@@ -1,0 +1,96 @@
+#/bin/bash
+
+command=$1
+config=$2
+config_file=shared/config/"$config"/conf.yml
+cidfile=cids/"$config".cid
+
+image=samsaffron/discourse
+
+[ $# -ne 2 ] && {
+  echo "Usage: launcher COMMAND CONFIG"
+  echo "Commands:"
+  echo "    start:    Start/initialize a container"
+  echo "    stop:     Stop a running container"
+  echo "    restart:  Restart a container"
+  echo "    destroy:  Stop and remove a container"
+  echo "    shell:    start a bash shell in a running container"
+  echo "    logs:     Docker logs for container"
+  exit 1
+}
+
+if [ ! -e $config_file ]
+  then
+    echo "Config file was not found, ensure $config_file exists"
+    exit 1
+fi
+
+if [ "$command" == "shell" ]
+  then
+
+    if [ ! -e $cidfile ]
+       then
+         echo "No cid found"
+         exit 1
+       else
+         docker attach `cat $cidfile`
+         exit 0
+    fi
+fi
+
+if [ "$command" == "stop" ]
+  then
+
+    if [ ! -e $cidfile ]
+       then
+         echo "No cid found"
+         exit 1
+       else
+         docker stop -t 10 `cat $cidfile`
+         exit 0
+    fi
+fi
+
+if [ "$command" == "logs" ]
+  then
+
+    if [ ! -e $cidfile ]
+       then
+         echo "No cid found"
+         exit 1
+       else
+         docker logs `cat $cidfile`
+         exit 0
+    fi
+fi
+
+if [ "$command" == "start" ]
+  then
+
+    if [ ! -e $cidfile ]
+       then
+         echo "No cid found, creating a new container"
+#docker run -cidfile $cidfile -p 22 -d -v `pwd`/shared:/shared samsaffron/discourse /usr/local/bin/ruby /shared/bootloader.rb
+         docker run -d samsaffron/discourse /usr/local/bin/ruby -e 'sleep 100'
+         exit 0
+       else
+         echo "cid found, ensuring container is started"
+         docker start `cat $cidfile`
+         exit 0
+    fi
+fi
+
+
+if [ "$command" == "destroy" ]
+  then
+    if [ -e $cidfile ]
+      then
+        echo "destroying container $cidfile"
+        docker stop -t 10 `cat $cidfile`
+        docker rm `cat $cidfile` && rm $cidfile
+        exit 0
+      else
+        echo "nothing to destroy cidfile does not exist"
+        exit 1
+    fi
+fi
