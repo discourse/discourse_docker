@@ -70,8 +70,7 @@ if [ "$command" == "start" ]
     if [ ! -e $cidfile ]
        then
          echo "No cid found, creating a new container"
-#docker run -cidfile $cidfile -p 22 -d -v `pwd`/shared:/shared samsaffron/discourse /usr/local/bin/ruby /shared/bootloader.rb
-         docker run -d samsaffron/discourse /usr/local/bin/ruby -e 'sleep 100'
+         docker run -cidfile $cidfile -p 22 -p 3000 -d -v `pwd`/shared:/shared samsaffron/discourse /shared/pups/bin/pups /$config_file
          exit 0
        else
          echo "cid found, ensuring container is started"
