@@ -80,7 +80,7 @@ if [ "$command" == "start" ]
     if [ ! -e $cidfile ]
        then
          echo "No cid found, creating a new container"
-         docker run -cidfile $cidfile -p 22 -p 3000 -d -v `pwd`/shared:/shared samsaffron/discourse:$config /usr/bin/runsvdir -P /etc/service
+         docker run -cidfile $cidfile -p 22 -p 80 -p 3000 -d -v `pwd`/shared:/shared samsaffron/discourse:$config /usr/bin/runsvdir -P /etc/service
          exit 0
        else
          echo "cid found, ensuring container is started"
