@@ -6,19 +6,23 @@ config_file=shared/config/"$config"/conf.yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
 
-image=samsaffron/discourse
-
-[ $# -ne 2 ] && {
+usage () {
   echo "Usage: launcher COMMAND CONFIG"
   echo "Commands:"
   echo "    start:      Start/initialize a container"
   echo "    stop:       Stop a running container"
   echo "    restart:    Restart a container"
   echo "    destroy:    Stop and remove a container"
-  echo "    shell:      Start a bash shell in a running container"
+  echo "    ssh:        Start a bash shell in a running container"
   echo "    logs:       Docker logs for container"
   echo "    bootstrap:  Bootstrap a container for the config base on an image"
   exit 1
+}
+
+image=samsaffron/discourse
+
+[ $# -ne 2 ] && {
+  usage
 }
 
 if [ ! -e $config_file ]
@@ -27,79 +31,77 @@ if [ ! -e $config_file ]
     exit 1
 fi
 
-if [ "$command" == "bootstrap" ]
-  then
-  docker run -cidfile $cidbootstrap -i -t -v `pwd`/shared:/shared samsaffron/discourse /shared/pups/bin/pups /$config_file
-  docker commit `cat $cidbootstrap` samsaffron/discourse $config
-  docker rm `cat $cidbootstrap`
-  rm $cidbootstrap
-fi
+case "$command" in
+  bootstrap)
+      docker run -cidfile $cidbootstrap -i -t -v `pwd`/shared:/shared samsaffron/discourse /shared/pups/bin/pups /$config_file
+      docker commit `cat $cidbootstrap` samsaffron/discourse $config
+      docker rm `cat $cidbootstrap`
+      rm $cidbootstrap
+      ;;
 
-if [ "$command" == "shell" ]
-  then
+  ssh)
+      if [ ! -e $cidfile ]
+         then
+           echo "No cid found"
+           exit 1
+         else
+           cid="`cat $cidfile`"
+           address="`docker port $cid 22`"
+           split=(${address//:/ })
+           exec ssh root@${split[0]} -p ${split[1]}
+      fi
+      ;;
 
-    if [ ! -e $cidfile ]
-       then
-         echo "No cid found"
-         exit 1
-       else
-         docker attach `cat $cidfile`
-         exit 0
-    fi
-fi
+  stop)
+      if [ ! -e $cidfile ]
+         then
+           echo "No cid found"
+           exit 1
+         else
+           docker stop -t 10 `cat $cidfile`
+           exit 0
+      fi
+      ;;
 
-if [ "$command" == "stop" ]
-  then
+  logs)
 
-    if [ ! -e $cidfile ]
-       then
-         echo "No cid found"
-         exit 1
-       else
-         docker stop -t 10 `cat $cidfile`
-         exit 0
-    fi
-fi
+      if [ ! -e $cidfile ]
+         then
+           echo "No cid found"
+           exit 1
+         else
+           docker logs `cat $cidfile`
+           exit 0
+      fi
+      ;;
 
-if [ "$command" == "logs" ]
-  then
+  start)
 
-    if [ ! -e $cidfile ]
-       then
-         echo "No cid found"
-         exit 1
-       else
-         docker logs `cat $cidfile`
-         exit 0
-    fi
-fi
-
-if [ "$command" == "start" ]
-  then
-
-    if [ ! -e $cidfile ]
-       then
-         echo "No cid found, creating a new container"
-         docker run -cidfile $cidfile -p 22 -p 80 -p 3000 -d -v `pwd`/shared:/shared samsaffron/discourse:$config /usr/bin/runsvdir -P /etc/service
-         exit 0
-       else
-         echo "cid found, ensuring container is started"
-         docker start `cat $cidfile`
-         exit 0
-    fi
-fi
+      if [ ! -e $cidfile ]
+         then
+           echo "No cid found, creating a new container"
+           docker run -cidfile $cidfile -p 22 -p 80 -p 3000 -d -v `pwd`/shared:/shared samsaffron/discourse:$config /usr/bin/runsvdir -P /etc/service
+           exit 0
+         else
+           echo "cid found, ensuring container is started"
+           docker start `cat $cidfile`
+           exit 0
+      fi
+      ;;
 
 
-if [ "$command" == "destroy" ]
-  then
-    if [ -e $cidfile ]
-      then
-        echo "destroying container $cidfile"
-        docker stop -t 10 `cat $cidfile`
-        docker rm `cat $cidfile` && rm $cidfile
-        exit 0
-      else
-        echo "nothing to destroy cidfile does not exist"
-        exit 1
-    fi
-fi
+  destroy)
+      if [ -e $cidfile ]
+        then
+          echo "destroying container $cidfile"
+          docker stop -t 10 `cat $cidfile`
+          docker rm `cat $cidfile` && rm $cidfile
+          exit 0
+        else
+          echo "nothing to destroy cidfile does not exist"
+          exit 1
+      fi
+      ;;
+esac
+
+usage
