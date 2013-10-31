@@ -45,7 +45,14 @@ RUN apt-get -y update &&\
     cp /var/www/discourse/config/environments/production.rb.sample /var/www/discourse/config/environments/production.rb
 
 
-
+RUN apt-get install -y runit &&\
+    mkdir -p /etc/service/sshd &&\
+    mkdir -p /var/run/sshd &&\
+    echo "#!/bin/sh" > /etc/service/sshd/run &&\
+    echo "exec 2>&1" >> /etc/service/sshd/run &&\
+    echo "exec /usr/sbin/sshd -D -e" >> /etc/service/sshd/run &&\
+    mkdir -p /root/.ssh &&\
+    chmod +x /etc/service/sshd/run
 
 # RUN cd /var/www/discourse && bundle exec rake db:test:prepare && bundle exec rspec
 
