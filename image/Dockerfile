@@ -39,20 +39,11 @@ RUN apt-get -y update &&\
     mkdir /var/www &&\
     cd /var/www &&\
     git clone https://github.com/discourse/discourse.git &&\
+    chown -R discourse /var/www/discourse &&\
     cd /var/www/discourse &&\
-    RAILS4=1 bundle install &&\
-    cp /var/www/discourse/config/redis.yml.sample /var/www/discourse/config/redis.yml &&\
-    cp /var/www/discourse/config/environments/production.rb.sample /var/www/discourse/config/environments/production.rb
+    sudo -u discourse RAILS4=1 bundle install --deployment &&\
+    apt-get install -y runit
 
-
-RUN apt-get install -y runit &&\
-    mkdir -p /etc/service/sshd &&\
-    mkdir -p /var/run/sshd &&\
-    echo "#!/bin/sh" > /etc/service/sshd/run &&\
-    echo "exec 2>&1" >> /etc/service/sshd/run &&\
-    echo "exec /usr/sbin/sshd -D -e" >> /etc/service/sshd/run &&\
-    mkdir -p /root/.ssh &&\
-    chmod +x /etc/service/sshd/run
 
 # RUN cd /var/www/discourse && bundle exec rake db:test:prepare && bundle exec rspec
 

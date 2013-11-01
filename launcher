@@ -35,8 +35,8 @@ case "$command" in
   bootstrap)
       docker run -cidfile $cidbootstrap -i -t -v `pwd`/shared:/shared samsaffron/discourse /shared/pups/bin/pups /$config_file
       docker commit `cat $cidbootstrap` samsaffron/discourse $config
-      docker rm `cat $cidbootstrap`
-      rm $cidbootstrap
+      docker rm `cat $cidbootstrap` && rm $cidbootstrap
+      exit 0
       ;;
 
   ssh)
