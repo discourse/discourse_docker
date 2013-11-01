@@ -20,7 +20,7 @@ RUN apt-get -y update &&\
                     pngcrush imagemagick \
                     postgresql-9.2 postgresql-client-9.2 \
                     postgresql-contrib-9.2 libpq-dev libreadline-dev \
-                    nginx &&\
+                    nginx wget language-pack-en sudo &&\
     dpkg-divert --local --rename --add /sbin/initctl &&\
     ln -s /bin/true /sbin/initctl &&\
     apt-get install -y redis-server &&\
@@ -34,7 +34,6 @@ RUN apt-get -y update &&\
     ruby-build 2.0.0-p247 /usr/local &&\
     gem update --system &&\
     gem install bundler &&\
-    apt-get -y install sudo &&\
     useradd discourse &&\
     mkdir /var/www &&\
     cd /var/www &&\
@@ -42,8 +41,8 @@ RUN apt-get -y update &&\
     chown -R discourse /var/www/discourse &&\
     cd /var/www/discourse &&\
     sudo -u discourse RAILS4=1 bundle install --deployment &&\
-    apt-get install -y runit
-
+    apt-get install -y runit &&\
+    locale-gen en_US
 
 # RUN cd /var/www/discourse && bundle exec rake db:test:prepare && bundle exec rspec
 
