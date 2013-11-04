@@ -44,6 +44,8 @@ RUN apt-get -y update &&\
     apt-get install -y runit &&\
     locale-gen en_US
 
+RUN cd / && git clone https://github.com/SamSaffron/pups.git
+
 # RUN cd /var/www/discourse && bundle exec rake db:test:prepare && bundle exec rspec
 
 # mkdir -p /src/godeb && cd /src/godeb && curl -O https://godeb.s3.amazonaws.com/godeb-amd64.tar.gz &&\

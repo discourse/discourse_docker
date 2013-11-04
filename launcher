@@ -2,7 +2,7 @@
 
 command=$1
 config=$2
-config_file=shared/config/"$config"/conf.yml
+config_file="$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
 
@@ -33,7 +33,8 @@ fi
 
 case "$command" in
   bootstrap)
-      docker run -cidfile $cidbootstrap -i -t -v `pwd`/shared:/shared samsaffron/discourse /shared/pups/bin/pups /$config_file
+      exec cat $config_file | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr -v `pwd`/shared:/shared samsaffron/discourse /pups/bin/pups --stdin
+      sleep 5
       docker commit `cat $cidbootstrap` samsaffron/discourse $config
       docker rm `cat $cidbootstrap` && rm $cidbootstrap
       exit 0

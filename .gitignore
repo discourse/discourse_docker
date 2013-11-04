@@ -1,4 +1,4 @@
 shared/pups
 *.swp
 cids/*
-shared/config/web1/conf.yml
+*.yml
