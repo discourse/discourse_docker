@@ -1,0 +1,23 @@
+# this is the base template, you should not change it
+template: "standalone.template.yml"
+# which ports to expose?
+expose:
+  - "80:80"
+  - "2222:22"
+
+params:
+  ssh_key: YOUR_SSH_KEY
+  # git revision to run
+  version: HEAD
+
+
+  # host name, required by Discourse
+  database_yml:
+    production:
+      host_names:
+        - dev.samsaffron.com
+
+
+# needed for bootstrapping
+env:
+  DEVELOPER_EMAILS: 'sam.saffron@gmail.com'
