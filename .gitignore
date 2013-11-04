@@ -1,4 +1,4 @@
-shared/pups
+shared/*
 *.swp
 cids/*
 *.yml
