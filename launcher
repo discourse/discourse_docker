@@ -56,7 +56,20 @@ fi
 
 case "$command" in
   bootstrap)
-      exec cat $config_file | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr -v `pwd`/shared:/shared samsaffron/discourse /pups/bin/pups --stdin
+
+      read -r -d '' ruby <<RUBY
+        require 'yaml'
+        puts YAML.load(STDIN.readlines.join)["template"]
+RUBY
+
+      template=`cat $config_file| docker run -i -a stdin -a stdout samsaffron/discourse ruby -e "$ruby"`
+
+      input=$(cat $config_file)
+      [ ! -z $template ] && {
+        input="$input _FILE_SEPERATOR_ $(cat $template)"
+      }
+
+      exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr -v `pwd`/shared:/shared samsaffron/discourse /shared/pups/bin/pups --stdin
       sleep 5
       docker commit `cat $cidbootstrap` samsaffron/discourse $config
       docker rm `cat $cidbootstrap` && rm $cidbootstrap
