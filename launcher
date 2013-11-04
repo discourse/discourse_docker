@@ -104,8 +104,8 @@ case "$command" in
       if [ ! -e $cidfile ]
          then
            echo "No cid found, creating a new container"
-           ports=`cat $config_file | docker run -rm -i -a stdout -a stdin samsaffron/discourse ruby -e "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
-           echo $ports
+           ports=`cat $config_file | docker run -rm -i -a stdout -a stdin samsaffron/discourse ruby -e \
+                  "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
            docker run -cidfile $cidfile $ports -d -v `pwd`/shared:/shared samsaffron/discourse:$config /usr/bin/runsvdir -P /etc/service
            exit 0
          else
