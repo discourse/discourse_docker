@@ -69,7 +69,7 @@ RUBY
         input="$input _FILE_SEPERATOR_ $(cat $template)"
       }
 
-      exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr -v `pwd`/shared:/shared samsaffron/discourse /shared/pups/bin/pups --stdin
+      exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr -v `pwd`/shared:/shared samsaffron/discourse /pups/bin/pups --stdin
       sleep 5
       docker commit `cat $cidbootstrap` samsaffron/discourse $config
       docker rm `cat $cidbootstrap` && rm $cidbootstrap
