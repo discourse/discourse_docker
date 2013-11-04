@@ -103,7 +103,13 @@ run:
         - cp config/environments/production.rb.sample config/environments/production.rb
         - mkdir -p tmp/pids
         - mkdir -p tmp/sockets
-        - mkdir -p log
+        - mkdir -p /shared/log/rails
+        - rm -r log
+        - ln -s /shared/log/rails $home/log
+        - mkdir -p /shared/uploads
+        - ln -s /shared/uploads $home/public/uploads
+        - chown -R discourse /shared/uploads
+        - chown -R discourse /shared/log/rails
   - exec:
       cmd:
         - mkdir -p /var/run/sshd
