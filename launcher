@@ -62,7 +62,7 @@ case "$command" in
         puts YAML.load(STDIN.readlines.join)["template"]
 RUBY
 
-      template=`cat $config_file| docker run -i -a stdin -a stdout samsaffron/discourse ruby -e "$ruby"`
+      template=`cat $config_file| docker run -rm -i -a stdin -a stdout samsaffron/discourse ruby -e "$ruby"`
 
       input=$(cat $config_file)
       [ ! -z $template ] && {
