@@ -5,6 +5,8 @@ config=$2
 config_file="$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
+image=samsaffron/discourse
+docker_path=`which docker`
 
 usage () {
   echo "Usage: launcher COMMAND CONFIG"
@@ -19,7 +21,28 @@ usage () {
   exit 1
 }
 
-image=samsaffron/discourse
+install_docker() {
+
+  echo "Docker is not installed, make sure you are running on the 3.8 kernel"
+  echo "The best supported Docker release is Ubuntu 12.04.03 for it run the following"
+  echo
+  echo "sudo apt-get update"
+  echo "sudo apt-get install linux-image-generic-lts-raring linux-headers-generic-lts-raring"
+  echo "sudo reboot"
+  echo
+
+  echo "sudo sh -c \"wget -qO- https://get.docker.io/gpg | apt-key add -\""
+  echo "sudo sh -c \"echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list\""
+  echo "sudo apt-get update"
+  echo "sudo apt-get install lxc-docker"
+
+  exit 1
+}
+
+[ -z $docker_path ] && {
+  install_docker
+}
+
 
 [ $# -ne 2 ] && {
   usage
@@ -81,7 +104,9 @@ case "$command" in
       if [ ! -e $cidfile ]
          then
            echo "No cid found, creating a new container"
-           docker run -cidfile $cidfile -p 22 -p 80 -p 3000 -d -v `pwd`/shared:/shared samsaffron/discourse:$config /usr/bin/runsvdir -P /etc/service
+           ports=`cat $config_file | docker run -rm -i -a stdout -a stdin samsaffron/discourse ruby -e "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
+           echo $ports
+           docker run -cidfile $cidfile $ports -d -v `pwd`/shared:/shared samsaffron/discourse:$config /usr/bin/runsvdir -P /etc/service
            exit 0
          else
            echo "cid found, ensuring container is started"
