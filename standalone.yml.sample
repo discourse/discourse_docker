@@ -6,6 +6,7 @@ expose:
   - "2222:22"
 
 params:
+  # ssh key so you can log in
   ssh_key: YOUR_SSH_KEY
   # git revision to run
   version: HEAD
@@ -15,9 +16,10 @@ params:
   database_yml:
     production:
       host_names:
-        - dev.samsaffron.com
+        # your domain name
+        - www.example.com
 
 
-# needed for bootstrapping
+# needed for bootstrapping, lowercase email
 env:
-  DEVELOPER_EMAILS: 'sam.saffron@gmail.com'
+  DEVELOPER_EMAILS: 'my_email@email.com'

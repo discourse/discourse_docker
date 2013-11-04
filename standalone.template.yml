@@ -92,6 +92,7 @@ run:
 
   - exec:
       cd: $home
+      hook: code
       cmd:
         - git reset --hard
         - git clean -f
