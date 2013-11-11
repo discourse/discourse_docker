@@ -1,4 +1,4 @@
-#/bin/bash
+#!/bin/bash
 
 command=$1
 config=$2
@@ -62,12 +62,8 @@ fi
 case "$command" in
   bootstrap)
 
-      read -r -d '' ruby <<RUBY
-        require 'yaml'
-        puts YAML.load(STDIN.readlines.join)["template"]
-RUBY
-
-      template=`cat $config_file| docker run -rm -i -a stdin -a stdout samsaffron/discourse ruby -e "$ruby"`
+      template=`cat $config_file | docker run -rm -i -a stdin -a stdout samsaffron/discourse ruby -e \
+        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['template']"`
 
       input=$(cat $config_file)
       [ ! -z $template ] && {
