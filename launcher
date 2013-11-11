@@ -39,6 +39,11 @@ install_docker() {
   exit 1
 }
 
+set_volumes() {
+  volumes=`cat $config_file | docker run -rm -i -a stdout -a stdin samsaffron/discourse ruby -e \
+        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
+}
+
 [ -z $docker_path ] && {
   install_docker
 }
@@ -69,7 +74,9 @@ RUBY
         input="$input _FILE_SEPERATOR_ $(cat $template)"
       }
 
-      exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr -v `pwd`/shared:/shared samsaffron/discourse /pups/bin/pups --stdin
+      set_volumes
+
+      exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes samsaffron/discourse /pups/bin/pups --stdin
       sleep 5
       docker commit `cat $cidbootstrap` samsaffron/discourse $config
       docker rm `cat $cidbootstrap` && rm $cidbootstrap
@@ -119,7 +126,10 @@ RUBY
            echo "No cid found, creating a new container"
            ports=`cat $config_file | docker run -rm -i -a stdout -a stdin samsaffron/discourse ruby -e \
                   "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
-           docker run -cidfile $cidfile $ports -d -v `pwd`/shared:/shared samsaffron/discourse:$config /usr/bin/runsvdir -P /etc/service
+
+           set_volumes
+
+           docker run -name $config -cidfile $cidfile $ports -d $volumes samsaffron/discourse:$config /usr/bin/runsvdir -P /etc/service
            exit 0
          else
            echo "cid found, ensuring container is started"
