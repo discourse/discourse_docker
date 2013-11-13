@@ -43,7 +43,7 @@ run:
         sv start redis || exit 1
         sv start postgres || exit 1
         cd $home
-        exec sudo -E -u discourse bundle exec unicorn -c config/unicorn.conf.rb
+        exec sudo -E -u discourse bundle exec config/unicorn_launcher config/unicorn.conf.rb
 
   - file:
      path: /etc/service/sidekiq/run
