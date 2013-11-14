@@ -43,7 +43,7 @@ run:
         sv start redis || exit 1
         sv start postgres || exit 1
         cd $home
-        exec sudo -E -u discourse bundle exec config/unicorn_launcher config/unicorn.conf.rb
+        exec sudo -E -u discourse bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
   - file:
      path: /etc/service/sidekiq/run
@@ -101,9 +101,9 @@ run:
         - cp config/database.yml.production-sample config/database.yml
         - cp config/redis.yml.sample config/redis.yml
         - cp config/environments/production.rb.sample config/environments/production.rb
-        - touch tmp/.gitkeep
         - mkdir -p tmp/pids
         - mkdir -p tmp/sockets
+        - touch tmp/.gitkeep
         - mkdir -p /shared/log/rails
         - rm -r log
         - ln -s /shared/log/rails $home/log
