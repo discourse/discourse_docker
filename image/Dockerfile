@@ -24,6 +24,7 @@ RUN apt-get -y update &&\
     dpkg-divert --local --rename --add /sbin/initctl &&\
     ln -s /bin/true /sbin/initctl &&\
     apt-get install -y redis-server haproxy openssh-server &&\
+    echo 'install: --no-ri --no-rdoc' >> ~/.gemrc
     (mkdir /src && cd /src &&\
      git clone https://github.com/sstephenson/ruby-build.git) &&\
     (cd /src/ruby-build && ./install.sh) &&\
@@ -36,16 +37,19 @@ RUN apt-get -y update &&\
      git clone https://github.com/discourse/discourse.git &&\
      chown -R discourse:discourse /var/www/discourse) &&\
     (cd /var/www/discourse &&\
-     sudo -u discourse RAILS4=1 bundle install --deployment) &&\
+     sudo -u discourse RAILS4=1 bundle install --deployment \
+         --without test --without development) &&\
+    (cd /var/www/discourse/vendor/bundle &&\
+     find . -name tmp -type d | xargs rm -rf) &&\
     apt-get install -y runit &&\
     locale-gen en_US &&\
-    apt-get -y autoremove build-essential gcc &&\
+    apt-get -y autoremove build-essential gcc gcc-4.7 .+-dev &&\
     apt-get clean
 
-    apt-get install psmisc &&\
+RUN apt-get install psmisc &&\
     (cd / && git clone https://github.com/SamSaffron/pups.git) &&\
     apt-get clean
-#RUN du -ksx /
+RUN echo image size: $(du -hsx /)
 
 # RUN cd /var/www/discourse && bundle exec rake db:test:prepare && bundle exec rspec
 
