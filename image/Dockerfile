@@ -23,28 +23,29 @@ RUN apt-get -y update &&\
                     nginx wget language-pack-en sudo &&\
     dpkg-divert --local --rename --add /sbin/initctl &&\
     ln -s /bin/true /sbin/initctl &&\
-    apt-get install -y redis-server &&\
-    apt-get install -y haproxy openssh-server &&\
-    mkdir /src && cd /src &&\
-    git clone https://github.com/sstephenson/ruby-build.git &&\
-    cd ruby-build && \
-    /src/ruby-build/install.sh &&\
-    cd / &&\
+    apt-get install -y redis-server haproxy openssh-server &&\
+    (mkdir /src && cd /src &&\
+     git clone https://github.com/sstephenson/ruby-build.git) &&\
+    (cd /src/ruby-build && ./install.sh) &&\
     rm -rf /src/ruby-build &&\
     ruby-build 2.0.0-p247 /usr/local &&\
     gem update --system &&\
     gem install bundler &&\
     useradd discourse &&\
-    mkdir /var/www &&\
-    cd /var/www &&\
-    git clone https://github.com/discourse/discourse.git &&\
-    chown -R discourse /var/www/discourse &&\
-    cd /var/www/discourse &&\
-    sudo -u discourse RAILS4=1 bundle install --deployment &&\
+    (mkdir /var/www && cd /var/www &&\
+     git clone https://github.com/discourse/discourse.git &&\
+     chown -R discourse:discourse /var/www/discourse) &&\
+    (cd /var/www/discourse &&\
+     sudo -u discourse RAILS4=1 bundle install --deployment) &&\
     apt-get install -y runit &&\
-    locale-gen en_US
+    locale-gen en_US &&\
+    apt-get -y autoremove build-essential gcc &&\
+    apt-get clean
 
-RUN apt-get install psmisc && cd / && git clone https://github.com/SamSaffron/pups.git
+    apt-get install psmisc &&\
+    (cd / && git clone https://github.com/SamSaffron/pups.git) &&\
+    apt-get clean
+#RUN du -ksx /
 
 # RUN cd /var/www/discourse && bundle exec rake db:test:prepare && bundle exec rspec
 
