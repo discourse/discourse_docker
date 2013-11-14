@@ -40,7 +40,7 @@ install_docker() {
 }
 
 set_volumes() {
-  volumes=`cat $config_file | docker run -rm -i -a stdout -a stdin samsaffron/discourse ruby -e \
+  volumes=`cat $config_file | docker run -rm -i -a stdout -a stdin $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
 }
 
@@ -62,7 +62,7 @@ fi
 case "$command" in
   bootstrap)
 
-      template=`cat $config_file | docker run -rm -i -a stdin -a stdout samsaffron/discourse ruby -e \
+      template=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['template']"`
 
       input=$(cat $config_file)
@@ -72,9 +72,9 @@ case "$command" in
 
       set_volumes
 
-      exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes samsaffron/discourse /pups/bin/pups --stdin
+      exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image /pups/bin/pups --stdin
       sleep 5
-      docker commit `cat $cidbootstrap` samsaffron/discourse $config
+      docker commit `cat $cidbootstrap` $image $config
       docker rm `cat $cidbootstrap` && rm $cidbootstrap
       exit 0
       ;;
@@ -120,12 +120,12 @@ case "$command" in
       if [ ! -e $cidfile ]
          then
            echo "No cid found, creating a new container"
-           ports=`cat $config_file | docker run -rm -i -a stdout -a stdin samsaffron/discourse ruby -e \
+           ports=`cat $config_file | docker run -rm -i -a stdout -a stdin $image ruby -e \
                   "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
 
            set_volumes
 
-           docker run -name $config -cidfile $cidfile $ports -d $volumes samsaffron/discourse:$config /usr/bin/runsvdir -P /etc/service
+           docker run -name $config -cidfile $cidfile $ports -d $volumes $image:$config /usr/bin/runsvdir -P /etc/service
            exit 0
          else
            echo "cid found, ensuring container is started"

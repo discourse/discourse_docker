@@ -20,34 +20,37 @@ RUN apt-get -y update &&\
                     pngcrush imagemagick \
                     postgresql-9.2 postgresql-client-9.2 \
                     postgresql-contrib-9.2 libpq-dev libreadline-dev \
-                    nginx wget language-pack-en sudo &&\
+                    nginx wget language-pack-en sudo cron &&\
     dpkg-divert --local --rename --add /sbin/initctl &&\
     ln -s /bin/true /sbin/initctl &&\
     apt-get install -y redis-server haproxy openssh-server &&\
-    echo 'install: --no-ri --no-rdoc' >> ~/.gemrc
-    (mkdir /src && cd /src &&\
-     git clone https://github.com/sstephenson/ruby-build.git) &&\
-    (cd /src/ruby-build && ./install.sh) &&\
+    echo 'install: --no-ri --no-rdoc' >> ~/.gemrc &&\
+    mkdir /src && cd /src &&\
+     git clone https://github.com/sstephenson/ruby-build.git && cd / &&\
+    cd /src/ruby-build &&\
+     ./install.sh && cd / &&\
     rm -rf /src/ruby-build &&\
     ruby-build 2.0.0-p247 /usr/local &&\
     gem update --system &&\
-    gem install bundler &&\
+    gem install bundler --pre &&\
     useradd discourse &&\
-    (mkdir /var/www && cd /var/www &&\
+    mkdir /var/www && cd /var/www &&\
      git clone https://github.com/discourse/discourse.git &&\
-     chown -R discourse:discourse /var/www/discourse) &&\
-    (cd /var/www/discourse &&\
-     sudo -u discourse RAILS4=1 bundle install --deployment \
-         --without test --without development) &&\
-    (cd /var/www/discourse/vendor/bundle &&\
-     find . -name tmp -type d | xargs rm -rf) &&\
+     chown -R discourse:discourse /var/www/discourse && cd / &&\
+    cd /var/www/discourse &&\
+     sudo -u discourse RAILS4=1 bundle install -j8 --deployment \
+         --without test --without development && cd / &&\
+    cd /var/www/discourse/vendor/bundle &&\
+     find . -name tmp -type d | xargs rm -rf && cd / &&\
     apt-get install -y runit &&\
     locale-gen en_US &&\
-    apt-get -y autoremove build-essential gcc gcc-4.7 .+-dev &&\
     apt-get clean
 
+# For a smaller but less flexible image:
+# RUN apt-get -y autoremove build-essential gcc gcc-4.7 .+-dev
+
 RUN apt-get install psmisc &&\
-    (cd / && git clone https://github.com/SamSaffron/pups.git) &&\
+    cd / && git clone https://github.com/SamSaffron/pups.git &&\
     apt-get clean
 RUN echo image size: $(du -hsx /)
 
