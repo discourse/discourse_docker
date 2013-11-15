@@ -23,3 +23,8 @@ params:
 # needed for bootstrapping, lowercase email
 env:
   DEVELOPER_EMAILS: 'my_email@email.com'
+
+volumes:
+  - volume:
+      host: /var/docker/data
+      guest: /shared
