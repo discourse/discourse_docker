@@ -20,11 +20,12 @@ RUN apt-get -y update &&\
                     pngcrush imagemagick \
                     postgresql-9.2 postgresql-client-9.2 \
                     postgresql-contrib-9.2 libpq-dev libreadline-dev \
-                    nginx wget language-pack-en sudo cron &&\
+                    nginx wget language-pack-en sudo cron \
+                    psmisc &&\
     dpkg-divert --local --rename --add /sbin/initctl &&\
     ln -s /bin/true /sbin/initctl &&\
     apt-get install -y redis-server haproxy openssh-server &&\
-    echo 'install: --no-ri --no-rdoc' >> ~/.gemrc &&\
+    echo 'gem: --no-document' >> /etc/gemrc &&\
     mkdir /src && cd /src &&\
      git clone https://github.com/sstephenson/ruby-build.git && cd / &&\
     cd /src/ruby-build &&\
@@ -33,26 +34,28 @@ RUN apt-get -y update &&\
     ruby-build 2.0.0-p247 /usr/local &&\
     gem update --system &&\
     gem install bundler --pre &&\
-    useradd discourse &&\
+    cd / && git clone https://github.com/SamSaffron/pups.git
+
+RUN mkdir /jemalloc && cd /jemalloc && wget http://www.canonware.com/download/jemalloc/jemalloc-3.4.1.tar.bz2 &&\
+      tar -xvjf jemalloc-3.4.1.tar.bz2 && cd jemalloc-3.4.1 && ./configure && make &&\
+      mv lib/libjemalloc.so.1 /usr/lib && cd / $$ rm -rf /jemalloc &&\
+      apt-get install -y runit && apt-get clean && locale-gen en_US
+
+# Discourse specific bits
+RUN useradd discourse -s /bin/bash -m -U &&\
     mkdir /var/www && cd /var/www &&\
-     git clone https://github.com/discourse/discourse.git &&\
+     git clone --depth 1 https://github.com/discourse/discourse.git &&\
      chown -R discourse:discourse /var/www/discourse && cd / &&\
     cd /var/www/discourse &&\
-     sudo -u discourse RAILS4=1 bundle install -j8 --deployment \
-         --without test --without development && cd / &&\
+     sudo -u discourse RAILS4=1 bundle install -j4 --deployment \
+         --without test --without development &&\
     cd /var/www/discourse/vendor/bundle &&\
-     find . -name tmp -type d | xargs rm -rf && cd / &&\
-    apt-get install -y runit &&\
-    locale-gen en_US &&\
-    apt-get clean
+       find . -name tmp -type d | xargs rm -rf && cd /
+
 
 # For a smaller but less flexible image:
-# RUN apt-get -y autoremove build-essential gcc gcc-4.7 .+-dev
-
-RUN apt-get install psmisc &&\
-    cd / && git clone https://github.com/SamSaffron/pups.git &&\
-    apt-get clean
-RUN echo image size: $(du -hsx /)
+#RUN apt-get -y autoremove build-essential gcc gcc-4.7 .+-dev
+#RUN echo image size: $(du -hsx /)
 
 # RUN cd /var/www/discourse && bundle exec rake db:test:prepare && bundle exec rspec
 
