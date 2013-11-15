@@ -35,6 +35,33 @@ params:
 
 run:
   - file:
+     path: /etc/service/cron/run
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        exec 2>&1
+        cd /
+        exec cron
+
+  - file:
+     path: /var/lib/postgresql/take-database-backup
+     chown: postgres:postgres
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        ID=db-$(date +%F_%T)
+        FILENAME=/shared/postgres_backup/$ID.tar.gz
+        pg_basebackup --format=tar --pgdata=- --xlog --gzip --label=$ID > $FILENAME
+        echo $FILENAME
+
+  - file:
+     path: /var/spool/cron/crontabs/postgres
+     contents: |
+        # m h  dom mon dow   command
+        #MAILTO=?
+        0 */4 * * * /var/lib/postgresql/take-database-backup
+
+  - file:
      path: /etc/service/unicorn/run
      chmod: "+x"
      contents: |
@@ -150,9 +177,7 @@ run:
 
   - exec:
       cmd:
-        - mkdir -p /shared/redis_data
-        - chown -R redis /shared/redis_data
-        - chgrp -R redis /shared/redis_data
+        - install -d -m 0755 -o redis -g redis /shared/redis_data
 
   - replace:
       filename: "/etc/redis/redis.conf"
@@ -175,13 +200,32 @@ run:
       cmd:
         - chown -R root /var/lib/postgresql/9.2/main
         - "[ ! -e /shared/postgres_data ] && cp -r /var/lib/postgresql/9.2/main /shared/postgres_data || exit 0"
-        - chown -R postgres /shared/postgres_data
-        - chgrp -R postgres /shared/postgres_data
+        - chown -R postgres:postgres /shared/postgres_data
 
   - replace:
       filename: "/etc/postgresql/9.2/main/postgresql.conf"
       from: "data_directory = '/var/lib/postgresql/9.2/main'"
       to: "data_directory = '/shared/postgres_data'"
+
+  # Necessary to enable backups
+  - exec:
+      cmd:
+        - install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
+
+  - replace:
+      filename: "/etc/postgresql/9.2/main/postgresql.conf"
+      from: /#?max_wal_senders *=.*/
+      to: "max_wal_senders = 4"
+
+  - replace:
+      filename: "/etc/postgresql/9.2/main/postgresql.conf"
+      from: /#?wal_level *=.*/
+      to: "wal_level = hot_standby"
+
+  - replace:
+      filename: "/etc/postgresql/9.2/main/pg_hba.conf"
+      from: /^#local +replication +postgres +peer$/
+      to: "local replication postgres  peer"
 
   - exec:
       background: true
