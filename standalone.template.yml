@@ -14,8 +14,6 @@ env:
   UNICORN_WORKERS: 3
   # slightly less aggressive than "recommendation" but works fine with oobgc
   RUBY_GC_MALLOC_LIMIT: 25000000
-  # way more efficient allocator
-  LD_PRELOAD: /usr/lib/libjemalloc.so.1
 
 params:
   # SSH key is required for remote access into the container
@@ -46,7 +44,7 @@ run:
         sv start redis || exit 1
         sv start postgres || exit 1
         cd $home
-        exec sudo -E -u discourse bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
+        exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
   - file:
      path: /etc/service/sidekiq/run
@@ -58,7 +56,7 @@ run:
         sv start redis || exit 1
         sv start postgres || exit 1
         cd $home
-        exec sudo -E -u discourse bundle exec sidekiq
+        exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec sidekiq
 
   - file:
      path: /etc/service/sshd/run
