@@ -34,12 +34,12 @@ RUN apt-get -y update &&\
     ruby-build 2.0.0-p247 /usr/local &&\
     gem update --system &&\
     gem install bundler --pre &&\
-    cd / && git clone https://github.com/SamSaffron/pups.git
-
-RUN mkdir /jemalloc && cd /jemalloc && wget http://www.canonware.com/download/jemalloc/jemalloc-3.4.1.tar.bz2 &&\
+    cd / && git clone https://github.com/SamSaffron/pups.git &&\
+    mkdir /jemalloc && cd /jemalloc &&\
+      wget http://www.canonware.com/download/jemalloc/jemalloc-3.4.1.tar.bz2 &&\
       tar -xvjf jemalloc-3.4.1.tar.bz2 && cd jemalloc-3.4.1 && ./configure && make &&\
-      mv lib/libjemalloc.so.1 /usr/lib && cd / $$ rm -rf /jemalloc &&\
-      apt-get install -y runit && apt-get clean && locale-gen en_US
+      mv lib/libjemalloc.so.1 /usr/lib && cd / && rm -rf /jemalloc &&\
+    apt-get install -y runit && apt-get clean && locale-gen en_US
 
 # Discourse specific bits
 RUN useradd discourse -s /bin/bash -m -U &&\
