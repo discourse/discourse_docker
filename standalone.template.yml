@@ -11,8 +11,9 @@ env:
   # You can have redis on a different box
   # REDIS_PROVIDER_URL: 'redis://l.discourse:6379'
   RAILS_ENV: 'production'
-  RAILS4: 1
   UNICORN_WORKERS: 3
+  # slightly less aggressive than "recommendation" but works fine with oobgc
+  RUBY_GC_MALLOC_LIMIT: 25000000
 
 params:
   # SSH key is required for remote access into the container
@@ -210,7 +211,7 @@ run:
       cd: $home
       cmd:
         - chown -R discourse $home
-        - sudo -E -u discourse bundle install --deployment
+        - sudo -E -u discourse bundle install --deployment --without test --without development
         - sudo -E -u discourse bundle exec rake db:migrate
         - sudo -E -u discourse bundle exec rake assets:precompile
 
