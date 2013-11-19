@@ -14,6 +14,8 @@ env:
   UNICORN_WORKERS: 3
   # slightly less aggressive than "recommendation" but works fine with oobgc
   RUBY_GC_MALLOC_LIMIT: 40000000
+  # this ensures we have enough heap space to handle a big pile of small reqs
+  RUBY_HEAP_MIN_SLOTS: 800000
 
 params:
   # SSH key is required for remote access into the container
