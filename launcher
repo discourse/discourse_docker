@@ -74,7 +74,7 @@ case "$command" in
 
       exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image /pups/bin/pups --stdin
       sleep 10
-      docker commit `cat $cidbootstrap` $image $config || echo 'FAILED TO COMMIT'
+      docker commit `cat $cidbootstrap` $image:$config || echo 'FAILED TO COMMIT'
       docker rm `cat $cidbootstrap` && rm $cidbootstrap
       exit 0
       ;;
