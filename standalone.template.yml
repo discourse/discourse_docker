@@ -184,7 +184,7 @@ run:
   - replace:
       filename: "/etc/redis/redis.conf"
       from: /^logfile.*$/
-      to: "logfile stdout"
+      to: "logfile \"\""
 
   - replace:
       filename: "/etc/redis/redis.conf"
