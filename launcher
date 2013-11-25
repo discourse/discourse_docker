@@ -5,6 +5,7 @@ config=$2
 config_file="$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
+local_discourse=local_discourse
 image=samsaffron/discourse
 docker_path=`which docker`
 
@@ -74,7 +75,7 @@ case "$command" in
 
       exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image /pups/bin/pups --stdin
       sleep 10
-      docker commit `cat $cidbootstrap` $image:$config || echo 'FAILED TO COMMIT'
+      docker commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
       docker rm `cat $cidbootstrap` && rm $cidbootstrap
       exit 0
       ;;
@@ -125,7 +126,7 @@ case "$command" in
 
            set_volumes
 
-           docker run -name $config -cidfile $cidfile $ports -d $volumes $image:$config /usr/bin/runsvdir -P /etc/service
+           docker run -name $config -cidfile $cidfile $ports -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
            exit 0
          else
            echo "cid found, ensuring container is started"
