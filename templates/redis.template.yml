@@ -1,0 +1,51 @@
+run:
+  - file:
+     path: /etc/service/redis/run
+     chmod: "+x"
+     contents: |
+        #!/bin/sh
+        exec 2>&1
+        exec sudo -u redis /usr/bin/redis-server /etc/redis/redis.conf
+
+  - replace:
+      filename: "/etc/redis/redis.conf"
+      from: "daemonize yes"
+      to: ""
+  - replace:
+      filename: "/etc/redis/redis.conf"
+      from: /^pidfile.*$/
+      to: ""
+
+  - exec:
+      cmd:
+        - install -d -m 0755 -o redis -g redis /shared/redis_data
+
+  - replace:
+      filename: "/etc/redis/redis.conf"
+      from: /^logfile.*$/
+      to: "logfile \"\""
+
+  - replace:
+      filename: "/etc/redis/redis.conf"
+      from: /^dir .*$/
+      to: "dir /shared/redis_data"
+
+  - exec:
+      cmd: echo redis installed
+      hook: redis
+
+# we can not migrate without redis, launch it if needed
+hooks:
+  before_code:
+    - exec:
+        background: true
+        cmd: "sudo -u redis /usr/bin/redis-server /etc/redis/redis.conf"
+  after_code:
+    - replace:
+       filename: /etc/service/sidekiq/run
+       from: "# redis"
+       to: sv start redis || exit 1
+    - replace:
+       filename: /etc/service/unicorn/run
+       from: "# redis"
+       to: sv start redis || exit 1

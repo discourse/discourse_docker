@@ -63,17 +63,29 @@ fi
 case "$command" in
   bootstrap)
 
-      template=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
-        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['template']"`
+      templates=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
+        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
 
+      arrTemplates=(${templates// / })
       input=$(cat $config_file)
-      [ ! -z $template ] && {
-        input="$input _FILE_SEPERATOR_ $(cat $template)"
-      }
+
+
+      for template in "${arrTemplates[@]}"
+      do
+        [ ! -z $template ] && {
+          input="$input _FILE_SEPERATOR_ $(cat $template)"
+        }
+      done
 
       set_volumes
 
-      exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image /pups/bin/pups --stdin
+      docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $image /bin/bash -c 'cd /pups && git pull'
+      docker commit `cat $cidbootstrap` $local_discourse/up_to_date_pups
+      docker rm `cat $cidbootstrap` && rm $cidbootstrap
+
+      (exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $local_discourse/up_to_date_pups /pups/bin/pups --stdin) \
+        || exit 1 && docker rm `cat $cidbootstrap` && rm $cidbootstrap && exit 1
+
       sleep 10
       docker commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
       docker rm `cat $cidbootstrap` && rm $cidbootstrap

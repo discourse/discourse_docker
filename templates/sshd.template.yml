@@ -1,0 +1,19 @@
+params:
+  # SSH key is required for remote access into the container
+  ssh_key: YOUR_SSH_KEY_HERE
+
+run:
+
+  - file:
+     path: /etc/service/sshd/run
+     chmod: "+x"
+     contents: |
+        #!/bin/sh
+        exec 2>&1
+        exec /usr/sbin/sshd -D -e
+
+  - exec:
+      cmd:
+        - mkdir -p /var/run/sshd
+        - mkdir -p /root/.ssh
+        - echo $ssh_key >> /root/.ssh/authorized_keys
