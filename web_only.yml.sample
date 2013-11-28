@@ -1,7 +1,4 @@
 templates:
-  - "templates/cron.template.yml"
-  - "templates/postgres.template.yml"
-  - "templates/redis.template.yml"
   - "templates/sshd.template.yml"
   - "templates/web.template.yml"
 
