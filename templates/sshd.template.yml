@@ -13,6 +13,7 @@ run:
         exec /usr/sbin/sshd -D -e
 
   - exec:
+      hook: sshd
       cmd:
         - mkdir -p /var/run/sshd
         - mkdir -p /root/.ssh
