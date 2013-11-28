@@ -6,7 +6,16 @@ run:
         #!/bin/bash
         exec 2>&1
         cd /
-        exec cron
+        exec cron -f
+  - file:
+     path: /etc/service/rsyslog/run
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        exec 2>&1
+        cd /
+        exec rsyslogd -n
+
   - exec:
       hook: cron
       cmd: echo cron installed
