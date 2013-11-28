@@ -50,9 +50,7 @@ hooks:
        from: "# postgres"
        to: sv start postgres || exit 1
 
-
 run:
-
   - file:
      path: /etc/service/postgres/run
      chmod: "+x"
@@ -64,7 +62,7 @@ run:
   - exec:
       cmd:
         - chown -R root /var/lib/postgresql/9.2/main
-        - "[ ! -e /shared/postgres_data ] && cp -r /var/lib/postgresql/9.2/main /shared/postgres_data || exit 0"
+        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -u postgres /usr/lib/postgresql/9.2/bin/initdb -D /shared/postgres_data || exit 0"
         - chown -R postgres:postgres /shared/postgres_data
 
   - replace:

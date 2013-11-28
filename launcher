@@ -79,16 +79,20 @@ case "$command" in
 
       set_volumes
 
-      docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $image /bin/bash -c 'cd /pups && git pull'
-      docker commit `cat $cidbootstrap` $local_discourse/up_to_date_pups
-      docker rm `cat $cidbootstrap` && rm $cidbootstrap
+      rm -f $cidbootstrap
 
-      (exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $local_discourse/up_to_date_pups /pups/bin/pups --stdin) \
-        || exit 1 && docker rm `cat $cidbootstrap` && rm $cidbootstrap && exit 1
+      (exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+         /bin/bash -c 'cd /pups && git pull && /pups/bin/pups --stdin') \
+         || (docker rm `cat $cidbootstrap` && rm $cidbootstrap)
 
-      sleep 10
+      [ ! -e $cidbootstrap ] && echo "FAILED TO BOOTSTRAP" && exit 1
+
+      sleep 5
+
       docker commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
       docker rm `cat $cidbootstrap` && rm $cidbootstrap
+
+      echo "Successfully bootstrappd, to starup use ./launcher start $config"
       exit 0
       ;;
 
