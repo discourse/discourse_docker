@@ -1,0 +1,18 @@
+templates:
+  - "templates/cron.template.yml"
+  - "templates/postgres.template.yml"
+  - "templates/redis.template.yml"
+  - "templates/sshd.template.yml"
+
+expose:
+  - "5432:5432"
+  - "6379:6379"
+  - "2221:22"
+
+params:
+  ssh_key: ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAoW2hxaAVSVNdHQlVJ8eQhhU3m6xYZ5ZsaHaUNc9Gau0OXko7Jw5Gf3ooJ8r0CI0vsHZtifTWCU2t4FlB3ERH6M9Rst8IypOo6/6JrEmXqGBQAHB6QyPNXNE+nVzCdLaww58iQa++IGNS29Zr9jDECGEBh9G52qkBa/9JoOXed6s0JJPf9C5MNNzGbv4mgP8iIqluB41egsY1hTEJwfA1WLgxEEqwZQpEDs2mLZKXlUav3slaD0oq81BZx4WxcKuLv4Xh3mGBeJcM/fWOpQmkgoamFUvD9ijxCQCNrqF0QX/+MqGDxqQfeEzoQaKeINfyehkJpLrcamunBgEvqqlaBw== sam@sam-ubuntu
+
+volumes:
+  - volume:
+        host: /home/sam/discourse_docker/shared
+        guest: /shared

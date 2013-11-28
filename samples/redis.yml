@@ -1,0 +1,16 @@
+templates:
+  - "templates/redis.template.yml"
+  - "templates/sshd.template.yml"
+
+expose:
+  - "6379:6379"
+  - "2221:22"
+
+hooks:
+#  after_sshd:
+    # - exec: ssh-import-id some-user
+
+volumes:
+  - volume:
+        host: /home/sam/discourse_docker/shared
+        guest: /shared

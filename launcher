@@ -2,7 +2,7 @@
 
 command=$1
 config=$2
-config_file="$config".yml
+config_file=containers/"$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
 local_discourse=local_discourse

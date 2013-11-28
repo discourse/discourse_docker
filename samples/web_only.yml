@@ -25,6 +25,9 @@ volumes:
         guest: /shared
 
 hooks:
+# you may import your key using launchpad if needed
+#after_sshd:
+#    - exec: ssh-import-id some-user
   after_code:
     - exec:
         cd: $home/plugins

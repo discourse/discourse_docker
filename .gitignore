@@ -1,4 +1,4 @@
 shared/*
 *.swp
+containers/*
 cids/*
-*.yml
