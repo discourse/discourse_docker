@@ -1,7 +1,7 @@
 # DOCKER-VERSION 0.6.7
 
 # 13.10 - 04 has a missing ppa for postgresql 9.2 at the moment (26/10/2013)
-FROM samsaffron/discourse_base
+FROM samsaffron/discourse_base:0.1.1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
@@ -11,7 +11,7 @@ RUN useradd discourse -s /bin/bash -m -U &&\
      git clone --depth 1 https://github.com/discourse/discourse.git &&\
      chown -R discourse:discourse /var/www/discourse && cd / &&\
     cd /var/www/discourse &&\
-     sudo -u discourse RAILS4=1 bundle install -j4 --deployment \
+     sudo -u discourse RAILS4=1 bundle install --deployment \
          --without test --without development &&\
     cd /var/www/discourse/vendor/bundle &&\
        find . -name tmp -type d | xargs rm -rf && cd /

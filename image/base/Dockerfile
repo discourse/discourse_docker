@@ -32,7 +32,7 @@ RUN apt-get -y update &&\
     rm -rf /src/ruby-build &&\
     ruby-build 2.0.0-p353 /usr/local &&\
     gem update --system &&\
-    gem install bundler --pre &&\
+    gem install bundler &&\
     cd / && git clone https://github.com/SamSaffron/pups.git &&\
     mkdir /jemalloc && cd /jemalloc &&\
       wget http://www.canonware.com/download/jemalloc/jemalloc-3.4.1.tar.bz2 &&\
