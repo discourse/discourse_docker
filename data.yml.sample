@@ -1,0 +1,20 @@
+# a basic data only container
+
+templates:
+  - "templates/cron.template.yml"
+  - "templates/postgres.template.yml"
+  - "templates/redis.template.yml"
+  - "templates/sshd.template.yml"
+
+expose:
+  - "5432:5432"
+  - "6379:6379"
+  - "2221:22"
+
+params:
+  ssh_key: YOUR_KEY
+
+volumes:
+  - volume:
+        host: /home/sam/discourse_docker/shared
+        guest: /shared
