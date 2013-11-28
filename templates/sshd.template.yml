@@ -1,6 +1,11 @@
 params:
   # SSH key is required for remote access into the container
-  ssh_key: YOUR_SSH_KEY_HERE
+  # you may also use ssh-import-id
+  ssh_key: ""
+  # so ssh-import-id works
+
+env:
+  HOME: /root
 
 run:
 
