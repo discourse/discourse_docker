@@ -1,5 +1,10 @@
-# this is the base template, you should not change it
-template: "standalone.template.yml"
+# this is the base templates used, you can cut it down to include less functionality per container
+templates:
+  - "templates/cron.template.yml"
+  - "templates/postgres.template.yml"
+  - "templates/redis.template.yml"
+  - "templates/sshd.template.yml"
+  - "templates/web.template.yml"
 # which ports to expose?
 expose:
   - "80:80"
