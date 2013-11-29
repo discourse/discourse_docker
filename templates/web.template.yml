@@ -22,10 +22,11 @@ params:
       database: discourse
       username: discourse
       socket: /var/run/postgresql
-      password:
-      host:
-      host_names:
-        - YOUR_HOSTNAME_HERE
+# TODO allow param here?
+      # password:
+      # host:
+      # host_names:
+      #   - YOUR_HOSTNAME_HERE
 
 run:
 

@@ -67,8 +67,8 @@ case "$command" in
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
 
       arrTemplates=(${templates// / })
-      input=$(cat $config_file)
-
+      config=$(cat $config_file)
+      input="hack: true"
 
       for template in "${arrTemplates[@]}"
       do
@@ -76,6 +76,9 @@ case "$command" in
           input="$input _FILE_SEPERATOR_ $(cat $template)"
         }
       done
+
+      # we always want our config file last so it takes priority
+      input="$input _FILE_SEPERATOR_ $config"
 
       set_volumes
 
