@@ -81,8 +81,8 @@ run:
         - ln -s /shared/log/rails $home/log
         - mkdir -p /shared/uploads
         - ln -s /shared/uploads $home/public/uploads
-        - chown -R discourse /shared/uploads
-        - chown -R discourse /shared/log/rails
+        - chown -R discourse:www-data /shared/uploads
+        - chown -R discourse:www-data /shared/log/rails
   - exec:
       cmd:
         - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
