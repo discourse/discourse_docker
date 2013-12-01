@@ -33,3 +33,13 @@ volumes:
   - volume:
       host: /var/docker/data
       guest: /shared
+
+# you may use the docker manager to upgrade and monitor your docker image
+# UI will be visible at http://yoursite.com/admin/docker
+hooks:
+  after_code:
+    - exec:
+        cd: $home/plugins
+        cmd:
+          - mkdir -p plugins
+          - git clone https://github.com/discourse/docker_manager.git

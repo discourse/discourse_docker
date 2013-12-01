@@ -24,6 +24,9 @@ volumes:
         host: /home/sam/discourse_docker/shared
         guest: /shared
 
+
+# you may use the docker manager to upgrade and monitor your docker image
+# UI will be visible at http://yoursite.com/admin/docker
 hooks:
 # you may import your key using launchpad if needed
 #after_sshd:
@@ -33,5 +36,4 @@ hooks:
         cd: $home/plugins
         cmd:
           - mkdir -p plugins
-          - git clone https://github.com/SamSaffron/blog.git
           - git clone https://github.com/discourse/docker_manager.git
