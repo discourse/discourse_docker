@@ -10,6 +10,17 @@ These templates are agnostic, you may run Discourse in multiple containers or a 
 
 The templates and base image take care of configuring Discourse with best practices in mind. The latest version of Ruby 2.0 is included as is fairly extensive memory and GC tuning. The web template uses unicorn which helps cut down on overall memory usage making this very suitable for VPS type installs.
 
+###Getting started
+
+The simplest (though slightly more fragile) way of getting started is using the standalone template.
+
+- `cp samples/standalone.yml containers/app.yml`
+- **Edit** app.yml with your environment specific information, including binds and volumes
+- `sudo ./launcher bootstrap app`
+- `sudo ./launcher start app`
+
+Note: you can add yourself to the docker group if you wish to avoid `sudo` with `usermod -a -G docker your-user-name`.
+
 ### Directory Structure
 
 - cids
@@ -58,14 +69,6 @@ Commands:
     bootstrap:  Bootstrap a container for the config based on a template
 ```
 
-###Getting started
-
-The simplest (though slightly more fragile) way of getting started is using the standalone template.
-
-- `cp samples/standalone.yml containers/app.yml`
-- Edit app.yml with your environment specific information
-- `./launcher bootstrap app`
-- `./launcher start app`
 
 ###About the container configuration
 
