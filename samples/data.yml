@@ -1,5 +1,5 @@
-# a basic data only container
-
+# A container for all things Data, be sure to set a secret password for discourse account, SOME_SECRET is just an example
+#
 templates:
   - "templates/cron.template.yml"
   - "templates/postgres.template.yml"
@@ -11,10 +11,20 @@ expose:
   - "6379:6379"
   - "2221:22"
 
+# ssh key for logging in to container
 params:
-  ssh_key: YOUR_KEY
+  ssh_key: ""
 
+# amend SOME_SECRET to a password for the discourse user
+hooks:
+  after_postgres:
+    - exec:
+        stdin: |
+          alter user discourse with password 'SOME_SECRET';
+        cmd: sudo -u postgres psql discourse
+        raise_on_fail: false
+# be sure to set the host location somewhere sane
 volumes:
   - volume:
-        host: /home/sam/discourse_docker/shared
+        host: /var/discourse/shared
         guest: /shared

@@ -1,3 +1,6 @@
+# IMPORTANT: SET A SECRET PASSWORD in Postgres for the Discourse User
+# SOME_SECRET in this template
+
 templates:
   - "templates/sshd.template.yml"
   - "templates/web.template.yml"
@@ -7,23 +10,29 @@ expose:
   - "2222:22"
 
 params:
-  ssh_key: YOUR_KEY
 
+# your ssh key can go here, or you can use ssh-import-id
+  ssh_key: ""
   version: HEAD
-
 
   database_yml:
     production:
+      socket: ""
+      host: <%= ENV['DOCKER_HOST_IP'] %>
+      database: discourse
+      username: discourse
+      password: SOME_SECRET
       host_names:
-        - example.com
+        - www.SOME_DOMAIN.com
+
+# developer emails allow you to fast track account creation on the site
 env:
-  DEVELOPER_EMAILS: 'dev@example.com'
+  DEVELOPER_EMAILS: ''
 
 volumes:
   - volume:
-        host: /home/sam/discourse_docker/shared
+        host: /var/docker/shared
         guest: /shared
-
 
 # you may use the docker manager to upgrade and monitor your docker image
 # UI will be visible at http://yoursite.com/admin/docker
@@ -32,6 +41,14 @@ hooks:
 #after_sshd:
 #    - exec: ssh-import-id some-user
   after_code:
+    - file:
+        path: $home/config/redis.yml
+        contents: |
+          production:
+            host: <%= ENV['DOCKER_HOST_IP'] %>
+            port: 6379
+            db: 0
+            cache_db: 2
     - exec:
         cd: $home/plugins
         cmd:

@@ -9,6 +9,13 @@ local_discourse=local_discourse
 image=samsaffron/discourse
 docker_path=`which docker`
 
+docker_ip=`/sbin/ifconfig | \
+                grep -B1 "inet addr" | \
+                awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' | \
+                grep docker0 | \
+                awk -F: '{ print $3 }';`
+
+
 usage () {
   echo "Usage: launcher COMMAND CONFIG"
   echo "Commands:"
@@ -84,7 +91,7 @@ case "$command" in
 
       rm -f $cidbootstrap
 
-      (exec echo "$input" | docker run -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+      (exec echo "$input" | docker run -e DOCKER_HOST_IP=$docker_ip -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
          /bin/bash -c 'cd /pups && git pull && /pups/bin/pups --stdin') \
          || (docker rm `cat $cidbootstrap` && rm $cidbootstrap)
 
@@ -145,7 +152,9 @@ case "$command" in
 
            set_volumes
 
-           docker run -name $config -cidfile $cidfile $ports -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
+           docker run -e DOCKER_HOST_IP=$docker_ip -name $config -cidfile $cidfile $ports \
+                      -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
+
            exit 0
          else
            echo "cid found, ensuring container is started"

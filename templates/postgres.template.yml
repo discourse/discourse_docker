@@ -19,28 +19,6 @@ hooks:
           0 */4 * * * /var/lib/postgresql/take-database-backup
 
   before_code:
-    - exec:
-        background: true
-        cmd: "sudo -u postgres /usr/lib/postgresql/9.2/bin/postmaster -D /etc/postgresql/9.2/main"
-
-    # give db a few secs to start up
-    - exec: "sleep 5"
-
-    - exec: sudo -u postgres createdb discourse || exit 0
-    - exec:
-        stdin: |
-          create user discourse;
-        cmd: sudo -u postgres psql discourse
-        raise_on_fail: false
-
-    - exec:
-        stdin: |
-          grant all privileges on database discourse to discourse;
-        cmd: sudo -u postgres psql discourse
-        raise_on_fail: false
-
-    - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists hstore;"'
-    - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists pg_trgm;"'
     - replace:
        filename: /etc/service/sidekiq/run
        from: "# postgres"
@@ -70,6 +48,12 @@ run:
       from: "data_directory = '/var/lib/postgresql/9.2/main'"
       to: "data_directory = '/shared/postgres_data'"
 
+  # listen on all interfaces
+  - replace:
+      filename: "/etc/postgresql/9.2/main/postgresql.conf"
+      from: /#?listen_addresses *=.*/
+      to: "listen_addresses = '*'"
+
   # Necessary to enable backups
   - exec:
       cmd:
@@ -89,3 +73,36 @@ run:
       filename: "/etc/postgresql/9.2/main/pg_hba.conf"
       from: /^#local +replication +postgres +peer$/
       to: "local replication postgres  peer"
+
+  # allow all to connect in with md5 auth
+  - replace:
+      filename: "/etc/postgresql/9.2/main/pg_hba.conf"
+      from: /^host.*all.*all.*127.*$/
+      to: "host all all 0.0.0.0/0 md5"
+
+  - exec:
+      background: true
+      cmd: "sudo -u postgres /usr/lib/postgresql/9.2/bin/postmaster -D /etc/postgresql/9.2/main"
+
+  # give db a few secs to start up
+  - exec: "sleep 5"
+
+  - exec: sudo -u postgres createdb discourse || exit 0
+  - exec:
+      stdin: |
+        create user discourse;
+      cmd: sudo -u postgres psql discourse
+      raise_on_fail: false
+
+  - exec:
+      stdin: |
+        grant all privileges on database discourse to discourse;
+      cmd: sudo -u postgres psql discourse
+      raise_on_fail: false
+
+  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists hstore;"'
+  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists pg_trgm;"'
+
+  - exec:
+      hook: postgres
+      cmd: "echo postgres installed!"
