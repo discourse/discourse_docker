@@ -18,6 +18,7 @@ The simplest (though slightly more fragile) way of getting started is using the 
 - **Edit** app.yml with your environment specific information, including binds and volumes
 - `sudo ./launcher bootstrap app`
 - `sudo ./launcher start app`
+- Ensure you setup iptables or some other firewall to protect various ports (like postgres/redis in multi image setups)
 
 Note: you can add yourself to the docker group if you wish to avoid `sudo` with `usermod -a -G docker your-user-name`.
 
@@ -106,7 +107,39 @@ volumes:
 
 Expose a directory inside the host inside the container.
 
-*short note about security* Directory permissions in Linux are sid based, if your sids on the host do not match the sids in the guest, permissions will mismatch. On clean installs you can ensure they are in sync by looking at `/etc/passwd` and `/etc/group`, the discourse account will have the sid 1000.
+###Upgrading discourse
+
+The docker setup gives you multiple upgrade options:
+
+1. You can use the front end at http://yoursite.com/admin/docker to upgrade an already running image.
+
+2. You can create a new base image by running:
+  - `./launcher bootstrap my_image`
+  - `./launcher destroy my_image`
+  - `./launcher start my_image`
+
+###Multi image vs Single image setups
+
+The samples directory conains a standalone template. This template will bundle all of the programs required to run discourse into a single image. The advantage is that it is very easy to get started as you do not need to wire up comms between containers.
+
+However, the disadvantage is that the bootstrapping process will launch a new postgres instance, having 2 postgres instances running against a single directory can lead to unexpected results. Due to that, if you are ever to bootstrap the `standalone` template again you should first stop the existing container.
+
+A multi image setup allows you to bootstrap new web processes while your site is running and only after it is built, switch the new image in. The setup is far more flexible and robust, however is a bit more complicated to setup. See the `data.yml` and `web_only.yml` templates in the samples directory. To ease this process, `launcher` will inject an env var called `DISCOURSE_HOST_IP` which will be available inside the image.
+
+###Troubleshooting
+
+It is strongly recommended you have ssh access to your running containers, this allows you very easily take sneak peak of the internals. Simplest way to gain access is:
+
+1. Run a terminal as root
+2. cd `~/.ssh`
+3. `ssh-key-gen`
+4. paste the contents of `id_rsa.pub` into your templates (see placeholder in samples)
+5. bootstrap and run your container
+6. `./launcher ssh my_container`
+
+###Security
+
+Directory permissions in Linux are sid based, if your sids on the host do not match the sids in the guest, permissions will mismatch. On clean installs you can ensure they are in sync by looking at `/etc/passwd` and `/etc/group`, the discourse account will have the sid 1000.
 
 
 
