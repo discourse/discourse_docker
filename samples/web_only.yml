@@ -54,3 +54,20 @@ hooks:
         cmd:
           - mkdir -p plugins
           - git clone https://github.com/discourse/docker_manager.git
+# mail is critical, setup here
+    # - replace:
+    #     filename: /var/www/discourse/config/environments/production.rb
+    #     from: /end/
+    #     direction: reverse
+    #     to: |
+    #       config.action_mailer.delivery_method = :smtp
+    #       config.action_mailer.smtp_settings = {
+    #         :address              => 'smtp.mandrillapp.com',
+    #         :port                 => 587,
+    #         :domain               => 'domain',
+    #         :user_name            => 'user@email.com',
+    #         :password             => 'pwd',
+    #         :authentication       => 'login',
+    #         :enable_starttls_auto => true
+    #       }
+    #       end
