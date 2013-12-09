@@ -126,6 +126,32 @@ However, the disadvantage is that the bootstrapping process will launch a new po
 
 A multi image setup allows you to bootstrap new web processes while your site is running and only after it is built, switch the new image in. The setup is far more flexible and robust, however is a bit more complicated to setup. See the `data.yml` and `web_only.yml` templates in the samples directory. To ease this process, `launcher` will inject an env var called `DISCOURSE_HOST_IP` which will be available inside the image.
 
+###Email setup
+
+For a Discourse instance to function properly Email must be setup. You can use an after_code hook in your template to setup mail, for example this will setup email integration with mandrill (which offer free smtp services).
+
+```
+    - replace:
+        filename: /var/www/discourse/config/environments/production.rb
+        from: /end/
+        direction: reverse
+        to: |
+          config.action_mailer.delivery_method = :smtp
+          config.action_mailer.smtp_settings = {
+            :address              => 'smtp.mandrillapp.com',
+            :port                 => 587,
+            :domain               => 'mydomain.com',
+            :user_name            => 'user@example.com',
+            :password             => 'some_password',
+            :authentication       => 'login',
+            :enable_starttls_auto => true
+          }
+          end
+
+```
+
+The docker image does not contain postfix, exim or another mta, it was omitted cause it is very tricky to setup perfectly.
+
 ###Troubleshooting
 
 It is strongly recommended you have ssh access to your running containers, this allows you very easily take sneak peak of the internals. Simplest way to gain access is:
