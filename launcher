@@ -73,9 +73,19 @@ case "$command" in
       templates=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
 
+      base_image=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
+        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['base_image']"`
+
+      update_pups=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
+        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['update_pups']"`
+
       arrTemplates=(${templates// / })
       config_data=$(cat $config_file)
       input="hack: true"
+
+      if [[ ! X"" = X"$base_image" ]]; then
+        image=$base_image
+      fi
 
       for template in "${arrTemplates[@]}"
       do
@@ -91,8 +101,14 @@ case "$command" in
 
       rm -f $cidbootstrap
 
+      run_command="cd /pups &&"
+      if [[ ! "false" =  $update_pups ]]; then
+        run_command="$run_command git pull &&"
+      fi
+      run_command="$run_command /pups/bin/pups --stdin"
+
       (exec echo "$input" | docker run -e DOCKER_HOST_IP=$docker_ip -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
-         /bin/bash -c 'cd /pups && git pull && /pups/bin/pups --stdin') \
+         /bin/bash -c "$run_command") \
          || (docker rm `cat $cidbootstrap` && rm $cidbootstrap)
 
       [ ! -e $cidbootstrap ] && echo "FAILED TO BOOTSTRAP" && exit 1
