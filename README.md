@@ -14,6 +14,8 @@ The templates and base image take care of configuring Discourse with best practi
 
 The simplest (though slightly more fragile) way of getting started is using the standalone template.
 
+- `mkdir -p /var/docker/data`
+- Clone this project from github into `/var/docker`
 - `cp samples/standalone.yml containers/app.yml`
 - **Edit** app.yml with your environment specific information, including binds and volumes
 - `sudo ./launcher bootstrap app`
