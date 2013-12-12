@@ -36,7 +36,6 @@ run:
      contents: |
         #!/bin/bash
         exec 2>&1
-        $env
         # redis
         # postgres
         cd $home
@@ -48,7 +47,6 @@ run:
      contents: |
         #!/bin/bash
         exec 2>&1
-        $env
         # redis
         # postgres
         cd $home

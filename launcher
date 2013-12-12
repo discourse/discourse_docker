@@ -52,6 +52,49 @@ set_volumes() {
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
 }
 
+set_template_info() {
+
+    templates=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
+      "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
+
+
+    arrTemplates=(${templates// / })
+    config_data=$(cat $config_file)
+
+    input="hack: true"
+
+
+    for template in "${arrTemplates[@]}"
+    do
+      [ ! -z $template ] && {
+        input="$input _FILE_SEPERATOR_ $(cat $template)"
+      }
+    done
+
+    # we always want our config file last so it takes priority
+    input="$input _FILE_SEPERATOR_ $config_data"
+
+    read -r -d '' env_ruby << 'RUBY'
+    require 'yaml'
+
+    input=STDIN.readlines.join
+    env = {}
+    input.split('_FILE_SEPERATOR_').each do |yml|
+       yml.strip!
+       begin
+         env.merge!(YAML.load(yml)['env'] || {})
+       rescue => e
+        puts yml
+        p e
+       end
+    end
+    puts env.map{|k,v| "-e #{k}=#{v}" }.join(" ")
+RUBY
+
+    env=`exec echo "$input" | docker run -rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
+    echo "Calculated ENV: $env"
+}
+
 [ -z $docker_path ] && {
   install_docker
 }
@@ -70,8 +113,7 @@ fi
 case "$command" in
   bootstrap)
 
-      templates=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
-        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
+      set_template_info
 
       base_image=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['base_image']"`
@@ -79,23 +121,9 @@ case "$command" in
       update_pups=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['update_pups']"`
 
-      arrTemplates=(${templates// / })
-      config_data=$(cat $config_file)
-      input="hack: true"
-
       if [[ ! X"" = X"$base_image" ]]; then
         image=$base_image
       fi
-
-      for template in "${arrTemplates[@]}"
-      do
-        [ ! -z $template ] && {
-          input="$input _FILE_SEPERATOR_ $(cat $template)"
-        }
-      done
-
-      # we always want our config file last so it takes priority
-      input="$input _FILE_SEPERATOR_ $config_data"
 
       set_volumes
 
@@ -107,7 +135,7 @@ case "$command" in
       fi
       run_command="$run_command /pups/bin/pups --stdin"
 
-      (exec echo "$input" | docker run -e DOCKER_HOST_IP=$docker_ip -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+      (exec echo "$input" | docker run $env -e DOCKER_HOST_IP=$docker_ip -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
          /bin/bash -c "$run_command") \
          || (docker rm `cat $cidbootstrap` && rm $cidbootstrap)
 
@@ -166,9 +194,10 @@ case "$command" in
            ports=`cat $config_file | docker run -rm -i -a stdout -a stdin $image ruby -e \
                   "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
 
+           set_template_info
            set_volumes
 
-           docker run -e DOCKER_HOST_IP=$docker_ip -name $config -cidfile $cidfile $ports \
+           docker run $env -e DOCKER_HOST_IP=$docker_ip -name $config -cidfile $cidfile $ports \
                       -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
 
            exit 0
