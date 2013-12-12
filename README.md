@@ -14,13 +14,13 @@ The templates and base image take care of configuring Discourse with best practi
 
 The simplest (though slightly more fragile) way of getting started is using the **standalone** template.
 
-- **Clone** this project from github: `git clone https://github.com/SamSaffron/discourse_docker.git`
-- **Copy** the standalone sample into the containers directory: `cp samples/standalone.yml containers/app.yml`
-- **Edit** `containers/app.yml` with your environment specific information
+1. **Clone** this project from github: `git clone https://github.com/SamSaffron/discourse_docker.git`
+2. **Copy** the standalone sample into the containers directory: `cp samples/standalone.yml containers/app.yml`
+3. **Edit** `containers/app.yml` with your environment specific information
   - [bindings](#expose)
   - [volumes](#volumes)
-- **Bootstrap** the image: `sudo ./launcher bootstrap app`
-- **Start** the image: `sudo ./launcher start app`
+4. **Bootstrap** the image: `sudo ./launcher bootstrap app`
+5. **Start** the image: `sudo ./launcher start app`
 
 Note: you can add yourself to the docker group if you wish to avoid `sudo` with `usermod -aG docker <your-user-name>`.
 
