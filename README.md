@@ -18,7 +18,7 @@ The simplest (though slightly more fragile) way of getting started is using the 
 2. **Copy** the standalone sample into the containers directory: `cp samples/standalone.yml containers/app.yml`
 3. **Edit** `containers/app.yml` with your environment specific information
   - [bindings](#expose)
-  - [volumes](#volumes)
+  - [volumes](#volumes) (make sure you create the appropriate directories on the host)
 4. **Bootstrap** the image: `sudo ./launcher bootstrap app`
 5. **Start** the image: `sudo ./launcher start app`
 
