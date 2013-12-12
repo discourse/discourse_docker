@@ -106,6 +106,10 @@ run:
   - merge: $home/config/database.yml $database_yml
 
   - exec:
+      cmd: echo "done configuring web"
+      hook: web_config
+
+  - exec:
       cd: $home
       cmd:
         - chown -R discourse $home
