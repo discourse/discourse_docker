@@ -197,11 +197,36 @@ case "$command" in
            set_template_info
            set_volumes
 
+           existing=`docker ps -a | awk '{ print $1, $(NF) }' | grep $config | awk '{ print $1 }'`
+           if [ ! -z $existing ]
+           then
+             echo "Found an existing container by its name, recovering cidfile, please rerun"
+             echo $existing > $cidfile
+             exit 1
+           fi
+
            docker run $env -e DOCKER_HOST_IP=$docker_ip -name $config -cidfile $cidfile $ports \
                       -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
 
            exit 0
          else
+           cid=`cat $cidfile`
+
+           if [ -z $cid ]
+           then
+             echo "Detected empty cid file, deleting, please re-run"
+             rm $cidfile
+             exit 1
+           fi
+
+           found=`docker ps -q -a | grep $cid`
+           if [ -z $found ]
+           then
+             echo "Invalid cid file, deleting, please re-run"
+             rm $cidfile
+             exit 1
+           fi
+
            echo "cid found, ensuring container is started"
            docker start `cat $cidfile`
            exit 0
