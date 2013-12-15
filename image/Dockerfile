@@ -9,7 +9,7 @@ MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 RUN useradd discourse -s /bin/bash -m -U &&\
     mkdir /var/www && cd /var/www &&\
      git clone --depth 1 https://github.com/discourse/discourse.git &&\
-     chown -R discourse:discourse /var/www/discourse && cd / &&\
+     chown -R discourse:discourse /var/www/discourse &&\
     cd /var/www/discourse &&\
      sudo -u discourse RAILS4=1 bundle install --deployment \
          --without test --without development &&\
