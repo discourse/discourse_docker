@@ -146,7 +146,7 @@ case "$command" in
       docker commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
       docker rm `cat $cidbootstrap` && rm $cidbootstrap
 
-      echo "Successfully bootstrappd, to starup use ./launcher start $config"
+      echo "Successfully bootstrappd, to startup use ./launcher start $config"
       exit 0
       ;;
 
