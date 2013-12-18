@@ -197,7 +197,7 @@ case "$command" in
            set_template_info
            set_volumes
 
-           existing=`docker ps -a | awk '{ print $1, $(NF) }' | grep "$config:latest" | awk '{ print $1 }'`
+           existing=`docker ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
            if [ ! -z $existing ]
            then
              echo "Found an existing container by its name, recovering cidfile, please rerun"
