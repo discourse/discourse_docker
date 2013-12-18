@@ -132,29 +132,8 @@ WARNING: If you launch multiple images, **make sure** you setup iptables or some
 
 ### Email setup
 
-For a Discourse instance to function properly Email must be setup. You can use an after_code hook in your template to setup mail, for example this will setup email integration with mandrill (which offer free smtp services).
-
-```
-    - replace:
-        filename: /var/www/discourse/config/environments/production.rb
-        from: /end/
-        direction: reverse
-        to: |
-          config.action_mailer.delivery_method = :smtp
-          config.action_mailer.smtp_settings = {
-            :address              => 'smtp.mandrillapp.com',
-            :port                 => 587,
-            :domain               => 'mydomain.com',
-            :user_name            => 'user@example.com',
-            :password             => 'some_password',
-            :authentication       => 'login',
-            :enable_starttls_auto => true
-          }
-          end
-
-```
-
-The docker image does not contain postfix, exim or another mta, it was omitted cause it is very tricky to setup perfectly.
+For a Discourse instance to function properly Email must be setup. Use the SMTP_URL env var to set your SMTP address, see sample templates for an example.
+The docker image does not contain postfix, exim or another MTA, it was omitted cause it is very tricky to setup perfectly.
 
 ### Troubleshooting
 
