@@ -15,19 +15,17 @@ params:
   ssh_key: ""
   version: HEAD
 
-  database_yml:
-    production:
-      socket: ""
-      host: <%= ENV['DOCKER_HOST_IP'] %>
-      database: discourse
-      username: discourse
-      password: SOME_SECRET
-      host_names:
-        - www.SOME_DOMAIN.com
-
 # developer emails allow you to fast track account creation on the site
 env:
+  # add emails here
   DEVELOPER_EMAILS: ''
+  POSTGRES_SOCKET: ''
+  POSTGRES_URL: pg://discourse:SOME_SECRET@YOUR_IP_ADDRESS
+  POSTGRES_DB: discourse
+  DISCOURSE_HOSTNAME: 'www.example.com'
+  REDIS_ADDRESS: YOUR_IP_ADDRESS
+  # don't forget to set mail
+  # SMTP_URL: 'smtp://user@example.com:password@smtp.mandrillapp.com:587'
 
 volumes:
   - volume:
@@ -41,33 +39,8 @@ hooks:
 #after_sshd:
 #    - exec: ssh-import-id some-user
   after_code:
-    - file:
-        path: $home/config/redis.yml
-        contents: |
-          production:
-            host: <%= ENV['DOCKER_HOST_IP'] %>
-            port: 6379
-            db: 0
-            cache_db: 2
     - exec:
         cd: $home/plugins
         cmd:
           - mkdir -p plugins
           - git clone https://github.com/discourse/docker_manager.git
-# mail is critical, setup here
-    # - replace:
-    #     filename: /var/www/discourse/config/environments/production.rb
-    #     from: /end/
-    #     direction: reverse
-    #     to: |
-    #       config.action_mailer.delivery_method = :smtp
-    #       config.action_mailer.smtp_settings = {
-    #         :address              => 'smtp.mandrillapp.com',
-    #         :port                 => 587,
-    #         :domain               => 'domain',
-    #         :user_name            => 'user@email.com',
-    #         :password             => 'pwd',
-    #         :authentication       => 'login',
-    #         :enable_starttls_auto => true
-    #       }
-    #       end

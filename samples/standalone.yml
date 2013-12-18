@@ -11,23 +11,20 @@ expose:
   - "2222:22"
 
 params:
-  # ssh key so you can log in
+  # ssh key so you can log in, a tip, try using the key for root in ~root/.ssh or generate one
+  # using ssh-keygen
   ssh_key: YOUR_SSH_KEY
   # git revision to run
   version: HEAD
 
 
-  # host name, required by Discourse
-  database_yml:
-    production:
-      host_names:
-        # your domain name
-        - www.example.com
-
-
-# needed for bootstrapping, lowercase email
 env:
+  # your email here
   DEVELOPER_EMAILS: 'my_email@email.com'
+  # CHANGE ME to your hostname
+  DISCOURSE_HOSTNAME: 'www.example.com'
+  # SET ME to your smtp server eg mandrill
+  # SMTP_URL: 'smtp://user@example.com:password@smtp.mandrillapp.com:587'
 
 volumes:
   - volume:
