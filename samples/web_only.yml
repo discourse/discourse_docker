@@ -19,11 +19,11 @@ params:
 env:
   # add emails here
   DEVELOPER_EMAILS: ''
-  POSTGRES_SOCKET: ''
-  POSTGRES_URL: pg://discourse:SOME_SECRET@YOUR_IP_ADDRESS
-  POSTGRES_DB: discourse
+  DISCOURSE_DB_SOCKET: ''
+  DISCOURSE_DB_PASSWORD: SOME_SECRET
+  DISCOURSE_DB_HOST: YOUR_IP_ADDRESS
   DISCOURSE_HOSTNAME: 'www.example.com'
-  REDIS_ADDRESS: YOUR_IP_ADDRESS
+  DISCOURSE_REDIS_HOST: YOUR_IP_ADDRESS
   # don't forget to set mail
   # SMTP_URL: 'smtp://user@example.com:password@smtp.mandrillapp.com:587'
 
