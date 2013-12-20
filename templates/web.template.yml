@@ -7,9 +7,7 @@ env:
   # this ensures we have enough heap space to handle a big pile of small reqs
   RUBY_HEAP_MIN_SLOTS: 800000
 
-  POSTGRES_SOCKET: /var/run/postgresql
-  POSTGRES_URL: pg://discourse@localhost
-  POSTGRES_DB: discourse
+  DISCOURSE_DB_SOCKET: /var/run/postgresql
 
 
 params:

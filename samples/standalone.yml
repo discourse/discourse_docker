@@ -20,7 +20,7 @@ params:
 
 env:
   # your email here
-  DEVELOPER_EMAILS: 'my_email@email.com'
+  DISCOURSE_DEVELOPER_EMAILS: 'my_email@email.com'
   # CHANGE ME to your hostname
   DISCOURSE_HOSTNAME: 'www.example.com'
   # SET ME to your smtp server eg mandrill
