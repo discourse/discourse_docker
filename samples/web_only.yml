@@ -18,7 +18,7 @@ params:
 # developer emails allow you to fast track account creation on the site
 env:
   # add emails here
-  DEVELOPER_EMAILS: ''
+  DISCOURSE_DEVELOPER_EMAILS: ''
   DISCOURSE_DB_SOCKET: ''
   DISCOURSE_DB_PASSWORD: SOME_SECRET
   DISCOURSE_DB_HOST: YOUR_IP_ADDRESS
