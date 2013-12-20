@@ -24,7 +24,11 @@ env:
   # CHANGE ME to your hostname
   DISCOURSE_HOSTNAME: 'www.example.com'
   # SET ME to your smtp server eg mandrill
-  # SMTP_URL: 'smtp://user@example.com:password@smtp.mandrillapp.com:587'
+  # don't forget to set mail
+  # DISCOURSE_SMTP_ADDRESS: smtp.mandrillapp.com
+  # DISCOURSE_SMTP_PORT: 587
+  # DISCOURSE_SMTP_USER_NAME: user@example.com
+  # DISCOURSE_SMTP_PASSWORD: p@ssword
 
 volumes:
   - volume:
