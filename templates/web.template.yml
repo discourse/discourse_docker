@@ -19,6 +19,22 @@ params:
   home: /var/www/discourse
 
 run:
+  - file:
+     path: /etc/service/copy_env/run
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        conf=/var/www/discourse/config/discourse.conf
+        sudo -u discourse echo > $conf
+
+        for x in `env | /usr/bin/awk -F= '{if($1 ~ /DISCOURSE_/) print $1}'`
+          do
+             c=${x,,}
+             c=${c:10}
+             echo "$c"=${!x} >> $conf
+          done
+        # I dunno there may be a cleaner way to handle this
+        exec sleep 2147483647
 
   - file:
      path: /etc/service/unicorn/run
@@ -28,6 +44,7 @@ run:
         exec 2>&1
         # redis
         # postgres
+        sv start copy_env || exit 1
         cd $home
         exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
@@ -39,6 +56,7 @@ run:
         exec 2>&1
         # redis
         # postgres
+        sv start copy_env || exit 1
         cd $home
         exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec sidekiq
 

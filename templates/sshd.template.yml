@@ -15,12 +15,6 @@ run:
      contents: |
         #!/bin/bash
         exec 2>&1
-        echo export DOCKER_HOST_IP=$DOCKER_HOST_IP > /etc/profile.d/docker.sh
-        for x in `env | /usr/bin/awk -F= '{if($1 ~ /DISCOURSE_/) print $1}'`
-          do
-             echo export "$x"=${!x} >> /etc/profile.d/docker.sh
-          done
-        chmod +x /etc/profile.d/docker.sh
         exec /usr/sbin/sshd -D -e
 
   - exec:
