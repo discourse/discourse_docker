@@ -219,7 +219,7 @@ case "$command" in
              exit 1
            fi
 
-           found=`docker ps -q -a | grep $cid`
+           found=`docker ps -q -a -notrunc | grep $cid`
            if [ -z $found ]
            then
              echo "Invalid cid file, deleting, please re-run"
