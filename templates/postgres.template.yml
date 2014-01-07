@@ -29,6 +29,14 @@ hooks:
        to: sv start postgres || exit 1
 
 run:
+  # temporary
+  - exec: apt-get install -y socat
+  - exec: mkdir -p /shared/postgres_run
+  - exec: chown postgres:postgres /shared/postgres_run
+  - exec: chmod 775 /shared/postgres_run
+  - exec: rm -fr /var/run/postgresql
+  - exec: ln -s /shared/postgres_run /var/run/postgresql
+  - exec: socat /dev/null UNIX-CONNECT:/shared/postgres_run/.s.PGSQL.5432 || exit 0 && echo postgres already running stop container ; exit 1
   - file:
      path: /etc/service/postgres/run
      chmod: "+x"
