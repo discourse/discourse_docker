@@ -37,6 +37,6 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
       wget http://www.canonware.com/download/jemalloc/jemalloc-3.4.1.tar.bz2 &&\
       tar -xvjf jemalloc-3.4.1.tar.bz2 && cd jemalloc-3.4.1 && ./configure && make &&\
       mv lib/libjemalloc.so.1 /usr/lib && cd / && rm -rf /jemalloc &&\
-    apt-get -y install runit monit &&\
+    apt-get -y install runit monit socat &&\
     apt-get clean &&\
     locale-gen en_US
