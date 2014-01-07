@@ -5,9 +5,11 @@ FROM ubuntu:12.10
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN apt-get -y update &&\
+RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
+    apt-get -y update &&\
     apt-get -y upgrade &&\
     apt-get -y install software-properties-common &&\
+    apt-add-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe" &&\
     add-apt-repository -y ppa:rwky/redis &&\
     add-apt-repository -y ppa:nginx/stable &&\
     add-apt-repository -y ppa:pitti/postgresql &&\
