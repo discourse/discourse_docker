@@ -12,5 +12,5 @@ hooks:
 
 volumes:
   - volume:
-        host: /home/sam/discourse_docker/shared
+        host: /var/docker/shared
         guest: /shared
