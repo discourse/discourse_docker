@@ -26,5 +26,5 @@ hooks:
 # be sure to set the host location somewhere sane
 volumes:
   - volume:
-        host: /var/discourse/shared
+        host: /var/docker/shared
         guest: /shared
