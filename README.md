@@ -10,11 +10,19 @@ These templates are agnostic, you may run Discourse in multiple containers or a 
 
 The templates and base image take care of configuring Discourse with best practices in mind. The latest version of Ruby 2.0 is included as is fairly extensive memory and GC tuning. The web template uses unicorn which helps cut down on overall memory usage making this very suitable for VPS type installs.
 
+
+### Before you start
+
+1. Be sure to run docker and launcer as root, its the simplest way to get going.
+2. Be sure to have Ubuntu 12.04 LTS or Ubuntu 13.04 or Ubuntu 13.10. Device mapper support in docker is still rough.
+3. Be sure to upgrade to the latest version of Docker.
+4. Install discourse docker into /var/docker it helps keep everything in a consistent spot and sample files expect this.
+
 ### Getting started
 
 The simplest (though slightly more fragile) way of getting started is using the **standalone** template.
 
-1. **Clone** this project from github: `git clone https://github.com/SamSaffron/discourse_docker.git`
+1. **Clone** this project from github: `git clone https://github.com/SamSaffron/discourse_docker.git /var/docker`
 2. **Copy** the standalone sample into the containers directory: `cp samples/standalone.yml containers/app.yml`
 3. **Edit** `containers/app.yml` with your environment specific information
   - [bindings](#expose)
