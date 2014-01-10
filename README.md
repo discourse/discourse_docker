@@ -13,7 +13,7 @@ The templates and base image take care of configuring Discourse with best practi
 
 ### Before you start
 
-1. Be sure to run docker and launcer as root, its the simplest way to get going.
+1. Be sure to run docker and launcher as root, its the simplest way to get going.
 2. Be sure to have Ubuntu 12.04 LTS or Ubuntu 13.04 or Ubuntu 13.10. Device mapper support in docker is still rough.
 3. Be sure to upgrade to the latest version of Docker.
 4. Install discourse docker into /var/docker it helps keep everything in a consistent spot and sample files expect this.
