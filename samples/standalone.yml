@@ -32,7 +32,7 @@ env:
 
 volumes:
   - volume:
-      host: /var/docker/data
+      host: /var/docker/shared
       guest: /shared
 
 # you may use the docker manager to upgrade and monitor your docker image
