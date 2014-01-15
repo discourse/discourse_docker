@@ -88,7 +88,7 @@ set_template_info() {
         p e
        end
     end
-    puts env.map{|k,v| "-e #{k}=#{v}" }.join(" ")
+    puts env.map{|k,v| "-e #{k}='#{v}'" }.join(" ")
 RUBY
 
     env=`exec echo "$input" | docker run -rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
