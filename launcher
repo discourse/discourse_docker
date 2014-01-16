@@ -88,11 +88,17 @@ set_template_info() {
         p e
        end
     end
-    puts env.map{|k,v| "-e #{k}=#{v}" }.join(" ")
+    puts env.map{|k,v| "-e\n#{k}=#{v}" }.join("\n")
 RUBY
 
-    env=`exec echo "$input" | docker run -rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
-    echo "Calculated ENV: $env"
+    raw=`exec echo "$input" | docker run -rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
+
+    env=()
+    while read i; do
+      env[${#env[@]}]=$i
+    done <<< "$raw"
+
+    echo "Calculated ENV: ${env[@]}"
 }
 
 [ -z $docker_path ] && {
@@ -135,7 +141,7 @@ case "$command" in
       fi
       run_command="$run_command /pups/bin/pups --stdin"
 
-      (exec echo "$input" | docker run $env -e DOCKER_HOST_IP=$docker_ip -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+      (exec echo "$input" | docker run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
          /bin/bash -c "$run_command") \
          || (docker rm `cat $cidbootstrap` && rm $cidbootstrap)
 
@@ -205,7 +211,7 @@ case "$command" in
              exit 1
            fi
 
-           docker run $env -e DOCKER_HOST_IP=$docker_ip -name $config -cidfile $cidfile $ports \
+           docker run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip -name $config -cidfile $cidfile $ports \
                       -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
 
            exit 0
