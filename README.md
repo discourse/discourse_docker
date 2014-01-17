@@ -126,11 +126,16 @@ The docker setup gives you multiple upgrade options:
 
 ### Single container vs. Multiple container
 
-The samples directory contains a standalone (single container) template. This template will bundle all of the programs required to run discourse into a single container. The advantage is that it is very easy to get started as you do not need to wire up communications between containers.
+The samples directory contains a standalone, single container template. This template bundles all of the software required to run Discourse. The advantage is that it is easy to get started. You don't need to wire up communications between containers.
 
-However, the disadvantage is that the bootstrapping process will launch a new postgres instance, having 2 postgres instances running against a single directory can lead to unexpected results. Due to that, if you are ever to bootstrap the `standalone` template again you should first stop the existing container.
+The multiple container configuration setup is far more flexible and robust, however it is more complicated to set up. A multiple container setup allows you to:
 
-A multi images setup allows you to bootstrap new web processes while your site is running and only after it is built, switch the new image in. The setup is far more flexible and robust, however is a bit more complicated to setup. See the `data.yml` and `web_only.yml` templates in the samples directory. To ease this process, `launcher` will inject an env var called `DISCOURSE_HOST_IP` which will be available inside the image.
+- Minimize downtime when upgrading to new versions of Discourse. You can bootstrap new web processes while your site is running and only after it is built, switch the new image in. 
+- Scale your forum to multiple servers
+- Add servers for redundancy
+- Have some required services (e.g. the database) run on beefier hardware
+
+If you want a multiple container setup, see the `data.yml` and `web_only.yml` templates in the samples directory. To ease this process, `launcher` will inject an env var called `DISCOURSE_HOST_IP` which will be available inside the image.
 
 WARNING: If you launch multiple images, **make sure** you setup iptables or some other firewall to protect various ports (for postgres/redis).
 
