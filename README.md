@@ -4,17 +4,17 @@
 
 - Docker makes it much easier to deploy [a Discourse forum](https://github.com/discourse/discourse) on your servers and keep it updated. For background, see [Sam's blog post](http://samsaffron.com/archive/2013/11/07/discourse-in-a-docker-container). 
 
-- These templates are agnostic. You may run Discourse in multiple containers or a single container.
+- You can run Discourse in a single Docker container, or multiple containers.
 
-- The templates and base image take care of configuring Discourse with the Discourse team's recommended optimal defaults. 
+- The templates and base image configure Discourse with the Discourse team's recommended optimal defaults. 
 
 
-### Before you start
+### IMPORTANT: Before you start
 
 1. Run docker and launcher as root.
-2. Use Ubuntu 12.04 LTS or Ubuntu 13.04 or Ubuntu 13.10. Device mapper support in docker is still rough.
-3. Upgrade to the latest version of Docker.
-4. Install discourse docker into `/var/docker` (it helps keep everything in a consistent spot and sample files expect this).
+2. Use [Ubuntu 12.04 LTS](http://releases.ubuntu.com/precise/) or [Ubuntu 13.04](http://releases.ubuntu.com/13.04/) or [Ubuntu 13.10](http://releases.ubuntu.com/13.10/). Device mapper support in docker is still rough.
+3. Upgrade to the [latest version of Docker](http://docs.docker.io/en/latest/installation/ubuntulinux/).
+4. Install Discourse docker into `/var/docker`
 
 ### Getting started
 
@@ -56,9 +56,9 @@ Placeholder spot for shared volumes with various Discourse containers. You may e
 
 Dockerfile for both the base image `samsaffron/discoruse_base` and discourse image `samsaffron/discourse`.
 
-`samsaffron/discourse_base` contains all the OS dependencies including sshd, runit, postgres, nginx, ruby.
+- `samsaffron/discourse_base` contains all the OS dependencies including sshd, runit, postgres, nginx, ruby.
 
-`samsaffron/discourse` builds on the base image and configures a discourse user and `/var/www/discourse` directory for the Discourse source.
+- `samsaffron/discourse` builds on the base image and configures a discourse user and `/var/www/discourse` directory for the Discourse source.
 
 The Docker repository will always contain the latest built version at: https://index.docker.io/u/samsaffron/discourse/ , you should not need to build the base image.
 
@@ -81,7 +81,7 @@ Commands:
 
 ### About the container configuration
 
-The beggining of the container definition will contain 3 "special" sections:
+The beginning of the container definition will contain 3 "special" sections:
 
 #### templates:
 
@@ -91,7 +91,7 @@ templates:
   - "templates/postgres.template.yml"
 ```
 
-This template is "composed" out of all these child templates, this allows for a very flexible configuration struture. Further more you may add specific hooks that extend the templates you reference.
+This template is "composed" out of all these child templates, this allows for a very flexible configuration struture. Furthermore you may add specific hooks that extend the templates you reference.
 
 #### expose:
 
@@ -126,9 +126,9 @@ The docker setup gives you multiple upgrade options:
   - `./launcher destroy my_image`
   - `./launcher start my_image`
 
-### Multi image vs Single image setups
+### Single container vs. Multiple container
 
-The samples directory contains a standalone template. This template will bundle all of the programs required to run discourse into a single image. The advantage is that it is very easy to get started as you do not need to wire up communications between containers.
+The samples directory contains a standalone (single container) template. This template will bundle all of the programs required to run discourse into a single container. The advantage is that it is very easy to get started as you do not need to wire up communications between containers.
 
 However, the disadvantage is that the bootstrapping process will launch a new postgres instance, having 2 postgres instances running against a single directory can lead to unexpected results. Due to that, if you are ever to bootstrap the `standalone` template again you should first stop the existing container.
 
@@ -138,8 +138,7 @@ WARNING: If you launch multiple images, **make sure** you setup iptables or some
 
 ### Email setup
 
-For a Discourse instance to function properly Email must be setup. Use the SMTP_URL env var to set your SMTP address, see sample templates for an example.
-The docker image does not contain postfix, exim or another MTA, it was omitted cause it is very tricky to setup perfectly.
+For a Discourse instance to function properly Email must be setup. Use the `SMTP_URL` env var to set your SMTP address, see sample templates for an example. The docker image does not contain postfix, exim or another MTA, it was omitted because it is very tricky to set up correctly.
 
 ### Troubleshooting
 
