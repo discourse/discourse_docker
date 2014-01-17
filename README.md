@@ -7,14 +7,14 @@
 - The templates and base image configure Discourse with the Discourse team's recommended optimal defaults. 
 
 
-### IMPORTANT: Before you start
+### IMPORTANT: Before You Start
 
 1. Run docker and launcher as root.
 2. Use [Ubuntu 12.04 LTS](http://releases.ubuntu.com/precise/) or [Ubuntu 13.04](http://releases.ubuntu.com/13.04/) or [Ubuntu 13.10](http://releases.ubuntu.com/13.10/). Device mapper support in docker is still rough.
 3. Upgrade to the [latest version of Docker](http://docs.docker.io/en/latest/installation/ubuntulinux/).
 4. Install Discourse docker into `/var/docker`
 
-### Getting started
+### Getting Started
 
 The simplest way to get started is the  **standalone** template:
 
@@ -26,7 +26,7 @@ The simplest way to get started is the  **standalone** template:
 4. **Bootstrap** the image: `sudo ./launcher bootstrap app`
 5. **Start** the image: `sudo ./launcher start app`
 
-Note: you can add yourself to the docker group if you wish to avoid `sudo` with `usermod -aG docker <your-user-name>`.
+Note: you can add yourself to the Docker group if you wish to avoid `sudo` with `usermod -aG docker <your-user-name>`.
 
 ### Directory Structure
 
@@ -36,7 +36,7 @@ Contains container ids for currently running Docker containers. cids are Docker'
 
 #### `/containers`
 
-This directory is to contain container definitions for your various Discourse containers. You are in charge of this directory, it ships empty.
+This directory is for container definitions for your various Discourse containers. You are in charge of this directory, it ships empty.
 
 #### `/samples`
 
@@ -77,7 +77,7 @@ Commands:
 ```
 
 
-### About the container configuration
+### Container Configuration
 
 The beginning of the container definition will contain 3 "special" sections:
 
@@ -113,39 +113,39 @@ volumes:
 
 Expose a directory inside the host inside the container.
 
-### Upgrading discourse
+### Upgrading Discourse
 
-The docker setup gives you multiple upgrade options:
+The Docker setup gives you multiple upgrade options:
 
-1. You can use the front end at http://yoursite.com/admin/docker to upgrade an already running image.
+1. Use the front end at http://yoursite.com/admin/docker to upgrade an already running image.
 
-2. You can create a new base image by running:
+2. Create a new base image by running:
   - `./launcher bootstrap my_image`
   - `./launcher destroy my_image`
   - `./launcher start my_image`
 
-### Single container vs. Multiple container
+### Single Container vs. Multiple Container
 
-The samples directory contains a standalone, single container template. This template bundles all of the software required to run Discourse. The advantage is that it is easy to get started. You don't need to wire up communications between containers.
+The samples directory contains a standalone template. This template bundles all of the software required to run Discourse into a single container. The advantage is that it is easy.
 
-The multiple container configuration setup is far more flexible and robust, however it is more complicated to set up. A multiple container setup allows you to:
+The multiple container configuration setup is far more flexible and robust, however it is also more complicated to set up. A multiple container setup allows you to:
 
 - Minimize downtime when upgrading to new versions of Discourse. You can bootstrap new web processes while your site is running and only after it is built, switch the new image in. 
-- Scale your forum to multiple servers
-- Add servers for redundancy
-- Have some required services (e.g. the database) run on beefier hardware
+- Scale your forum to multiple servers.
+- Add servers for redundancy.
+- Have some required services (e.g. the database) run on beefier hardware.
 
 If you want a multiple container setup, see the `data.yml` and `web_only.yml` templates in the samples directory. To ease this process, `launcher` will inject an env var called `DISCOURSE_HOST_IP` which will be available inside the image.
 
-WARNING: If you launch multiple images, **make sure** you setup iptables or some other firewall to protect various ports (for postgres/redis).
+WARNING: In a multiple container configuration, *make sure* you setup iptables or some other firewall to protect various ports (for postgres/redis).
 
-### Email setup
+### Email
 
-For a Discourse instance to function properly Email must be setup. Use the `SMTP_URL` env var to set your SMTP address, see sample templates for an example. The docker image does not contain postfix, exim or another MTA, it was omitted because it is very tricky to set up correctly.
+For a Discourse instance to function properly Email must be set up. Use the `SMTP_URL` env var to set your SMTP address, see sample templates for an example. The Docker image does not contain postfix, exim or another MTA, it was omitted because it is very tricky to set up correctly.
 
 ### Troubleshooting
 
-It is strongly recommended you have ssh access to your running containers, this allows you very easily take sneak peak of the internals. Simplest way to gain access is:
+We strongly recommend you have ssh access to your running containers, this allows you very easily take a sneak peek at internals. The simplest way to gain access is:
 
 1. Run a terminal as root
 2. cd `~/.ssh`
@@ -156,4 +156,4 @@ It is strongly recommended you have ssh access to your running containers, this 
 
 ### Security
 
-Directory permissions in Linux are sid based, if your sids on the host do not match the sids in the guest, permissions will mismatch. On clean installs you can ensure they are in sync by looking at `/etc/passwd` and `/etc/group`, the discourse account will have the sid 1000.
+Directory permissions in Linux are SID based, if your SIDs on the host do not match the SIDs in the guest, permissions will mismatch. On clean installs you can ensure they are in sync by looking at `/etc/passwd` and `/etc/group`, the Discourse account will have the SID 1000.
