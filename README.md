@@ -1,26 +1,24 @@
-## Discourse Docker
-
-A toolkit for building and managing Docker images for Discourse.
-
 ### About
 
-The Discourse docker templates were designed by Sam Saffron. See the following introduction: http://samsaffron.com/archive/2013/11/07/discourse-in-a-docker-container
+- [Docker](https://www.docker.io/) is an open source project to pack, ship and run any Linux application in a lighter weight, faster container than a traditional virtual machine.
 
-These templates are agnostic, you may run Discourse in multiple containers or a single container.
+- Docker makes it much easier to deploy [a Discourse forum](https://github.com/discourse/discourse) on your servers and keep it updated. For background, see [Sam's blog post](http://samsaffron.com/archive/2013/11/07/discourse-in-a-docker-container). 
 
-The templates and base image take care of configuring Discourse with best practices in mind. The latest version of Ruby 2.0 is included as is fairly extensive memory and GC tuning. The web template uses unicorn which helps cut down on overall memory usage making this very suitable for VPS type installs.
+- These templates are agnostic. You may run Discourse in multiple containers or a single container.
+
+- The templates and base image take care of configuring Discourse with the Discourse team's recommended optimal defaults. 
 
 
 ### Before you start
 
-1. Be sure to run docker and launcher as root, its the simplest way to get going.
-2. Be sure to have Ubuntu 12.04 LTS or Ubuntu 13.04 or Ubuntu 13.10. Device mapper support in docker is still rough.
-3. Be sure to upgrade to the latest version of Docker.
-4. Install discourse docker into /var/docker it helps keep everything in a consistent spot and sample files expect this.
+1. Run docker and launcher as root.
+2. Use Ubuntu 12.04 LTS or Ubuntu 13.04 or Ubuntu 13.10. Device mapper support in docker is still rough.
+3. Upgrade to the latest version of Docker.
+4. Install discourse docker into `/var/docker` (it helps keep everything in a consistent spot and sample files expect this).
 
 ### Getting started
 
-The simplest (though slightly more fragile) way of getting started is using the **standalone** template.
+The simplest way to get started is the  **standalone** template:
 
 1. **Clone** this project from github: `git clone https://github.com/SamSaffron/discourse_docker.git /var/docker`
 2. **Copy** the standalone sample into the containers directory: `cp samples/standalone.yml containers/app.yml`
@@ -34,27 +32,27 @@ Note: you can add yourself to the docker group if you wish to avoid `sudo` with 
 
 ### Directory Structure
 
-#### cids
+#### `/cids`
 
 Contains container ids for currently running Docker containers. cids are Docker's "equivalent" of pids. Each container will have a unique git like hash.
 
-#### containers
+#### `/containers`
 
 This directory is to contain container definitions for your various Discourse containers. You are in charge of this directory, it ships empty.
 
-#### samples
+#### `/samples`
 
 Sample container definitions you may use to bootstrap your environment. You can copy and amend templates here into the containers directory.
 
-#### shared
+#### `/shared`
 
 Placeholder spot for shared volumes with various Discourse containers. You may elect to store certain persistent information outside of a container, in our case we keep various logfiles and upload directory outside. This allows you to rebuild containers easily without losing important information. Keeping uploads outside of the container allows you to share them between multiple web instances.
 
-#### templates
+#### `/templates`
 
 [pups](https://github.com/samsaffron/pups) managed pups templates you may use to bootstrap your environment.
 
-#### image
+#### `/image`
 
 Dockerfile for both the base image `samsaffron/discoruse_base` and discourse image `samsaffron/discourse`.
 
