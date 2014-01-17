@@ -3,7 +3,7 @@
 - [Docker](https://www.docker.io/) is an open source project to pack, ship and run any Linux application in a lighter weight, faster container than a traditional virtual machine.
 
 - Docker makes it much easier to deploy [a Discourse forum](https://github.com/discourse/discourse) on your servers and keep it updated. For background, see [Sam's blog post](http://samsaffron.com/archive/2013/11/07/discourse-in-a-docker-container). 
-- 
+
 - The templates and base image configure Discourse with the Discourse team's recommended optimal defaults. 
 
 
