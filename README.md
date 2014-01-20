@@ -14,7 +14,7 @@
 3. Run Docker and launcher as **root**.
 4. Install Discourse Docker into the expected path `/var/docker`
 
-If you do not do any of the above, as RoboCop once said, ["there will be ... trouble."](http://www.youtube.com/watch?v=XxarhampSNI) Please double check the above list before you begin!
+If you do not do any of the above, as RoboCop once said, ["there will be ... trouble."](http://www.youtube.com/watch?v=XxarhampSNI) *Please double check the above list before proceeding!*
 
 ### Getting Started
 
