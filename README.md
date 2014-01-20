@@ -9,12 +9,12 @@
 
 ### IMPORTANT: Before You Start
 
-1. Make sure you're running a **64 bits** version of either [Ubuntu 12.04 LTS](http://releases.ubuntu.com/precise/), [Ubuntu 13.04](http://releases.ubuntu.com/13.04/) or [Ubuntu 13.10](http://releases.ubuntu.com/13.10/).
+1. Make sure you're running a **64 bit** version of either [Ubuntu 12.04 LTS](http://releases.ubuntu.com/precise/), [Ubuntu 13.04](http://releases.ubuntu.com/13.04/) or [Ubuntu 13.10](http://releases.ubuntu.com/13.10/).
 2. Upgrade to the [latest version of Docker](http://docs.docker.io/en/latest/installation/ubuntulinux/).
 3. Run Docker and launcher as **root**.
 4. Install Discourse Docker into the expected path `/var/docker`
 
-If you do not do any of the above, as RoboCop one said, "there will be ... problems."
+If you do not do any of the above, as RoboCop once said, ["there will be ... trouble."](http://www.youtube.com/watch?v=XxarhampSNI) Please double check the above list before you begin!
 
 ### Getting Started
 
