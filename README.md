@@ -9,9 +9,9 @@
 
 ### IMPORTANT: Before You Start
 
-1. Run Docker and launcher as **root**.
-2. Use [Ubuntu 12.04 LTS](http://releases.ubuntu.com/precise/) or [Ubuntu 13.04](http://releases.ubuntu.com/13.04/) or [Ubuntu 13.10](http://releases.ubuntu.com/13.10/). Device mapper support in Docker is still rough.
-3. Upgrade to the [latest version of Docker](http://docs.docker.io/en/latest/installation/ubuntulinux/).
+1. Make sure you're running a **64 bits** version of either [Ubuntu 12.04 LTS](http://releases.ubuntu.com/precise/), [Ubuntu 13.04](http://releases.ubuntu.com/13.04/) or [Ubuntu 13.10](http://releases.ubuntu.com/13.10/).
+2. Upgrade to the [latest version of Docker](http://docs.docker.io/en/latest/installation/ubuntulinux/).
+3. Run Docker and launcher as **root**.
 4. Install Discourse Docker into the expected path `/var/docker`
 
 If you do not do any of the above, as RoboCop one said, "there will be ... problems."
