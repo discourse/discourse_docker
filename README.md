@@ -109,7 +109,7 @@ Expose port 22 inside the container on port 2222 on ALL local host interfaces.
 ```
 volumes:
   - volume:
-      host: /var/docker/data
+      host: /var/docker/shared
       guest: /shared
 
 ```
