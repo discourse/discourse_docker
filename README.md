@@ -10,11 +10,12 @@
 ### IMPORTANT: Before You Start
 
 1. Make sure you're running a **64 bit** version of either [Ubuntu 12.04 LTS](http://releases.ubuntu.com/precise/), [Ubuntu 13.04](http://releases.ubuntu.com/13.04/) or [Ubuntu 13.10](http://releases.ubuntu.com/13.10/).
-2. Upgrade to the [latest version of Docker](http://docs.docker.io/en/latest/installation/ubuntulinux/).
-3. Run Docker and launcher as **root**.
-4. Install Discourse Docker into the expected path `/var/docker`
+1. Upgrade to the [latest version of Docker](http://docs.docker.io/en/latest/installation/ubuntulinux/).
+1. Create a directory for Discourse Docker (the expected path is `/var/docker`): `install -g docker -m 2775 -d /var/docker`
+1. Run the docker installation and launcher as **root** or a member of the **docker** group.
+1. Add your user account to the docker group: `usermod -a -G docker yourusername` and re-login.
 
-If you do not do any of the above, as RoboCop once said, ["there will be ... trouble."](http://www.youtube.com/watch?v=XxarhampSNI) *Please double check the above list before proceeding!*
+If you do not do any of the above, as RoboCop once said, ["there will be… trouble."](http://www.youtube.com/watch?v=XxarhampSNI) *Please double check the above list before proceeding!*
 
 ### Getting Started
 
@@ -140,6 +141,7 @@ The multiple container configuration setup is far more flexible and robust, howe
 If you want a multiple container setup, see the `data.yml` and `web_only.yml` templates in the samples directory. To ease this process, `launcher` will inject an env var called `DISCOURSE_HOST_IP` which will be available inside the image.
 
 WARNING: In a multiple container configuration, *make sure* you setup iptables or some other firewall to protect various ports (for postgres/redis).
+On Ubuntu, install the `ufw` or `iptables-persistent` package to manage firewall rules.
 
 ### Email
 
@@ -150,12 +152,14 @@ For a Discourse instance to function properly Email must be set up. Use the `SMT
 We strongly recommend you have ssh access to your running containers, this allows you very easily take a sneak peek at internals. The simplest way to gain access is:
 
 1. Run a terminal as root
-2. cd `~/.ssh`
-3. `ssh-key-gen`
-4. paste the contents of `id_rsa.pub` into your templates (see placeholder in samples)
-5. bootstrap and run your container
-6. `./launcher ssh my_container`
+1. `ssh-keygen -b 2048 -t rsa -N "" -C "root's unprotected key" -f ~root/.ssh/id_rsa`
+1. Paste the contents of `~root/.ssh/id_rsa.pub` into your templates (see placeholder `YOUR_SSH_KEY` in samples)
+1. Bootstrap and run your container
+1. `./launcher ssh my_container`
 
 ### Security
 
-Directory permissions in Linux are SID based, if your SIDs on the host do not match the SIDs in the guest, permissions will mismatch. On clean installs you can ensure they are in sync by looking at `/etc/passwd` and `/etc/group`, the Discourse account will have the SID 1000.
+Directory permissions in Linux are UID/GID based, if your numeric IDs on the
+host do not match the IDs in the guest, permissions will mismatch. On clean
+installs you can ensure they are in sync by looking at `/etc/passwd` and
+`/etc/group`, the Discourse account will have UID 1000.
