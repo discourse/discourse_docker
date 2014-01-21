@@ -118,6 +118,9 @@ fi
 
 case "$command" in
   bootstrap)
+      # Is the image available?
+      # If not, pull it here so the user is aware what's happening.
+      docker history $image >/dev/null 2>&1 || docker pull $image
 
       set_template_info
 
@@ -165,7 +168,7 @@ case "$command" in
            cid="`cat $cidfile`"
            address="`docker port $cid 22`"
            split=(${address//:/ })
-           exec ssh root@${split[0]} -p ${split[1]}
+           exec ssh -o StrictHostKeyChecking=no root@${split[0]} -p ${split[1]}
       fi
       ;;
 
