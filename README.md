@@ -157,6 +157,14 @@ We strongly recommend you have ssh access to your running containers, this allow
 1. Bootstrap and run your container
 1. `./launcher ssh my_container`
 
+Or, if you're running as a regular user:
+
+1. Run a terminal
+1. `ssh-keygen -b 2048 -t rsa -N "" -C "my unprotected key" -f ~/.ssh/id_rsa`
+1. Paste the contents of `~/.ssh/id_rsa.pub` into your templates (see placeholder `YOUR_SSH_KEY` in samples)
+1. Bootstrap and run your container
+1. `./launcher ssh my_container`
+
 ### Security
 
 Directory permissions in Linux are UID/GID based, if your numeric IDs on the
