@@ -12,7 +12,8 @@ expose:
 
 params:
   # ssh key so you can log in, a tip, try using the key for root in ~root/.ssh or generate one
-  # using ssh-keygen
+  # using ssh-keygen. This should be a string containing the key contents. For more information
+  # see Troubleshooting in README
   ssh_key: YOUR_SSH_KEY
   # git revision to run
   version: HEAD
