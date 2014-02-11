@@ -22,4 +22,5 @@ run:
       cmd:
         - mkdir -p /var/run/sshd
         - mkdir -p /root/.ssh
-        - echo $ssh_key >> /root/.ssh/authorized_keys
+        - echo "$ssh_key" >> /root/.ssh/authorized_keys
+        - chmod 640 /root/.ssh/authorized_keys
