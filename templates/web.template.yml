@@ -76,12 +76,12 @@ run:
         - git clean -f
         - git pull
         - git checkout $version
-        - touch tmp/.gitkeep
         - mkdir -p tmp/pids
         - mkdir -p tmp/sockets
         - mkdir -p /shared/log/rails
         - mkdir -p /shared/uploads
         - mkdir -p /shared/backups
+        - touch tmp/.gitkeep
         - rm -r log
         - ln -s /shared/log/rails $home/log
         - ln -s /shared/uploads $home/public/uploads
