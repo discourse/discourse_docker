@@ -76,16 +76,20 @@ run:
         - git clean -f
         - git pull
         - git checkout $version
+        - touch tmp/.gitkeep
         - mkdir -p tmp/pids
         - mkdir -p tmp/sockets
-        - touch tmp/.gitkeep
         - mkdir -p /shared/log/rails
+        - mkdir -p /shared/uploads
+        - mkdir -p /shared/backups
         - rm -r log
         - ln -s /shared/log/rails $home/log
-        - mkdir -p /shared/uploads
         - ln -s /shared/uploads $home/public/uploads
-        - chown -R discourse:www-data /shared/uploads
+        - ln -s /shared/backups $home/public/backups
         - chown -R discourse:www-data /shared/log/rails
+        - chown -R discourse:www-data /shared/uploads
+        - chown -R discourse:www-data /shared/backups
+        
   - exec:
       cmd:
         - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
