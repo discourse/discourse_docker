@@ -108,6 +108,7 @@ run:
       cmd: sudo -u postgres psql discourse
       raise_on_fail: false
 
+  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "alter schema public owner to discourse;"'
   - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists hstore;"'
   - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists pg_trgm;"'
 
