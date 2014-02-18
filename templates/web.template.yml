@@ -119,8 +119,13 @@ run:
   - exec:
       cd: $home
       cmd:
+        # ensure we are on latest bundler
+        - gem update bundler
+        - mkdir -p /shared/vendor_bundle
+        - cp -fr /shared/vendor_bundle/* vendor/bundle || echo "can not copy"
         - chown -R discourse $home
         - sudo -E -u discourse bundle install --deployment --verbose --without test --without development
+        - cp -fr vendor/bundle/* /shared/vendor_bundle
         - sudo -E -u discourse bundle exec rake db:migrate
         - sudo -E -u discourse bundle exec rake assets:precompile
 
