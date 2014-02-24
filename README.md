@@ -21,7 +21,7 @@ If you do not do any of the above, as RoboCop once said, ["there will be… trou
 
 The simplest way to get started is the  **standalone** template:
 
-1. **Clone** this project from github into `/var/docker` on your server: `git clone https://github.com/SamSaffron/discourse_docker.git /var/docker`
+1. **Clone** this project from github into `/var/docker` on your server: `git clone https://github.com/discourse/discourse_docker.git /var/docker`
 2. **Copy** the standalone sample into the containers directory: `cp samples/standalone.yml containers/app.yml`
 3. **Edit** `containers/app.yml` with your environment specific information
   - [bindings](#expose)
