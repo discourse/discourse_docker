@@ -48,13 +48,13 @@ install_docker() {
 }
 
 set_volumes() {
-  volumes=`cat $config_file | docker run -rm -i -a stdout -a stdin $image ruby -e \
+  volumes=`cat $config_file | docker run --rm -i -a stdout -a stdin $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
 }
 
 set_template_info() {
 
-    templates=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
+    templates=`cat $config_file | docker run --rm -i -a stdin -a stdout $image ruby -e \
       "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
 
 
@@ -91,7 +91,7 @@ set_template_info() {
     puts env.map{|k,v| "-e\n#{k}=#{v}" }.join("\n")
 RUBY
 
-    raw=`exec echo "$input" | docker run -rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
+    raw=`exec echo "$input" | docker run --rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
 
     env=()
     while read i; do
@@ -124,10 +124,10 @@ case "$command" in
 
       set_template_info
 
-      base_image=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
+      base_image=`cat $config_file | docker run --rm -i -a stdin -a stdout $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['base_image']"`
 
-      update_pups=`cat $config_file | docker run -rm -i -a stdin -a stdout $image ruby -e \
+      update_pups=`cat $config_file | docker run --rm -i -a stdin -a stdout $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['update_pups']"`
 
       if [[ ! X"" = X"$base_image" ]]; then
@@ -144,7 +144,9 @@ case "$command" in
       fi
       run_command="$run_command /pups/bin/pups --stdin"
 
-      (exec echo "$input" | docker run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip -cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+      echo $run_command
+
+      (exec echo "$input" | docker run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
          /bin/bash -c "$run_command") \
          || (docker rm `cat $cidbootstrap` && rm $cidbootstrap)
 
@@ -200,7 +202,7 @@ case "$command" in
       if [ ! -e $cidfile ]
          then
            echo "No cid found, creating a new container"
-           ports=`cat $config_file | docker run -rm -i -a stdout -a stdin $image ruby -e \
+           ports=`cat $config_file | docker run --rm -i -a stdout -a stdin $image ruby -e \
                   "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
 
            set_template_info
@@ -214,7 +216,7 @@ case "$command" in
              exit 1
            fi
 
-           docker run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip -name $config -cidfile $cidfile $ports \
+           docker run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip -name $config --cidfile $cidfile $ports \
                       -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
 
            exit 0

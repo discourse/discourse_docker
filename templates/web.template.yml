@@ -24,6 +24,7 @@ run:
      chmod: "+x"
      contents: |
         #!/bin/bash
+        env > ~/boot_env
         conf=/var/www/discourse/config/discourse.conf
         sudo -u discourse echo > $conf
 
@@ -89,7 +90,7 @@ run:
         - chown -R discourse:www-data /shared/log/rails
         - chown -R discourse:www-data /shared/uploads
         - chown -R discourse:www-data /shared/backups
-        
+
   - exec:
       cmd:
         - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
