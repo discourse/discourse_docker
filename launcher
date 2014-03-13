@@ -216,7 +216,7 @@ case "$command" in
              exit 1
            fi
 
-           docker run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip -name $config --cidfile $cidfile $ports \
+           docker run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config --cidfile $cidfile $ports \
                       -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
 
            exit 0
