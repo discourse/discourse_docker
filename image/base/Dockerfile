@@ -1,26 +1,29 @@
 # DOCKER-VERSION 0.6.7 : samsaffron/discourse_base
 
-# 13.10 - 04 has a missing ppa for postgresql 9.2 at the moment (26/10/2013)
-FROM ubuntu:12.10
+# Official repo only has a ppa for postgresql 9.3 at the moment (14/3/2014)
+# When new LTS ships we can upgrade
+FROM ubuntu:12.04
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get -y update &&\
     apt-get -y upgrade &&\
-    apt-get -y install software-properties-common &&\
-    apt-add-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe" &&\
+    apt-get -y install python-software-properties &&\
+    add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe" &&\
     add-apt-repository -y ppa:rwky/redis &&\
     add-apt-repository -y ppa:nginx/stable &&\
-    add-apt-repository -y ppa:pitti/postgresql &&\
+    apt-get install -y curl && curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add - &&\
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main" | \
+    tee /etc/apt/sources.list.d/postgres.list &&\
     apt-get -y update &&\
     apt-get -y install build-essential git curl wget \
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk \
                        pngcrush imagemagick \
-                       postgresql-9.2 postgresql-client-9.2 \
-                       postgresql-contrib-9.2 libpq-dev libreadline-dev \
+                       postgresql-9.3 postgresql-client-9.3 \
+                       postgresql-contrib-9.3 libpq-dev libreadline-dev \
                        nginx language-pack-en sudo cron \
                        psmisc &&\
     dpkg-divert --local --rename --add /sbin/initctl &&\
@@ -29,7 +32,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     echo 'gem: --no-document' >> /etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p353 /usr/local &&\
+    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p451 /usr/local &&\
     gem update --system &&\
     gem install bundler &&\
     cd / && git clone https://github.com/SamSaffron/pups.git &&\

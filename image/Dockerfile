@@ -1,7 +1,4 @@
-# DOCKER-VERSION 0.6.7
-
-# 13.10 - 04 has a missing ppa for postgresql 9.2 at the moment (26/10/2013)
-FROM samsaffron/discourse_base:0.1.1
+FROM samsaffron/discourse_base:0.1.2
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
