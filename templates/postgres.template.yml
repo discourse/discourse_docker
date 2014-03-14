@@ -43,22 +43,48 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
-        exec sudo -u postgres /usr/lib/postgresql/9.2/bin/postmaster -D /etc/postgresql/9.2/main
+        exec sudo -u postgres /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
+  - file:
+     path: /root/upgrade_postgres
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       if [ "9.2" = `cat /shared/postgres_data/PG_VERSION` ]; then
+         echo Upgrading PostgreSQL to from version 9.2 to 9.3
+         rm -fr /shared/postgres_data_new
+         install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/9.3/bin/initdb -D /shared/postgres_data_new || exit 0
+         apt-get install -y postgresql-9.2
+         cd ~postgres
+         sudo -u postgres /usr/lib/postgresql/9.3/bin/pg_upgrade -d /shared/postgres_data -D /shared/postgres_data_new -b /usr/lib/postgresql/9.2/bin -B /usr/lib/postgresql/9.3/bin || exit 1
 
+         mv /shared/postgres_data /shared/postgres_data_old
+         mv /shared/postgres_data_new /shared/postgres_data
+
+         echo -------------------------------------------------------------------------------------
+         echo UPGRADE OF POSTGRES COMPLETE
+         echo
+         echo Old 9.2 database is stored at /shared/postgres_data_old
+         echo
+         echo Please run "./launcher bootstrap" again
+         echo -------------------------------------------------------------------------------------
+         exit 1
+       fi
+  - exec: /root/upgrade_postgres
   - exec:
       cmd:
-        - chown -R root /var/lib/postgresql/9.2/main
-        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -u postgres /usr/lib/postgresql/9.2/bin/initdb -D /shared/postgres_data || exit 0"
+        - chown -R root /var/lib/postgresql/9.3/main
+        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -u postgres /usr/lib/postgresql/9.3/bin/initdb -D /shared/postgres_data || exit 0"
         - chown -R postgres:postgres /shared/postgres_data
+        - chown -R postgres:postgres /var/run/postgresql
 
   - replace:
-      filename: "/etc/postgresql/9.2/main/postgresql.conf"
-      from: "data_directory = '/var/lib/postgresql/9.2/main'"
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: "data_directory = '/var/lib/postgresql/9.3/main'"
       to: "data_directory = '/shared/postgres_data'"
 
   # listen on all interfaces
   - replace:
-      filename: "/etc/postgresql/9.2/main/postgresql.conf"
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
       from: /#?listen_addresses *=.*/
       to: "listen_addresses = '*'"
 
@@ -68,29 +94,29 @@ run:
         - install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
 
   - replace:
-      filename: "/etc/postgresql/9.2/main/postgresql.conf"
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
       from: /#?max_wal_senders *=.*/
       to: "max_wal_senders = 4"
 
   - replace:
-      filename: "/etc/postgresql/9.2/main/postgresql.conf"
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
       from: /#?wal_level *=.*/
       to: "wal_level = hot_standby"
 
   - replace:
-      filename: "/etc/postgresql/9.2/main/pg_hba.conf"
+      filename: "/etc/postgresql/9.3/main/pg_hba.conf"
       from: /^#local +replication +postgres +peer$/
       to: "local replication postgres  peer"
 
   # allow all to connect in with md5 auth
   - replace:
-      filename: "/etc/postgresql/9.2/main/pg_hba.conf"
+      filename: "/etc/postgresql/9.3/main/pg_hba.conf"
       from: /^host.*all.*all.*127.*$/
       to: "host all all 0.0.0.0/0 md5"
 
   - exec:
       background: true
-      cmd: "sudo -u postgres /usr/lib/postgresql/9.2/bin/postmaster -D /etc/postgresql/9.2/main"
+      cmd: "sudo -u postgres /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main"
 
   # give db a few secs to start up
   - exec: "sleep 5"
