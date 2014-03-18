@@ -12,7 +12,8 @@ run:
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /listen 80;\s+gzip on;/m
      to: |
-       listen 443 ssl spdy;
+       # No SPDY till nginx 1.4.7 or up (buffer overflow)
+       listen 443 ssl;
        spdy_keepalive_timeout 300; # up from 180 secs default
 
        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
@@ -27,7 +28,7 @@ run:
        #ssl_session_tickets off;
 
        # enable SPDY header compression
-       spdy_headers_comp 6;
+       # spdy_headers_comp 6;
 
        # remember the certificate for a year and automatically connect to HTTPS
        add_header Strict-Transport-Security 'max-age=31536000; includeSubDomains';
