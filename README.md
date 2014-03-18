@@ -171,3 +171,8 @@ Directory permissions in Linux are UID/GID based, if your numeric IDs on the
 host do not match the IDs in the guest, permissions will mismatch. On clean
 installs you can ensure they are in sync by looking at `/etc/passwd` and
 `/etc/group`, the Discourse account will have UID 1000.
+
+
+### Advanced topics
+
+- [Setting up SSL with Discourse Docker](https://meta.discourse.org/t/allowing-ssl-for-your-discourse-docker-setup/13847)
