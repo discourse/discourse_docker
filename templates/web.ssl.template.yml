@@ -14,7 +14,7 @@ run:
      to: |
        # No SPDY till nginx 1.4.7 or up (buffer overflow)
        listen 443 ssl;
-       spdy_keepalive_timeout 300; # up from 180 secs default
+       # spdy_keepalive_timeout 300; # up from 180 secs default
 
        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
     
