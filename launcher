@@ -51,7 +51,7 @@ prereqs() {
   fi
 
   # 3. able to attach stderr / out / tty
-  test=`docker run -i -t --rm -a stdin -a stdout -a stderr $image echo working`
+  test=`docker run -i --rm -a stdin -a stdout -a stderr $image echo working`
   if [[ "$test" =~ "working" ]] ; then : ; else
     echo "Your Docker installation is not working correctly"
     echo
