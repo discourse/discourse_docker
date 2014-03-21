@@ -6,10 +6,6 @@ expose:
   - "6379:6379"
   - "2221:22"
 
-hooks:
-#  after_sshd:
-    # - exec: ssh-import-id some-user
-
 volumes:
   - volume:
         host: /var/docker/shared

@@ -23,4 +23,5 @@ run:
         - mkdir -p /var/run/sshd
         - mkdir -p /root/.ssh
         - echo "$ssh_key" >> /root/.ssh/authorized_keys
+        - echo "$$ENV_SSH_PUB_KEY" >> /root/.ssh/authorized_keys
         - chmod 640 /root/.ssh/authorized_keys

@@ -10,9 +10,6 @@ expose:
   - "2222:22"
 
 params:
-
-# your ssh key can go here, or you can use ssh-import-id
-  ssh_key: ""
   version: HEAD
 
 # developer emails allow you to fast track account creation on the site

@@ -11,10 +11,6 @@ expose:
   - "6379:6379"
   - "2221:22"
 
-# ssh key for logging in to container
-params:
-  ssh_key: ""
-
 # amend SOME_SECRET to a password for the discourse user
 hooks:
   after_postgres:

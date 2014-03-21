@@ -149,21 +149,7 @@ For a Discourse instance to function properly Email must be set up. Use the `SMT
 
 ### Troubleshooting
 
-We strongly recommend you have ssh access to your running containers, this allows you very easily take a sneak peek at internals. The simplest way to gain access is:
-
-1. Run a terminal as root
-1. `ssh-keygen -b 2048 -t rsa -N "" -C "root's unprotected key" -f ~root/.ssh/id_rsa`
-1. Paste the contents of `~root/.ssh/id_rsa.pub` into your templates (see placeholder `YOUR_SSH_KEY` in samples)
-1. Bootstrap and run your container
-1. `./launcher ssh my_container`
-
-Or, if you're running as a regular user:
-
-1. Run a terminal
-1. `ssh-keygen -b 2048 -t rsa -N "" -C "my unprotected key" -f ~/.ssh/id_rsa`
-1. Paste the contents of `~/.ssh/id_rsa.pub` into your templates (see placeholder `YOUR_SSH_KEY` in samples)
-1. Bootstrap and run your container
-1. `./launcher ssh my_container`
+You can ssh into your container using `./launcher ssh my_container`, we will automatically set up ssh access during bootstrap.
 
 ### Security
 

@@ -62,6 +62,30 @@ prereqs() {
 
 prereqs
 
+get_ssh_pub_key() {
+  if tty -s
+  then
+    if [[ ! -e ~/.ssh/id_rsa.pub ]] ; then
+      echo You have no SSH key associated to this profile
+      echo "(This will allow you ssh access into your container)"
+      read -p "Generate SSH key at ~/.ssh/id_rsa.pub? (y/N) " -n 1 -r
+      if [[ $REPLY =~ ^[Yy]$ ]]
+      then
+        echo
+        echo Generating SSH key
+        (mkdir -p ~/.ssh && cd ~/.ssh && ssh-keygen -f id_rsa -t rsa -N '')
+      else
+        echo
+        echo WARNING: You may not be able to log in to your container.
+        echo
+      fi
+    fi
+  fi
+
+  ssh_pub_key=`cat ~/.ssh/id_rsa.pub`
+}
+
+
 install_docker() {
 
   echo "Docker is not installed, make sure you are running on the 3.8 kernel"
@@ -151,6 +175,9 @@ fi
 
 case "$command" in
   bootstrap)
+
+      get_ssh_pub_key
+
       # Is the image available?
       # If not, pull it here so the user is aware what's happening.
       docker history $image >/dev/null 2>&1 || docker pull $image
@@ -178,6 +205,8 @@ case "$command" in
       run_command="$run_command /pups/bin/pups --stdin"
 
       echo $run_command
+
+      env=("${env[@]}" "-e" "SSH_PUB_KEY=\"$ssh_pub_key\"")
 
       (exec echo "$input" | docker run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
          /bin/bash -c "$run_command") \
