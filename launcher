@@ -29,6 +29,39 @@ usage () {
   exit 1
 }
 
+prereqs() {
+
+  # 1. running aufs
+  test=`docker info 2> /dev/null | grep 'Driver: aufs'`
+  if [[ "$test" =~ "aufs" ]] ; then : ; else
+    echo "Your Docker installation is not using aufs"
+    echo "Device mapper and other experimental drivers are unstable"
+    echo
+    echo "Please ensure your kernel is running linux extras and aufs"
+    echo "Please follow the installation guide for Docker here: http://docs.docker.io/en/latest/installation/ubuntulinux/"
+    exit 1
+  fi
+
+  # 2. running docker 0.9+
+  test=`docker --version | grep 0.9`
+
+  if [[ "$test" =~ "0.9" ]] ; then : ; else
+    echo "Your Docker installation is old, please upgrade to 0.9.0 or up"
+    exit 1
+  fi
+
+  # 3. able to attach stderr / out / tty
+  test=`docker run -i -t --rm -a stdin -a stdout -a stderr $image echo working`
+  if [[ "$test" =~ "working" ]] ; then : ; else
+    echo "Your Docker installation is not working correctly"
+    echo
+    echo "See: https://meta.discourse.org/t/docker-error-on-bootstrap/13657/18?u=sam"
+    exit 1
+  fi
+}
+
+prereqs
+
 install_docker() {
 
   echo "Docker is not installed, make sure you are running on the 3.8 kernel"
