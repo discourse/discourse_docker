@@ -130,3 +130,33 @@ run:
         - sudo -E -u discourse bundle exec rake db:migrate
         - sudo -E -u discourse bundle exec rake assets:precompile
 
+  - file:
+     path: /usr/local/bin/discourse
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -E -u discourse bundle exec script/discourse "$@")
+
+  - file:
+     path: /usr/local/bin/rails
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -E -u discourse bundle exec script/rails "$@")
+
+  - file:
+     path: /usr/local/bin/rake
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -E -u discourse bundle exec bin/rake "$@")
+
+  - file:
+     path: /etc/update-motd.d/10-web
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       echo
+       echo Use: rails, rake or discourse to execute commands in production
+       echo
+
