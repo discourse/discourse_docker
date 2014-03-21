@@ -173,6 +173,65 @@ if [ ! -e $config_file ]
     exit 1
 fi
 
+
+run_stop(){
+  if [ ! -e $cidfile ]
+     then
+       echo "No cid found"
+       exit 1
+     else
+       docker stop -t 10 `cat $cidfile`
+  fi
+}
+
+run_start(){
+
+  if [ ! -e $cidfile ]
+     then
+       echo "No cid found, creating a new container"
+       ports=`cat $config_file | docker run --rm -i -a stdout -a stdin $image ruby -e \
+              "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
+
+       set_template_info
+       set_volumes
+
+       existing=`docker ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+       if [ ! -z $existing ]
+       then
+         echo "Found an existing container by its name, recovering cidfile, please rerun"
+         echo $existing > $cidfile
+         exit 1
+       fi
+
+       docker run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
+                  -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
+
+       exit 0
+     else
+       cid=`cat $cidfile`
+
+       if [ -z $cid ]
+       then
+         echo "Detected empty cid file, deleting, please re-run"
+         rm $cidfile
+         exit 1
+       fi
+
+       found=`docker ps -q -a --no-trunc | grep $cid`
+       if [ -z $found ]
+       then
+         echo "Invalid cid file, deleting, please re-run"
+         rm $cidfile
+         exit 1
+       fi
+
+       echo "cid found, ensuring container is started"
+       docker start `cat $cidfile`
+       exit 0
+  fi
+
+}
+
 case "$command" in
   bootstrap)
 
@@ -237,14 +296,8 @@ case "$command" in
       ;;
 
   stop)
-      if [ ! -e $cidfile ]
-         then
-           echo "No cid found"
-           exit 1
-         else
-           docker stop -t 10 `cat $cidfile`
-           exit 0
-      fi
+      run_stop
+      exit 0
       ;;
 
   logs)
@@ -259,51 +312,15 @@ case "$command" in
       fi
       ;;
 
+  restart)
+      run_stop
+      run_start
+      exit 0
+      ;;
+
   start)
-
-      if [ ! -e $cidfile ]
-         then
-           echo "No cid found, creating a new container"
-           ports=`cat $config_file | docker run --rm -i -a stdout -a stdin $image ruby -e \
-                  "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
-
-           set_template_info
-           set_volumes
-
-           existing=`docker ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
-           if [ ! -z $existing ]
-           then
-             echo "Found an existing container by its name, recovering cidfile, please rerun"
-             echo $existing > $cidfile
-             exit 1
-           fi
-
-           docker run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
-                      -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
-
-           exit 0
-         else
-           cid=`cat $cidfile`
-
-           if [ -z $cid ]
-           then
-             echo "Detected empty cid file, deleting, please re-run"
-             rm $cidfile
-             exit 1
-           fi
-
-           found=`docker ps -q -a --no-trunc | grep $cid`
-           if [ -z $found ]
-           then
-             echo "Invalid cid file, deleting, please re-run"
-             rm $cidfile
-             exit 1
-           fi
-
-           echo "cid found, ensuring container is started"
-           docker start `cat $cidfile`
-           exit 0
-      fi
+      run_start
+      exit 0
       ;;
 
 
