@@ -55,7 +55,7 @@ Placeholder spot for shared volumes with various Discourse containers. You may e
 
 #### `/image`
 
-Dockerfile for both the base image `samsaffron/discoruse_base` and discourse image `samsaffron/discourse`.
+Dockerfile for both the base image `samsaffron/discourse_base` and discourse image `samsaffron/discourse`.
 
 - `samsaffron/discourse_base` contains all the OS dependencies including sshd, runit, postgres, nginx, ruby.
 
