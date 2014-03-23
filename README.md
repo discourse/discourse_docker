@@ -123,8 +123,8 @@ The Docker setup gives you multiple upgrade options:
 1. Use the front end at http://yoursite.com/admin/docker to upgrade an already running image.
 
 2. Create a new base image by running:
-  - `./launcher bootstrap my_image`
   - `./launcher destroy my_image`
+  - `./launcher bootstrap my_image`
   - `./launcher start my_image`
 
 ### Single Container vs. Multiple Container
