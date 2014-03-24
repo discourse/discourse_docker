@@ -31,7 +31,15 @@ usage () {
 
 prereqs() {
 
-  # 1. running aufs
+  # 1. docker daemon running?
+  test=`docker info >/dev/null`
+
+  if [[ $? -ne 0 ]] ; then
+    echo "Cannot connect to the docker daemon - verify it is running and you have access"
+    exit 1
+  fi
+
+  # 2. running aufs
   test=`docker info 2> /dev/null | grep 'Driver: aufs'`
   if [[ "$test" =~ "aufs" ]] ; then : ; else
     echo "Your Docker installation is not using aufs"
@@ -42,7 +50,7 @@ prereqs() {
     exit 1
   fi
 
-  # 2. running docker 0.9+
+  # 3. running docker 0.9+
   test=`docker --version | grep 0.9`
 
   if [[ "$test" =~ "0.9" ]] ; then : ; else
@@ -50,7 +58,7 @@ prereqs() {
     exit 1
   fi
 
-  # 3. able to attach stderr / out / tty
+  # 4. able to attach stderr / out / tty
   test=`docker run -i --rm -a stdin -a stdout -a stderr $image echo working`
   if [[ "$test" =~ "working" ]] ; then : ; else
     echo "Your Docker installation is not working correctly"
@@ -263,7 +271,7 @@ case "$command" in
 
       echo $run_command
 
-      env=("${env[@]}" "-e" "SSH_PUB_KEY=\"$ssh_pub_key\"")
+      env=("${env[@]}" "-e" "SSH_PUB_KEY=$ssh_pub_key")
 
       (exec echo "$input" | docker run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
          /bin/bash -c "$run_command") \
