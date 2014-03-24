@@ -63,17 +63,15 @@ prereqs() {
 prereqs
 
 get_ssh_pub_key() {
-  if tty -s
-  then
-    if [[ ! -e ~/.ssh/id_rsa.pub ]] ; then
+  if tty -s ; then
+    if [[ ! -e ~/.ssh/id_rsa.pub && ! -e ~/.ssh/id_dsa.pub ]] ; then
       echo You have no SSH key associated to this profile
       echo "(This will allow you ssh access into your container)"
       read -p "Generate SSH key at ~/.ssh/id_rsa.pub? (y/N) " -n 1 -r
-      if [[ $REPLY =~ ^[Yy]$ ]]
-      then
+      if [[ $REPLY =~ ^[Yy]$ ]] ; then
         echo
         echo Generating SSH key
-        (mkdir -p ~/.ssh && cd ~/.ssh && ssh-keygen -f id_rsa -t rsa -N '')
+        mkdir -p ~/.ssh && ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
       else
         echo
         echo WARNING: You may not be able to log in to your container.
@@ -82,7 +80,7 @@ get_ssh_pub_key() {
     fi
   fi
 
-  ssh_pub_key=`cat ~/.ssh/id_rsa.pub`
+  ssh_pub_key="$(cat ~/.ssh/id_rsa.pub 2>/dev/null || cat ~/.ssh/id_dsa.pub)"
 }
 
 
