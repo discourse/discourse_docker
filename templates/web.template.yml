@@ -119,6 +119,7 @@ run:
 
   - exec:
       cd: $home
+      hook: web
       cmd:
         # ensure we are on latest bundler
         - gem update bundler

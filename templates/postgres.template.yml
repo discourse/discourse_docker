@@ -85,7 +85,7 @@ run:
            echo Run: "sudo mv /var/docker/shared/postgres_data /var/shared/postgres_data_old"
            echo Run: "./launcher bootstrap"
            echo
-           echo Login to the blank site, and import your backup (remember to set the allow_restore site setting)
+           echo "Login to the blank site, and import your backup (remember to set the allow_restore site setting)"
            echo Restart your container: "./launcher restart"
            echo -------------------------------------------------------------------------------------
            exit 1
