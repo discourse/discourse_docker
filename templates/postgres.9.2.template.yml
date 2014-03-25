@@ -1,0 +1,117 @@
+hooks:
+  after_cron:
+    - file:
+       path: /var/lib/postgresql/take-database-backup
+       chown: postgres:postgres
+       chmod: "+x"
+       contents: |
+          #!/bin/bash
+          ID=db-$(date +%F_%T)
+          FILENAME=/shared/postgres_backup/$ID.tar.gz
+          pg_basebackup --format=tar --pgdata=- --xlog --gzip --label=$ID > $FILENAME
+          echo $FILENAME
+
+    - file:
+       path: /var/spool/cron/crontabs/postgres
+       contents: |
+          # m h  dom mon dow   command
+          #MAILTO=?
+          0 */4 * * * /var/lib/postgresql/take-database-backup
+
+  before_code:
+    - replace:
+       filename: /etc/service/sidekiq/run
+       from: "# postgres"
+       to: sv start postgres || exit 1
+    - replace:
+       filename: /etc/service/unicorn/run
+       from: "# postgres"
+       to: sv start postgres || exit 1
+
+run:
+  # temporary
+  - exec: apt-get install -y socat
+  - exec: mkdir -p /shared/postgres_run
+  - exec: chown postgres:postgres /shared/postgres_run
+  - exec: chmod 775 /shared/postgres_run
+  - exec: rm -fr /var/run/postgresql
+  - exec: ln -s /shared/postgres_run /var/run/postgresql
+  - exec: socat /dev/null UNIX-CONNECT:/shared/postgres_run/.s.PGSQL.5432 || exit 0 && echo postgres already running stop container ; exit 1
+  - file:
+     path: /etc/service/postgres/run
+     chmod: "+x"
+     contents: |
+        #!/bin/sh
+        exec 2>&1
+        exec sudo -u postgres /usr/lib/postgresql/9.2/bin/postmaster -D /etc/postgresql/9.2/main
+
+  - exec:
+      cmd:
+        - chown -R root /var/lib/postgresql/9.2/main
+        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -u postgres /usr/lib/postgresql/9.2/bin/initdb -D /shared/postgres_data || exit 0"
+        - chown -R postgres:postgres /shared/postgres_data
+
+  - replace:
+      filename: "/etc/postgresql/9.2/main/postgresql.conf"
+      from: "data_directory = '/var/lib/postgresql/9.2/main'"
+      to: "data_directory = '/shared/postgres_data'"
+
+  # listen on all interfaces
+  - replace:
+      filename: "/etc/postgresql/9.2/main/postgresql.conf"
+      from: /#?listen_addresses *=.*/
+      to: "listen_addresses = '*'"
+
+  # Necessary to enable backups
+  - exec:
+      cmd:
+        - install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
+
+  - replace:
+      filename: "/etc/postgresql/9.2/main/postgresql.conf"
+      from: /#?max_wal_senders *=.*/
+      to: "max_wal_senders = 4"
+
+  - replace:
+      filename: "/etc/postgresql/9.2/main/postgresql.conf"
+      from: /#?wal_level *=.*/
+      to: "wal_level = hot_standby"
+
+  - replace:
+      filename: "/etc/postgresql/9.2/main/pg_hba.conf"
+      from: /^#local +replication +postgres +peer$/
+      to: "local replication postgres  peer"
+
+  # allow all to connect in with md5 auth
+  - replace:
+      filename: "/etc/postgresql/9.2/main/pg_hba.conf"
+      from: /^host.*all.*all.*127.*$/
+      to: "host all all 0.0.0.0/0 md5"
+
+  - exec:
+      background: true
+      cmd: "sudo -u postgres /usr/lib/postgresql/9.2/bin/postmaster -D /etc/postgresql/9.2/main"
+
+  # give db a few secs to start up
+  - exec: "sleep 5"
+
+  - exec: sudo -u postgres createdb discourse || exit 0
+  - exec:
+      stdin: |
+        create user discourse;
+      cmd: sudo -u postgres psql discourse
+      raise_on_fail: false
+
+  - exec:
+      stdin: |
+        grant all privileges on database discourse to discourse;
+      cmd: sudo -u postgres psql discourse
+      raise_on_fail: false
+
+  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "alter schema public owner to discourse;"'
+  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists hstore;"'
+  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists pg_trgm;"'
+
+  - exec:
+      hook: postgres
+      cmd: "echo postgres installed!"
