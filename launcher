@@ -26,6 +26,7 @@ usage () {
   echo "    ssh:        Start a bash shell in a running container"
   echo "    logs:       Docker logs for container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
+  echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
   exit 1
 }
 
@@ -238,52 +239,55 @@ run_start(){
 
 }
 
+run_bootstrap(){
+  get_ssh_pub_key
+
+  # Is the image available?
+  # If not, pull it here so the user is aware what's happening.
+  docker history $image >/dev/null 2>&1 || docker pull $image
+
+  set_template_info
+
+  base_image=`cat $config_file | docker run --rm -i -a stdin -a stdout $image ruby -e \
+    "require 'yaml'; puts YAML.load(STDIN.readlines.join)['base_image']"`
+
+  update_pups=`cat $config_file | docker run --rm -i -a stdin -a stdout $image ruby -e \
+    "require 'yaml'; puts YAML.load(STDIN.readlines.join)['update_pups']"`
+
+  if [[ ! X"" = X"$base_image" ]]; then
+    image=$base_image
+  fi
+
+  set_volumes
+
+  rm -f $cidbootstrap
+
+  run_command="cd /pups &&"
+  if [[ ! "false" =  $update_pups ]]; then
+    run_command="$run_command git pull &&"
+  fi
+  run_command="$run_command /pups/bin/pups --stdin"
+
+  echo $run_command
+
+  env=("${env[@]}" "-e" "SSH_PUB_KEY=$ssh_pub_key")
+
+  (exec echo "$input" | docker run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+     /bin/bash -c "$run_command") \
+     || (docker rm `cat $cidbootstrap` && rm $cidbootstrap)
+
+  [ ! -e $cidbootstrap ] && echo "FAILED TO BOOTSTRAP" && exit 1
+
+  sleep 5
+
+  docker commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
+  docker rm `cat $cidbootstrap` && rm $cidbootstrap
+}
+
 case "$command" in
   bootstrap)
 
-      get_ssh_pub_key
-
-      # Is the image available?
-      # If not, pull it here so the user is aware what's happening.
-      docker history $image >/dev/null 2>&1 || docker pull $image
-
-      set_template_info
-
-      base_image=`cat $config_file | docker run --rm -i -a stdin -a stdout $image ruby -e \
-        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['base_image']"`
-
-      update_pups=`cat $config_file | docker run --rm -i -a stdin -a stdout $image ruby -e \
-        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['update_pups']"`
-
-      if [[ ! X"" = X"$base_image" ]]; then
-        image=$base_image
-      fi
-
-      set_volumes
-
-      rm -f $cidbootstrap
-
-      run_command="cd /pups &&"
-      if [[ ! "false" =  $update_pups ]]; then
-        run_command="$run_command git pull &&"
-      fi
-      run_command="$run_command /pups/bin/pups --stdin"
-
-      echo $run_command
-
-      env=("${env[@]}" "-e" "SSH_PUB_KEY=$ssh_pub_key")
-
-      (exec echo "$input" | docker run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
-         /bin/bash -c "$run_command") \
-         || (docker rm `cat $cidbootstrap` && rm $cidbootstrap)
-
-      [ ! -e $cidbootstrap ] && echo "FAILED TO BOOTSTRAP" && exit 1
-
-      sleep 5
-
-      docker commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
-      docker rm `cat $cidbootstrap` && rm $cidbootstrap
-
+      run_bootstrap
       echo "Successfully bootstrapped, to startup use ./launcher start $config"
       exit 0
       ;;
@@ -325,6 +329,24 @@ case "$command" in
       ;;
 
   start)
+      run_start
+      exit 0
+      ;;
+
+  rebuild)
+      if [ -e $cidfile ]
+        then
+          echo "Stopping old container"
+          docker stop -t 10 `cat $cidfile`
+      fi
+
+      run_bootstrap
+
+      if [ -e $cidfile ]
+        then
+          docker rm `cat $cidfile` && rm $cidfile
+      fi
+
       run_start
       exit 0
       ;;
