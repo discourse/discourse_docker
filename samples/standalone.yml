@@ -16,6 +16,15 @@ params:
   version: HEAD
 
 env:
+  # Number of web workers, the more workers you have the more 
+  #  memory will be consumed.
+  # On 2GB setups we recommend 3-4 workers 
+  # On 1GB setups we recommend 2 workers
+  # Default (3) 
+  #
+  # UNICORN_WORKERS: 3
+  #
+  #
   # comma-separated emails
   DISCOURSE_DEVELOPER_EMAILS: 'my_email@example.com'
   # CHANGE ME to your hostname
