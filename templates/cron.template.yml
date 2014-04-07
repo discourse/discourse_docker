@@ -19,4 +19,5 @@ run:
   - exec:
       hook: cron
       cmd: echo cron installed
-
+  - exec:
+      cmd: apt-get -y install rsyslog
