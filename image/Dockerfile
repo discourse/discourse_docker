@@ -1,4 +1,4 @@
-FROM samsaffron/discourse_base:0.1.2
+FROM samsaffron/discourse_base:0.2.0
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
