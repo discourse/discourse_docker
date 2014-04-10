@@ -2,6 +2,9 @@
 
 command=$1
 config=$2
+opt=$3
+
+
 config_file=containers/"$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
@@ -17,7 +20,7 @@ docker_ip=`/sbin/ifconfig | \
 
 
 usage () {
-  echo "Usage: launcher COMMAND CONFIG"
+  echo "Usage: launcher COMMAND CONFIG [--skip-prereqs]"
   echo "Commands:"
   echo "    start:      Start/initialize a container"
   echo "    stop:       Stop a running container"
@@ -27,6 +30,9 @@ usage () {
   echo "    logs:       Docker logs for container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
+  echo
+  echo "Options:"
+  echo "    --skip-prereqs   Don't check prerequisites"
   exit 1
 }
 
@@ -69,7 +75,9 @@ prereqs() {
   fi
 }
 
-prereqs
+if [ "$opt" != "--skip-prereqs" ] ; then
+  prereqs
+fi
 
 get_ssh_pub_key() {
   if tty -s ; then
