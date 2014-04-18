@@ -40,7 +40,7 @@ env:
   # DISCOURSE_SMTP_PASSWORD: p@ssword               # (optional)
   ##
   ## the origin pull CDN address for this Discourse instance
-  # DISCOURSE_CDN_URL: discourse-cdn.example.com
+  # DISCOURSE_CDN_URL: //discourse-cdn.example.com
 
 ## These containers are stateless, all data is stored in /shared
 volumes:
