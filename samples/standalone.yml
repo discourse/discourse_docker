@@ -1,4 +1,11 @@
-# this is the base templates used, you can cut it down to include less functionality per container
+##
+## After making changes to this file, you MUST rebuild for any changes
+## to take effect in your live Discourse instance:
+## 
+## /var/docker/launcher rebuild app
+##
+
+## this is the all-in-one, standalone Discourse Docker container template
 templates:
   - "templates/cron.template.yml"
   - "templates/postgres.template.yml"
@@ -6,44 +13,40 @@ templates:
   - "templates/sshd.template.yml"
   - "templates/web.template.yml"
 
-# which ports to expose?
+## which TCP/IP ports should this container expose?
 expose:
   - "80:80"   # fwd host port 80   to container port 80 (http)
   - "2222:22" # fwd host port 2222 to container port 22 (ssh)
 
 params:
-  # git revision to run
+  ## Which Git revision should this container use?
   version: HEAD
 
 env:
-  # Number of web workers, the more workers you have the more 
-  #  memory will be consumed.
-  # On 2GB setups we recommend 3-4 workers 
-  # On 1GB setups we recommend 2 workers
-  # Default (3) 
-  #
+  ## How many concurrent web requests are supported?
+  ## With 2GB we recommend 3-4 workers, with 1GB only 2
   # UNICORN_WORKERS: 3
-  #
-  #
-  # comma-separated emails
-  DISCOURSE_DEVELOPER_EMAILS: 'my_email@example.com'
-  # CHANGE ME to your hostname
-  DISCOURSE_HOSTNAME: 'www.example.com'
-  # SET ME to your smtp server eg mandrill
-  # don't forget to set mail
+  ##
+  ## List of comma delimited emails that will be made admin on signup
+  DISCOURSE_DEVELOPER_EMAILS: 'my-email-address@example.com'
+  ##
+  ## The domain name this Discourse instance will respond to
+  DISCOURSE_HOSTNAME: 'discourse.example.com'
+  ##
+  ## The mailserver this Discourse instance will use
   DISCOURSE_SMTP_ADDRESS: smtp.example.com          # (mandatory)
   # DISCOURSE_SMTP_PORT: 587                        # (optional)
   # DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
   # DISCOURSE_SMTP_PASSWORD: p@ssword               # (optional)
 
-# These containers are stateless, all the data is stored in /shared
+## These containers are stateless, all data is stored in /shared
 volumes:
   - volume:
       host: /var/docker/shared/standalone
       guest: /shared
 
-# you may use the docker manager to upgrade and monitor your docker image
-# UI will be visible at http://yoursite.com/admin/docker
+## The docker manager plugin allows you to one-click upgrade Discouse
+## http://discourse.example.com/admin/docker
 hooks:
   after_code:
     - exec:
@@ -52,7 +55,7 @@ hooks:
           - mkdir -p plugins
           - git clone https://github.com/discourse/docker_manager.git
 
-# Remember, this is YAML syntax - you can only have one block with a name
+## Remember, this is YAML syntax - you can only have one block with a name
 run:
   - exec: echo "Beginning of custom commands"
 
