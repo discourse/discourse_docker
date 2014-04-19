@@ -1,0 +1,127 @@
+#!/usr/bin/env python3
+# vim:sw=4 ts=4 et:
+
+import email
+import smtplib
+import ssl
+import socket
+import sys
+import os
+
+try:
+    import yaml
+except ImportError:
+    print("ERROR: python yaml module not installed - run the following and try again:", file=sys.stderr)
+    print("sudo apt-get install python3-yaml", file=sys.stderr)
+    sys.exit(1)
+
+def do_tls(conn, sslv):
+    # Possible values of smtp_sslv: none|peer|client_once|fail_if_no_peer_cert
+    try:
+        # Creating a context with the purpose of server authentication implies verifying the certificate
+        sslcontext=ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
+        # The None below looks like might be a typo but it's not - it represents the ActiveRecord default (to verify)
+        if sslv in (None, 'peer', 'client_once', 'fail_if_no_peer_cert'):
+            # defaults are good
+            conn.starttls(context=sslcontext)
+        elif sslv in ('none',):
+            # disable cert checking
+            sslcontext.check_hostname = False
+            sslcontext.verify_mode = ssl.CERT_NONE
+            conn.starttls(context=sslcontext)
+        else:
+            raise ValueError('invalid value for DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: {}'.format(sslv))
+    except smtplib.SMTPException as e:
+        if (sslv is None) and ('STARTTLS extension not supported by server' in e.args[0]):
+            print("unable to establish TLS, continuing: {}".format(e.args[0]))
+        else:
+            raise
+
+### Start of execution ###
+cfgfile = sys.argv[1]
+try:
+    destemail = sys.argv[2]
+except IndexError:
+    destemail = input('Enter your email address: ')
+srcemail  = 'nobody+launcher-mailtest@discourse.org'
+
+# Read in the container yaml and grab the env section
+cfgdata = yaml.safe_load(open(cfgfile).read())
+envdata = cfgdata['env']
+
+# Here are the variables we'll test
+smtp_addr = envdata.get('DISCOURSE_SMTP_ADDRESS')
+smtp_port = envdata.get('DISCOURSE_SMTP_PORT')
+smtp_user = envdata.get('DISCOURSE_SMTP_USER_NAME')
+smtp_pass = envdata.get('DISCOURSE_SMTP_PASSWORD')
+smtp_sslv = envdata.get('DISCOURSE_SMTP_OPENSSL_VERIFY_MODE')
+
+# Yoink out the settings from the file - we'll print them and put them in the email
+testinfo = 'DISCOURSE_SMTP_ settings:\n'
+for k,v in filter(lambda x: x[0].startswith('DISCOURSE_SMTP_'), envdata.items()):
+    if 'PASSWORD' in k:
+        v = '(hidden)'
+    testinfo += ' {} = {}\n'.format(k,v)
+print(testinfo)
+
+# Ensure at least smtp-addr is specified - everything else is optional
+if smtp_addr is None:
+    print("ERROR: DISCOURSE_SMTP_ADDRESS not specified", file=sys.stderr)
+    sys.exit(1)
+
+if (smtp_user is None and smtp_pass is not None) or (smtp_user is not None and smtp_pass is None):
+    print("ERROR: both username and password must be specified for auth", file=sys.stderr)
+    sys.exit(1)
+
+# Try and ensure the test is valid
+if destemail.split('@',1)[1] in smtp_addr:
+    print('WARNING: {} may be allowed to relay mail to {}, this may not be a valid test!'.format(smtp_addr, destemail))
+
+msg = email.message.Message()
+msg.add_header('From', 'nobody+launcher-mailtest@discourse.org')
+msg.add_header('To', destemail)
+msg.add_header('Subject', 'discourse launcher mailtest for {}'.format(os.path.basename(cfgfile)))
+msg.set_payload(testinfo)
+
+try:
+    smtp = smtplib.SMTP(smtp_addr, smtp_port, timeout=5)
+    #smtp.debuglevel=1
+    do_tls(smtp,smtp_sslv)
+    if smtp_user:
+        smtp.login(smtp_user, smtp_pass)
+    result = smtp.sendmail('nobody+launcher-mailtest@discourse.org', destemail, msg.as_string())
+except socket.gaierror as e:
+    print("ERROR: {}".format(e.args[-1]), file=sys.stderr)
+    print(" Ensure that the host '{}' exists".format(smtp_addr), file=sys.stderr)
+    sys.exit(1)
+except socket.timeout as e:
+    print("ERROR: {}".format(e.args[-1]), file=sys.stderr)
+    print(" Ensure that the host '{}' is up and reachable".format(smtp_addr), file=sys.stderr)
+    sys.exit(1)
+except smtplib.SMTPConnectError as e:
+    print("ERROR: {}".format(e.args[-1]), file=sys.stderr)
+    print(" Ensure that the host '{}' is up and reachable", file=sys.stderr)
+    sys.exit(1)
+except ssl.SSLError as e:
+    print("ERROR: unable to establish TLS: {}".format(e.args[-1]), file=sys.stderr)
+    if 'certificate verify failed' in e.args[-1]:
+        print(" Fix the host certificate or disable validation".format(smtp_addr), file=sys.stderr)
+    sys.exit(1)
+except smtplib.SMTPRecipientsRefused as e:
+    print("ERROR: {}".format(e.args[-1].popitem()[1][1].decode()), file=sys.stderr)
+    print(" You must provide a username/password to send to this host", file=sys.stderr)
+    sys.exit(1)
+except smtplib.SMTPAuthenticationError as e:
+    print("ERROR: {}".format(e.args[-1].decode()), file=sys.stderr)
+    print(" Check to ensure your username and password are correct", file=sys.stderr)
+    sys.exit(1)
+except smtplib.SMTPException as e:
+    print("ERROR: {}".format(e.args[-1]), file=sys.stderr)
+    if 'SMTP AUTH extension not supported by server' in e.args[0]:
+        print(" Authorization is not available - you may need to use TLS", file=sys.stderr)
+    sys.exit(1)
+except ValueError:
+    print("ERROR: {}".format(e.args[-1]), file=sys.stderr)
+    sys.exit(1)
+    
+print("Success!")
