@@ -31,12 +31,19 @@ function get_new_swapfile() {
 }
 
 [ `id -u` -eq 0 ] || { echo "You must be root to run this script"; exit 1; }
+
+# how big? default 1GB
+declare -i num_gb
+num_gb="${1-1}"
+[ $num_gb -lt 1 ] && { echo "Please specify an integer >= 1"; exit 1; }
+echo "Creating a ${num_gb}GB swapfile..."
+
 set_swappiness
 
 SWAPFILE=$(get_new_swapfile)
 
 umask 077
-dd if=/dev/zero of=$SWAPFILE bs=1k count=1024k conv=excl
+dd if=/dev/zero of=$SWAPFILE bs=1k count=$(($num_gb * 1024)) conv=excl
 mkswap $SWAPFILE
 swapon $SWAPFILE
 echo "$SWAPFILE swap swap auto 0 0" >> /etc/fstab
