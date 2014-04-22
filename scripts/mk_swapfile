@@ -1,5 +1,5 @@
 #!/bin/bash -e
-# This script adds a 512MB swapfile to the system
+# This script adds a 1GB swapfile to the system
 
 function do_err() {
     code=$?
@@ -36,9 +36,9 @@ set_swappiness
 SWAPFILE=$(get_new_swapfile)
 
 umask 077
-dd if=/dev/zero of=$SWAPFILE bs=1k count=512k conv=excl
+dd if=/dev/zero of=$SWAPFILE bs=1k count=1024k conv=excl
 mkswap $SWAPFILE
 swapon $SWAPFILE
 echo "$SWAPFILE swap swap auto 0 0" >> /etc/fstab
 
-echo 512MB swapfile successfully added
+echo 1GiB swapfile successfully added
