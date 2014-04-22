@@ -11,7 +11,7 @@ cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
 local_discourse=local_discourse
 image=samsaffron/discourse:0.2.0
-docker_path=`which docker`
+docker_path=`which docker.io || which docker`
 
 docker_ip=`/sbin/ifconfig | \
                 grep -B1 "inet addr" | \
@@ -41,7 +41,7 @@ usage () {
 prereqs() {
 
   # 1. docker daemon running?
-  test=`docker info >/dev/null`
+  test=`$docker_path info >/dev/null`
 
   if [[ $? -ne 0 ]] ; then
     echo "Cannot connect to the docker daemon - verify it is running and you have access"
@@ -49,7 +49,7 @@ prereqs() {
   fi
 
   # 2. running aufs
-  test=`docker info 2> /dev/null | grep 'Driver: aufs'`
+  test=`$docker_path info 2> /dev/null | grep 'Driver: aufs'`
   if [[ "$test" =~ "aufs" ]] ; then : ; else
     echo "Your Docker installation is not using aufs"
     echo "Device mapper and other experimental drivers are unstable"
@@ -60,7 +60,7 @@ prereqs() {
   fi
 
   # 3. running docker 0.10+
-  test=`docker --version | grep 0.10`
+  test=`$docker_path --version | grep 0.10`
 
   if [[ "$test" =~ "0.10" ]] ; then : ; else
     echo "Your Docker installation is old, please upgrade to 0.10.0 or up"
@@ -68,7 +68,7 @@ prereqs() {
   fi
 
   # 4. able to attach stderr / out / tty
-  test=`docker run -i --rm -a stdout -a stderr $image echo working`
+  test=`$docker_path run -i --rm -a stdout -a stderr $image echo working`
   if [[ "$test" =~ "working" ]] ; then : ; else
     echo "Your Docker installation is not working correctly"
     echo
@@ -122,13 +122,13 @@ install_docker() {
 }
 
 set_volumes() {
-  volumes=`cat $config_file | docker run --rm -i -a stdout -a stdin $image ruby -e \
+  volumes=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
 }
 
 set_template_info() {
 
-    templates=`cat $config_file | docker run --rm -i -a stdin -a stdout $image ruby -e \
+    templates=`cat $config_file | $docker_path run --rm -i -a stdin -a stdout $image ruby -e \
       "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
 
 
@@ -165,7 +165,7 @@ set_template_info() {
     puts env.map{|k,v| "-e\n#{k}=#{v}" }.join("\n")
 RUBY
 
-    raw=`exec echo "$input" | docker run --rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
+    raw=`exec echo "$input" | $docker_path run --rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
 
     env=()
     while read i; do
@@ -205,7 +205,7 @@ run_stop(){
        echo "No cid found"
        exit 1
      else
-       docker stop -t 10 `cat $cidfile`
+       $docker_path stop -t 10 `cat $cidfile`
   fi
 }
 
@@ -214,13 +214,13 @@ run_start(){
   if [ ! -e $cidfile ]
      then
        echo "No cid found, creating a new container"
-       ports=`cat $config_file | docker run --rm -i -a stdout -a stdin $image ruby -e \
+       ports=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e \
               "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
 
        set_template_info
        set_volumes
 
-       existing=`docker ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+       existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
        if [ ! -z $existing ]
        then
          echo "Found an existing container by its name, recovering cidfile, please rerun"
@@ -228,7 +228,7 @@ run_start(){
          exit 1
        fi
 
-       docker run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
+       $docker_path run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
                   -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
 
        exit 0
@@ -242,7 +242,7 @@ run_start(){
          exit 1
        fi
 
-       found=`docker ps -q -a --no-trunc | grep $cid`
+       found=`$docker_path ps -q -a --no-trunc | grep $cid`
        if [ -z $found ]
        then
          echo "Invalid cid file, deleting, please re-run"
@@ -251,7 +251,7 @@ run_start(){
        fi
 
        echo "cid found, ensuring container is started"
-       docker start `cat $cidfile`
+       $docker_path start `cat $cidfile`
        exit 0
   fi
 
@@ -262,14 +262,14 @@ run_bootstrap(){
 
   # Is the image available?
   # If not, pull it here so the user is aware what's happening.
-  docker history $image >/dev/null 2>&1 || docker pull $image
+  $docker_path history $image >/dev/null 2>&1 || $docker_path pull $image
 
   set_template_info
 
-  base_image=`cat $config_file | docker run --rm -i -a stdin -a stdout $image ruby -e \
+  base_image=`cat $config_file | $docker_path run --rm -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['base_image']"`
 
-  update_pups=`cat $config_file | docker run --rm -i -a stdin -a stdout $image ruby -e \
+  update_pups=`cat $config_file | $docker_path run --rm -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['update_pups']"`
 
   if [[ ! X"" = X"$base_image" ]]; then
@@ -290,16 +290,16 @@ run_bootstrap(){
 
   env=("${env[@]}" "-e" "SSH_PUB_KEY=$ssh_pub_key")
 
-  (exec echo "$input" | docker run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+  (exec echo "$input" | $docker_path run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
      /bin/bash -c "$run_command") \
-     || (docker rm `cat $cidbootstrap` && rm $cidbootstrap)
+     || ($docker_path rm `cat $cidbootstrap` && rm $cidbootstrap)
 
   [ ! -e $cidbootstrap ] && echo "FAILED TO BOOTSTRAP" && exit 1
 
   sleep 5
 
-  docker commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
-  docker rm `cat $cidbootstrap` && rm $cidbootstrap
+  $docker_path commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
+  $docker_path rm `cat $cidbootstrap` && rm $cidbootstrap
 }
 
 case "$command" in
@@ -321,7 +321,7 @@ case "$command" in
            exit 1
          else
            cid="`cat $cidfile`"
-           address="`docker port $cid 22`"
+           address="`$docker_path port $cid 22`"
            split=(${address//:/ })
            exec ssh -o StrictHostKeyChecking=no root@${split[0]} -p ${split[1]}
       fi
@@ -339,7 +339,7 @@ case "$command" in
            echo "No cid found"
            exit 1
          else
-           docker logs `cat $cidfile`
+           $docker_path logs `cat $cidfile`
            exit 0
       fi
       ;;
@@ -359,14 +359,14 @@ case "$command" in
       if [ -e $cidfile ]
         then
           echo "Stopping old container"
-          docker stop -t 10 `cat $cidfile`
+          $docker_path stop -t 10 `cat $cidfile`
       fi
 
       run_bootstrap
 
       if [ -e $cidfile ]
         then
-          docker rm `cat $cidfile` && rm $cidfile
+          $docker_path rm `cat $cidfile` && rm $cidfile
       fi
 
       run_start
@@ -378,8 +378,8 @@ case "$command" in
       if [ -e $cidfile ]
         then
           echo "destroying container $cidfile"
-          docker stop -t 10 `cat $cidfile`
-          docker rm `cat $cidfile` && rm $cidfile
+          $docker_path stop -t 10 `cat $cidfile`
+          $docker_path rm `cat $cidfile` && rm $cidfile
           exit 0
         else
           echo "nothing to destroy cidfile does not exist"

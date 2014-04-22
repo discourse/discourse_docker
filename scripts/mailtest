@@ -9,9 +9,26 @@ import sys
 import os
 
 try:
+    from xtermcolor import colorize
+    COLOR_ERROR = 0xff0000
+    COLOR_WARN  = 0xffff00
+    COLOR_GOOD  = 0x00ff00
+    def print_error(val="", *args, **kwargs):
+        return print(colorize(val, COLOR_ERROR), *args, **kwargs)
+    def print_warn(val="", *args, **kwargs):
+        return print(colorize(val, COLOR_WARN), *args, **kwargs)
+    def print_good(val="", *args, **kwargs):
+        return print(colorize(val, COLOR_GOOD), *args, **kwargs)
+except ImportError:
+    print("Install the python3-xtermcolor package for coloured output")
+    print_error = print
+    print_warn = print
+    print_good = print
+
+try:
     import yaml
 except ImportError:
-    print("ERROR: python yaml module not installed - run the following and try again:", file=sys.stderr)
+    print_error("ERROR: python yaml module not installed - run the following and try again:", file=sys.stderr)
     print("sudo apt-get install python3-yaml", file=sys.stderr)
     sys.exit(1)
 
@@ -33,7 +50,7 @@ def do_tls(conn, sslv):
             raise ValueError('invalid value for DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: {}'.format(sslv))
     except smtplib.SMTPException as e:
         if (sslv is None) and ('STARTTLS extension not supported by server' in e.args[0]):
-            print("unable to establish TLS, continuing: {}".format(e.args[0]))
+            print_warn("unable to establish TLS, continuing: {}".format(e.args[0]))
         else:
             raise
 
@@ -66,17 +83,36 @@ print(testinfo)
 
 # Ensure at least smtp-addr is specified - everything else is optional
 if smtp_addr is None:
-    print("ERROR: DISCOURSE_SMTP_ADDRESS not specified", file=sys.stderr)
+    print_error("ERROR: DISCOURSE_SMTP_ADDRESS not specified", file=sys.stderr)
     sys.exit(1)
 
 if (smtp_user is None and smtp_pass is not None) or (smtp_user is not None and smtp_pass is None):
-    print("ERROR: both username and password must be specified for auth", file=sys.stderr)
+    print_error("ERROR: both username and password must be specified for auth", file=sys.stderr)
     sys.exit(1)
+
+# Do we have a known good set of parameters?
+known_good_settings = {
+    ('smtp.mandrillapp.com', 587): 'Mandrill',
+}
+try:
+    print_good('You are correctly configured to use: {}'.format(known_good_settings[smtp_addr,smtp_port]))
+except KeyError:
+    pass
 
 # Try and ensure the test is valid
 if destemail.split('@',1)[1] in smtp_addr:
-    print('WARNING: {} may be allowed to relay mail to {}, this may not be a valid test!'.format(smtp_addr, destemail))
+    print_warn('WARNING: {} may be allowed to relay mail to {}, this may not be a valid test!'.format(smtp_addr, destemail))
 
+# Outbound port smtp?
+if smtp_port == 25 or smtp_port is None:
+    print_warn('WARNING: many networks block outbound port 25 - consider an alternative (587?)')
+
+# Outbound port submission?
+if smtp_port == 587:
+    if smtp_user is None:
+        print_warn('WARNING: trying to use the submission (587) port without authenticating will probably fail')
+
+# Build the message and send!
 msg = email.message.Message()
 msg.add_header('From', 'nobody+launcher-mailtest@discourse.org')
 msg.add_header('To', destemail)
@@ -91,37 +127,38 @@ try:
         smtp.login(smtp_user, smtp_pass)
     result = smtp.sendmail('nobody+launcher-mailtest@discourse.org', destemail, msg.as_string())
 except socket.gaierror as e:
-    print("ERROR: {}".format(e.args[-1]), file=sys.stderr)
+    print_error("ERROR: {}".format(e.args[-1]), file=sys.stderr)
     print(" Ensure that the host '{}' exists".format(smtp_addr), file=sys.stderr)
     sys.exit(1)
 except socket.timeout as e:
-    print("ERROR: {}".format(e.args[-1]), file=sys.stderr)
-    print(" Ensure that the host '{}' is up and reachable".format(smtp_addr), file=sys.stderr)
+    print_error("ERROR: {}".format(e.args[-1]), file=sys.stderr)
+    print(" Ensure that the host '{}' is up and port {} is reachable".format(smtp_addr, smtp_port), file=sys.stderr)
+    print(" If your settings are known-good, ensure outbound port {} is not blocked".format(smtp_port), file=sys.stderr)
     sys.exit(1)
 except smtplib.SMTPConnectError as e:
-    print("ERROR: {}".format(e.args[-1]), file=sys.stderr)
-    print(" Ensure that the host '{}' is up and reachable", file=sys.stderr)
+    print_error("ERROR: {}".format(e.args[-1]), file=sys.stderr)
+    print(" Ensure that the host '{}' is up and port {} is reachable".format(smtp_addr, smtp_port), file=sys.stderr)
     sys.exit(1)
 except ssl.SSLError as e:
-    print("ERROR: unable to establish TLS: {}".format(e.args[-1]), file=sys.stderr)
+    print_error("ERROR: unable to establish TLS: {}".format(e.args[-1]), file=sys.stderr)
     if 'certificate verify failed' in e.args[-1]:
         print(" Fix the host certificate or disable validation".format(smtp_addr), file=sys.stderr)
     sys.exit(1)
 except smtplib.SMTPRecipientsRefused as e:
-    print("ERROR: {}".format(e.args[-1].popitem()[1][1].decode()), file=sys.stderr)
+    print_error("ERROR: {}".format(e.args[-1].popitem()[1][1].decode()), file=sys.stderr)
     print(" You must provide a username/password to send to this host", file=sys.stderr)
     sys.exit(1)
 except smtplib.SMTPAuthenticationError as e:
-    print("ERROR: {}".format(e.args[-1].decode()), file=sys.stderr)
+    print_error("ERROR: {}".format(e.args[-1].decode()), file=sys.stderr)
     print(" Check to ensure your username and password are correct", file=sys.stderr)
     sys.exit(1)
 except smtplib.SMTPException as e:
-    print("ERROR: {}".format(e.args[-1]), file=sys.stderr)
+    print_error("ERROR: {}".format(e.args[-1]), file=sys.stderr)
     if 'SMTP AUTH extension not supported by server' in e.args[0]:
         print(" Authorization is not available - you may need to use TLS", file=sys.stderr)
     sys.exit(1)
 except ValueError:
-    print("ERROR: {}".format(e.args[-1]), file=sys.stderr)
+    print_error("ERROR: {}".format(e.args[-1]), file=sys.stderr)
     sys.exit(1)
     
-print("Success!")
+print_good("Success!")
