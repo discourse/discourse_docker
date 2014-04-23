@@ -2,6 +2,7 @@ env:
   # You can have redis on a different box
   RAILS_ENV: 'production'
   UNICORN_WORKERS: 3
+  UNICORN_SIDEKIQS: 1
   # slightly less aggressive than "recommendation" but works fine with oobgc
   RUBY_GC_MALLOC_LIMIT: 40000000
   # this ensures we have enough heap space to handle a big pile of small reqs
@@ -48,18 +49,6 @@ run:
         sv start copy_env || exit 1
         cd $home
         exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
-
-  - file:
-     path: /etc/service/sidekiq/run
-     chmod: "+x"
-     contents: |
-        #!/bin/bash
-        exec 2>&1
-        # redis
-        # postgres
-        sv start copy_env || exit 1
-        cd $home
-        exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec sidekiq
 
   - file:
      path: /etc/service/nginx/run
