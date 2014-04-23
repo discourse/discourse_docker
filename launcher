@@ -169,7 +169,9 @@ RUBY
 
     env=()
     while read i; do
-      env[${#env[@]}]=$i
+      if [ -n "$i" ]; then
+        env[${#env[@]}]=$i
+      fi
     done <<< "$raw"
 
     echo "Calculated ENV: ${env[@]}"
