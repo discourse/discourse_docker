@@ -42,10 +42,6 @@ hooks:
         cmd: "sudo -u redis /usr/bin/redis-server /etc/redis/redis.conf"
   after_code:
     - replace:
-       filename: /etc/service/sidekiq/run
-       from: "# redis"
-       to: sv start redis || exit 1
-    - replace:
        filename: /etc/service/unicorn/run
        from: "# redis"
        to: sv start redis || exit 1

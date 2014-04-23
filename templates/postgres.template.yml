@@ -20,10 +20,6 @@ hooks:
 
   before_code:
     - replace:
-       filename: /etc/service/sidekiq/run
-       from: "# postgres"
-       to: sv start postgres || exit 1
-    - replace:
        filename: /etc/service/unicorn/run
        from: "# postgres"
        to: sv start postgres || exit 1
