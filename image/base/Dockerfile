@@ -36,7 +36,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     dpkg-divert --local --rename --add /sbin/initctl &&\
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl" &&\
     apt-get -y install redis-server haproxy openssh-server &&\
-    echo 'gem: --no-document' >> /etc/gemrc &&\
+    echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
     cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p451 /usr/local &&\
