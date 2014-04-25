@@ -36,6 +36,10 @@ def do_tls(conn, sslv):
     # Possible values of smtp_sslv: none|peer|client_once|fail_if_no_peer_cert
     try:
         # Creating a context with the purpose of server authentication implies verifying the certificate
+        if not hasattr(ssl,'create_default_context'):
+            # ssl.create_default_context is in Pyton 3.4+
+            print_warn('WARNING: cannot verify server certificate')
+            return conn.starttls()
         sslcontext=ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
         # The None below looks like might be a typo but it's not - it represents the ActiveRecord default (to verify)
         if sslv in (None, 'peer', 'client_once', 'fail_if_no_peer_cert'):
