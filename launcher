@@ -6,6 +6,9 @@ opt=$3
 
 cd "$(dirname "$0")"
 
+docker_min_version='0.9.1'
+docker_rec_version='0.10.0'
+
 config_file=containers/"$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
@@ -38,6 +41,27 @@ usage () {
   exit 1
 }
 
+compare_version() {
+    declare -a ver_a
+    declare -a ver_b
+    IFS=. read -a ver_a <<< "$1"
+    IFS=. read -a ver_b <<< "$2"
+
+    while [[ -n $ver_a ]]; do
+        if (( ver_a > ver_b )); then
+            return 0
+        elif (( ver_b > ver_a )); then
+            return 1
+        else
+            unset ver_a[0]
+            ver_a=("${ver_a[@]}")
+            unset ver_b[0]
+            ver_b=("${ver_b[@]}")
+        fi
+    done
+    return 1  # They are equal
+}
+
 prereqs() {
 
   # 1. docker daemon running?
@@ -59,12 +83,19 @@ prereqs() {
     exit 1
   fi
 
-  # 3. running docker 0.10+
-  test=`$docker_path --version | grep 0.10`
+  # 3. running recommended docker version
+  test=($($docker_path --version))  # Get docker version string
+  test=${test[2]//,/}  # Get version alone and strip comma if exists
 
-  if [[ "$test" =~ "0.10" ]] ; then : ; else
-    echo "Your Docker installation is old, please upgrade to 0.10.0 or up"
+  # At least minimum version
+  if compare_version "${socker_min_version}" "${test}"; then
+    echo "ERROR: Docker version ${test} not supported, please upgrade to at least ${docker_min_version}, or recommended ${docker_rec_version}"
     exit 1
+  fi
+
+  # Recommend best version
+  if compare_version "${docker_rec_version}" "${test}"; then
+    echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer."
   fi
 
   # 4. able to attach stderr / out / tty
