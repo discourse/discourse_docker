@@ -117,14 +117,15 @@ get_ssh_pub_key() {
     if [[ ! -e ~/.ssh/id_rsa.pub && ! -e ~/.ssh/id_dsa.pub ]] ; then
       echo You have no SSH key associated to this profile
       echo "(This will allow you ssh access into your container)"
-      read -p "Generate SSH key at ~/.ssh/id_rsa.pub? (y/N) " -n 1 -r
-      if [[ $REPLY =~ ^[Yy]$ ]] ; then
+      read -p "Generate SSH key at ~/.ssh/id_rsa.pub? (Y/n) " -n 1 -r
+      if [[ $REPLY =~ ^[Nn]$ ]] ; then
+        echo
+        echo WARNING: You may not be able to log in to your container.
+        echo
+      else
         echo
         echo Generating SSH key
         mkdir -p ~/.ssh && ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
-      else
-        echo
-        echo WARNING: You may not be able to log in to your container.
         echo
       fi
     fi
