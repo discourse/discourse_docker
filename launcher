@@ -72,18 +72,7 @@ prereqs() {
     exit 1
   fi
 
-  # 2. running aufs
-  test=`$docker_path info 2> /dev/null | grep 'Driver: aufs'`
-  if [[ "$test" =~ "aufs" ]] ; then : ; else
-    echo "Your Docker installation is not using aufs"
-    echo "Device mapper and other experimental drivers are unstable"
-    echo
-    echo "Please ensure your kernel is running linux extras and aufs"
-    echo "Please follow the installation guide for Docker here: http://docs.docker.io/en/latest/installation/ubuntulinux/"
-    exit 1
-  fi
-
-  # 3. running recommended docker version
+  # 2. running recommended docker version
   test=($($docker_path --version))  # Get docker version string
   test=${test[2]//,/}  # Get version alone and strip comma if exists
 
@@ -98,7 +87,7 @@ prereqs() {
     echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer."
   fi
 
-  # 4. able to attach stderr / out / tty
+  # 3. able to attach stderr / out / tty
   test=`$docker_path run -i --rm -a stdout -a stderr $image echo working`
   if [[ "$test" =~ "working" ]] ; then : ; else
     echo "Your Docker installation is not working correctly"
