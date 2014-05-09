@@ -219,27 +219,15 @@ run_mailtest(){
   exec scripts/mailtest $config_file
 }
 
-run_stop(){
-   $docker_path stop -t 10 $config
-}
+first_run(){
+  echo "Creating a new container..."
+  ports=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e \
+         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
 
-run_start(){
-  if $docker_path inspect $config &> /dev/null
-     then
-       $docker_path start $config
-     else
-       echo "Creating a new container..."
-       ports=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e \
-              "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
+  set_volumes
 
-       set_volumes
-
-       $docker_path run -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports \
-                  -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
-
-       exit 0
-  fi
-
+  exec $docker_path run -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports \
+                        -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
 }
 
 run_bootstrap(){
@@ -273,9 +261,9 @@ run_bootstrap(){
 
   env=("${env[@]}" "-e" "SSH_PUB_KEY=$ssh_pub_key")
 
-  (exec echo "$input" | $docker_path run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --name $config-bootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+  (echo "$input" | $docker_path run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --name $config-bootstrap -i -a stdin -a stdout -a stderr $volumes $image \
      /bin/bash -c "$run_command") \
-     || ($docker_path rm $config-bootstrap && echo "FAILED TO BOOTSTRAP" && exit 1)
+     || ($docker_path rm $config-bootstrap; echo "FAILED TO BOOTSTRAP"; exit 1) || exit 1
 
   sleep 5
 
@@ -302,8 +290,7 @@ case "$command" in
       ;;
 
   stop)
-      run_stop
-      exit 0
+      exec $docker_path stop -t 10 $config
       ;;
 
   logs)
@@ -311,14 +298,16 @@ case "$command" in
       ;;
 
   restart)
-      run_stop
-      run_start
-      exit 0
+      exec $docker_path restart -t 10 $config
       ;;
 
   start)
-      run_start
-      exit 0
+      if $docker_path inspect $config &> /dev/null
+        then
+          exec $docker_path start $config
+        else
+          first_run
+      fi
       ;;
 
   rebuild)
@@ -329,16 +318,13 @@ case "$command" in
 
       $docker_path rm $config
 
-      run_start
-      exit 0
+      first_run
       ;;
-
 
   destroy)
       echo "destroying container $config"
       $docker_path stop -t 10 $config
-      $docker_path rm $config
-      exit 0
+      exec $docker_path rm $config
       ;;
 esac
 
