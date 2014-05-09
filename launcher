@@ -10,8 +10,6 @@ docker_min_version='0.9.1'
 docker_rec_version='0.11.0'
 
 config_file=containers/"$config".yml
-cidfile=cids/"$config".cid
-cidbootstrap=cids/"$config"_boostrap.cid
 local_discourse=local_discourse
 image=samsaffron/discourse:0.2.0
 docker_path=`which docker.io || which docker`
@@ -222,57 +220,23 @@ run_mailtest(){
 }
 
 run_stop(){
-  if [ ! -e $cidfile ]
-     then
-       echo "No cid found"
-       exit 1
-     else
-       $docker_path stop -t 10 `cat $cidfile`
-  fi
+   $docker_path stop -t 10 $config
 }
 
 run_start(){
-
-  if [ ! -e $cidfile ]
+  if $docker_path inspect $config &> /dev/null
      then
-       echo "No cid found, creating a new container"
+       $docker_path start $config
+     else
+       echo "Creating a new container..."
        ports=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e \
               "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
 
        set_volumes
 
-       existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
-       if [ ! -z $existing ]
-       then
-         echo "Found an existing container by its name, recovering cidfile, please rerun"
-         echo $existing > $cidfile
-         exit 1
-       fi
-
-       $docker_path run -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
+       $docker_path run -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports \
                   -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
 
-       exit 0
-     else
-       cid=`cat $cidfile`
-
-       if [ -z $cid ]
-       then
-         echo "Detected empty cid file, deleting, please re-run"
-         rm $cidfile
-         exit 1
-       fi
-
-       found=`$docker_path ps -q -a --no-trunc | grep $cid`
-       if [ -z $found ]
-       then
-         echo "Invalid cid file, deleting, please re-run"
-         rm $cidfile
-         exit 1
-       fi
-
-       echo "cid found, ensuring container is started"
-       $docker_path start `cat $cidfile`
        exit 0
   fi
 
@@ -299,8 +263,6 @@ run_bootstrap(){
 
   set_volumes
 
-  rm -f $cidbootstrap
-
   run_command="cd /pups &&"
   if [[ ! "false" =  $update_pups ]]; then
     run_command="$run_command git pull &&"
@@ -311,16 +273,14 @@ run_bootstrap(){
 
   env=("${env[@]}" "-e" "SSH_PUB_KEY=$ssh_pub_key")
 
-  (exec echo "$input" | $docker_path run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+  (exec echo "$input" | $docker_path run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --name $config-bootstrap -i -a stdin -a stdout -a stderr $volumes $image \
      /bin/bash -c "$run_command") \
-     || ($docker_path rm `cat $cidbootstrap` && rm $cidbootstrap)
-
-  [ ! -e $cidbootstrap ] && echo "FAILED TO BOOTSTRAP" && exit 1
+     || ($docker_path rm $config-bootstrap && echo "FAILED TO BOOTSTRAP" && exit 1)
 
   sleep 5
 
-  $docker_path commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
-  $docker_path rm `cat $cidbootstrap` && rm $cidbootstrap
+  $docker_path commit $config-bootstrap $local_discourse/$config || echo 'FAILED TO COMMIT'
+  $docker_path rm $config-bootstrap
 }
 
 case "$command" in
@@ -336,16 +296,9 @@ case "$command" in
       ;;
 
   ssh)
-      if [ ! -e $cidfile ]
-         then
-           echo "No cid found"
-           exit 1
-         else
-           cid="`cat $cidfile`"
-           address="`$docker_path port $cid 22`"
-           split=(${address//:/ })
-           exec ssh -o StrictHostKeyChecking=no root@${split[0]} -p ${split[1]}
-      fi
+      address="`$docker_path port $config 22`"
+      split=(${address//:/ })
+      exec ssh -o StrictHostKeyChecking=no root@${split[0]} -p ${split[1]}
       ;;
 
   stop)
@@ -354,15 +307,7 @@ case "$command" in
       ;;
 
   logs)
-
-      if [ ! -e $cidfile ]
-         then
-           echo "No cid found"
-           exit 1
-         else
-           $docker_path logs `cat $cidfile`
-           exit 0
-      fi
+      exec $docker_path logs $config
       ;;
 
   restart)
@@ -377,18 +322,12 @@ case "$command" in
       ;;
 
   rebuild)
-      if [ -e $cidfile ]
-        then
-          echo "Stopping old container"
-          $docker_path stop -t 10 `cat $cidfile`
-      fi
+      echo "Stopping old container"
+      $docker_path stop -t 10 $config
 
       run_bootstrap
 
-      if [ -e $cidfile ]
-        then
-          $docker_path rm `cat $cidfile` && rm $cidfile
-      fi
+      $docker_path rm $config
 
       run_start
       exit 0
@@ -396,16 +335,10 @@ case "$command" in
 
 
   destroy)
-      if [ -e $cidfile ]
-        then
-          echo "destroying container $cidfile"
-          $docker_path stop -t 10 `cat $cidfile`
-          $docker_path rm `cat $cidfile` && rm $cidfile
-          exit 0
-        else
-          echo "nothing to destroy cidfile does not exist"
-          exit 1
-      fi
+      echo "destroying container $config"
+      $docker_path stop -t 10 $config
+      $docker_path rm $config
+      exit 0
       ;;
 esac
 
