@@ -239,7 +239,6 @@ run_start(){
        ports=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e \
               "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
 
-       set_template_info
        set_volumes
 
        existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
@@ -250,7 +249,7 @@ run_start(){
          exit 1
        fi
 
-       $docker_path run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
+       $docker_path run -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
                   -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
 
        exit 0
