@@ -117,6 +117,21 @@ volumes:
 
 Expose a directory inside the host inside the container.
 
+
+#### ssh:
+
+In order to ssh into the container instance, you need to provide root's public key on host. You can get the root's public key using `sudo cat /root/.ssh/id_rsa.pub`. Then add a new entry into `app.yml` under `params` to specify the key.
+
+    ssh_key: ssh-rsa ROOT_PUBLIC_KEY_HERE
+
+If you don't have a key there, you could generate one using `ssh-keygen`
+
+    sudo su     # switch to root
+    cd ~
+    ssh-keygen  # defaults are fine. 
+    exit        # return to your own account
+
+
 ### Upgrading Discourse
 
 The Docker setup gives you multiple upgrade options:
@@ -150,7 +165,8 @@ For a Discourse instance to function properly Email must be set up. Use the `SMT
 
 ### Troubleshooting
 
-You can ssh into your container using `./launcher ssh my_container`, we will automatically set up ssh access during bootstrap.
+You can ssh into your container using `./launcher ssh my_container`, we will automatically set up ssh access during bootstrap. 
+
 
 ### Security
 
