@@ -7,7 +7,7 @@ opt=$3
 cd "$(dirname "$0")"
 
 docker_min_version='0.9.1'
-docker_rec_version='0.11.0'
+docker_rec_version='0.11.1'
 
 config_file=containers/"$config".yml
 cidfile=cids/"$config".cid
