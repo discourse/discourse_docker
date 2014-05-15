@@ -13,7 +13,7 @@ config_file=containers/"$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
 local_discourse=local_discourse
-image=samsaffron/discourse:0.2.0
+image=samsaffron/discourse:0.2.1
 docker_path=`which docker.io || which docker`
 
 docker_ip=`/sbin/ifconfig | \
@@ -72,15 +72,12 @@ prereqs() {
     exit 1
   fi
 
-  # 2. running aufs
+  # 2. running aufs 
   test=`$docker_path info 2> /dev/null | grep 'Driver: aufs'`
   if [[ "$test" =~ "aufs" ]] ; then : ; else
-    echo "Your Docker installation is not using aufs"
-    echo "Device mapper and other experimental drivers are unstable"
-    echo
-    echo "Please ensure your kernel is running linux extras and aufs"
-    echo "Please follow the installation guide for Docker here: http://docs.docker.io/en/latest/installation/ubuntulinux/"
-    exit 1
+    echo "Your Docker installation is not using aufs, in the past we have had issues with it"
+    echo "If you are unable to bootstrap your image (or stop it) please report the issue at:"
+    echo "https://meta.discourse.org/t/discourse-docker-installation-without-aufs/15639"
   fi
 
   # 3. running recommended docker version

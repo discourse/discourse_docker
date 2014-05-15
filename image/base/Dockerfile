@@ -39,7 +39,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p451 /usr/local &&\
+    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p481 /usr/local &&\
     gem update --system &&\
     gem install bundler &&\
     cd / && git clone https://github.com/SamSaffron/pups.git &&\
