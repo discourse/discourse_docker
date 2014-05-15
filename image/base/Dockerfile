@@ -3,7 +3,7 @@
 # Official repo only has a ppa for postgresql 9.3 at the moment (14/3/2014)
 # When new LTS ships we can upgrade
 
-# VERSION 0.2.0
+# VERSION 0.2.2
 FROM ubuntu:12.04
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
@@ -48,6 +48,11 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
       tar -xvjf jemalloc-3.4.1.tar.bz2 && cd jemalloc-3.4.1 && ./configure && make &&\
       mv lib/libjemalloc.so.1 /usr/lib && cd / && rm -rf /jemalloc &&\
     apt-get -y install runit monit socat &&\
+    mkdir -p /etc/runit/1.d &&\
     apt-get clean &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US
+
+ADD runit-1 /etc/runit/1
+ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
+ADD runit-2 /etc/runit/2
