@@ -37,8 +37,14 @@ def do_tls(conn, sslv):
     try:
         # Creating a context with the purpose of server authentication implies verifying the certificate
         if not hasattr(ssl,'create_default_context'):
-            # ssl.create_default_context is in Pyton 3.4+
-            print_warn('WARNING: cannot verify server certificate')
+            # ssl.create_default_context is in Python 3.4+
+            print_warn('WARNING: cannot attempt verification of server certificate:')
+            print_warn(' (need Python 3.4+ to attempt verification)')
+            # Damn you, openssl. Why don't you support IPv6?
+            if conn.sock.family == socket.AddressFamily.AF_INET:
+                print_warn(' You can verify the certificate manually by running:')
+                print_warn(' echo quit | openssl s_client -CAfile /etc/ssl/certs/ca-certificates.crt \\')
+                print_warn('   -starttls smtp -connect {}:{}'.format(*conn.sock.getpeername()[0:2]))
             return conn.starttls()
         sslcontext=ssl.create_default_context(purpose=ssl.Purpose.SERVER_AUTH)
         # The None below looks like might be a typo but it's not - it represents the ActiveRecord default (to verify)
@@ -110,6 +116,11 @@ if destemail.split('@',1)[1] in smtp_addr:
 # Outbound port smtp?
 if smtp_port == 25 or smtp_port is None:
     print_warn('WARNING: many networks block outbound port 25 - consider an alternative (587?)')
+
+# Outbound port smtps?
+if smtp_port == 465:
+    print_warn("WARNING: I can't yet handle testing port 465.")
+    print_warn(" It's probably wrong though - most servers use 587 or 25 for submission.")
 
 # Outbound port submission?
 if smtp_port == 587:
