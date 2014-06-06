@@ -185,6 +185,9 @@ set_template_info() {
        yml.strip!
        begin
          env.merge!(YAML.load(yml)['env'] || {})
+       rescue Psych::SyntaxError => e
+        puts e
+        puts "*ERROR."
        rescue => e
         puts yml
         p e
@@ -196,12 +199,20 @@ RUBY
     raw=`exec echo "$input" | $docker_path run --rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
 
     env=()
+    ok=1
     while read i; do
-      if [ -n "$i" ]; then
+      if [ "$i" == "*ERROR." ]; then
+        ok=0
+      elif [ -n "$i" ]; then
         env[${#env[@]}]=$i
       fi
     done <<< "$raw"
 
+    if [ "$ok" -ne 1 ]; then
+      echo "${env[@]}"
+      echo "YAML syntax error. Please check your configuration files."
+      exit 1
+    fi
     echo "Calculated ENV: ${env[@]}"
 }
 
