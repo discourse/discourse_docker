@@ -84,8 +84,10 @@ prereqs() {
   test=($($docker_path --version))  # Get docker version string
   test=${test[2]//,/}  # Get version alone and strip comma if exists
 
+  [[ "$test" =~ "0.12.0" ]] && echo "You are running a broken version of Docker, please upgrade ASAP. See: https://meta.discourse.org/t/the-installation-stopped-in-the-middle/16311/ for more details." && exit 1
+
   # At least minimum version
-  if compare_version "${socker_min_version}" "${test}"; then
+  if compare_version "${docker_min_version}" "${test}"; then
     echo "ERROR: Docker version ${test} not supported, please upgrade to at least ${docker_min_version}, or recommended ${docker_rec_version}"
     exit 1
   fi
