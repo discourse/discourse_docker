@@ -9,6 +9,12 @@ env:
 
 run:
 
+  - replace:
+      filename: /etc/pam.d/sshd
+      from: "session    required     pam_loginuid.so"
+      to: ""
+
+
   - file:
      path: /etc/service/sshd/run
      chmod: "+x"
@@ -27,7 +33,6 @@ run:
         - chmod 640 /root/.ssh/authorized_keys
         - rm /etc/update-motd.d/00-header
         - rm /etc/update-motd.d/10-help-text
-        - rm /etc/update-motd.d/99-footer
         - rm /etc/legal
   - file:
      path: /etc/update-motd.d/00-discourse

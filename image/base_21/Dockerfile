@@ -1,10 +1,8 @@
-# DOCKER-VERSION 0.6.7 : samsaffron/discourse_base
-
 # Official repo only has a ppa for postgresql 9.3 at the moment (14/3/2014)
 # When new LTS ships we can upgrade
 
 # VERSION 0.2.0
-FROM ubuntu:12.04
+FROM ubuntu:14.04
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
@@ -12,7 +10,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get -y install fping &&\
     sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy || true" &&\
     apt-get -y update &&\
-    apt-get -y install python-software-properties &&\
+    apt-get -y install software-properties-common &&\
     add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe" &&\
     add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-updates main universe" &&\
     apt-get -y update &&\
@@ -21,7 +19,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     add-apt-repository -y ppa:rwky/redis &&\
     add-apt-repository -y ppa:nginx/stable &&\
     apt-get install -y curl && curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add - &&\
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ precise-pgdg main" | \
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" | \
     tee /etc/apt/sources.list.d/postgres.list &&\
     apt-get -y update &&\
     apt-get -y install build-essential git curl wget \
@@ -56,4 +54,9 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get -y install runit monit socat &&\
     apt-get clean &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
-    locale-gen en_US
+    locale-gen en_US &&\
+    mkdir -p /etc/runit/1.d
+
+ADD runit-1 /etc/runit/1
+ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
+ADD runit-2 /etc/runit/2
