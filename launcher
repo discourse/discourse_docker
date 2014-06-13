@@ -230,6 +230,8 @@ RUBY
 if [ ! -e $config_file ]
   then
     echo "Config file was not found, ensure $config_file exists"
+    echo ""
+    echo "Available configs ( `cd containers && ls -dm *.yml | tr -s '\n' ' ' | awk '{ gsub(/\.yml/, ""); print }'`)"
     exit 1
 fi
 
