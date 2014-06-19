@@ -13,4 +13,5 @@ RUN cd opt/vim-setup && git submodule update --init
 RUN ln -s /opt/vim-setup/vimrc /etc/vim/vimrc.local
 RUN ln -s /opt/vim-setup/vimfiles/bundle /etc/vim/bundle
 RUN apt-get -y install ctags
-RUN apt-get -y install thesilversearcher-ag
+RUN apt-get -y install silversearcher-ag
+RUN cd /var/www/discourse && rm -fr .bundle && sudo -u discourse bundle install --standalone
