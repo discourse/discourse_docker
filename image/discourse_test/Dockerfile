@@ -16,6 +16,10 @@ RUN cd /var/www/discourse &&\
       sudo -u discourse bundle install --standalone &&\
       chown -R discourse /var/run/postgresql
 
+# RUN cd /var/www/discourse &&\
+#      sudo -u discourse git pull &&\
+#      sudo -u discourse bundle install --standalone
+
 WORKDIR /var/www/discourse
 ENV LANG en_US.UTF-8
-ENTRYPOINT sudo -E -u discourse bundle exec rake docker:test
+ENTRYPOINT sudo -E -u discourse ruby script/docker_test.rb
