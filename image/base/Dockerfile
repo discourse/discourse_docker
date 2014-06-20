@@ -49,7 +49,12 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     mkdir -p /etc/runit/1.d &&\
     apt-get clean &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
-    locale-gen en_US
+    locale-gen en_US &&
+    wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
+    tar -xjf phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
+    rm phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
+    cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
+    rm -fr phantomjs-1.9.7-linux-x86_64
 
 ADD runit-1 /etc/runit/1
 ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
