@@ -30,6 +30,7 @@ usage () {
   echo "    stop:       Stop a running container"
   echo "    restart:    Restart a container"
   echo "    destroy:    Stop and remove a container"
+  echo "    enter:      Use nsenter to enter a container"
   echo "    ssh:        Start a bash shell in a running container"
   echo "    logs:       Docker logs for container"
   echo "    mailtest:   Test the mail settings in a container"
@@ -358,6 +359,35 @@ case "$command" in
   mailtest)
       run_mailtest
       exit 0
+      ;;
+
+  enter)
+
+      if [ ! -e $cidfile ]
+         then
+           echo "No cid found"
+           exit 1
+      fi
+
+      if [ ! $UID -eq 0 ] ;
+        then
+        echo "enter command must run as root, will attempt to sudo"
+        echo
+      fi
+
+      if [ ! -e bin/nsenter ]
+        then
+          echo "Downloading nsenter"
+          $docker_path pull samsaffron/nsenter
+          ($docker_path run --rm samsaffron/nsenter cat /nsenter > bin/nsenter1) || exit 1
+          cp bin/nsenter1 bin/nsenter
+          chmod +x bin/nsenter
+      fi
+
+      PID=$($docker_path inspect --format {{.State.Pid}} `cat $cidfile`)
+      SHELL=/bin/bash sudo -E bin/nsenter --target $PID --mount --uts --ipc --net --pid
+
+      exit 0;
       ;;
 
   ssh)

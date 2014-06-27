@@ -2,3 +2,5 @@ shared/*
 *.swp
 containers/*
 cids/*
+bin/*
+image/nsenter/nsenter
