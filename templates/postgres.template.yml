@@ -102,7 +102,7 @@ run:
   - exec:
       cmd:
         - chown -R root /var/lib/postgresql/9.3/main
-        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -u postgres /usr/lib/postgresql/9.3/bin/initdb -D /shared/postgres_data || exit 0"
+        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/9.3/bin/initdb -D /shared/postgres_data || exit 0"
         - chown -R postgres:postgres /shared/postgres_data
         - chown -R postgres:postgres /var/run/postgresql
 

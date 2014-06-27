@@ -11,6 +11,10 @@ expose:
   - "6379:6379"
   - "2221:22"
 
+env:
+  # ensure locale exists in container, you may need to install it
+  LANG: en_US.UTF-8
+
 # amend SOME_SECRET to a password for the discourse user
 hooks:
   after_postgres:

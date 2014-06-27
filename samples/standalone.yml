@@ -23,6 +23,7 @@ params:
   version: HEAD
 
 env:
+  LANG: en_US.UTF-8
   ## How many concurrent web requests are supported?
   ## With 2GB we recommend 3-4 workers, with 1GB only 2
   # UNICORN_WORKERS: 3

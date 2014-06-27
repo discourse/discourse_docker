@@ -2,6 +2,9 @@ templates:
   - "templates/redis.template.yml"
   - "templates/sshd.template.yml"
 
+env:
+  LANG: en_US.UTF-8
+
 expose:
   - "6379:6379"
   - "2221:22"

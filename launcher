@@ -182,7 +182,8 @@ set_template_info() {
     require 'yaml'
 
     input=STDIN.readlines.join
-    env = {}
+    # default to UTF-8 for the dbs sake
+    env = {'LANG' => 'en_US.UTF-8'}
     input.split('_FILE_SEPERATOR_').each do |yml|
        yml.strip!
        begin
