@@ -13,6 +13,11 @@ RUN useradd discourse -s /bin/bash -m -U &&\
     cd /var/www/discourse/vendor/bundle &&\
        find . -name tmp -type d | xargs rm -rf && cd /
 
+RUN wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
+      tar -xjf phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
+      rm phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
+      cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
+      rm -fr phantomjs-1.9.7-linux-x86_64
 
 # For a smaller but less flexible image:
 #RUN apt-get -y autoremove build-essential gcc gcc-4.7 .+-dev
