@@ -1,7 +1,7 @@
 ##
 ## After making changes to this file, you MUST rebuild for any changes
 ## to take effect in your live Discourse instance:
-## 
+##
 ## /var/docker/launcher rebuild app
 ##
 
@@ -20,7 +20,7 @@ expose:
 
 params:
   ## Which Git revision should this container use?
-  version: HEAD
+  version: tests-passed
 
 env:
   LANG: en_US.UTF-8
