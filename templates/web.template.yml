@@ -64,9 +64,9 @@ run:
       cmd:
         - git reset --hard
         - git clean -f
-        - git branch $version || echo branch exists
+        - git pull
+        - git fetch origin $version
         - git checkout $version
-        - git pull origin $version
         - mkdir -p tmp/pids
         - mkdir -p tmp/sockets
         - mkdir -p /shared/log/rails

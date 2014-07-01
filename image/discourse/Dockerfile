@@ -1,3 +1,4 @@
+# Current version 0.2.5
 FROM samsaffron/discourse_base:0.2.3
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
@@ -5,15 +6,17 @@ MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 # Discourse specific bits
 RUN useradd discourse -s /bin/bash -m -U &&\
     mkdir /var/www && cd /var/www &&\
-     git clone --depth 1 https://github.com/discourse/discourse.git &&\
+     git clone https://github.com/discourse/discourse.git &&\
+     cd discourse &&\
+     git remote set-branches origin tests-passed &&\
+     cd .. &&\
      chown -R discourse:discourse /var/www/discourse &&\
     cd /var/www/discourse &&\
      sudo -u discourse RAILS4=1 bundle install --deployment \
          --without test --without development &&\
     cd /var/www/discourse/vendor/bundle &&\
-       find . -name tmp -type d | xargs rm -rf && cd /
-
-RUN wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
+       find . -name tmp -type d | xargs rm -rf && cd / &&\
+      wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
       tar -xjf phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
       rm phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
       cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
