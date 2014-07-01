@@ -9,8 +9,9 @@ expose:
   - "80:80"
   - "2222:22"
 
-params:
-  version: HEAD
+# tests-passed is default
+#params:
+#  version: tests-passed
 
 # developer emails allow you to fast track account creation on the site
 env:

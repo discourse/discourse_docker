@@ -15,7 +15,7 @@ env:
 
 params:
   # SSH key is required for remote access into the container
-  version: HEAD
+  version: tests-passed
 
   home: /var/www/discourse
 
