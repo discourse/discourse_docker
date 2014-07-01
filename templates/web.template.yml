@@ -64,7 +64,7 @@ run:
       cmd:
         - git reset --hard
         - git clean -f
-        - git pull
+        - git pull origin $version
         - git checkout $version
         - mkdir -p tmp/pids
         - mkdir -p tmp/sockets
