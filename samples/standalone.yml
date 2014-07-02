@@ -41,6 +41,10 @@ env:
   # DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
   # DISCOURSE_SMTP_PASSWORD: p@ssword               # (optional)
   ##
+  ## Uncomment this to disable SMTP certificate validation
+  ## Only use in a trusted network!
+  # DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: 'none'
+  ##
   ## the origin pull CDN address for this Discourse instance
   # DISCOURSE_CDN_URL: //discourse-cdn.example.com
 

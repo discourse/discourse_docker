@@ -30,6 +30,10 @@ env:
   # DISCOURSE_SMTP_USER_NAME: user@example.com
   # DISCOURSE_SMTP_PASSWORD: p@ssword
 
+  ## Uncomment this to disable SMTP certificate validation
+  ## Only use in a trusted network!
+  # DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: 'none'
+
 volumes:
   - volume:
         host: /var/docker/shared
