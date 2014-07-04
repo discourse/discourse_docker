@@ -51,10 +51,16 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US &&
     wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
-    tar -xjf phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
-    rm phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
-    cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
-    rm -fr phantomjs-1.9.7-linux-x86_64
+      tar -xjf phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
+      rm phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
+      cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
+      rm -fr phantomjs-1.9.7-linux-x86_64 &&\
+    wget http://static.jonof.id.au/dl/kenutils/pngout-20130221-linux.tar.gz &&\
+      tar -xvf pngout-20130221-linux.tar.gz &&\
+      rm pngout-20130221-linux.tar.gz &&\
+      cp pngout-20130221-linux/x86_64/pngout /bin/pngout &&\
+      rm -rf pngout-20130221-linux
+
 
 ADD runit-1 /etc/runit/1
 ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
