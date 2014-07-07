@@ -18,6 +18,7 @@ params:
   version: tests-passed
 
   home: /var/www/discourse
+  upload_size: 2m
 
 run:
   - file:
@@ -103,6 +104,11 @@ run:
       filename: "/etc/nginx/conf.d/discourse.conf"
       from: /server_name.+$/
       to: server_name _ ;
+
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /client_max_body_size.+$/
+      to: client_max_body_size $upload_size ;
 
   - exec:
       cmd: echo "done configuring web"
