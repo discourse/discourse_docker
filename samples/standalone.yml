@@ -27,7 +27,7 @@ env:
   LANG: en_US.UTF-8
   ## How many concurrent web requests are supported?
   ## With 2GB we recommend 3-4 workers, with 1GB only 2
-  # UNICORN_WORKERS: 3
+  #UNICORN_WORKERS: 3
   ##
   ## List of comma delimited emails that will be made admin on signup
   DISCOURSE_DEVELOPER_EMAILS: 'my-email-address@example.com'
@@ -37,12 +37,12 @@ env:
   ##
   ## The mailserver this Discourse instance will use
   DISCOURSE_SMTP_ADDRESS: smtp.example.com          # (mandatory)
-  # DISCOURSE_SMTP_PORT: 587                        # (optional)
-  # DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
-  # DISCOURSE_SMTP_PASSWORD: p@ssword               # (optional)
+  #DISCOURSE_SMTP_PORT: 587                        # (optional)
+  #DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
+  #DISCOURSE_SMTP_PASSWORD: p@ssword               # (optional)
   ##
   ## the origin pull CDN address for this Discourse instance
-  # DISCOURSE_CDN_URL: //discourse-cdn.example.com
+  #DISCOURSE_CDN_URL: //discourse-cdn.example.com
 
 ## These containers are stateless, all data is stored in /shared
 volumes:
