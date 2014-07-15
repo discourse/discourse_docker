@@ -87,6 +87,7 @@ run:
       cmd:
         - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
         - "rm /etc/nginx/sites-enabled/default"
+        - "mkdir -p /var/nginx/cache"
 
   - replace:
       filename: /etc/nginx/nginx.conf
