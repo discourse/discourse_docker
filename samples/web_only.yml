@@ -9,9 +9,14 @@ expose:
   - "80:80"
   - "2222:22"
 
-# tests-passed is default
-#params:
-#  version: tests-passed
+params:
+  ## Which Git revision should this container use?
+  # tests-passed is default
+  #version: tests-passed
+
+  ## Maximum file upload size
+  # This must be kept in sync with the max image/attachment size settings in Discourse.
+  upload_size: 3m
 
 # developer emails allow you to fast track account creation on the site
 env:
@@ -20,6 +25,7 @@ env:
 
   DISCOURSE_DEVELOPER_EMAILS: ''
   DISCOURSE_DB_SOCKET: ''
+  # IMPORTANT: Make sure to set this both here and in the data container too!
   DISCOURSE_DB_PASSWORD: SOME_SECRET
   DISCOURSE_DB_HOST: YOUR_IP_ADDRESS
   DISCOURSE_HOSTNAME: 'www.example.com'
