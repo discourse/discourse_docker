@@ -164,3 +164,7 @@ installs you can ensure they are in sync by looking at `/etc/passwd` and
 
 - [Setting up SSL with Discourse Docker](https://meta.discourse.org/t/allowing-ssl-for-your-discourse-docker-setup/13847)
 - [Multisite configuration with Docker](https://meta.discourse.org/t/multisite-configuration-with-docker/14084)
+
+License
+===
+MIT
