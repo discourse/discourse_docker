@@ -18,10 +18,14 @@ expose:
   - "80:80"   # fwd host port 80   to container port 80 (http)
   - "2222:22" # fwd host port 2222 to container port 22 (ssh)
 
-#params:
+params:
   ## Which Git revision should this container use?
   # tests-passed is default
-  # version: tests-passed
+  #version: tests-passed
+
+  ## Maximum file upload size
+  # This must be kept in sync with the max image/attachment size settings in Discourse.
+  upload_size: 3m
 
 env:
   LANG: en_US.UTF-8
