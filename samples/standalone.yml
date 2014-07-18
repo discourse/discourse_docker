@@ -64,6 +64,10 @@ hooks:
 run:
   - exec: echo "Beginning of custom commands"
 
+  ## If you want to set the 'From' email address for your first registration, uncomment and change:
+  #- exec: rails r "SiteSetting.notification_email='info@unconfigured.discourse.org'"
+  ## After getting the first signup email, re-comment the line. It only needs to run once.
+
   ## If you want to configure password login for root, uncomment and change:
   #- exec: apt-get -y install whois # for mkpasswd
   ## Use only one of the following lines:
