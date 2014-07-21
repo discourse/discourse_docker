@@ -18,7 +18,7 @@ params:
   version: tests-passed
 
   home: /var/www/discourse
-  upload_size: 2m
+  upload_size: 3m
 
 run:
   - file:
