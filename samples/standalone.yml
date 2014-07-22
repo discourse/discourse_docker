@@ -2,7 +2,7 @@
 ## After making changes to this file, you MUST rebuild for any changes
 ## to take effect in your live Discourse instance:
 ## 
-## /var/docker/launcher rebuild app
+## ./var/docker/launcher rebuild app
 ##
 
 ## this is the all-in-one, standalone Discourse Docker container template
@@ -19,9 +19,8 @@ expose:
   - "2222:22" # fwd host port 2222 to container port 22 (ssh)
 
 #params:
-  ## Which Git revision should this container use?
-  # tests-passed is default
-  # version: tests-passed
+  ## Which Git revision should this container use? (default: tests-passed)
+  #version: tests-passed
 
 env:
   LANG: en_US.UTF-8
@@ -29,17 +28,18 @@ env:
   ## With 2GB we recommend 3-4 workers, with 1GB only 2
   #UNICORN_WORKERS: 3
   ##
-  ## List of comma delimited emails that will be made admin on signup
-  DISCOURSE_DEVELOPER_EMAILS: 'my-email-address@example.com'
+  ## List of comma delimited emails that will be made admin and developer
+  ## on initial signup example 'user1@example.com, user2@example.com'
+  DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'
   ##
   ## The domain name this Discourse instance will respond to
   DISCOURSE_HOSTNAME: 'discourse.example.com'
   ##
   ## The mailserver this Discourse instance will use
-  DISCOURSE_SMTP_ADDRESS: smtp.example.com          # (mandatory)
+  DISCOURSE_SMTP_ADDRESS: smtp.example.com         # (mandatory)
   #DISCOURSE_SMTP_PORT: 587                        # (optional)
   #DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
-  #DISCOURSE_SMTP_PASSWORD: p@ssword               # (optional)
+  #DISCOURSE_SMTP_PASSWORD: pa$$word               # (optional)
   ##
   ## the origin pull CDN address for this Discourse instance
   #DISCOURSE_CDN_URL: //discourse-cdn.example.com
