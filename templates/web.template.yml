@@ -57,6 +57,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
+        mkdir -p /var/log/nginx
         exec /usr/sbin/nginx
 
   - exec:
