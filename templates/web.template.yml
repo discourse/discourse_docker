@@ -49,6 +49,7 @@ run:
         # postgres
         sv start copy_env || exit 1
         cd $home
+        chown -R discourse:www-data /shared/log/rails
         exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
   - file:
@@ -57,6 +58,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
+        mkdir -p /var/log/nginx
         exec /usr/sbin/nginx
 
   - exec:
