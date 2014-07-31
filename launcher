@@ -432,8 +432,10 @@ case "$command" in
       ;;
 
   rebuild)
-      echo "Updating discourse docker"
-      git pull || (echo 'failed to update' && exit 1)
+      if [ "$(git symbolic-ref --short HEAD)" == "master" ]; then
+        echo "Updating discourse docker"
+        git pull || (echo 'failed to update' && exit 1)
+      fi
       if [ -e $cidfile ]
         then
           echo "Stopping old container"
