@@ -8,6 +8,7 @@
 ## this is the all-in-one, standalone Discourse Docker container template
 templates:
   - "templates/cron.template.yml"
+  - "templates/syslog.template.yml"
   - "templates/postgres.template.yml"
   - "templates/redis.template.yml"
   - "templates/sshd.template.yml"
