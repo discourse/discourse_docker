@@ -28,16 +28,12 @@ run:
         #!/bin/bash
         env > ~/boot_env
         conf=/var/www/discourse/config/discourse.conf
-        sudo -u discourse echo > $conf
 
-        for x in `env | /usr/bin/awk -F= '{if($1 ~ /DISCOURSE_/) print $1}'`
-          do
-             c=${x,,}
-             c=${c:10}
-             echo "$c"=${!x} >> $conf
-          done
-        # I dunno there may be a cleaner way to handle this
-        exec sleep 2147483647
+        # find DISCOURSE_ env vars, strip the leader, lowercase the key
+        env | /usr/bin/awk -F= -vOFS== '$1 ~ /^DISCOURSE_/ {print substr(tolower($1),11),$2}' > $conf
+
+        # tell runsv to not restart this when it exits
+        sv once copy_env
 
   - file:
      path: /etc/service/unicorn/run
@@ -47,7 +43,7 @@ run:
         exec 2>&1
         # redis
         # postgres
-        sv start copy_env || exit 1
+        sv check copy_env || exit 1
         cd $home
         chown -R discourse:www-data /shared/log/rails
         exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
