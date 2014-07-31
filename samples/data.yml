@@ -2,6 +2,7 @@
 #
 templates:
   - "templates/cron.template.yml"
+  - "templates/syslog.template.yml"
   - "templates/postgres.template.yml"
   - "templates/redis.template.yml"
   - "templates/sshd.template.yml"
