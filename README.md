@@ -2,9 +2,9 @@
 
 - [Docker](https://www.docker.io/) is an open source project to pack, ship and run any Linux application in a lighter weight, faster container than a traditional virtual machine.
 
-- Docker makes it much easier to deploy [a Discourse forum](https://github.com/discourse/discourse) on your servers and keep it updated. For background, see [Sam's blog post](http://samsaffron.com/archive/2013/11/07/discourse-in-a-docker-container). 
+- Docker makes it much easier to deploy [a Discourse forum](https://github.com/discourse/discourse) on your servers and keep it updated. For background, see [Sam's blog post](http://samsaffron.com/archive/2013/11/07/discourse-in-a-docker-container).
 
-- The templates and base image configure Discourse with the Discourse team's recommended optimal defaults. 
+- The templates and base image configure Discourse with the Discourse team's recommended optimal defaults.
 
 
 ### IMPORTANT: Before You Start
@@ -102,7 +102,7 @@ expose:
   - "127.0.0.1:20080:80"
 ```
 
-Expose port 22 inside the container on port 2222 on ALL local host interfaces. In order to bind to only one interface, you may specify the host's IP address as `([<host_interface>:[host_port]])|(<host_port>):]<container_port>[/udp]` as defined in the [docker port binding documentation](http://docs.docker.io/en/latest/use/port_redirection/) 
+Expose port 22 inside the container on port 2222 on ALL local host interfaces. In order to bind to only one interface, you may specify the host's IP address as `([<host_interface>:[host_port]])|(<host_port>):]<container_port>[/udp]` as defined in the [docker port binding documentation](http://docs.docker.io/en/latest/use/port_redirection/)
 
 
 #### volumes:
@@ -134,7 +134,7 @@ The samples directory contains a standalone template. This template bundles all 
 
 The multiple container configuration setup is far more flexible and robust, however it is also more complicated to set up. A multiple container setup allows you to:
 
-- Minimize downtime when upgrading to new versions of Discourse. You can bootstrap new web processes while your site is running and only after it is built, switch the new image in. 
+- Minimize downtime when upgrading to new versions of Discourse. You can bootstrap new web processes while your site is running and only after it is built, switch the new image in.
 - Scale your forum to multiple servers.
 - Add servers for redundancy.
 - Have some required services (e.g. the database) run on beefier hardware.
@@ -151,6 +151,18 @@ For a Discourse instance to function properly Email must be set up. Use the `SMT
 ### Troubleshooting
 
 You can ssh into your container using `./launcher ssh my_container`, we will automatically set up ssh access during bootstrap.
+
+You can spawn a shell inside your container using `./launcher enter my_container`. This is the most foolproof method if you have local root access.
+
+Behind a proxy network with no direct access to the Internet? Add proxy information to the container environment by adding to the existing `env` block in the `container.yml` file:
+```yaml
+env:
+    …existing info…
+    HTTP_PROXY: http://proxyserver:port/
+    http_proxy: http://proxyserver:port/
+    HTTPS_PROXY: http://proxyserver:port/
+    https_proxy: http://proxyserver:port/
+```
 
 ### Security
 
