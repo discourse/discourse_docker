@@ -150,14 +150,19 @@ For a Discourse instance to function properly Email must be set up. Use the `SMT
 
 ### Troubleshooting
 
+View the container logs: `./launcher logs my_container`
+
 You can ssh into your container using `./launcher ssh my_container`, we will automatically set up ssh access during bootstrap.
 
-You can spawn a shell inside your container using `./launcher enter my_container`. This is the most foolproof method if you have local root access.
+Spawn a shell inside your container using `./launcher enter my_container`. This is the most foolproof method if you have host root access.
+
+You got network errors trying to retrieve code from `github.com` or `rubygems.org`? Try again - sometimes there are temporary interruptions and a retry is all it takes.
 
 Behind a proxy network with no direct access to the Internet? Add proxy information to the container environment by adding to the existing `env` block in the `container.yml` file:
+
 ```yaml
 env:
-    …existing info…
+    …existing entries…
     HTTP_PROXY: http://proxyserver:port/
     http_proxy: http://proxyserver:port/
     HTTPS_PROXY: http://proxyserver:port/
