@@ -41,7 +41,7 @@ def do_tls(conn, sslv):
             print_warn('WARNING: cannot attempt verification of server certificate:')
             print_warn(' (need Python 3.4+ to attempt verification)')
             # Damn you, openssl. Why don't you support IPv6?
-            if conn.sock.family == socket.AddressFamily.AF_INET:
+            if conn.sock.family == socket.AF_INET:
                 print_warn(' You can verify the certificate manually by running:')
                 print_warn(' echo quit | openssl s_client -CAfile /etc/ssl/certs/ca-certificates.crt \\')
                 print_warn('   -starttls smtp -connect {}:{}'.format(*conn.sock.getpeername()[0:2]))
