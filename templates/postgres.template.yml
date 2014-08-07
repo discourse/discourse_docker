@@ -2,7 +2,7 @@ params:
   db_synchronous_commit: "off"
   db_shared_buffers: "256MB"
   db_work_mem: "10MB"
-  db_default_text_search_config: "pb_catelog.english"
+  db_default_text_search_config: "pg_catalog.english"
 
 hooks:
   after_cron:
