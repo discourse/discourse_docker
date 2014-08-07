@@ -1,3 +1,9 @@
+params:
+  db_synchronous_commit: "off"
+  db_shared_buffers: "256MB"
+  db_work_mem: "10MB"
+  db_default_text_search_config: "pb_catelog.english"
+
 hooks:
   after_cron:
     - file:
@@ -107,6 +113,8 @@ run:
         - chown -R postgres:postgres /var/run/postgresql
 
   - exec: /root/upgrade_postgres
+  - exec: rm /root/upgrade_postgres
+
   - replace:
       filename: "/etc/postgresql/9.3/main/postgresql.conf"
       from: "data_directory = '/var/lib/postgresql/9.3/main'"
@@ -117,6 +125,36 @@ run:
       filename: "/etc/postgresql/9.3/main/postgresql.conf"
       from: /#?listen_addresses *=.*/
       to: "listen_addresses = '*'"
+
+  # listen on all interfaces
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?listen_addresses *=.*/
+      to: "listen_addresses = '*'"
+
+  # sync commit off is faster and less spiky, also marginally less safe
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?synchronous_commit *=.*/
+      to: "synchronous_commit = $db_synchronous_commit"
+
+  # default is 128MB which is way too small
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?shared_buffers *=.*/
+      to: "shared_buffers = $db_shared_buffers"
+
+  # default is 1MB which is too small
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?work_mem *=.*/
+      to: "work_mem = $db_work_mem"
+
+  # allow for other
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?default_text_search_config *=.*/
+      to: "default_text_search_config = '$db_default_text_search_config'"
 
   # Necessary to enable backups
   - exec:

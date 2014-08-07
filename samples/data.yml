@@ -16,6 +16,12 @@ env:
   # ensure locale exists in container, you may need to install it
   LANG: en_US.UTF-8
 
+params:
+  db_default_text_search_config: "pb_catelog.english"
+  ##  Set db_shared_buffers to 1/3 of the memory you wish to allocate to postgres
+  ##  on 1GB install set to 128MB on a 4GB instance you may raise to 1GB
+  # db_shared_buffers: "256MB"
+
 # amend SOME_SECRET to a password for the discourse user
 hooks:
   after_postgres:
