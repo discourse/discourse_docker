@@ -53,7 +53,6 @@ volumes:
   - volume:
       host: /var/discourse/shared/standalone
       guest: /shared
-volumes:
   - volume:
       host: /var/discourse/shared/standalone/log/var-log
       guest: /var/log

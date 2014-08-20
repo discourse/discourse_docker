@@ -34,7 +34,6 @@ volumes:
   - volume:
       host: /var/discourse/shared/web-only
       guest: /shared
-volumes:
   - volume:
       host: /var/discourse/shared/web-only/log/var-log
       guest: /var/log
