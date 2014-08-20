@@ -1,18 +1,16 @@
 ##
 ## After making changes to this file, you MUST rebuild for any changes
 ## to take effect in your live Discourse instance:
-## 
+##
 ## ./var/docker/launcher rebuild app
 ##
 
 ## this is the all-in-one, standalone Discourse Docker container template
 templates:
-  - "templates/cron.template.yml"
-  - "templates/syslog.template.yml"
   - "templates/postgres.template.yml"
   - "templates/redis.template.yml"
-  - "templates/sshd.template.yml"
   - "templates/web.template.yml"
+  - "templates/sshd.template.yml"
 
 ## which TCP/IP ports should this container expose?
 expose:
@@ -53,8 +51,12 @@ env:
 ## These containers are stateless, all data is stored in /shared
 volumes:
   - volume:
-      host: /var/docker/shared/standalone
+      host: /var/discourse/shared/standalone
       guest: /shared
+volumes:
+  - volume:
+      host: /var/discourse/shared/standalone/log/var-log
+      guest: /var/log
 
 ## The docker manager plugin allows you to one-click upgrade Discouse
 ## http://discourse.example.com/admin/docker

@@ -11,5 +11,8 @@ expose:
 
 volumes:
   - volume:
-        host: /var/docker/shared
+        host: /var/discourse/shared/redis
         guest: /shared
+  - volume:
+        host: /var/discourse/shared/redis/log/var-log
+        guest: /var/log

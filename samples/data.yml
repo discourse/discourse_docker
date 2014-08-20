@@ -1,8 +1,6 @@
 # A container for all things Data, be sure to set a secret password for discourse account, SOME_SECRET is just an example
 #
 templates:
-  - "templates/cron.template.yml"
-  - "templates/syslog.template.yml"
   - "templates/postgres.template.yml"
   - "templates/redis.template.yml"
   - "templates/sshd.template.yml"
@@ -33,5 +31,8 @@ hooks:
 # be sure to set the host location somewhere sane
 volumes:
   - volume:
-        host: /var/docker/shared
+        host: /var/discourse/shared/data
         guest: /shared
+  - volume:
+        host: /var/discourse/shared/data/log/var-log
+        guest: /var/log

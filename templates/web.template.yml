@@ -69,13 +69,20 @@ run:
         - mkdir -p /shared/uploads
         - mkdir -p /shared/backups
         - touch tmp/.gitkeep
-        - rm -r log
-        - ln -s /shared/log/rails $home/log
+        - touch /shared/log/rails/production.log
+        - touch /shared/log/rails/production_errors.log
+        - touch /shared/log/rails/unicorn.stdout.log
+        - touch /shared/log/rails/unicorn.stderr.log
+        - ln -s /shared/log/rails/production.log $home/log/production.log
+        - ln -s /shared/log/rails/production_errors.log $home/log/production_errors.log
+        - ln -s /shared/log/rails/unicorn.stdout.log $home/log/unicorn.stdout.log
+        - ln -s /shared/log/rails/unicorn.stderr.log $home/log/unicorn.stderr.log
         - ln -s /shared/uploads $home/public/uploads
         - ln -s /shared/backups $home/public/backups
         - chown -R discourse:www-data /shared/log/rails
         - chown -R discourse:www-data /shared/uploads
         - chown -R discourse:www-data /shared/backups
+        - chown -R discourse:www-data $home/log
 
   - exec:
       cmd:
@@ -156,3 +163,19 @@ run:
        echo Use: rails, rake or discourse to execute commands in production
        echo
 
+  - file:
+     path: /etc/logrotate.d/rails
+     contents: |
+        /shared/log/rails/*.log
+        {
+                rotate 14
+                dateext
+                daily
+                missingok
+                notifempty
+                delaycompress
+                compress
+                postrotate
+                sv 1 unicorn
+                endscript
+        }

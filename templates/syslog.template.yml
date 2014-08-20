@@ -1,16 +1,3 @@
 run:
-  - file:
-     path: /etc/service/rsyslog/run
-     chmod: "+x"
-     contents: |
-        #!/bin/bash
-        exec 2>&1
-        cd /
-        exec rsyslogd -n
-
-  - exec: apt-get -y install rsyslog
-  - replace:
-      filename: "/etc/rsyslog.conf"
-      from: "$ModLoad imklog"
-      to: "#$ModLoad imklog"
+  - exec: echo rsyslog template is included in base image, remove
 

@@ -13,7 +13,7 @@ config_file=containers/"$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
 local_discourse=local_discourse
-image=samsaffron/discourse:0.2.5
+image=samsaffron/discourse:1.0.0
 docker_path=`which docker.io || which docker`
 
 docker_ip=`/sbin/ifconfig | \

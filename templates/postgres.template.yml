@@ -5,25 +5,6 @@ params:
   db_default_text_search_config: "pg_catalog.english"
 
 hooks:
-  after_cron:
-    - file:
-       path: /var/lib/postgresql/take-database-backup
-       chown: postgres:postgres
-       chmod: "+x"
-       contents: |
-          #!/bin/bash
-          ID=db-$(date +%F_%T)
-          FILENAME=/shared/postgres_backup/$ID.tar.gz
-          pg_basebackup --format=tar --pgdata=- --xlog --gzip --label=$ID > $FILENAME
-          echo $FILENAME
-
-    - file:
-       path: /var/spool/cron/crontabs/postgres
-       contents: |
-          # m h  dom mon dow   command
-          #MAILTO=?
-          0 */4 * * * /var/lib/postgresql/take-database-backup
-
   before_code:
     - replace:
        filename: /etc/service/unicorn/run
@@ -205,6 +186,24 @@ run:
   - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "alter schema public owner to discourse;"'
   - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists hstore;"'
   - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists pg_trgm;"'
+
+  - file:
+     path: /var/lib/postgresql/take-database-backup
+     chown: postgres:postgres
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        ID=db-$(date +%F_%T)
+        FILENAME=/shared/postgres_backup/$ID.tar.gz
+        pg_basebackup --format=tar --pgdata=- --xlog --gzip --label=$ID > $FILENAME
+        echo $FILENAME
+
+  - file:
+     path: /var/spool/cron/crontabs/postgres
+     contents: |
+        # m h  dom mon dow   command
+        #MAILTO=?
+        0 */4 * * * /var/lib/postgresql/take-database-backup
 
   - exec:
       hook: postgres
