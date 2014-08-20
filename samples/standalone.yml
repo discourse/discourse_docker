@@ -2,7 +2,7 @@
 ## After making changes to this file, you MUST rebuild for any changes
 ## to take effect in your live Discourse instance:
 ##
-## ./var/docker/launcher rebuild app
+## /var/docker/launcher rebuild app
 ##
 
 ## this is the all-in-one, standalone Discourse Docker container template
@@ -18,9 +18,9 @@ expose:
   - "2222:22" # fwd host port 2222 to container port 22 (ssh)
 
 params:
-  db_default_text_search_config: "pb_catelog.english"
-  ##  Set db_shared_buffers to 1/3 of the memory you wish to allocate to postgres
-  ##  on 1GB install set to 128MB on a 4GB instance you may raise to 1GB
+  db_default_text_search_config: "pg_catalog.english"
+  ## Set db_shared_buffers to 1/3 of the memory you wish to allocate to postgres
+  ## on 1GB install set to 128MB on a 4GB instance you may raise to 1GB
   #db_shared_buffers: "256MB"
   #
   ## Which Git revision should this container use? (default: tests-passed)
@@ -28,18 +28,18 @@ params:
 
 env:
   LANG: en_US.UTF-8
-  ## How many concurrent web requests are supported?
+  ## TODO: How many concurrent web requests are supported?
   ## With 2GB we recommend 3-4 workers, with 1GB only 2
   #UNICORN_WORKERS: 3
   ##
-  ## List of comma delimited emails that will be made admin and developer
+  ## TODO: List of comma delimited emails that will be made admin and developer
   ## on initial signup example 'user1@example.com, user2@example.com'
   DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'
   ##
-  ## The domain name this Discourse instance will respond to
+  ## TODO: The domain name this Discourse instance will respond to
   DISCOURSE_HOSTNAME: 'discourse.example.com'
   ##
-  ## The mailserver this Discourse instance will use
+  ## TODO: The mailserver this Discourse instance will use
   DISCOURSE_SMTP_ADDRESS: smtp.example.com         # (mandatory)
   #DISCOURSE_SMTP_PORT: 587                        # (optional)
   #DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
@@ -53,7 +53,6 @@ volumes:
   - volume:
       host: /var/discourse/shared/standalone
       guest: /shared
-volumes:
   - volume:
       host: /var/discourse/shared/standalone/log/var-log
       guest: /var/log

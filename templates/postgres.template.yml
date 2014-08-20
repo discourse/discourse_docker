@@ -13,6 +13,7 @@ hooks:
 
 run:
   # temporary
+  - exec: apt-get update
   - exec: apt-get install -y socat
   - exec: mkdir -p /shared/postgres_run
   - exec: chown postgres:postgres /shared/postgres_run
@@ -28,7 +29,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
-        exec sudo -u postgres /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
+        exec su - postgres -c '/usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main'
   - file:
      path: /root/upgrade_postgres
      chmod: "+x"
@@ -165,27 +166,17 @@ run:
 
   - exec:
       background: true
-      cmd: "sudo -u postgres /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main"
+      cmd: su - postgres -c '/usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main'
 
   # give db a few secs to start up
   - exec: "sleep 5"
 
-  - exec: sudo -u postgres createdb discourse || exit 0
-  - exec:
-      stdin: |
-        create user discourse;
-      cmd: sudo -u postgres psql discourse
-      raise_on_fail: false
-
-  - exec:
-      stdin: |
-        grant all privileges on database discourse to discourse;
-      cmd: sudo -u postgres psql discourse
-      raise_on_fail: false
-
-  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "alter schema public owner to discourse;"'
-  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists hstore;"'
-  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists pg_trgm;"'
+  - exec: su postgres -c 'createdb discourse' || true
+  - exec: su postgres -c 'psql discourse -c "create user discourse;"' || true
+  - exec: su postgres -c 'psql discourse -c "grant all privileges on database discourse to discourse;"' || true
+  - exec: su postgres -c 'psql discourse -c "alter schema public owner to discourse;"'
+  - exec: su postgres -c 'psql discourse -c "create extension if not exists hstore;"'
+  - exec: su postgres -c 'psql discourse -c "create extension if not exists pg_trgm;"'
 
   - file:
      path: /var/lib/postgresql/take-database-backup
@@ -203,7 +194,7 @@ run:
      contents: |
         # m h  dom mon dow   command
         #MAILTO=?
-        0 */4 * * * /var/lib/postgresql/take-database-backup
+        #0 */4 * * * /var/lib/postgresql/take-database-backup
 
   - exec:
       hook: postgres

@@ -42,7 +42,7 @@ run:
         # postgres
         cd $home
         chown -R discourse:www-data /shared/log/rails
-        exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
+        LD_PRELOAD=/usr/lib/libjemalloc.so.1 exec su discourse -c 'bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb'
 
   - file:
      path: /etc/service/nginx/run
@@ -65,24 +65,13 @@ run:
         - git checkout $version
         - mkdir -p tmp/pids
         - mkdir -p tmp/sockets
-        - mkdir -p /shared/log/rails
-        - mkdir -p /shared/uploads
-        - mkdir -p /shared/backups
         - touch tmp/.gitkeep
-        - touch /shared/log/rails/production.log
-        - touch /shared/log/rails/production_errors.log
-        - touch /shared/log/rails/unicorn.stdout.log
-        - touch /shared/log/rails/unicorn.stderr.log
-        - ln -s /shared/log/rails/production.log $home/log/production.log
-        - ln -s /shared/log/rails/production_errors.log $home/log/production_errors.log
-        - ln -s /shared/log/rails/unicorn.stdout.log $home/log/unicorn.stdout.log
-        - ln -s /shared/log/rails/unicorn.stderr.log $home/log/unicorn.stderr.log
-        - ln -s /shared/uploads $home/public/uploads
-        - ln -s /shared/backups $home/public/backups
-        - chown -R discourse:www-data /shared/log/rails
-        - chown -R discourse:www-data /shared/uploads
-        - chown -R discourse:www-data /shared/backups
-        - chown -R discourse:www-data $home/log
+        - mkdir -p                    /shared/log/rails
+        - bash -c "touch              /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log"
+        - bash -c "ln    -s           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log $home/log"
+        - bash -c "mkdir -p           /shared/{uploads,backups}"
+        - bash -c "ln    -s           /shared/{uploads,backups} $home/public"
+        - chown -R discourse:www-data /shared/log/rails /shared/uploads /shared/backups
 
   - exec:
       cmd:
@@ -123,9 +112,9 @@ run:
         # ensure we are on latest bundler
         - gem update bundler
         - chown -R discourse $home
-        - sudo -E -u discourse bundle install --deployment --verbose --without test --without development
-        - sudo -E -u discourse bundle exec rake db:migrate
-        - sudo -E -u discourse bundle exec rake assets:precompile
+        - su discourse -c 'bundle install --deployment --verbose --without test --without development'
+        - su discourse -c 'bundle exec rake db:migrate'
+        - su discourse -c 'bundle exec rake assets:precompile'
 
   - file:
      path: /usr/local/bin/discourse

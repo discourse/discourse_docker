@@ -9,20 +9,19 @@ FROM ubuntu:14.04
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
-    apt-get -y install fping &&\
-    sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy || true" &&\
-    apt-get -y update &&\
+    echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main restricted universe" > /etc/apt/sources.list &&\
+    echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-updates main restricted universe" >> /etc/apt/sources.list &&\
+    echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-security main restricted universe" >> /etc/apt/sources.list &&\
+    apt-get update && apt-get -y install fping &&\
+    sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt-get update || true" &&\
     apt-get -y install software-properties-common &&\
-    add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe" &&\
-    add-apt-repository "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-updates main universe" &&\
-    apt-get -y update &&\
     apt-mark hold initscripts &&\
     apt-get -y upgrade &&\
     add-apt-repository -y ppa:rwky/redis &&\
     add-apt-repository -y ppa:nginx/stable &&\
     apt-get install -y curl && curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add - &&\
     echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" | \
-    tee /etc/apt/sources.list.d/postgres.list &&\
+        tee /etc/apt/sources.list.d/postgres.list &&\
     apt-get -y update &&\
     apt-get -y install build-essential git curl wget \
                        libxslt-dev libcurl4-openssl-dev \
@@ -33,6 +32,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
                        postgresql-contrib-9.3 libpq-dev libreadline-dev \
                        nginx language-pack-en sudo cron \
                        psmisc rsyslog vim &&\
+    sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf &&\
     dpkg-divert --local --rename --add /sbin/initctl &&\
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl" &&\
     apt-get -y install redis-server haproxy openssh-server &&\
@@ -72,5 +72,3 @@ ADD runit-2 /etc/runit/2
 
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
-
-RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
