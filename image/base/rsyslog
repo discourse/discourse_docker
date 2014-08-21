@@ -1,4 +1,6 @@
 #!/bin/bash
 exec 2>&1
 cd /
-exec rsyslogd -f
+chgrp syslog /var/log
+chmod g+w /var/log
+exec rsyslogd -n

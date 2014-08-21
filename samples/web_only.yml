@@ -1,5 +1,5 @@
 # IMPORTANT: SET A SECRET PASSWORD in Postgres for the Discourse User
-# SOME_SECRET in this template
+# TODO: change SOME_SECRET in this template
 
 templates:
   - "templates/sshd.template.yml"
@@ -9,26 +9,38 @@ expose:
   - "80:80"
   - "2222:22"
 
-# tests-passed is default
 params:
-#  version: tests-passed
+  ## Which Git revision should this container use? (default: tests-passed)
+  #version: tests-passed
 
-# developer emails allow you to fast track account creation on the site
 env:
-  # add emails here
   LANG: en_US.UTF-8
+  ## TODO: How many concurrent web requests are supported?
+  ## With 2GB we recommend 3-4 workers, with 1GB only 2
+  #UNICORN_WORKERS: 3
 
-  DISCOURSE_DEVELOPER_EMAILS: ''
+  ## TODO: configure connectivity to the databases
   DISCOURSE_DB_SOCKET: ''
+  #DISCOURSE_DB_USER: discourse
   DISCOURSE_DB_PASSWORD: SOME_SECRET
-  DISCOURSE_DB_HOST: YOUR_IP_ADDRESS
-  DISCOURSE_HOSTNAME: 'www.example.com'
-  DISCOURSE_REDIS_HOST: YOUR_IP_ADDRESS
-  # don't forget to set mail
-  # DISCOURSE_SMTP_ADDRESS: smtp.mandrillapp.com
-  # DISCOURSE_SMTP_PORT: 587
-  # DISCOURSE_SMTP_USER_NAME: user@example.com
-  # DISCOURSE_SMTP_PASSWORD: p@ssword
+  DISCOURSE_DB_HOST: DB_IP_ADDRESS
+  DISCOURSE_REDIS_HOST: REDIS_IP_ADDRESS
+  ##
+  ## TODO: List of comma delimited emails that will be made admin and developer
+  ## on initial signup example 'user1@example.com, user2@example.com'
+  DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'
+  ##
+  ## TODO: The domain name this Discourse instance will respond to
+  DISCOURSE_HOSTNAME: 'discourse.example.com'
+  ##
+  ## TODO: The mailserver this Discourse instance will use
+  DISCOURSE_SMTP_ADDRESS: smtp.example.com         # (mandatory)
+  #DISCOURSE_SMTP_PORT: 587                        # (optional)
+  #DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
+  #DISCOURSE_SMTP_PASSWORD: pa$$word               # (optional)
+  ##
+  ## The CDN address for this Discourse instance (configured to pull)
+  #DISCOURSE_CDN_URL: //discourse-cdn.example.com
 
 volumes:
   - volume:
@@ -38,15 +50,29 @@ volumes:
       host: /var/discourse/shared/web-only/log/var-log
       guest: /var/log
 
-# you may use the docker manager to upgrade and monitor your docker image
-# UI will be visible at http://yoursite.com/admin/docker
+## The docker manager plugin allows you to one-click upgrade Discouse
+## http://discourse.example.com/admin/docker
 hooks:
-# you may import your key using launchpad if needed
-#after_sshd:
-#    - exec: ssh-import-id some-user
   after_code:
     - exec:
         cd: $home/plugins
         cmd:
           - mkdir -p plugins
           - git clone https://github.com/discourse/docker_manager.git
+
+## Remember, this is YAML syntax - you can only have one block with a name
+run:
+  - exec: echo "Beginning of custom commands"
+
+  ## If you want to configure password login for root, uncomment and change:
+  #- exec: apt-get -y install whois # for mkpasswd
+  ## Use only one of the following lines:
+  #- exec: /usr/sbin/usermod -p 'PASSWORD_HASH' root
+  #- exec: /usr/sbin/usermod -p "$(mkpasswd -m sha-256 'RAW_PASSWORD')" root
+
+  ## If you want to authorized additional users, uncomment and change:
+  #- exec: ssh-import-id username
+  #- exec: ssh-import-id anotherusername
+
+  - exec: echo "End of custom commands"
+  - exec: awk -F\# '{print $1;}' ~/.ssh/authorized_keys | awk 'BEGIN { print "Authorized SSH keys for this container:"; } NF>=2 {print $NF;}'
