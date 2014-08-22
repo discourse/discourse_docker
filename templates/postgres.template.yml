@@ -12,9 +12,6 @@ hooks:
        to: sv start postgres || exit 1
 
 run:
-  # temporary
-  - exec: apt-get update
-  - exec: apt-get install -y socat
   - exec: mkdir -p /shared/postgres_run
   - exec: chown postgres:postgres /shared/postgres_run
   - exec: chmod 775 /shared/postgres_run
