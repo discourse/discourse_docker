@@ -2,7 +2,7 @@
 # When new LTS ships we can upgrade
 
 # NAME:     discourse_base
-# VERSION:  1.0.0
+# VERSION:  1.0.1
 
 FROM ubuntu:14.04
 
