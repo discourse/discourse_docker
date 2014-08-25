@@ -2,7 +2,7 @@
 # When new LTS ships we can upgrade
 
 # NAME:     discourse_base
-# VERSION:  1.0.2
+# VERSION:  1.0.3
 
 FROM ubuntu:14.04
 
@@ -71,5 +71,4 @@ ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
 ADD runit-2 /etc/runit/2
 
 ADD cron /etc/service/cron/run
-ADD anacron /etc/service/anacron/run
 ADD rsyslog /etc/service/rsyslog/run
