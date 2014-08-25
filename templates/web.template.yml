@@ -30,7 +30,7 @@ run:
         conf=/var/www/discourse/config/discourse.conf
 
         # find DISCOURSE_ env vars, strip the leader, lowercase the key
-        env | /usr/bin/awk -F= -vOFS== '$1 ~ /^DISCOURSE_/ {print substr(tolower($1),11),$2}' > $conf
+        /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = #{v}" if k =~ /^DISCOURSE_(.*)/}' > $conf
 
   - file:
      path: /etc/service/unicorn/run
