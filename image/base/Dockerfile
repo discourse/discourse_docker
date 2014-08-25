@@ -68,6 +68,7 @@ RUN cd / && git clone https://github.com/SamSaffron/pups.git
 
 ADD runit-1 /etc/runit/1
 ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
+ADD runit-1.d-anacron /etc/runit/1.d/anacron
 ADD runit-2 /etc/runit/2
 
 ADD cron /etc/service/cron/run
