@@ -238,6 +238,17 @@ if [ ! -e $config_file ]
 fi
 
 
+docker_version=($($docker_path --version))
+docker_version=${test[2]//,/}
+
+if compare_version "1.2.0" "$docker_version"; then
+  echo "We recommend you upgrade docker, the version you are running has no restart policies, on reboot your container may not start up"
+  restart_policy=""
+else
+  restart_policy="--restart=always"
+fi
+
+
 run_mailtest(){
   if [ ! -e $config_file ]; then
     echo "Config does not exist: $config_file" >&2
@@ -275,7 +286,7 @@ run_start(){
          exit 1
        fi
 
-       $docker_path run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
+       $docker_path run "$restart_policy" "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
                   -d $volumes $local_discourse/$config /sbin/runit
 
        exit 0
