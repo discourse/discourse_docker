@@ -2,7 +2,7 @@
 # When new LTS ships we can upgrade
 
 # NAME:     discourse_base
-# VERSION:  1.0.1
+# VERSION:  1.0.2
 
 FROM ubuntu:14.04
 
@@ -30,7 +30,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
                        pngcrush imagemagick \
                        postgresql-9.3 postgresql-client-9.3 \
                        postgresql-contrib-9.3 libpq-dev libreadline-dev \
-                       nginx language-pack-en sudo cron \
+                       nginx language-pack-en sudo cron anacron \
                        psmisc rsyslog vim &&\
     sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf &&\
     dpkg-divert --local --rename --add /sbin/initctl &&\
@@ -71,4 +71,5 @@ ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
 ADD runit-2 /etc/runit/2
 
 ADD cron /etc/service/cron/run
+ADD anacron /etc/service/anacron/run
 ADD rsyslog /etc/service/rsyslog/run

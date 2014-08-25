@@ -1,5 +1,5 @@
-# Current version 1.0.1
-FROM samsaffron/discourse_base:1.0.1
+# Current version 1.0.2
+FROM samsaffron/discourse_base:1.0.2
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
