@@ -286,7 +286,12 @@ run_start(){
          exit 1
        fi
 
-       $docker_path run "$restart_policy""${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
+       run="run"
+       if [ -n "${restart_policy}" ]; then
+          run="$run $restart_policy"
+       fi
+
+       $docker_path $run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
                   -d $volumes $local_discourse/$config /sbin/runit
 
        exit 0
