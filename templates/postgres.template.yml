@@ -26,7 +26,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
-        exec su - postgres -c '/usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main'
+        HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
   - file:
      path: /root/upgrade_postgres
      chmod: "+x"

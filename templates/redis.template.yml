@@ -5,7 +5,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
-        exec su - redis -s /bin/bash -c '/usr/bin/redis-server /etc/redis/redis.conf'
+        exec chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
 
   - replace:
       filename: "/etc/redis/redis.conf"
