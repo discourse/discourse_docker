@@ -1,23 +1,10 @@
+params:
+  db_synchronous_commit: "off"
+  db_shared_buffers: "256MB"
+  db_work_mem: "10MB"
+  db_default_text_search_config: "pg_catalog.english"
+
 hooks:
-  after_cron:
-    - file:
-       path: /var/lib/postgresql/take-database-backup
-       chown: postgres:postgres
-       chmod: "+x"
-       contents: |
-          #!/bin/bash
-          ID=db-$(date +%F_%T)
-          FILENAME=/shared/postgres_backup/$ID.tar.gz
-          pg_basebackup --format=tar --pgdata=- --xlog --gzip --label=$ID > $FILENAME
-          echo $FILENAME
-
-    - file:
-       path: /var/spool/cron/crontabs/postgres
-       contents: |
-          # m h  dom mon dow   command
-          #MAILTO=?
-          0 */4 * * * /var/lib/postgresql/take-database-backup
-
   before_code:
     - replace:
        filename: /etc/service/unicorn/run
@@ -25,8 +12,6 @@ hooks:
        to: sv start postgres || exit 1
 
 run:
-  # temporary
-  - exec: apt-get install -y socat
   - exec: mkdir -p /shared/postgres_run
   - exec: chown postgres:postgres /shared/postgres_run
   - exec: chmod 775 /shared/postgres_run
@@ -41,7 +26,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
-        exec sudo -u postgres /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
+        HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
   - file:
      path: /root/upgrade_postgres
      chmod: "+x"
@@ -102,11 +87,13 @@ run:
   - exec:
       cmd:
         - chown -R root /var/lib/postgresql/9.3/main
-        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -u postgres /usr/lib/postgresql/9.3/bin/initdb -D /shared/postgres_data || exit 0"
+        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/9.3/bin/initdb -D /shared/postgres_data || exit 0"
         - chown -R postgres:postgres /shared/postgres_data
         - chown -R postgres:postgres /var/run/postgresql
 
   - exec: /root/upgrade_postgres
+  - exec: rm /root/upgrade_postgres
+
   - replace:
       filename: "/etc/postgresql/9.3/main/postgresql.conf"
       from: "data_directory = '/var/lib/postgresql/9.3/main'"
@@ -117,6 +104,36 @@ run:
       filename: "/etc/postgresql/9.3/main/postgresql.conf"
       from: /#?listen_addresses *=.*/
       to: "listen_addresses = '*'"
+
+  # listen on all interfaces
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?listen_addresses *=.*/
+      to: "listen_addresses = '*'"
+
+  # sync commit off is faster and less spiky, also marginally less safe
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?synchronous_commit *=.*/
+      to: "synchronous_commit = $db_synchronous_commit"
+
+  # default is 128MB which is way too small
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?shared_buffers *=.*/
+      to: "shared_buffers = $db_shared_buffers"
+
+  # default is 1MB which is too small
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?work_mem *=.*/
+      to: "work_mem = $db_work_mem"
+
+  # allow for other
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?default_text_search_config *=.*/
+      to: "default_text_search_config = '$db_default_text_search_config'"
 
   # Necessary to enable backups
   - exec:
@@ -146,27 +163,35 @@ run:
 
   - exec:
       background: true
-      cmd: "sudo -u postgres /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main"
+      cmd: su - postgres -c '/usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main'
 
   # give db a few secs to start up
   - exec: "sleep 5"
 
-  - exec: sudo -u postgres createdb discourse || exit 0
-  - exec:
-      stdin: |
-        create user discourse;
-      cmd: sudo -u postgres psql discourse
-      raise_on_fail: false
+  - exec: su postgres -c 'createdb discourse' || true
+  - exec: su postgres -c 'psql discourse -c "create user discourse;"' || true
+  - exec: su postgres -c 'psql discourse -c "grant all privileges on database discourse to discourse;"' || true
+  - exec: su postgres -c 'psql discourse -c "alter schema public owner to discourse;"'
+  - exec: su postgres -c 'psql discourse -c "create extension if not exists hstore;"'
+  - exec: su postgres -c 'psql discourse -c "create extension if not exists pg_trgm;"'
 
-  - exec:
-      stdin: |
-        grant all privileges on database discourse to discourse;
-      cmd: sudo -u postgres psql discourse
-      raise_on_fail: false
+  - file:
+     path: /var/lib/postgresql/take-database-backup
+     chown: postgres:postgres
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        ID=db-$(date +%F_%T)
+        FILENAME=/shared/postgres_backup/$ID.tar.gz
+        pg_basebackup --format=tar --pgdata=- --xlog --gzip --label=$ID > $FILENAME
+        echo $FILENAME
 
-  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "alter schema public owner to discourse;"'
-  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists hstore;"'
-  - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists pg_trgm;"'
+  - file:
+     path: /var/spool/cron/crontabs/postgres
+     contents: |
+        # m h  dom mon dow   command
+        #MAILTO=?
+        #0 */4 * * * /var/lib/postgresql/take-database-backup
 
   - exec:
       hook: postgres

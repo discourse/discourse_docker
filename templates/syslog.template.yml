@@ -1,0 +1,3 @@
+run:
+  - exec: echo rsyslog template is included in base image, remove
+

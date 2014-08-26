@@ -1,0 +1,21 @@
+params:
+  reqs_per_second: 12
+  burst_per_second: 12
+  reqs_per_minute: 100
+  burst_per_minute: 50
+
+run:
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /server.+{/
+     to: |
+       limit_req_zone $binary_remote_addr zone=flood:10m rate=$reqs_per_secondr/s;
+       limit_req_zone $binary_remote_addr zone=bot:10m rate=$reqs_per_minuter/m;
+       server {
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: "/location @discourse {/"
+     to: |
+       location @discourse {
+         limit_req zone=flood burst=$burst_per_second nodelay;
+         limit_req zone=bot burst=$burst_per_minute nodelay;

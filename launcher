@@ -13,7 +13,7 @@ config_file=containers/"$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
 local_discourse=local_discourse
-image=samsaffron/discourse:0.2.1
+image=samsaffron/discourse:1.0.3
 docker_path=`which docker.io || which docker`
 
 docker_ip=`/sbin/ifconfig | \
@@ -30,6 +30,7 @@ usage () {
   echo "    stop:       Stop a running container"
   echo "    restart:    Restart a container"
   echo "    destroy:    Stop and remove a container"
+  echo "    enter:      Use nsenter to enter a container"
   echo "    ssh:        Start a bash shell in a running container"
   echo "    logs:       Docker logs for container"
   echo "    mailtest:   Test the mail settings in a container"
@@ -84,8 +85,10 @@ prereqs() {
   test=($($docker_path --version))  # Get docker version string
   test=${test[2]//,/}  # Get version alone and strip comma if exists
 
+  [[ "$test" =~ "0.12.0" ]] && echo "You are running a broken version of Docker, please upgrade ASAP. See: https://meta.discourse.org/t/the-installation-stopped-in-the-middle/16311/ for more details." && exit 1
+
   # At least minimum version
-  if compare_version "${socker_min_version}" "${test}"; then
+  if compare_version "${docker_min_version}" "${test}"; then
     echo "ERROR: Docker version ${test} not supported, please upgrade to at least ${docker_min_version}, or recommended ${docker_rec_version}"
     exit 1
   fi
@@ -180,7 +183,8 @@ set_template_info() {
     require 'yaml'
 
     input=STDIN.readlines.join
-    env = {}
+    # default to UTF-8 for the dbs sake
+    env = {'LANG' => 'en_US.UTF-8'}
     input.split('_FILE_SEPERATOR_').each do |yml|
        yml.strip!
        begin
@@ -210,7 +214,7 @@ RUBY
 
     if [ "$ok" -ne 1 ]; then
       echo "${env[@]}"
-      echo "YAML syntax error. Please check your configuration files."
+      echo "YAML syntax error. Please check your /var/docker/containers/*.yml config files."
       exit 1
     fi
     echo "Calculated ENV: ${env[@]}"
@@ -228,7 +232,20 @@ RUBY
 if [ ! -e $config_file ]
   then
     echo "Config file was not found, ensure $config_file exists"
+    echo ""
+    echo "Available configs ( `cd containers && ls -dm *.yml | tr -s '\n' ' ' | awk '{ gsub(/\.yml/, ""); print }'`)"
     exit 1
+fi
+
+
+docker_version=($($docker_path --version))
+docker_version=${test[2]//,/}
+
+if compare_version "1.2.0" "$docker_version"; then
+  echo "We recommend you upgrade docker, the version you are running has no restart policies, on reboot your container may not start up"
+  restart_policy=""
+else
+  restart_policy="--restart=always "
 fi
 
 
@@ -269,8 +286,13 @@ run_start(){
          exit 1
        fi
 
-       $docker_path run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
-                  -d $volumes $local_discourse/$config /usr/bin/runsvdir -P /etc/service
+       run="run"
+       if [ -n "${restart_policy}" ]; then
+          run="$run $restart_policy"
+       fi
+
+       $docker_path $run "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
+                  -d $volumes $local_discourse/$config /sbin/runit
 
        exit 0
      else
@@ -355,6 +377,35 @@ case "$command" in
       exit 0
       ;;
 
+  enter)
+
+      if [ ! -e $cidfile ]
+         then
+           echo "No cid found"
+           exit 1
+      fi
+
+      if [ ! $UID -eq 0 ] ;
+        then
+        echo "enter command must run as root, will attempt to sudo"
+        echo
+      fi
+
+      if [ ! -e bin/nsenter ]
+        then
+          echo "Downloading nsenter"
+          $docker_path pull samsaffron/nsenter
+          ($docker_path run --rm samsaffron/nsenter cat /nsenter > bin/nsenter1) || exit 1
+          cp bin/nsenter1 bin/nsenter
+          chmod +x bin/nsenter
+      fi
+
+      PID=$($docker_path inspect --format {{.State.Pid}} `cat $cidfile`)
+      SHELL=/bin/bash sudo -E bin/nsenter --target $PID --mount --uts --ipc --net --pid
+
+      exit 0;
+      ;;
+
   ssh)
       if [ ! -e $cidfile ]
          then
@@ -397,6 +448,10 @@ case "$command" in
       ;;
 
   rebuild)
+      if [ "$(git symbolic-ref --short HEAD)" == "master" ]; then
+        echo "Updating discourse docker"
+        git pull || (echo 'failed to update' && exit 1)
+      fi
       if [ -e $cidfile ]
         then
           echo "Stopping old container"

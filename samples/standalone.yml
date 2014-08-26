@@ -1,17 +1,22 @@
 ##
 ## After making changes to this file, you MUST rebuild for any changes
 ## to take effect in your live Discourse instance:
-## 
+##
 ## /var/docker/launcher rebuild app
 ##
 
 ## this is the all-in-one, standalone Discourse Docker container template
+
+# You may add rate limiting to by commenting out the ratelimited template.
+# Out of the box it allows 12 reqs a second per ip, and 100 per minute per ip
+# This is configurable by amending the params in this file
+
 templates:
-  - "templates/cron.template.yml"
   - "templates/postgres.template.yml"
   - "templates/redis.template.yml"
-  - "templates/sshd.template.yml"
   - "templates/web.template.yml"
+  - "templates/sshd.template.yml"
+  #- "templates/web.ratelimited.template.yml"
 
 ## which TCP/IP ports should this container expose?
 expose:
@@ -19,34 +24,44 @@ expose:
   - "2222:22" # fwd host port 2222 to container port 22 (ssh)
 
 params:
-  ## Which Git revision should this container use?
-  version: HEAD
+  db_default_text_search_config: "pg_catalog.english"
+  ## Set db_shared_buffers to 1/3 of the memory you wish to allocate to postgres
+  ## on 1GB install set to 128MB on a 4GB instance you may raise to 1GB
+  #db_shared_buffers: "256MB"
+  #
+  ## Which Git revision should this container use? (default: tests-passed)
+  #version: tests-passed
 
 env:
-  ## How many concurrent web requests are supported?
+  LANG: en_US.UTF-8
+  ## TODO: How many concurrent web requests are supported?
   ## With 2GB we recommend 3-4 workers, with 1GB only 2
-  # UNICORN_WORKERS: 3
+  #UNICORN_WORKERS: 3
   ##
-  ## List of comma delimited emails that will be made admin on signup
-  DISCOURSE_DEVELOPER_EMAILS: 'my-email-address@example.com'
+  ## TODO: List of comma delimited emails that will be made admin and developer
+  ## on initial signup example 'user1@example.com, user2@example.com'
+  DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'
   ##
-  ## The domain name this Discourse instance will respond to
+  ## TODO: The domain name this Discourse instance will respond to
   DISCOURSE_HOSTNAME: 'discourse.example.com'
   ##
-  ## The mailserver this Discourse instance will use
-  DISCOURSE_SMTP_ADDRESS: smtp.example.com          # (mandatory)
-  # DISCOURSE_SMTP_PORT: 587                        # (optional)
-  # DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
-  # DISCOURSE_SMTP_PASSWORD: p@ssword               # (optional)
+  ## TODO: The mailserver this Discourse instance will use
+  DISCOURSE_SMTP_ADDRESS: smtp.example.com         # (mandatory)
+  #DISCOURSE_SMTP_PORT: 587                        # (optional)
+  #DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
+  #DISCOURSE_SMTP_PASSWORD: pa$$word               # (optional)
   ##
-  ## the origin pull CDN address for this Discourse instance
-  # DISCOURSE_CDN_URL: //discourse-cdn.example.com
+  ## The CDN address for this Discourse instance (configured to pull)
+  #DISCOURSE_CDN_URL: //discourse-cdn.example.com
 
 ## These containers are stateless, all data is stored in /shared
 volumes:
   - volume:
-      host: /var/docker/shared/standalone
+      host: /var/discourse/shared/standalone
       guest: /shared
+  - volume:
+      host: /var/discourse/shared/standalone/log/var-log
+      guest: /var/log
 
 ## The docker manager plugin allows you to one-click upgrade Discouse
 ## http://discourse.example.com/admin/docker

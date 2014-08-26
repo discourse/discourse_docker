@@ -1,23 +1,4 @@
 hooks:
-  after_cron:
-    - file:
-       path: /var/lib/postgresql/take-database-backup
-       chown: postgres:postgres
-       chmod: "+x"
-       contents: |
-          #!/bin/bash
-          ID=db-$(date +%F_%T)
-          FILENAME=/shared/postgres_backup/$ID.tar.gz
-          pg_basebackup --format=tar --pgdata=- --xlog --gzip --label=$ID > $FILENAME
-          echo $FILENAME
-
-    - file:
-       path: /var/spool/cron/crontabs/postgres
-       contents: |
-          # m h  dom mon dow   command
-          #MAILTO=?
-          0 */4 * * * /var/lib/postgresql/take-database-backup
-
   before_code:
     - replace:
        filename: /etc/service/unicorn/run
@@ -25,8 +6,6 @@ hooks:
        to: sv start postgres || exit 1
 
 run:
-  # temporary
-  - exec: apt-get install -y socat
   - exec: mkdir -p /shared/postgres_run
   - exec: chown postgres:postgres /shared/postgres_run
   - exec: chmod 775 /shared/postgres_run

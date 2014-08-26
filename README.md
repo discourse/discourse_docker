@@ -1,35 +1,16 @@
 ### About
 
-- [Docker](https://www.docker.io/) is an open source project to pack, ship and run any Linux application in a lighter weight, faster container than a traditional virtual machine.
+- [Docker](https://docker.com/) is an open source project to pack, ship and run any Linux application in a lighter weight, faster container than a traditional virtual machine.
 
-- Docker makes it much easier to deploy [a Discourse forum](https://github.com/discourse/discourse) on your servers and keep it updated. For background, see [Sam's blog post](http://samsaffron.com/archive/2013/11/07/discourse-in-a-docker-container). 
+- Docker makes it much easier to deploy [a Discourse forum](https://github.com/discourse/discourse) on your servers and keep it updated. For background, see [Sam's blog post](http://samsaffron.com/archive/2013/11/07/discourse-in-a-docker-container).
 
-- The templates and base image configure Discourse with the Discourse team's recommended optimal defaults. 
-
-
-### IMPORTANT: Before You Start
-
-1. Make sure you're running a **64 bit** version of either [Ubuntu 12.04 LTS](http://releases.ubuntu.com/precise/), [Ubuntu 13.04](http://releases.ubuntu.com/13.04/) or [Ubuntu 13.10](http://releases.ubuntu.com/13.10/).
-1. Upgrade to the [latest version of Docker](http://docs.docker.io/en/latest/installation/ubuntulinux/).
-1. Create a directory for Discourse Docker (the expected path is `/var/docker`): `install -g docker -m 2775 -d /var/docker`
-1. Run the docker installation and launcher as **root** or a member of the **docker** group.
-1. Add your user account to the docker group: `usermod -a -G docker yourusername` and re-login.
-
-If you do not do any of the above, as RoboCop once said, ["there will be… trouble."](http://www.youtube.com/watch?v=XxarhampSNI) *Please double check the above list before proceeding!*
+- The templates and base image configure Discourse with the Discourse team's recommended optimal defaults.
 
 ### Getting Started
 
-The simplest way to get started is the  **standalone** template:
+The simplest way to get started is via the **standalone** template, which can be installed in 30 minutes or less. For detailed install instructions, see
 
-1. **Clone** this project from github into `/var/docker` on your server: `git clone https://github.com/discourse/discourse_docker.git /var/docker`
-2. **Copy** the standalone sample into the containers directory: `cp samples/standalone.yml containers/app.yml`
-3. **Edit** `containers/app.yml` with your environment specific information
-  - [bindings](#expose)
-  - [volumes](#volumes)
-4. **Bootstrap** the image: `sudo ./launcher bootstrap app`
-5. **Start** the image: `sudo ./launcher start app`
-
-Note: you can add yourself to the Docker group if you wish to avoid `sudo` with `usermod -aG docker <your-user-name>`.
+https://github.com/discourse/discourse/blob/master/docs/INSTALL-digital-ocean.md
 
 ### Directory Structure
 
@@ -43,7 +24,7 @@ This directory is for container definitions for your various Discourse container
 
 #### `/samples`
 
-Sample container definitions you may use to bootstrap your environment. You can copy and amend templates here into the containers directory.
+Sample container definitions you may use to bootstrap your environment. You can copy templates from here into the containers directory.
 
 #### `/shared`
 
@@ -55,11 +36,11 @@ Placeholder spot for shared volumes with various Discourse containers. You may e
 
 #### `/image`
 
-Dockerfile for both the base image `samsaffron/discourse_base` and discourse image `samsaffron/discourse`.
+Dockerfile for both the base image `/discourse_base` and discourse image `/discourse`.
 
-- `samsaffron/discourse_base` contains all the OS dependencies including sshd, runit, postgres, nginx, ruby.
+- `/discourse_base` contains all the OS dependencies including sshd, runit, postgres, nginx, ruby.
 
-- `samsaffron/discourse` builds on the base image and configures a discourse user and `/var/www/discourse` directory for the Discourse source.
+- `/discourse` builds on the base image and configures a discourse user and `/var/www/discourse` directory for the Discourse source.
 
 The Docker repository will always contain the latest built version at: https://index.docker.io/u/samsaffron/discourse/ , you should not need to build the base image.
 
@@ -68,17 +49,19 @@ The Docker repository will always contain the latest built version at: https://i
 The base directory contains a single bash script which is used to manage containers. You can use it to "bootstrap" a new container, ssh in, start, stop and destroy a container.
 
 ```
-Usage: launcher COMMAND CONFIG
+Usage: launcher COMMAND CONFIG [--skip-prereqs]
 Commands:
     start:      Start/initialize a container
     stop:       Stop a running container
     restart:    Restart a container
     destroy:    Stop and remove a container
+    enter:      Use nsenter to enter a container
     ssh:        Start a bash shell in a running container
     logs:       Docker logs for container
+    mailtest:   Test the mail settings in a container
     bootstrap:  Bootstrap a container for the config based on a template
+    rebuild:    Rebuild a container (destroy old, bootstrap, start new)
 ```
-
 
 ### Container Configuration
 
@@ -102,7 +85,7 @@ expose:
   - "127.0.0.1:20080:80"
 ```
 
-Expose port 22 inside the container on port 2222 on ALL local host interfaces. In order to bind to only one interface, you may specify the host's IP address as `([<host_interface>:[host_port]])|(<host_port>):]<container_port>[/udp]` as defined in the [docker port binding documentation](http://docs.docker.io/en/latest/use/port_redirection/) 
+Expose port 22 inside the container on port 2222 on ALL local host interfaces. In order to bind to only one interface, you may specify the host's IP address as `([<host_interface>:[host_port]])|(<host_port>):]<container_port>[/udp]` as defined in the [docker port binding documentation](http://docs.docker.io/en/latest/use/port_redirection/)
 
 
 #### volumes:
@@ -121,12 +104,10 @@ Expose a directory inside the host inside the container.
 
 The Docker setup gives you multiple upgrade options:
 
-1. Use the front end at http://yoursite.com/admin/docker to upgrade an already running image.
+1. Use the front end at http://yoursite.com/admin/upgrade to upgrade an already running image.
 
-2. Create a new base image by running:
-  - `./launcher destroy my_image`
-  - `./launcher bootstrap my_image`
-  - `./launcher start my_image`
+2. Create a new base image manually by running:
+  - `./launcher rebuild my_image`
 
 ### Single Container vs. Multiple Container
 
@@ -134,7 +115,7 @@ The samples directory contains a standalone template. This template bundles all 
 
 The multiple container configuration setup is far more flexible and robust, however it is also more complicated to set up. A multiple container setup allows you to:
 
-- Minimize downtime when upgrading to new versions of Discourse. You can bootstrap new web processes while your site is running and only after it is built, switch the new image in. 
+- Minimize downtime when upgrading to new versions of Discourse. You can bootstrap new web processes while your site is running and only after it is built, switch the new image in.
 - Scale your forum to multiple servers.
 - Add servers for redundancy.
 - Have some required services (e.g. the database) run on beefier hardware.
@@ -150,7 +131,24 @@ For a Discourse instance to function properly Email must be set up. Use the `SMT
 
 ### Troubleshooting
 
+View the container logs: `./launcher logs my_container`
+
 You can ssh into your container using `./launcher ssh my_container`, we will automatically set up ssh access during bootstrap.
+
+Spawn a shell inside your container using `./launcher enter my_container`. This is the most foolproof method if you have host root access.
+
+If you see network errors trying to retrieve code from `github.com` or `rubygems.org` try again - sometimes there are temporary interruptions and a retry is all it takes.
+
+Behind a proxy network with no direct access to the Internet? Add proxy information to the container environment by adding to the existing `env` block in the `container.yml` file:
+
+```yaml
+env:
+    …existing entries…
+    HTTP_PROXY: http://proxyserver:port/
+    http_proxy: http://proxyserver:port/
+    HTTPS_PROXY: http://proxyserver:port/
+    https_proxy: http://proxyserver:port/
+```
 
 ### Security
 
@@ -164,3 +162,7 @@ installs you can ensure they are in sync by looking at `/etc/passwd` and
 
 - [Setting up SSL with Discourse Docker](https://meta.discourse.org/t/allowing-ssl-for-your-discourse-docker-setup/13847)
 - [Multisite configuration with Docker](https://meta.discourse.org/t/multisite-configuration-with-docker/14084)
+
+License
+===
+MIT

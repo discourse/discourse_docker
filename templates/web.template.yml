@@ -15,28 +15,23 @@ env:
 
 params:
   # SSH key is required for remote access into the container
-  version: HEAD
+  version: tests-passed
 
   home: /var/www/discourse
+  upload_size: 3m
 
 run:
+  - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
   - file:
-     path: /etc/service/copy_env/run
+     path: /etc/runit/1.d/copy-env
      chmod: "+x"
      contents: |
         #!/bin/bash
         env > ~/boot_env
         conf=/var/www/discourse/config/discourse.conf
-        sudo -u discourse echo > $conf
 
-        for x in `env | /usr/bin/awk -F= '{if($1 ~ /DISCOURSE_/) print $1}'`
-          do
-             c=${x,,}
-             c=${c:10}
-             echo "$c"=${!x} >> $conf
-          done
-        # I dunno there may be a cleaner way to handle this
-        exec sleep 2147483647
+        # find DISCOURSE_ env vars, strip the leader, lowercase the key
+        /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = #{v}" if k =~ /^DISCOURSE_(.*)/}' > $conf
 
   - file:
      path: /etc/service/unicorn/run
@@ -46,9 +41,9 @@ run:
         exec 2>&1
         # redis
         # postgres
-        sv start copy_env || exit 1
         cd $home
-        exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
+        chown -R discourse:www-data /shared/log/rails
+        LD_PRELOAD=/usr/lib/libjemalloc.so.1 HOME=/home/discourse USER=discourse exec chpst -u discourse:www-data -U discourse:www-data bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
   - file:
      path: /etc/service/nginx/run
@@ -56,6 +51,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
+        mkdir -p /var/log/nginx
         exec /usr/sbin/nginx
 
   - exec:
@@ -64,26 +60,25 @@ run:
       cmd:
         - git reset --hard
         - git clean -f
+        - git remote set-branches --add origin master
         - git pull
+        - git fetch origin $version
         - git checkout $version
         - mkdir -p tmp/pids
         - mkdir -p tmp/sockets
-        - mkdir -p /shared/log/rails
-        - mkdir -p /shared/uploads
-        - mkdir -p /shared/backups
         - touch tmp/.gitkeep
-        - rm -r log
-        - ln -s /shared/log/rails $home/log
-        - ln -s /shared/uploads $home/public/uploads
-        - ln -s /shared/backups $home/public/backups
-        - chown -R discourse:www-data /shared/log/rails
-        - chown -R discourse:www-data /shared/uploads
-        - chown -R discourse:www-data /shared/backups
+        - mkdir -p                    /shared/log/rails
+        - bash -c "touch -a            /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log"
+        - bash -c "ln    -s           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log $home/log"
+        - bash -c "mkdir -p           /shared/{uploads,backups}"
+        - bash -c "ln    -s           /shared/{uploads,backups} $home/public"
+        - chown -R discourse:www-data /shared/log/rails /shared/uploads /shared/backups
 
   - exec:
       cmd:
         - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
         - "rm /etc/nginx/sites-enabled/default"
+        - "mkdir -p /var/nginx/cache"
 
   - replace:
       filename: /etc/nginx/nginx.conf
@@ -102,6 +97,11 @@ run:
       from: /server_name.+$/
       to: server_name _ ;
 
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /client_max_body_size.+$/
+      to: client_max_body_size $upload_size ;
+
   - exec:
       cmd: echo "done configuring web"
       hook: web_config
@@ -112,13 +112,10 @@ run:
       cmd:
         # ensure we are on latest bundler
         - gem update bundler
-        - mkdir -p /shared/vendor_bundle
-        - cp -fr /shared/vendor_bundle/* vendor/bundle || echo "can not copy"
         - chown -R discourse $home
-        - sudo -E -u discourse bundle install --deployment --verbose --without test --without development
-        - cp -fr vendor/bundle/* /shared/vendor_bundle
-        - sudo -E -u discourse bundle exec rake db:migrate
-        - sudo -E -u discourse bundle exec rake assets:precompile
+        - su discourse -c 'bundle install --deployment --verbose --without test --without development'
+        - su discourse -c 'bundle exec rake db:migrate'
+        - su discourse -c 'bundle exec rake assets:precompile'
 
   - file:
      path: /usr/local/bin/discourse
@@ -156,3 +153,19 @@ run:
        echo Use: rails, rake or discourse to execute commands in production
        echo
 
+  - file:
+     path: /etc/logrotate.d/rails
+     contents: |
+        /shared/log/rails/*.log
+        {
+                rotate 14
+                dateext
+                daily
+                missingok
+                notifempty
+                delaycompress
+                compress
+                postrotate
+                sv 1 unicorn
+                endscript
+        }

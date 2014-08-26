@@ -1,23 +1,4 @@
 run:
-  - file:
-     path: /etc/service/cron/run
-     chmod: "+x"
-     contents: |
-        #!/bin/bash
-        exec 2>&1
-        cd /
-        exec cron -f
-  - file:
-     path: /etc/service/rsyslog/run
-     chmod: "+x"
-     contents: |
-        #!/bin/bash
-        exec 2>&1
-        cd /
-        exec rsyslogd -n
-
   - exec:
       hook: cron
-      cmd: echo cron installed
-  - exec:
-      cmd: apt-get -y install rsyslog
+      cmd: echo cron is now included in base image, remove from templates

@@ -5,7 +5,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
-        exec sudo -u redis /usr/bin/redis-server /etc/redis/redis.conf
+        exec chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
 
   - replace:
       filename: "/etc/redis/redis.conf"
@@ -39,7 +39,7 @@ hooks:
   before_code:
     - exec:
         background: true
-        cmd: "sudo -u redis /usr/bin/redis-server /etc/redis/redis.conf"
+        cmd: su - redis -s /bin/bash -c '/usr/bin/redis-server /etc/redis/redis.conf'
   after_code:
     - replace:
        filename: /etc/service/unicorn/run

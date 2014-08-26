@@ -2,11 +2,17 @@ templates:
   - "templates/redis.template.yml"
   - "templates/sshd.template.yml"
 
+env:
+  LANG: en_US.UTF-8
+
 expose:
   - "6379:6379"
   - "2221:22"
 
 volumes:
   - volume:
-        host: /var/docker/shared
+        host: /var/discourse/shared/redis
         guest: /shared
+  - volume:
+        host: /var/discourse/shared/redis/log/var-log
+        guest: /var/log
