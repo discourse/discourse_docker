@@ -68,7 +68,7 @@ run:
         - mkdir -p tmp/sockets
         - touch tmp/.gitkeep
         - mkdir -p                    /shared/log/rails
-        - bash -c "touch -a            /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log"
+        - bash -c "touch -a           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log"
         - bash -c "ln    -s           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log $home/log"
         - bash -c "mkdir -p           /shared/{uploads,backups}"
         - bash -c "ln    -s           /shared/{uploads,backups} $home/public"
