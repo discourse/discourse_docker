@@ -27,7 +27,7 @@ env:
   DISCOURSE_REDIS_HOST: REDIS_IP_ADDRESS
   ##
   ## TODO: List of comma delimited emails that will be made admin and developer
-  ## on initial signup example 'user1@example.com, user2@example.com'
+  ## on initial signup example 'user1@example.com,user2@example.com'
   DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'
   ##
   ## TODO: The domain name this Discourse instance will respond to
