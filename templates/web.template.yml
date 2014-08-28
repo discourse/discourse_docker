@@ -169,3 +169,14 @@ run:
                 sv 1 unicorn
                 endscript
         }
+  # move state out of the container this fancy is done to support rapid rebuilds of containers,
+  # we store anacron and logrotate state outside the container to ensure its maintained across builds
+  # later move this snipped into an intialization script
+  - exec:
+     cmd:
+       - rm -fr /var/lib/logrotate
+       - mkdir -p /shared/state/logrotate
+       - ln -s /shared/state/logrotate /var/lib/logrotate
+       - rm -fr /var/spool/anacron
+       - mkdir -p /shared/state/anacron-spool
+       - ln -s /shared/state/anacron-spool /var/spool/anacron
