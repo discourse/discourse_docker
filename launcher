@@ -76,8 +76,8 @@ prereqs() {
   # 2. running aufs 
   test=`$docker_path info 2> /dev/null | grep 'Driver: aufs'`
   if [[ "$test" =~ "aufs" ]] ; then : ; else
-    echo "Your Docker installation is not using aufs, in the past we have had issues with it"
-    echo "If you are unable to bootstrap your image (or stop it) please report the issue at:"
+    echo "Your Docker installation is not using the recommended AuFS (union filesystem) and may be unstable."
+    echo "If you are unable to bootstrap / stop your image please report the issue at:"
     echo "https://meta.discourse.org/t/discourse-docker-installation-without-aufs/15639"
   fi
 
