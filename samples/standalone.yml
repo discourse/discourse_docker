@@ -7,7 +7,7 @@
 
 ## this is the all-in-one, standalone Discourse Docker container template
 
-# You may add rate limiting to by commenting out the ratelimited template.
+# You may add rate limiting by uncommenting the web.ratelimited template.
 # Out of the box it allows 12 reqs a second per ip, and 100 per minute per ip
 # This is configurable by amending the params in this file
 
