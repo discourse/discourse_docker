@@ -63,6 +63,8 @@ Commands:
     rebuild:    Rebuild a container (destroy old, bootstrap, start new)
 ```
 
+If the environment variable "SUPERVISED" is set to true, the container won't be detached, allowing a process monitoring tool to manage the restart behaviour of the container.
+
 ### Container Configuration
 
 The beginning of the container definition will contain 3 "special" sections:

@@ -16,6 +16,14 @@ local_discourse=local_discourse
 image=samsaffron/discourse:1.0.3
 docker_path=`which docker.io || which docker`
 
+if [ "${SUPERVISED}" = "true" ]; then
+  restart_policy="--restart=no"
+  attach_on_start="-a"
+  attach_on_run="-a stdout -a stderr"
+else
+  attach_on_run="-d"
+fi
+
 if [ -x /sbin/ip ]; then
   docker_ip=`/sbin/ip addr show docker0 | \
                   grep 'inet ' | \
@@ -282,7 +290,7 @@ if compare_version "1.2.0" "$docker_version"; then
   echo "We recommend you upgrade docker, the version you are running has no restart policies, on reboot your container may not start up"
   restart_policy=""
 else
-  restart_policy="--restart=always"
+  restart_policy=${restart_policy:---restart=always}
 fi
 
 
@@ -325,8 +333,8 @@ run_start(){
          exit 1
        fi
 
-       $docker_path run $restart_policy "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
-                  -d $volumes $local_discourse/$config /sbin/runit
+       $docker_path run $attach_on_run $restart_policy "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
+                  $volumes $local_discourse/$config /sbin/runit
 
        exit 0
      else
@@ -348,7 +356,7 @@ run_start(){
        fi
 
        echo "cid found, ensuring container is started"
-       $docker_path start `cat $cidfile`
+       $docker_path start $attach_on_start `cat $cidfile`
        exit 0
   fi
 
