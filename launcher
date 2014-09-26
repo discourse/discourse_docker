@@ -13,7 +13,7 @@ config_file=containers/"$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
 local_discourse=local_discourse
-image=samsaffron/discourse:1.0.3
+image=samsaffron/discourse:1.0.4
 docker_path=`which docker.io || which docker`
 
 if [ "${SUPERVISED}" = "true" ]; then
