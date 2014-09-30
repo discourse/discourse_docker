@@ -122,7 +122,7 @@ run:
      chmod: +x
      contents: |
        #!/bin/bash
-       (cd /var/www/discourse && RAILS_ENV=production sudo -E -u discourse bundle exec script/discourse "$@")
+       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/discourse "$@")
 
   - file:
      path: /usr/local/bin/rails
@@ -132,9 +132,9 @@ run:
        # If they requested a console, load pry instead
        if [ "$@" == "c" -o "$@" == "console" ]
        then
-        (cd /var/www/discourse && RAILS_ENV=production sudo -E -u discourse bundle exec pry -r ./config/environment)
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec pry -r ./config/environment)
        else
-        (cd /var/www/discourse && RAILS_ENV=production sudo -E -u discourse bundle exec script/rails "$@")
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/rails "$@")
        fi
 
   - file:
@@ -142,7 +142,7 @@ run:
      chmod: +x
      contents: |
        #!/bin/bash
-       (cd /var/www/discourse && RAILS_ENV=production sudo -E -u discourse bundle exec bin/rake "$@")
+       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec bin/rake "$@")
 
   - file:
      path: /etc/update-motd.d/10-web
