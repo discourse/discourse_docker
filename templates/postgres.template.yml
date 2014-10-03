@@ -105,12 +105,6 @@ run:
       from: /#?listen_addresses *=.*/
       to: "listen_addresses = '*'"
 
-  # listen on all interfaces
-  - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
-      from: /#?listen_addresses *=.*/
-      to: "listen_addresses = '*'"
-
   # sync commit off is faster and less spiky, also marginally less safe
   - replace:
       filename: "/etc/postgresql/9.3/main/postgresql.conf"
