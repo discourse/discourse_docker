@@ -105,12 +105,6 @@ run:
       from: /#?listen_addresses *=.*/
       to: "listen_addresses = '*'"
 
-  # listen on all interfaces
-  - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
-      from: /#?listen_addresses *=.*/
-      to: "listen_addresses = '*'"
-
   # sync commit off is faster and less spiky, also marginally less safe
   - replace:
       filename: "/etc/postgresql/9.3/main/postgresql.conf"
@@ -172,6 +166,8 @@ run:
   - exec: su postgres -c 'psql discourse -c "create user discourse;"' || true
   - exec: su postgres -c 'psql discourse -c "grant all privileges on database discourse to discourse;"' || true
   - exec: su postgres -c 'psql discourse -c "alter schema public owner to discourse;"'
+  - exec: su postgres -c 'psql template1 -c "create extension hstore;"'
+  - exec: su postgres -c 'psql template1 -c "create extension pg_trgm;"'
   - exec: su postgres -c 'psql discourse -c "create extension if not exists hstore;"'
   - exec: su postgres -c 'psql discourse -c "create extension if not exists pg_trgm;"'
 

@@ -50,6 +50,12 @@ volumes:
       host: /var/discourse/shared/web-only/log/var-log
       guest: /var/log
 
+#Use 'links' key to link containers together, aka use Docker --link flag.
+#links:
+#  - link:
+#      name: data
+#      alias: data
+
 ## The docker manager plugin allows you to one-click upgrade Discouse
 ## http://discourse.example.com/admin/docker
 hooks:

@@ -202,6 +202,11 @@ set_volumes() {
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
 }
 
+set_links() {
+    links=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e \
+        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['links'].map{|l| '--link ' << l['link']['name'] << ':' << l['link']['alias'] << ' '}.join"`
+}
+
 set_template_info() {
 
     templates=`cat $config_file | $docker_path run --rm -i -a stdin -a stdout $image ruby -e \
@@ -324,6 +329,7 @@ run_start(){
 
        set_template_info
        set_volumes
+       set_links
 
        existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
        if [ ! -z $existing ]
@@ -333,7 +339,7 @@ run_start(){
          exit 1
        fi
 
-       $docker_path run $attach_on_run $restart_policy "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
+       $docker_path run $links $attach_on_run $restart_policy "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
                   $volumes $local_discourse/$config /sbin/runit
 
        exit 0
@@ -385,6 +391,7 @@ run_bootstrap(){
   fi
 
   set_volumes
+  set_links
 
   rm -f $cidbootstrap
 
@@ -398,7 +405,7 @@ run_bootstrap(){
 
   env=("${env[@]}" "-e" "SSH_PUB_KEY=$ssh_pub_key")
 
-  (exec echo "$input" | $docker_path run "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+  (exec echo "$input" | $docker_path run $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
      /bin/bash -c "$run_command") \
      || ($docker_path rm `cat $cidbootstrap` && rm $cidbootstrap)
 
