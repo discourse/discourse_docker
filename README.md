@@ -87,7 +87,7 @@ expose:
   - "127.0.0.1:20080:80"
 ```
 
-Expose port 22 inside the container on port 2222 on ALL local host interfaces. In order to bind to only one interface, you may specify the host's IP address as `([<host_interface>:[host_port]])|(<host_port>):]<container_port>[/udp]` as defined in the [docker port binding documentation](http://docs.docker.io/en/latest/use/port_redirection/)
+Expose port 22 inside the container on port 2222 on ALL local host interfaces. In order to bind to only one interface, you may specify the host's IP address as `([<host_interface>:[host_port]])|(<host_port>):<container_port>[/udp]` as defined in the [docker port binding documentation](http://docs.docker.com/userguide/dockerlinks/)
 
 
 #### volumes:
@@ -95,7 +95,7 @@ Expose port 22 inside the container on port 2222 on ALL local host interfaces. I
 ```
 volumes:
   - volume:
-      host: /var/docker/shared
+      host: /var/discourse/shared
       guest: /shared
 
 ```
