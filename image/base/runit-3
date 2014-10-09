@@ -1,0 +1,3 @@
+#!/bin/bash
+
+/bin/run-parts --verbose /etc/runit/3.d

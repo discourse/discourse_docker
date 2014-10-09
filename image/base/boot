@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# we use this to boot up cause runit will not handle TERM and will not exit when done
+
+/etc/runit/1
+/etc/runit/2&
+RUNSVDIR=$!
+echo "Started runsvdir, PID is $RUNSVDIR"
+trap "echo Shutting Down && /etc/runit/3 && kill -HUP $RUNSVDIR && wait $RUNSVDIR" SIGTERM SIGHUP
+wait $RUNSVDIR

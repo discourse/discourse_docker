@@ -23,6 +23,13 @@ run:
         exec 2>&1
         exec /usr/sbin/sshd -D -e
 
+  - file:
+     path: /etc/runit/3.d/99-ssh
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       sv stop sshd
+
   - exec:
       hook: sshd
       cmd:

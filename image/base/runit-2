@@ -1,2 +1,2 @@
 #!/bin/bash
-/usr/bin/runsvdir -P /etc/service
+exec /usr/bin/runsvdir -P /etc/service

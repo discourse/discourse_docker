@@ -1,5 +1,5 @@
-# Current version 1.0.4
-FROM samsaffron/discourse_base:1.0.4
+# Current version 1.0.5
+FROM samsaffron/discourse_base:1.0.5
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
@@ -11,7 +11,7 @@ RUN useradd discourse -s /bin/bash -m -U &&\
       git remote set-branches --add origin tests-passed &&\
     chown -R discourse:discourse /var/www/discourse &&\
     cd /var/www/discourse &&\
-     sudo -u discourse RAILS4=1 bundle install --deployment \
+     sudo -u discourse bundle install --deployment \
          --without test --without development &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
 

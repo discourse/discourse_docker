@@ -13,7 +13,7 @@ config_file=containers/"$config".yml
 cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_boostrap.cid
 local_discourse=local_discourse
-image=samsaffron/discourse:1.0.4
+image=samsaffron/discourse:1.0.5
 docker_path=`which docker.io || which docker`
 
 if [ "${SUPERVISED}" = "true" ]; then
@@ -340,7 +340,7 @@ run_start(){
        fi
 
        $docker_path run $links $attach_on_run $restart_policy "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
-                  $volumes $local_discourse/$config /sbin/runit
+                  $volumes $local_discourse/$config /sbin/boot
 
        exit 0
      else

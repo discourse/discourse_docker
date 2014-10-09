@@ -2,7 +2,7 @@
 # When new LTS ships we can upgrade
 
 # NAME:     discourse_base
-# VERSION:  1.0.4
+# VERSION:  1.0.5
 
 FROM ubuntu:14.04
 
@@ -67,12 +67,17 @@ RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     cd / && git clone https://github.com/SamSaffron/pups.git
 
 # clean up for docker squash
-RUN rm -fr /usr/share/man && rm -fr /usr/share/doc
+RUN rm -fr /usr/share/man && rm -fr /usr/share/doc && mkdir -p /etc/runit/3.d
 
 ADD runit-1 /etc/runit/1
 ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
 ADD runit-1.d-anacron /etc/runit/1.d/anacron
 ADD runit-2 /etc/runit/2
+ADD runit-3 /etc/runit/3
+ADD boot /sbin/boot
 
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
+
+# this is temporary, remove in 2015
+RUN cp /sbin/boot /sbin/runit
