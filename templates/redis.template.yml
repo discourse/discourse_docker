@@ -39,7 +39,7 @@ hooks:
   before_code:
     - exec:
         background: true
-        cmd: su - redis -s /bin/bash -c '/usr/bin/redis-server /etc/redis/redis.conf'
+        cmd: exec chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
   after_code:
     - replace:
        filename: /etc/service/unicorn/run

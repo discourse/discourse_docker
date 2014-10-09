@@ -157,7 +157,9 @@ run:
 
   - exec:
       background: true
-      cmd: su - postgres -c '/usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main'
+      # use fast shutdown for pg
+      stop_signal: INT
+      cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
 
   # give db a few secs to start up
   - exec: "sleep 5"
