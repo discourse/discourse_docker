@@ -16,7 +16,7 @@ templates:
   - "templates/redis.template.yml"
   - "templates/web.template.yml"
   - "templates/sshd.template.yml"
-  #- "templates/web.ratelimited.template.yml"
+  - "templates/web.ratelimited.template.yml"
 
 ## which TCP/IP ports should this container expose?
 expose:
