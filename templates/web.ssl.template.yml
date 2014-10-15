@@ -13,6 +13,8 @@ run:
        # ssl_stapling        on;
        # ssl_trusted_certificate /shared/ssl/trusted-CAs.bundle;
 
+       ssl_dhparam         /etc/ssl/dhparam-3072;
+
        server {
          listen 80;
          return 301 https://$$ENV_DISCOURSE_HOSTNAME$request_uri;
@@ -44,3 +46,21 @@ run:
        if ($http_host != $$ENV_DISCOURSE_HOSTNAME) {
           rewrite (.*) https://$$ENV_DISCOURSE_HOSTNAME$1 permanent;
        }
+  - file:
+     path: /etc/ssl/dhparam-3072
+     # You could generate your own using: openssl dhparam 3072 -out my-dhparam-3072
+     # Doesn't need to be kept secret and can be re-used.
+     # Should be the size of your RSA key or greater.
+     # Nginx comes with a 1024 built-in, which isn't sufficient.
+     contents: |
+       -----BEGIN DH PARAMETERS-----
+       MIIBiAKCAYEA253XR2Y+ChtDC456DnTORYS42iQy3ajqnVuwlCAuu+1bREc1hYpw
+       2YjMpSb8lXn+Xex1ks/P0y3ZJ8qgQNhX0NL53GxYdj0aCxZeCMemduZqfgqJAPaJ
+       Nicrip0fgSNmbJeUWhy4Dk3ANuuN5Hd9XvvuzLBgcRJG4J9wCbE6SN6LhKk8rubM
+       TeUkFfK9b1WZUszenYAUYU9PS1bFvnMS45J0KCF0DGiXiEAp8JkKg6krJM7XSntC
+       2n0khqJBnnQyDW14KyscoDAponc6rpDld/mRkXn8FdbZIHbJmQEMXkPDcLDr8Dcf
+       YIlTY5Rai2OmbPwRymxf9ROpAcQKMzu74ZbTYMboau+qDdWGm1tLalvB3jFvP/kz
+       BrC4oBRmT+v1wvABe41I3Oe9B3H3in36jPTZ3q+mN+kCSQ6oviXC9WdLtvvpEcxv
+       4x7YTD88yXHHxBbnm23HNJjTaXtYDyeE/EeZiKt/65S72ThbBMOSmBCNueBWx925
+       EA/p/Ic8a41TAgEC
+       -----END DH PARAMETERS-----
