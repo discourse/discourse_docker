@@ -24,12 +24,12 @@ else
   attach_on_run="-d"
 fi
 
-if [ -x /sbin/ip ]; then
-  docker_ip=`/sbin/ip addr show docker0 | \
+if [ -x "$(which ip 2>/dev/null)" ]; then
+  docker_ip=`ip addr show docker0 | \
                   grep 'inet ' | \
                   awk '{ split($2,a,"/"); print a[1] }';`
 else
-  docker_ip=`/sbin/ifconfig | \
+  docker_ip=`ifconfig | \
                   grep -B1 "inet addr" | \
                   awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' | \
                   grep docker0 | \
