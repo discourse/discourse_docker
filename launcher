@@ -129,15 +129,18 @@ fi
 get_ssh_pub_key() {
   local ${ssh_key_locations}
   ssh_key_locations=(
+    ~/.ssh/id_ed25519.pub
+    ~/.ssh/id_ecdsa.pub
     ~/.ssh/id_rsa.pub
     ~/.ssh/id_dsa.pub
+    ~core/.ssh/authorized_keys
   )
 
   local $keyfile
   for keyfile in "${ssh_key_locations[@]}"; do
     if [[ -e ${keyfile} ]] ; then
       ssh_pub_key="$(cat ${keyfile})"
-      return 1
+      return 0
     fi
   done
 
@@ -154,11 +157,11 @@ get_ssh_pub_key() {
       mkdir -p ~/.ssh && ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
       echo
       ssh_pub_key="$(cat ~/.ssh/id_rsa.pub)"
-      return 1
+      return 0
     fi
   fi
 
-  return 0
+  return 1
 }
 
 
