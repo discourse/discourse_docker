@@ -2,7 +2,12 @@ run:
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /server.+{/
+     # If you have the memory, enable a large and long session cache.
+     # This will speed up SSL connections for repeating visits.
      to: |
+       # ssl_session_cache   shared:SSL:64m;
+       # ssl_session_timeout 26h;
+
        server {
          listen 80;
          return 301 https://$$ENV_DISCOURSE_HOSTNAME$request_uri;
