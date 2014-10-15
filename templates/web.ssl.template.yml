@@ -4,9 +4,14 @@ run:
      from: /server.+{/
      # If you have the memory, enable a large and long session cache.
      # This will speed up SSL connections for repeating visits.
+     # Concatenate your certificate issuer's intermediate and root certificate
+     # to a trusted-CAs.bundle and your forum will support OCSP.
      to: |
        # ssl_session_cache   shared:SSL:64m;
        # ssl_session_timeout 26h;
+
+       # ssl_stapling        on;
+       # ssl_trusted_certificate /shared/ssl/trusted-CAs.bundle;
 
        server {
          listen 80;
