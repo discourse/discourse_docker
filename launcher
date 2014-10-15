@@ -127,24 +127,38 @@ if [ "$opt" != "--skip-prereqs" ] ; then
 fi
 
 get_ssh_pub_key() {
+  local ${ssh_key_locations}
+  ssh_key_locations=(
+    ~/.ssh/id_rsa.pub
+    ~/.ssh/id_dsa.pub
+  )
+
+  local $keyfile
+  for keyfile in "${ssh_key_locations[@]}"; do
+    if [[ -e ${keyfile} ]] ; then
+      ssh_pub_key="$(cat ${keyfile})"
+      return 1
+    fi
+  done
+
   if tty -s ; then
-    if [[ ! -e ~/.ssh/id_rsa.pub && ! -e ~/.ssh/id_dsa.pub ]] ; then
-      echo "This user has no SSH key, but a SSH key is required to access the Discourse Docker container."
-      read -p "Generate a SSH key? (Y/n) " -n 1 -r
-      if [[ $REPLY =~ ^[Nn]$ ]] ; then
-        echo
-        echo WARNING: You may not be able to log in to your container.
-        echo
-      else
-        echo
-        echo Generating SSH key
-        mkdir -p ~/.ssh && ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
-        echo
-      fi
+    echo "This user has no SSH key, but a SSH key is required to access the Discourse Docker container."
+    read -p "Generate a SSH key? (Y/n) " -n 1 -r
+    if [[ $REPLY =~ ^[Nn]$ ]] ; then
+      echo
+      echo WARNING: You may not be able to log in to your container.
+      echo
+    else
+      echo
+      echo Generating SSH key
+      mkdir -p ~/.ssh && ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+      echo
+      ssh_pub_key="$(cat ~/.ssh/id_rsa.pub)"
+      return 1
     fi
   fi
 
-  ssh_pub_key="$(cat ~/.ssh/id_rsa.pub 2>/dev/null || cat ~/.ssh/id_dsa.pub)"
+  return 0
 }
 
 
