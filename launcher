@@ -24,12 +24,12 @@ else
   attach_on_run="-d"
 fi
 
-if [ -x /sbin/ip ]; then
-  docker_ip=`/sbin/ip addr show docker0 | \
+if [ -x "$(which ip 2>/dev/null)" ]; then
+  docker_ip=`ip addr show docker0 | \
                   grep 'inet ' | \
                   awk '{ split($2,a,"/"); print a[1] }';`
 else
-  docker_ip=`/sbin/ifconfig | \
+  docker_ip=`ifconfig | \
                   grep -B1 "inet addr" | \
                   awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' | \
                   grep docker0 | \
@@ -127,24 +127,41 @@ if [ "$opt" != "--skip-prereqs" ] ; then
 fi
 
 get_ssh_pub_key() {
+  local ${ssh_key_locations}
+  ssh_key_locations=(
+    ~/.ssh/id_ed25519.pub
+    ~/.ssh/id_ecdsa.pub
+    ~/.ssh/id_rsa.pub
+    ~/.ssh/id_dsa.pub
+    ~core/.ssh/authorized_keys
+  )
+
+  local $keyfile
+  for keyfile in "${ssh_key_locations[@]}"; do
+    if [[ -e ${keyfile} ]] ; then
+      ssh_pub_key="$(cat ${keyfile})"
+      return 0
+    fi
+  done
+
   if tty -s ; then
-    if [[ ! -e ~/.ssh/id_rsa.pub && ! -e ~/.ssh/id_dsa.pub ]] ; then
-      echo "This user has no SSH key, but a SSH key is required to access the Discourse Docker container."
-      read -p "Generate a SSH key? (Y/n) " -n 1 -r
-      if [[ $REPLY =~ ^[Nn]$ ]] ; then
-        echo
-        echo WARNING: You may not be able to log in to your container.
-        echo
-      else
-        echo
-        echo Generating SSH key
-        mkdir -p ~/.ssh && ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
-        echo
-      fi
+    echo "This user has no SSH key, but a SSH key is required to access the Discourse Docker container."
+    read -p "Generate a SSH key? (Y/n) " -n 1 -r
+    if [[ $REPLY =~ ^[Nn]$ ]] ; then
+      echo
+      echo WARNING: You may not be able to log in to your container.
+      echo
+    else
+      echo
+      echo Generating SSH key
+      mkdir -p ~/.ssh && ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
+      echo
+      ssh_pub_key="$(cat ~/.ssh/id_rsa.pub)"
+      return 0
     fi
   fi
 
-  ssh_pub_key="$(cat ~/.ssh/id_rsa.pub 2>/dev/null || cat ~/.ssh/id_dsa.pub)"
+  return 1
 }
 
 
