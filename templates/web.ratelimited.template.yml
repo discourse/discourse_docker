@@ -1,8 +1,8 @@
 params:
   reqs_per_second: 12
   burst_per_second: 12
-  reqs_per_minute: 100
-  burst_per_minute: 50
+  reqs_per_minute: 200
+  burst_per_minute: 100
 
 run:
   - replace:
