@@ -1,11 +1,11 @@
-# Current version 1.0.5
-FROM samsaffron/discourse_base:1.0.5
+# Current version 1.0.6
+FROM samsaffron/discourse_base:1.0.6
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
 # Discourse specific bits
 RUN useradd discourse -s /bin/bash -m -U &&\
-    mkdir /var/www && cd /var/www &&\
+    mkdir -p /var/www && cd /var/www &&\
      git clone https://github.com/discourse/discourse.git &&\
      cd discourse &&\
       git remote set-branches --add origin tests-passed &&\

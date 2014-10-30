@@ -2,7 +2,7 @@
 # When new LTS ships we can upgrade
 
 # NAME:     discourse_base
-# VERSION:  1.0.5
+# VERSION:  1.0.6
 
 FROM ubuntu:14.04
 
@@ -18,7 +18,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-mark hold initscripts &&\
     apt-get -y upgrade &&\
     add-apt-repository -y ppa:rwky/redis &&\
-    add-apt-repository -y ppa:nginx/stable &&\
+    add-apt-repository -y ppa:nginx/development &&\
     apt-get install -y curl && curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add - &&\
     echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list &&\
@@ -46,11 +46,11 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get clean &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US &&\
-    wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
-      tar -xjf phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
-      rm phantomjs-1.9.7-linux-x86_64.tar.bz2 &&\
-      cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
-      rm -fr phantomjs-1.9.7-linux-x86_64 &&\
+    wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
+      tar -xjf phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
+      rm phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
+      cp phantomjs-1.9.8-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
+      rm -fr phantomjs-1.9.8-linux-x86_64 &&\
     wget http://static.jonof.id.au/dl/kenutils/pngout-20130221-linux.tar.gz &&\
       tar -xvf pngout-20130221-linux.tar.gz &&\
       rm pngout-20130221-linux.tar.gz &&\
@@ -60,7 +60,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p576 /usr/local &&\
+    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p594 /usr/local &&\
     gem update --system &&\
     gem install bundler &&\
     rm -rf /usr/local/share/ri/2.0.0/system &&\
