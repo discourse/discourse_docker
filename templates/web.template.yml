@@ -127,6 +127,11 @@ run:
         # ensure we are on latest bundler
         - gem update bundler
         - chown -R discourse $home
+
+  - exec:
+      cd: $home
+      hook: bundle_exec
+      cmd:
         - su discourse -c 'bundle install --deployment --verbose --without test --without development'
         - su discourse -c 'bundle exec rake db:migrate'
         - su discourse -c 'bundle exec rake assets:precompile'

@@ -1,0 +1,11 @@
+hooks:
+  before_web:
+    - exec:
+       cmd:
+         - gem sources --remove https://rubygems.org/
+         - gem sources -a https://ruby.taobao.org/
+
+  before_bundle_exec:
+    - exec:
+      cmd:
+        - su discourse -c 'bundle config mirror.https://rubygems.org https://ruby.taobao.org/'
