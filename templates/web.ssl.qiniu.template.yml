@@ -1,25 +1,21 @@
 run:
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
-     from: /server.+{/
-     to: |
-       server {
-         listen 80;
-          
-         if ($http_user_agent !~* (qiniu)) {
-             rewrite ^ https://$$ENV_DISCOURSE_HOSTNAME$request_uri? permanent;
-         }
-         
-         location / {
-             root /var/www/discourse/public;
-         }
-       }
-       server {
-  - replace:
-     filename: "/etc/nginx/conf.d/discourse.conf"
      from: /listen 80;\s+gzip on;/m
      to: |
+       listen 80;
        listen 443 ssl spdy;
+       set $flag 0;
+       if ($server_port = 80){
+           set $flag "{$flag}1";
+       }
+       if ($http_user_agent !~* (qiniu)) {
+           set $flag "{$flag}2";
+       }
+       if ($flag = "012"){
+           rewrite ^ https://coderq.com$request_uri? permanent;
+       }
+
        spdy_keepalive_timeout 300; # up from 180 secs default
        ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
        # courtesy of https://wiki.mozilla.org/Security/Server_Side_TLS#Recommended_Ciphersuite
