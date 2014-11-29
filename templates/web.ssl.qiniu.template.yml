@@ -13,7 +13,7 @@ run:
            set $flag "{$flag}2";
        }
        if ($flag = "012"){
-           rewrite ^ https://coderq.com$request_uri? permanent;
+           rewrite ^ https://$$ENV_DISCOURSE_HOSTNAME$request_uri? permanent;
        }
 
        spdy_keepalive_timeout 300; # up from 180 secs default
