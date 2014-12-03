@@ -7,5 +7,5 @@ hooks:
 
   before_bundle_exec:
     - exec:
-      cmd:
-        - su discourse -c 'bundle config mirror.https://rubygems.org https://ruby.taobao.org/'
+       cmd:
+         - su discourse -c 'bundle config mirror.https://rubygems.org https://ruby.taobao.org/'
