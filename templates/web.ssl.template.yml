@@ -27,8 +27,8 @@ run:
        # enable SPDY header compression
        spdy_headers_comp 6;
 
-       # remember the certificate for a year and automatically connect to HTTPS
-       add_header Strict-Transport-Security 'max-age=31536000; includeSubDomains';
+       # remember the certificate for a year and automatically connect to HTTPS for this domain
+       add_header Strict-Transport-Security 'max-age=31536000';
 
        gzip on;
 
