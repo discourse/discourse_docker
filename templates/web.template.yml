@@ -8,6 +8,7 @@ env:
   # this ensures we have enough heap space to handle a big pile of small reqs
   RUBY_HEAP_MIN_SLOTS: 800000
 
+  DISCOURSE_GRAVATAR_URL: http://www.gravatar.com/avatar
   DISCOURSE_DB_SOCKET: /var/run/postgresql
   DISCOURSE_DB_HOST:
   DISCOURSE_DB_PORT:
