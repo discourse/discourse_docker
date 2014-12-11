@@ -63,7 +63,7 @@ volumes:
       host: /var/discourse/shared/standalone/log/var-log
       guest: /var/log
 
-## The docker manager plugin allows you to one-click upgrade Discouse
+## The docker manager plugin allows you to one-click upgrade Discourse
 ## http://discourse.example.com/admin/docker
 hooks:
   after_code:
