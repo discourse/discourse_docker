@@ -281,7 +281,7 @@ RUBY
 
     if [ "$ok" -ne 1 ]; then
       echo "${env[@]}"
-      echo "YAML syntax error. Please check your /var/docker/containers/*.yml config files."
+      echo "YAML syntax error. Please check your /var/discourse/containers/*.yml config files."
       exit 1
     fi
     echo "Calculated ENV: ${env[@]}"

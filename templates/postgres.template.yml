@@ -71,7 +71,7 @@ run:
            echo
            echo Then destroy your container "./launcher destroy standalone"
            echo Undo the base_image and postgres.9.2 template from your container config
-           echo Run: "sudo mv /var/docker/shared/postgres_data /var/shared/postgres_data_old"
+           echo Run: "sudo mv /var/discourse/shared/postgres_data /var/shared/postgres_data_old"
            echo Run: "./launcher bootstrap"
            echo
            echo "Login to the blank site, and import your backup (remember to set the allow_restore site setting)"
