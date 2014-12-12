@@ -5,12 +5,12 @@ run:
      to: |
        listen 80;
        listen 443 ssl spdy;
-       set $flag 0;
+       set $flag "0";
        if ($server_port = 80){
-           set $flag "{$flag}1";
+           set $flag "${flag}1";
        }
        if ($http_user_agent !~* (qiniu)) {
-           set $flag "{$flag}2";
+           set $flag "${flag}2";
        }
        if ($flag = "012"){
            rewrite ^ https://$$ENV_DISCOURSE_HOSTNAME$request_uri? permanent;
