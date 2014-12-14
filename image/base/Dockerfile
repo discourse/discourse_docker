@@ -22,6 +22,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get install -y curl && curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add - &&\
     echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list &&\
+    curl -sL https://deb.nodesource.com/setup | sudo bash - &&\
     apt-get -y update &&\
     apt-get -y install build-essential git curl wget \
                        libxslt-dev libcurl4-openssl-dev \
@@ -55,9 +56,15 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
       tar -xf pngout-20130221-linux.tar.gz &&\
       rm pngout-20130221-linux.tar.gz &&\
       cp pngout-20130221-linux/x86_64/pngout /bin/pngout &&\
-      rm -rf pngout-20130221-linux
+      rm -rf pngout-20130221-linux &&\
+    apt-get install -y nodejs &&\
+    npm install uglify-js -g
 
-RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
+RUN add-apt-repository ppa:ubuntu-toolchain-r/test &&\
+    apt-get update &&\
+    apt-get install -y gcc-4.9 &&\
+    (cd /usr/bin && rm gcc && ln -s gcc-4.9 gcc) &&\
+    echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
     cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p594 /usr/local &&\
