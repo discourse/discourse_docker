@@ -83,6 +83,12 @@ run:
       cmd: sudo -u postgres psql discourse
       raise_on_fail: false
 
+  - exec:
+      stdin: |
+        update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = 'discourse';
+      cmd: sudo -u postgres psql discourse
+      raise_on_fail: false
+
   - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "alter schema public owner to discourse;"'
   - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists hstore;"'
   - exec: /bin/bash -c 'sudo -u postgres psql discourse <<< "create extension if not exists pg_trgm;"'
