@@ -53,6 +53,7 @@ usage () {
   echo
   echo "Options:"
   echo "    --skip-prereqs   Don't check prerequisites"
+  echo "    --docker-args    Extra arguments to pass when running docker"
   exit 1
 }
 
@@ -113,7 +114,7 @@ prereqs() {
   fi
 
   # 4. able to attach stderr / out / tty
-  test=`$docker_path run -i --rm -a stdout -a stderr $image echo working`
+  test=`$docker_path run $user_args -i --rm -a stdout -a stderr $image echo working`
   if [[ "$test" =~ "working" ]] ; then : ; else
     echo "Your Docker installation is not working correctly"
     echo
@@ -124,6 +125,12 @@ prereqs() {
 
 if [ "$opt" != "--skip-prereqs" ] ; then
   prereqs
+fi
+
+if [ "$opt" == "--docker-args" ] ; then
+  user_args=$4
+else
+  user_args=""
 fi
 
 get_ssh_pub_key() {
@@ -201,7 +208,7 @@ host_run() {
   end
 RUBY
 
-  host_run=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e "$env_ruby"`
+  host_run=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e "$env_ruby"`
 
   while [ "$host_run" ] ; do
     iter=${host_run%%--SEP--*}
@@ -215,18 +222,18 @@ RUBY
 
 
 set_volumes() {
-  volumes=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e \
+  volumes=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
 }
 
 set_links() {
-    links=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e \
+    links=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['links'].map{|l| '--link ' << l['link']['name'] << ':' << l['link']['alias'] << ' '}.join"`
 }
 
 set_template_info() {
 
-    templates=`cat $config_file | $docker_path run --rm -i -a stdin -a stdout $image ruby -e \
+    templates=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
       "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
 
 
@@ -267,7 +274,7 @@ set_template_info() {
     puts env.map{|k,v| "-e\n#{k}=#{v}" }.join("\n")
 RUBY
 
-    raw=`exec echo "$input" | $docker_path run --rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
+    raw=`exec echo "$input" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
 
     env=()
     ok=1
@@ -341,7 +348,7 @@ run_start(){
   if [ ! -e $cidfile ]
      then
        echo "No cid found, creating a new container"
-       ports=`cat $config_file | $docker_path run --rm -i -a stdout -a stdin $image ruby -e \
+       ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
               "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
 
        set_template_info
@@ -356,7 +363,7 @@ run_start(){
          exit 1
        fi
 
-       $docker_path run $links $attach_on_run $restart_policy "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
+       $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
                   $volumes $local_discourse/$config /sbin/boot
 
        exit 0
@@ -397,10 +404,10 @@ run_bootstrap(){
 
   set_template_info
 
-  base_image=`cat $config_file | $docker_path run --rm -i -a stdin -a stdout $image ruby -e \
+  base_image=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['base_image']"`
 
-  update_pups=`cat $config_file | $docker_path run --rm -i -a stdin -a stdout $image ruby -e \
+  update_pups=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['update_pups']"`
 
   if [[ ! X"" = X"$base_image" ]]; then
@@ -422,7 +429,7 @@ run_bootstrap(){
 
   env=("${env[@]}" "-e" "SSH_PUB_KEY=$ssh_pub_key")
 
-  (exec echo "$input" | $docker_path run $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+  (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
      /bin/bash -c "$run_command") \
      || ($docker_path rm `cat $cidbootstrap` && rm $cidbootstrap)
 
@@ -464,7 +471,7 @@ case "$command" in
         then
           echo "Downloading nsenter"
           $docker_path pull samsaffron/nsenter
-          ($docker_path run --rm samsaffron/nsenter cat /nsenter > bin/nsenter1) || exit 1
+          ($docker_path run $user_args --rm samsaffron/nsenter cat /nsenter > bin/nsenter1) || exit 1
           cp bin/nsenter1 bin/nsenter
           chmod +x bin/nsenter
       fi
