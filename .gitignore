@@ -1,6 +1,5 @@
-shared/*
 *.swp
-containers/*
+shared/*
 cids/*
 bin/*
 image/nsenter/nsenter

@@ -1,0 +1,94 @@
+##
+## After making changes to this file, you MUST rebuild for any changes
+## to take effect in your live Discourse instance:
+##
+## /var/discourse/launcher rebuild app
+##
+
+## this is the all-in-one, standalone Discourse Docker container template
+
+# You may add rate limiting by uncommenting the web.ratelimited template.
+# Out of the box it allows 12 reqs a second per ip, and 100 per minute per ip
+# This is configurable by amending the params in this file
+
+templates:
+  - "templates/postgres.template.yml"
+  - "templates/redis.template.yml"
+  - "templates/web.template.yml"
+  - "templates/sshd.template.yml"
+  - "templates/web.ratelimited.template.yml"
+  - "templates/web.ssl.qiniu.template.yml"
+
+## which TCP/IP ports should this container expose?
+expose:
+  - "80:80"   # fwd host port 80   to container port 80 (http)
+  - "2222:22" # fwd host port 2222 to container port 22 (ssh)
+  - "443:443" # ssl
+
+params:
+  db_default_text_search_config: "pg_catalog.english"
+  ## Set db_shared_buffers to 1/3 of the memory you wish to allocate to postgres
+  ## on 1GB install set to 128MB on a 4GB instance you may raise to 1GB
+  db_shared_buffers: "128MB"
+  #
+  ## Which Git revision should this container use? (default: tests-passed)
+  version: tests-passed
+
+env:
+  LANG: en_US.UTF-8
+  ## TODO: How many concurrent web requests are supported?
+  ## With 2GB we recommend 3-4 workers, with 1GB only 2
+  UNICORN_WORKERS: 2
+  ## on initial signup example 'user1@example.com,user2@example.com'
+  DISCOURSE_DEVELOPER_EMAILS: 'imjark@gmail.com'
+  ##
+  ## TODO: The domain name this Discourse instance will respond to
+  DISCOURSE_HOSTNAME: 'coderq.com'
+  ##
+  ## TODO: The mailserver this Discourse instance will use
+  DISCOURSE_SMTP_ADDRESS: smtp.mailgun.org         # (mandatory)
+  DISCOURSE_SMTP_PORT: 587                        # (optional)
+  DISCOURSE_SMTP_USER_NAME: postmaster@coderq.com      # (optional)
+  DISCOURSE_SMTP_PASSWORD: 5b7048fc83d52d066b4e34968a74d418               # (optional)
+  ##
+  ## The CDN address for this Discourse instance (configured to pull)
+  DISCOURSE_CDN_URL: //dn-coderq.qbox.me
+
+## These containers are stateless, all data is stored in /shared
+volumes:
+  - volume:
+      host: /var/discourse/shared/standalone
+      guest: /shared
+  - volume:
+      host: /var/discourse/shared/standalone/log/var-log
+      guest: /var/log
+
+## The docker manager plugin allows you to one-click upgrade Discouse
+## http://discourse.example.com/admin/docker
+hooks:
+  after_code:
+    - exec:
+        cd: $home/plugins
+        cmd:
+          - mkdir -p plugins
+          - git clone https://github.com/discourse/docker_manager.git
+          - git clone https://github.com/fantasticfears/qq_connect.git
+          - git clone https://github.com/wuchong/discourse-chinese-share.git
+          - git clone https://github.com/wuchong/discourse-locale-override.git
+
+## Remember, this is YAML syntax - you can only have one block with a name
+run:
+  - exec: echo "Beginning of custom commands"
+
+  ## If you want to configure password login for root, uncomment and change:
+  #- exec: apt-get -y install whois # for mkpasswd
+  ## Use only one of the following lines:
+  #- exec: /usr/sbin/usermod -p 'PASSWORD_HASH' root
+  #- exec: /usr/sbin/usermod -p "$(mkpasswd -m sha-256 'RAW_PASSWORD')" root
+
+  ## If you want to authorized additional users, uncomment and change:
+  #- exec: ssh-import-id username
+  #- exec: ssh-import-id anotherusername
+
+  - exec: echo "End of custom commands"
+  - exec: awk -F\# '{print $1;}' ~/.ssh/authorized_keys | awk 'BEGIN { print "Authorized SSH keys for this container:"; } NF>=2 {print $NF;}'
