@@ -94,6 +94,12 @@ prereqs() {
     echo "Your Docker installation is not using the recommended AuFS (union filesystem) and may be unstable."
     echo "If you are unable to bootstrap / stop your image please report the issue at:"
     echo "https://meta.discourse.org/t/discourse-docker-installation-without-aufs/15639"
+    echo ""
+    read -p "Continue without proper filesystem? [yN]" yn
+    case $yn in
+        [Yy]* ) break;;
+            * ) exit 1;;
+    esac
   fi
 
   # 3. running recommended docker version
