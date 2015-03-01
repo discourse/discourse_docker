@@ -50,6 +50,7 @@ usage () {
   echo "    mailtest:   Test the mail settings in a container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
+  echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
   echo
   echo "Options:"
   echo "    --skip-prereqs   Don't check prerequisites"
@@ -298,6 +299,15 @@ RUBY
   install_docker
 }
 
+[ $command == "cleanup" ] && {
+  echo "Starting Cleanup"
+  docker inspect -f '{{.Id}},{{.State.Running}},{{.State.FinishedAt}}' $(docker ps -qa) | \
+  awk -F, 'BEGIN { TIME=strftime("%FT%T.000000000Z",systime()-60*60*24); } $2=="false" && $3 < TIME {print $1;}' | \
+  xargs --no-run-if-empty docker rm >/dev/null 2>/dev/null
+  docker images --no-trunc| grep none | awk '{print $3}' | xargs -r docker rmi
+  echo "Ending Cleanup"
+  exit 0
+}
 
 [ $# -lt 2 ] && {
   usage
