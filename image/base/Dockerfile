@@ -32,7 +32,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
                        postgresql-9.3 postgresql-client-9.3 \
                        postgresql-contrib-9.3 libpq-dev libreadline-dev \
                        nginx language-pack-en sudo cron anacron \
-                       psmisc rsyslog vim &&\
+                       psmisc rsyslog vim whois &&\
     sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron &&\
     sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf &&\
     dpkg-divert --local --rename --add /sbin/initctl &&\

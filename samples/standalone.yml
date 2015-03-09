@@ -82,7 +82,6 @@ run:
   - exec: echo "Beginning of custom commands"
 
   ## If you want to configure password login for root, uncomment and change:
-  #- exec: apt-get -y install whois # for mkpasswd
   ## Use only one of the following lines:
   #- exec: /usr/sbin/usermod -p 'PASSWORD_HASH' root
   #- exec: /usr/sbin/usermod -p "$(mkpasswd -m sha-256 'RAW_PASSWORD')" root
