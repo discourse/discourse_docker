@@ -1,3 +1,3 @@
 #!/bin/bash
 
-/bin/run-parts --verbose --exit-on-error /etc/runit/1.d
+/bin/run-parts --verbose --exit-on-error /etc/runit/1.d || exit 100
