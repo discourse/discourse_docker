@@ -50,6 +50,7 @@ usage () {
   echo "    mailtest:   Test the mail settings in a container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
+  echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
   echo
   echo "Options:"
   echo "    --skip-prereqs   Don't check prerequisites"
@@ -298,6 +299,31 @@ RUBY
   install_docker
 }
 
+[ $command == "cleanup" ] && {
+  echo
+  echo "The following command will"
+  echo "- Delete all docker images for old containers"
+  echo "- Delete all stopped and orphan containers"
+  echo
+  read -p "Are you sure (Y/n): " -n 1 -r && echo
+  if [[ $REPLY =~ ^[Yy]$ || ! $REPLY ]]
+    then
+      GetSpace=$(du -sk | awk '{print $1}');
+      echo "Starting Cleanup"
+      docker inspect -f '{{.Id}},{{.State.Running}},{{.State.FinishedAt}}' $(docker ps -qa) | \
+      awk -F, 'BEGIN { TIME=strftime("%FT%T.000000000Z",systime()-60*60*24); } $2=="false" && $3 < TIME {print $1;}' | \
+      xargs --no-run-if-empty docker rm >/dev/null 2>/dev/null
+      docker images --no-trunc| grep none | awk '{print $3}' | xargs -r docker rmi
+      let SpaceFreed=$GetSpace-$(du -sk | awk '{print $1}')
+      Output="$SpaceFreed" | awk '{sum=$1;hum[1024**3]="GB"; hum[1024**2]="MB"; hum[1024]="KB"; for (x=1024**3;x>=1024; x/=1024){ if (sum>=x) { printf "%.2f %s\n",sum/x,hum[x];break }}}'
+      [ -z "$Output" ] && { 
+        [[ $SpaceFreed > 0 ]] && { echo "./launcher cleanup cleared up $SpaceFreed Bytes of disk space."; } || { echo "./launcher cleanup has finished, no files were removed."; }
+      } || { echo "./launcher cleanup cleared up $Output of disk space."; }
+    else
+      echo "Aborting..."
+  fi
+  exit 0
+}
 
 [ $# -lt 2 ] && {
   usage
