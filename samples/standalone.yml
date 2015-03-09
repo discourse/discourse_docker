@@ -54,6 +54,7 @@ env:
   #DISCOURSE_SMTP_PORT: 587                        # (optional)
   #DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
   #DISCOURSE_SMTP_PASSWORD: pa$$word               # (optional)
+  #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
 
   ## The CDN address for this Discourse instance (configured to pull)
   #DISCOURSE_CDN_URL: //discourse-cdn.example.com
