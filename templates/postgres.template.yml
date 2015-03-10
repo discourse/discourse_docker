@@ -20,6 +20,8 @@ run:
   - exec: socat /dev/null UNIX-CONNECT:/shared/postgres_run/.s.PGSQL.5432 || exit 0 && echo postgres already running stop container ; exit 1
   - exec: rm -fr /shared/postgres_run/.s*
   - exec: rm -fr /shared/postgres_run/*.pid
+  - exec: mkdir -p /shared/postgres_run/9.3-main.pg_stat_tmp
+  - exec: chown postgres:postgres /shared/postgres_run/9.3-main.pg_stat_tmp
   - file:
      path: /etc/service/postgres/run
      chmod: "+x"
