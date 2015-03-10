@@ -4,3 +4,4 @@ containers/*
 cids/*
 bin/*
 image/nsenter/nsenter
+image/docker-squash

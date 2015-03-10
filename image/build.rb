@@ -34,7 +34,7 @@ def ensure_docker_squash
   return if File.exist?("docker-squash")
   run ("wget #{$docker_squash}")
   run ("tar -xzvf *.tar.gz")
-  run ("rm docker-squash-linux*")
+  run ("rm -f docker-squash-linux*")
 end
 
 ensure_docker_squash
