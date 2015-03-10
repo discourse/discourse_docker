@@ -182,6 +182,11 @@ run:
   - exec: su postgres -c 'psql template1 -c "create extension if not exists pg_trgm;"'
   - exec: su postgres -c 'psql discourse -c "create extension if not exists hstore;"'
   - exec: su postgres -c 'psql discourse -c "create extension if not exists pg_trgm;"'
+  - exec:
+      stdin: |
+        update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = 'discourse' AND encoding = pg_encoding_to_char('SQL_ASCII');
+      cmd: sudo -u postgres psql discourse
+      raise_on_fail: false
 
   - file:
      path: /var/lib/postgresql/take-database-backup
