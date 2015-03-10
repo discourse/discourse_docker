@@ -577,11 +577,8 @@ case "$command" in
           echo "Your version of Discourse Docker is ahead of origin"
 
         else
-          echo "Discourse Docker has diverged source"
-
+          echo "Discourse Docker has diverged source, this is only expected in Dev mode"
         fi
-
-        exit
 
       fi
       if [ -e $cidfile ]
