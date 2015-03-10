@@ -557,8 +557,32 @@ case "$command" in
 
   rebuild)
       if [ "$(git symbolic-ref --short HEAD)" == "master" ]; then
-        echo "Updating discourse docker"
-        git pull || (echo 'failed to update' && exit 1)
+        echo "Ensuring discourse docker is up to date"
+
+        git remote update
+
+        LOCAL=$(git rev-parse @)
+        REMOTE=$(git rev-parse @{u})
+        BASE=$(git merge-base @ @{u})
+
+        if [ $LOCAL = $REMOTE ]; then
+          echo "Discourse Docker is up-to-date"
+
+        elif [ $LOCAL = $BASE ]; then
+          echo "Updating Discourse Docker"
+          git pull || (echo 'failed to update' && exit 1)
+          exec /bin/bash $0 $@
+
+        elif [ $REMOTE = $BASE ]; then
+          echo "Your version of Discourse Docker is ahead of origin"
+
+        else
+          echo "Discourse Docker has diverged source"
+
+        fi
+
+        exit
+
       fi
       if [ -e $cidfile ]
         then
