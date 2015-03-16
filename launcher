@@ -10,7 +10,6 @@ docker_min_version='1.2.0'
 docker_rec_version='1.2.0'
 
 config_file=containers/"$config".yml
-cidfile=cids/"$config".cid
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
 image=samsaffron/discourse:1.0.8
@@ -82,7 +81,9 @@ compare_version() {
 prereqs() {
 
   # 1. docker daemon running?
-  test=`$docker_path info >/dev/null`
+  # we send stderr to /dev/null cause we don't care about warnings,
+  # it usually complains about swap which does not matter
+  test=`$docker_path info 2> /dev/null`
 
   if [[ $? -ne 0 ]] ; then
     echo "Cannot connect to the docker daemon - verify it is running and you have access"
@@ -298,7 +299,6 @@ RUBY
       echo "YAML syntax error. Please check your /var/discourse/containers/*.yml config files."
       exit 1
     fi
-    echo "Calculated ENV: ${env[@]}"
 }
 
 [ -z $docker_path ] && {
@@ -314,19 +314,30 @@ RUBY
   read -p "Are you sure (Y/n): " -n 1 -r && echo
   if [[ $REPLY =~ ^[Yy]$ || ! $REPLY ]]
     then
-      GetSpace=$(du -sk | awk '{print $1}');
+      space=$(df /var/lib/docker | awk '{ print $4 }' | grep -v Available)
+
       echo "Starting Cleanup"
-      docker inspect -f '{{.Id}},{{.State.Running}},{{.State.FinishedAt}}' $(docker ps -qa) | \
-      awk -F, 'BEGIN { TIME=strftime("%FT%T.000000000Z",systime()-60*60*24); } $2=="false" && $3 < TIME {print $1;}' | \
-      xargs --no-run-if-empty docker rm >/dev/null 2>/dev/null
-      docker images --no-trunc| grep none | awk '{print $3}' | xargs -r docker rmi
-      let SpaceFreed=$GetSpace-$(du -sk | awk '{print $1}')
-      Output="$SpaceFreed" | awk '{sum=$1;hum[1024**3]="GB"; hum[1024**2]="MB"; hum[1024]="KB"; for (x=1024**3;x>=1024; x/=1024){ if (sum>=x) { printf "%.2f %s\n",sum/x,hum[x];break }}}'
-      [ -z "$Output" ] && { 
-        [[ $SpaceFreed > 0 ]] && { echo "./launcher cleanup cleared up $SpaceFreed Bytes of disk space."; } || { echo "./launcher cleanup has finished, no files were removed."; }
-      } || { echo "./launcher cleanup cleared up $Output of disk space."; }
+
+      if [[ ! -z `docker ps -aq` ]]; then
+        docker inspect -f '{{.Id}},{{.State.Running}},{{.State.FinishedAt}}' $(docker ps -qa) | \
+        awk -F, 'BEGIN { TIME=strftime("%FT%T.000000000Z",systime()-60*60*24); } $2=="false" && $3 < TIME {print $1;}' | \
+        xargs --no-run-if-empty docker rm >/dev/null 2>/dev/null
+      fi
+
+      docker rmi `docker images -a | grep '<none>' | awk '{print $3}'` 2> /dev/null
+
+      let freed=$space-$(df /var/lib/docker | awk '{ print $4 }' | grep -v Available)
+
+      echo $space
+      echo $(df /var/lib/docker | awk '{ print $4 }' | grep -v Available)
+
+
+      output="$freed" | awk '{sum=$1;hum[1024**3]="GB"; hum[1024**2]="MB"; hum[1024]="KB"; for (x=1024**3;x>=1024; x/=1024){ if (sum>=x) { printf "%.2f %s\n",sum/x,hum[x];break }}}'
+      [ -z "$output" ] && { 
+        [[ $freed > 0 ]] && { echo "./launcher cleanup cleared up $freed of disk space."; } || { echo "./launcher cleanup has finished, no files were removed."; }
+      } || { echo "./launcher cleanup cleared up $freed of disk space."; }
     else
-      echo "Aborting..."
+      exit 1
   fi
   exit 0
 }
@@ -363,64 +374,62 @@ run_mailtest(){
   exec scripts/mailtest $config_file
 }
 
+set_existing_container(){
+  existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+}
+
 run_stop(){
-  if [ ! -e $cidfile ]
+
+  set_existing_container
+
+  if [ ! -z $existing ]
      then
-       echo "No cid found"
-       exit 1
+       (
+        set -x
+        $docker_path stop -t 10 $config
+       )
      else
-       $docker_path stop -t 10 `cat $cidfile`
+       echo "$config was not started !"
+       exit 1
   fi
 }
 
 run_start(){
 
-  host_run
+   existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+   if [ ! -z $existing ]
+   then
+     echo "Nothing to do, your container has already started!"
+     exit 1
+   fi
 
-  if [ ! -e $cidfile ]
-     then
-       echo "No cid found, creating a new container"
-       ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
-              "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
+   existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+   if [ ! -z $existing ]
+   then
+     echo "starting up existing container"
+     (
+       set -x
+       $docker_path start $config
+     )
+     exit 0
+   fi
 
-       set_template_info
-       set_volumes
-       set_links
+   host_run
+   ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+          "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
 
-       existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
-       if [ ! -z $existing ]
-       then
-         echo "Found an existing container by its name, recovering cidfile, please rerun"
-         echo $existing > $cidfile
-         exit 1
-       fi
+   set_template_info
+   set_volumes
+   set_links
 
-       $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "`hostname`-$config" -e DOCKER_HOST_IP=$docker_ip --name $config -t --cidfile $cidfile $ports \
-                  $volumes $local_discourse/$config /sbin/boot
+   (
+     hostname=`hostname`
+     set -x
+     $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "$hostname-$config" \
+        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $local_discourse/$config /sbin/boot
 
-       exit 0
-     else
-       cid=`cat $cidfile`
-
-       if [ -z $cid ]
-       then
-         echo "Detected empty cid file, deleting, please re-run"
-         rm $cidfile
-         exit 1
-       fi
-
-       found=`$docker_path ps -q -a --no-trunc | grep $cid`
-       if [ -z $found ]
-       then
-         echo "Invalid cid file, deleting, please re-run"
-         rm $cidfile
-         exit 1
-       fi
-
-       echo "cid found, ensuring container is started"
-       $docker_path start $attach_on_start `cat $cidfile`
-       exit 0
-  fi
+   )
+   exit 0
 
 }
 
@@ -486,45 +495,20 @@ case "$command" in
       ;;
 
   enter)
-
-      if [ ! -e $cidfile ]
-         then
-           echo "No cid found"
-           exit 1
-      fi
-
-      if [ ! $UID -eq 0 ] ;
-        then
-        echo "enter command must run as root, will attempt to sudo"
-        echo
-      fi
-
-      if [ ! -e bin/nsenter ]
-        then
-          echo "Downloading nsenter"
-          $docker_path pull samsaffron/nsenter
-          ($docker_path run $user_args --rm samsaffron/nsenter cat /nsenter > bin/nsenter1) || exit 1
-          cp bin/nsenter1 bin/nsenter
-          chmod +x bin/nsenter
-      fi
-
-      PID=$($docker_path inspect --format {{.State.Pid}} `cat $cidfile`)
-      SHELL=/bin/bash sudo -E bin/nsenter --target $PID --mount --uts --ipc --net --pid
-
-      exit 0;
+      exec $docker_path exec -it $config /bin/bash
       ;;
 
   ssh)
-      if [ ! -e $cidfile ]
-         then
-           echo "No cid found"
-           exit 1
-         else
-           cid="`cat $cidfile`"
-           address="`$docker_path port $cid 22`"
-           split=(${address//:/ })
-           exec ssh -o StrictHostKeyChecking=no root@${split[0]} -p ${split[1]}
-      fi
+       existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+
+       if [[ ! -z $existing ]]; then
+         address="`$docker_path port $config 22`"
+         split=(${address//:/ })
+         exec ssh -o StrictHostKeyChecking=no root@${split[0]} -p ${split[1]}
+       else
+         echo "$config is not running!"
+         exit 1
+       fi
       ;;
 
   stop)
@@ -534,14 +518,8 @@ case "$command" in
 
   logs)
 
-      if [ ! -e $cidfile ]
-         then
-           echo "No cid found"
-           exit 1
-         else
-           $docker_path logs `cat $cidfile`
-           exit 0
-      fi
+      $docker_path logs $config
+      exit 0
       ;;
 
   restart)
@@ -581,17 +559,27 @@ case "$command" in
         fi
 
       fi
-      if [ -e $cidfile ]
+
+      set_existing_container
+
+      if [ ! -z $existing ]
         then
           echo "Stopping old container"
-          $docker_path stop -t 10 `cat $cidfile`
+          (
+            set -x
+            $docker_path stop -t 10 $config
+          )
       fi
 
       run_bootstrap
 
-      if [ -e $cidfile ]
+      if [ ! -z $existing ]
         then
-          $docker_path rm `cat $cidfile` && rm $cidfile
+          echo "Removing old container"
+          (
+            set -x
+            $docker_path rm $config
+          )
       fi
 
       run_start
@@ -600,16 +588,8 @@ case "$command" in
 
 
   destroy)
-      if [ -e $cidfile ]
-        then
-          echo "destroying container $cidfile"
-          $docker_path stop -t 10 `cat $cidfile`
-          $docker_path rm `cat $cidfile` && rm $cidfile
-          exit 0
-        else
-          echo "nothing to destroy cidfile does not exist"
-          exit 1
-      fi
+      (set -x; $docker_path stop -t 10 $config && $docker_path rm $config) || (echo "$config was not found" && exit 0)
+      exit 0
       ;;
 esac
 
