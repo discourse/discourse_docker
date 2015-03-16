@@ -159,24 +159,7 @@ get_ssh_pub_key() {
     fi
   done
 
-  if tty -s ; then
-    echo "This user has no SSH key, but a SSH key is required to access the Discourse Docker container."
-    read -p "Generate a SSH key? (Y/n) " -n 1 -r
-    if [[ $REPLY =~ ^[Nn]$ ]] ; then
-      echo
-      echo WARNING: You may not be able to log in to your container.
-      echo
-    else
-      echo
-      echo Generating SSH key
-      mkdir -p ~/.ssh && ssh-keygen -f ~/.ssh/id_rsa -t rsa -N ''
-      echo
-      ssh_pub_key="$(cat ~/.ssh/id_rsa.pub)"
-      return 0
-    fi
-  fi
-
-  return 1
+  return 0
 }
 
 
