@@ -358,7 +358,7 @@ run_mailtest(){
 }
 
 set_existing_container(){
-  existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+  existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
 }
 
 run_stop(){
@@ -379,14 +379,15 @@ run_stop(){
 
 run_start(){
 
-   existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+   existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
+   echo $existing
    if [ ! -z $existing ]
    then
      echo "Nothing to do, your container has already started!"
      exit 1
    fi
 
-   existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+   existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
    if [ ! -z $existing ]
    then
      echo "starting up existing container"
@@ -482,7 +483,7 @@ case "$command" in
       ;;
 
   ssh)
-       existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+       existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
 
        if [[ ! -z $existing ]]; then
          address="`$docker_path port $config 22`"
