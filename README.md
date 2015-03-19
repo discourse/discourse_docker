@@ -100,7 +100,7 @@ volumes:
 
 ```
 
-Expose a directory inside the host inside the container.
+Expose a directory inside the host to the container.
 
 ### Upgrading Discourse
 
