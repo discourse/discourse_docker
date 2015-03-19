@@ -77,7 +77,7 @@ templates:
   - "templates/postgres.template.yml"
 ```
 
-This template is "composed" out of all these child templates, this allows for a very flexible configuration struture. Furthermore you may add specific hooks that extend the templates you reference.
+This template is "composed" out of all these child templates, this allows for a very flexible configuration structure. Furthermore you may add specific hooks that extend the templates you reference.
 
 #### expose:
 
