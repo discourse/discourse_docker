@@ -3,6 +3,8 @@ params:
   db_shared_buffers: "256MB"
   db_work_mem: "10MB"
   db_default_text_search_config: "pg_catalog.english"
+  db_name: discourse
+  db_user: discourse
 
 hooks:
   before_code:
@@ -174,18 +176,18 @@ run:
   # give db a few secs to start up
   - exec: "sleep 5"
 
-  - exec: su postgres -c 'createdb discourse' || true
-  - exec: su postgres -c 'psql discourse -c "create user discourse;"' || true
-  - exec: su postgres -c 'psql discourse -c "grant all privileges on database discourse to discourse;"' || true
-  - exec: su postgres -c 'psql discourse -c "alter schema public owner to discourse;"'
+  - exec: su postgres -c 'createdb $db_name' || true
+  - exec: su postgres -c 'psql $db_name -c "create user $db_user;"' || true
+  - exec: su postgres -c 'psql $db_name -c "grant all privileges on database $db_name to $db_user;"' || true
+  - exec: su postgres -c 'psql $db_name -c "alter schema public owner to $db_user;"'
   - exec: su postgres -c 'psql template1 -c "create extension if not exists hstore;"'
   - exec: su postgres -c 'psql template1 -c "create extension if not exists pg_trgm;"'
-  - exec: su postgres -c 'psql discourse -c "create extension if not exists hstore;"'
-  - exec: su postgres -c 'psql discourse -c "create extension if not exists pg_trgm;"'
+  - exec: su postgres -c 'psql $db_name -c "create extension if not exists hstore;"'
+  - exec: su postgres -c 'psql $db_name -c "create extension if not exists pg_trgm;"'
   - exec:
       stdin: |
-        update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = 'discourse' AND encoding = pg_encoding_to_char('SQL_ASCII');
-      cmd: sudo -u postgres psql discourse
+        update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = '$db_name' AND encoding = pg_encoding_to_char('SQL_ASCII');
+      cmd: sudo -u postgres psql $db_name
       raise_on_fail: false
 
   - file:
