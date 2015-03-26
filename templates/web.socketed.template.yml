@@ -1,0 +1,11 @@
+run:
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /listen 80;/
+     to: |
+       listen unix:/shared/nginx.http.sock;
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /listen 443 ssl spdy;/
+     to: |
+       listen unix:/shared/nginx.https.sock ssl spdy;
