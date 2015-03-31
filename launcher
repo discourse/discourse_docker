@@ -133,8 +133,6 @@ prereqs() {
     echo
 
   fi
-  exit
-
 
   # 5. able to attach stderr / out / tty
   test=`$docker_path run $user_args -i --rm -a stdout -a stderr $image echo working`
