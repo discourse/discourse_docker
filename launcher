@@ -121,7 +121,22 @@ prereqs() {
     echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer."
   fi
 
-  # 4. able to attach stderr / out / tty
+  # 4. discourse docker image is downloaded
+  test=`$docker_path images | awk '{print $1 ":" $2 }' | grep "$image"`
+
+  if [ -z "$test" ]; then
+    echo
+    echo "WARNING: We are about to start downloading the Discourse base image"
+    echo "This process may take anywhere between a few minutes to an hour, depending on your network speed"
+    echo
+    echo "Please be patient"
+    echo
+
+  fi
+  exit
+
+
+  # 5. able to attach stderr / out / tty
   test=`$docker_path run $user_args -i --rm -a stdout -a stderr $image echo working`
   if [[ "$test" =~ "working" ]] ; then : ; else
     echo "Your Docker installation is not working correctly"
