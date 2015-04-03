@@ -2,7 +2,7 @@
 # When new LTS ships we can upgrade
 
 # VERSION 0.1.0
-FROM samsaffron/discourse_base:1.0.7
+FROM samsaffron/discourse_base:1.0.9
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 

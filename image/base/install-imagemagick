@@ -1,0 +1,47 @@
+#!/bin/bash
+set -o errexit
+
+# Install build deps
+apt-get -y -q remove imagemagick
+apt-get -y -q install autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev
+
+PREFIX=/usr/local
+WDIR=/tmp/imagemagick
+mkdir -p $WDIR
+
+# Build and install libpng
+git clone -b v1.6.16 git://git.code.sf.net/p/libpng/code $WDIR/libpng
+cd $WDIR/libpng
+./autogen.sh
+./configure --prefix=$PREFIX
+make all && make install
+
+# Build and install ImageMagick
+wget -O $WDIR/ImageMagick.tar.gz "http://www.imagemagick.org/download/ImageMagick.tar.gz"
+IMDIR=$WDIR/$(tar tzf $WDIR/ImageMagick.tar.gz --wildcards "ImageMagick-*/configure" |cut -d/ -f1)
+tar zxf $WDIR/ImageMagick.tar.gz -C $WDIR
+cd $IMDIR
+LDFLAGS=-L$PREFIX/lib CFLAGS=-I$PREFIX/include ./configure \
+          --prefix=$PREFIX \
+          --enable-static \
+          --enable-bounds-checking \
+          --enable-hdri \
+          --enable-hugepages \
+          --with-threads \
+          --with-modules \
+          --with-quantum-depth=16 \
+          --without-magick-plus-plus \
+          --with-bzlib \
+          --with-zlib \
+          --without-autotrace \
+          --with-freetype \
+          --with-jpeg \
+          --without-lcms \
+          --with-lzma \
+          --with-png \
+          --with-tiff
+make all && make install
+
+cd $HOME
+rm -rf $WDIR
+ldconfig

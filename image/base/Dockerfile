@@ -2,7 +2,7 @@
 # When new LTS ships we can upgrade
 
 # NAME:     discourse_base
-# VERSION:  1.0.8
+# VERSION:  1.0.9
 
 FROM ubuntu:14.04
 
@@ -28,7 +28,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk \
-                       pngcrush imagemagick gifsicle \
+                       pngcrush gifsicle \
                        postgresql-9.3 postgresql-client-9.3 \
                        postgresql-contrib-9.3 libpq-dev libreadline-dev \
                        nginx language-pack-en sudo cron anacron \
@@ -61,6 +61,9 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get install -y nodejs &&\
     npm install uglify-js -g
 
+ADD install-imagemagick /tmp/install-imagemagick
+RUN /tmp/install-imagemagick
+
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test &&\
     apt-get update &&\
     apt-get install -y gcc-4.9 &&\
@@ -68,7 +71,7 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test &&\
     echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p594 /usr/local &&\
+    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p643 /usr/local &&\
     gem update --system &&\
     gem install bundler &&\
     rm -rf /usr/local/share/ri/2.0.0/system &&\
