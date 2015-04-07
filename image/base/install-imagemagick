@@ -3,7 +3,7 @@ set -o errexit
 
 # Install build deps
 apt-get -y -q remove imagemagick
-apt-get -y -q install autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev
+apt-get -y -q install gsfonts autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev
 
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
