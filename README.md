@@ -102,6 +102,17 @@ volumes:
 
 Expose a directory inside the host to the container.
 
+#### links:
+```
+links:
+  - link:
+      name: postgres
+      alias: postgres
+```
+
+Links another container to the current container. This will add `--link postgres:postgres`
+to the options when running the container.
+
 ### Upgrading Discourse
 
 The Docker setup gives you multiple upgrade options:
