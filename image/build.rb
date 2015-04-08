@@ -49,4 +49,4 @@ end
 
 build("base",$base_image,true)
 build("discourse",$image,false)
-build("discourse_fast_switch",$image,false)
+build("discourse_fast_switch",$fast_switch,false)
