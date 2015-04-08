@@ -8,6 +8,7 @@ $docker_squash = "https://github.com/jwilder/docker-squash/releases/download/v0.
 
 $base_image = "samsaffron/discourse_base:#{$version}"
 $image = "samsaffron/discourse:#{$version}"
+$fast_switch= "samsaffron/discourse_fast_switch:#{$version}"
 
 if ENV["USER"] != "root"
   STDERR.puts "Build script must be ran as root due to docker-squash"
@@ -48,5 +49,4 @@ end
 
 build("base",$base_image,true)
 build("discourse",$image,false)
-
-
+build("discourse_fast_switch",$image,false)
