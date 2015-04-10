@@ -12,7 +12,7 @@ docker_rec_version='1.2.0'
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
-image=samsaffron/discourse:1.0.8
+image=samsaffron/discourse:1.0.10
 docker_path=`which docker.io || which docker`
 
 if [ "${SUPERVISED}" = "true" ]; then
@@ -121,7 +121,20 @@ prereqs() {
     echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer."
   fi
 
-  # 4. able to attach stderr / out / tty
+  # 4. discourse docker image is downloaded
+  test=`$docker_path images | awk '{print $1 ":" $2 }' | grep "$image"`
+
+  if [ -z "$test" ]; then
+    echo
+    echo "WARNING: We are about to start downloading the Discourse base image"
+    echo "This process may take anywhere between a few minutes to an hour, depending on your network speed"
+    echo
+    echo "Please be patient"
+    echo
+
+  fi
+
+  # 5. able to attach stderr / out / tty
   test=`$docker_path run $user_args -i --rm -a stdout -a stderr $image echo working`
   if [[ "$test" =~ "working" ]] ; then : ; else
     echo "Your Docker installation is not working correctly"
@@ -358,7 +371,7 @@ run_mailtest(){
 }
 
 set_existing_container(){
-  existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+  existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
 }
 
 run_stop(){
@@ -379,14 +392,15 @@ run_stop(){
 
 run_start(){
 
-   existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+   existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
+   echo $existing
    if [ ! -z $existing ]
    then
      echo "Nothing to do, your container has already started!"
      exit 1
    fi
 
-   existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+   existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
    if [ ! -z $existing ]
    then
      echo "starting up existing container"
@@ -482,7 +496,7 @@ case "$command" in
       ;;
 
   ssh)
-       existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep "$config$" | awk '{ print $1 }'`
+       existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
 
        if [[ ! -z $existing ]]; then
          address="`$docker_path port $config 22`"
