@@ -53,11 +53,11 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
       rm phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
       cp phantomjs-1.9.8-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
       rm -fr phantomjs-1.9.8-linux-x86_64 &&\
-    wget http://static.jonof.id.au/dl/kenutils/pngout-20130221-linux.tar.gz &&\
-      tar -xf pngout-20130221-linux.tar.gz &&\
-      rm pngout-20130221-linux.tar.gz &&\
-      cp pngout-20130221-linux/x86_64/pngout /bin/pngout &&\
-      rm -rf pngout-20130221-linux &&\
+    wget http://static.jonof.id.au/dl/kenutils/pngout-20150319-linux.tar.gz &&\
+      tar -xf pngout-20150319-linux.tar.gz &&\
+      rm pngout-20150319-linux.tar.gz &&\
+      cp pngout-20150319-linux/x86_64/pngout /bin/pngout &&\
+      rm -rf pngout-20150319-linux &&\
     apt-get install -y nodejs &&\
     npm install uglify-js -g
 
