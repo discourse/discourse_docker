@@ -24,6 +24,7 @@ run:
        ssl_certificate_key /shared/ssl/ssl.key;
 
        ssl_session_tickets off;
+       ssl_session_cache shared:SSL:1m;
 
        # disable SPDY header compression (flawed in spdy < 4)
        spdy_headers_comp 0;
