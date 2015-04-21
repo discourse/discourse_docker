@@ -25,8 +25,8 @@ run:
 
        ssl_session_tickets off;
 
-       # enable SPDY header compression
-       spdy_headers_comp 6;
+       # disable SPDY header compression (flawed in spdy < 4)
+       spdy_headers_comp 0;
 
        # remember the certificate for a year and automatically connect to HTTPS for this domain
        add_header Strict-Transport-Security 'max-age=31536000';
