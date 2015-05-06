@@ -10,7 +10,7 @@
 
 The simplest way to get started is via the **standalone** template, which can be installed in 30 minutes or less. For detailed install instructions, see
 
-https://github.com/discourse/discourse/blob/master/docs/INSTALL-digital-ocean.md
+https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md
 
 ### Directory Structure
 
