@@ -172,7 +172,7 @@ except smtplib.SMTPException as e:
     if 'SMTP AUTH extension not supported by server' in e.args[0]:
         print(" Authorization is not available - you may need to use TLS", file=sys.stderr)
     sys.exit(1)
-except ValueError:
+except ValueError as e:
     print_error("ERROR: {}".format(e.args[-1]), file=sys.stderr)
     sys.exit(1)
     
