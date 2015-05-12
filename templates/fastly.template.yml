@@ -1,0 +1,5 @@
+run:
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: "$proxy_add_x_forwarded_for"
+     to: "$http_fastly_client_ip"
