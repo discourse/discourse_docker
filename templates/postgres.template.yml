@@ -5,6 +5,12 @@ params:
   db_default_text_search_config: "pg_catalog.english"
   db_name: discourse
   db_user: discourse
+  db_wal_level: minimal
+  db_max_wal_senders: 0
+  db_checkpoint_segments: 6
+  db_logging_collector: off
+  db_log_min_duration_statement: 100
+
 
 hooks:
   before_code:
@@ -149,12 +155,27 @@ run:
   - replace:
       filename: "/etc/postgresql/9.3/main/postgresql.conf"
       from: /#?max_wal_senders *=.*/
-      to: "max_wal_senders = 4"
+      to: "max_wal_senders = $db_max_wal_senders"
 
   - replace:
       filename: "/etc/postgresql/9.3/main/postgresql.conf"
       from: /#?wal_level *=.*/
-      to: "wal_level = hot_standby"
+      to: "wal_level = $db_wal_level"
+
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?checkpoint_segments *=.*/
+      to: "checkpoint_segments = $db_checkpoint_segments"
+
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?logging_collector *=.*/
+      to: "logging_collector = $db_logging_collector"
+
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?log_min_duration_statement *=.*/
+      to: "log_min_duration_statement = $db_log_min_duration_statement"
 
   - replace:
       filename: "/etc/postgresql/9.3/main/pg_hba.conf"
