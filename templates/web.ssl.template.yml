@@ -1,4 +1,9 @@
 run:
+  - exec:
+     cmd:
+       # Generate strong Diffie-Hellman parameters
+       - "mkdir -p /shared/ssl/"
+       - "[ ! -e /shared/ssl/dhparams.pem ] && openssl dhparam -out /shared/ssl/dhparams.pem 2048 || true"
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /server.+{/
@@ -22,6 +27,7 @@ run:
 
        ssl_certificate /shared/ssl/ssl.crt;
        ssl_certificate_key /shared/ssl/ssl.key;
+       ssl_dhparam /shared/ssl/dhparams.pem;
 
        ssl_session_tickets off;
        ssl_session_cache shared:SSL:1m;
