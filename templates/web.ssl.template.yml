@@ -3,7 +3,7 @@ run:
      cmd:
        # Generate strong Diffie-Hellman parameters
        - "mkdir -p /shared/ssl/"
-       - "[ ! -e /shared/ssl/dhparams.pem ] && openssl dhparam -out /shared/ssl/dhparams.pem 2048"
+       - "[ -e /shared/ssl/dhparams.pem ] || openssl dhparam -out /shared/ssl/dhparams.pem 2048"
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /server.+{/
