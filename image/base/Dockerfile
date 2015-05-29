@@ -65,6 +65,9 @@ RUN mkdir /jemalloc && cd /jemalloc &&\
       tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure && make &&\
       mv lib/libjemalloc.so.1 /usr/lib && cd / && rm -rf /jemalloc
 
+ADD install-imagemagick /tmp/install-imagemagick
+RUN /tmp/install-imagemagick
+
 ADD install-pngcrush /tmp/install-pngcrush
 RUN /tmp/install-pngcrush
 
@@ -73,9 +76,6 @@ RUN /tmp/install-gifsicle
 
 ADD install-pngquant /tmp/install-pngquant
 RUN /tmp/install-pngquant
-
-ADD install-imagemagick /tmp/install-imagemagick
-RUN /tmp/install-imagemagick
 
 RUN add-apt-repository ppa:ubuntu-toolchain-r/test &&\
     apt-get update &&\
