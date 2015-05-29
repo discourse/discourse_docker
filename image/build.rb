@@ -2,7 +2,7 @@
 #
 require 'pty'
 
-$version = "1.0.11"
+$version = "1.0.12"
 
 $docker_squash = "https://github.com/jwilder/docker-squash/releases/download/v0.0.11/docker-squash-linux-amd64-v0.0.11.tar.gz"
 
