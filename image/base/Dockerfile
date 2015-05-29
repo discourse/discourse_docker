@@ -2,7 +2,7 @@
 # When new LTS ships we can upgrade
 
 # NAME:     discourse_base
-# VERSION:  1.0.11
+# VERSION:  1.0.12
 
 FROM ubuntu:14.04
 
@@ -28,7 +28,6 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk \
-                       pngcrush gifsicle \
                        postgresql-9.3 postgresql-client-9.3 \
                        postgresql-contrib-9.3 libpq-dev libreadline-dev \
                        nginx language-pack-en sudo cron anacron \
@@ -39,27 +38,41 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl" &&\
     apt-get -y install redis-server haproxy openssh-server &&\
     cd / &&\
-    mkdir /jemalloc && cd /jemalloc &&\
-      wget http://www.canonware.com/download/jemalloc/jemalloc-3.4.1.tar.bz2 &&\
-      tar -xjf jemalloc-3.4.1.tar.bz2 && cd jemalloc-3.4.1 && ./configure && make &&\
-      mv lib/libjemalloc.so.1 /usr/lib && cd / && rm -rf /jemalloc &&\
     apt-get -y install runit monit socat &&\
     mkdir -p /etc/runit/1.d &&\
     apt-get clean &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US &&\
-    wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
-      tar -xjf phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
-      rm phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
-      cp phantomjs-1.9.8-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
-      rm -fr phantomjs-1.9.8-linux-x86_64 &&\
     wget http://static.jonof.id.au/dl/kenutils/pngout-20150319-linux.tar.gz &&\
       tar -xf pngout-20150319-linux.tar.gz &&\
       rm pngout-20150319-linux.tar.gz &&\
       cp pngout-20150319-linux/x86_64/pngout /bin/pngout &&\
       rm -rf pngout-20150319-linux &&\
     apt-get install -y nodejs &&\
-    npm install uglify-js -g
+    npm install uglify-js -g &&\
+    npm install svgo -g &&\
+    apt-get -y install advancecomp jhead jpegoptim libjpeg-progs optipng
+
+# TODO check when binary packages are ready (not yet)
+RUN wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
+      tar -xjf phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
+      rm phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
+      cp phantomjs-1.9.8-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
+      rm -fr phantomjs-1.9.8-linux-x86_64
+
+RUN mkdir /jemalloc && cd /jemalloc &&\
+      wget http://www.canonware.com/download/jemalloc/jemalloc-3.6.0.tar.bz2 &&\
+      tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure && make &&\
+      mv lib/libjemalloc.so.1 /usr/lib && cd / && rm -rf /jemalloc
+
+ADD install-pngcrush /tmp/install-pngcrush
+RUN /tmp/install-pngcrush
+
+ADD install-gifsicle /tmp/install-gifsicle
+RUN /tmp/install-gifsicle
+
+ADD install-pngquant /tmp/install-pngquant
+RUN /tmp/install-pngquant
 
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick

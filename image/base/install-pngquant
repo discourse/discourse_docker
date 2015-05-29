@@ -1,0 +1,11 @@
+#!/bin/bash
+VERSION=2.4.1
+cd /tmp
+curl -O https://github.com/pornel/pngquant/archive/$VERSION.tar.gz
+tar zxf $VERSION.tar.gz
+cd pngquant-$VERSION
+./configure
+make && make install
+cd /
+rm -fr /tmp/pngq*
+rm -fr /tmp/$VERSION*
