@@ -7,5 +7,4 @@ cd gifsicle-$VERSION
 ./configure
 make install
 cd /
-rm -fr /tmp/gifsicle-$PNGCRUSH_VERSION
-rm /tmp/gifsicle-$PNGCRUSH_VERSION.tar.gz
+rm -fr /tmp/gifsicle*

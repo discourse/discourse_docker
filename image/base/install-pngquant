@@ -1,7 +1,9 @@
 #!/bin/bash
+
+apt-get install -y libpng-dev
 VERSION=2.4.1
 cd /tmp
-curl -O https://github.com/pornel/pngquant/archive/$VERSION.tar.gz
+wget https://github.com/pornel/pngquant/archive/$VERSION.tar.gz
 tar zxf $VERSION.tar.gz
 cd pngquant-$VERSION
 ./configure
