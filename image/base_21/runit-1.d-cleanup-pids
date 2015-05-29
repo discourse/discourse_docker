@@ -1,3 +1,0 @@
-#!/bin/bash
-/bin/echo "Cleaning stale PID files"
-/bin/rm -f /var/run/*.pid

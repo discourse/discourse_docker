@@ -1,3 +1,0 @@
-#!/bin/bash
-
-/bin/run-parts --verbose --exit-on-error /etc/runit/1.d

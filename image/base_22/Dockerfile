@@ -1,8 +1,8 @@
 # Official repo only has a ppa for postgresql 9.3 at the moment (14/3/2014)
 # When new LTS ships we can upgrade
 
-# VERSION 1.0.11
-FROM samsaffron/discourse_base:1.0.11
+# VERSION 1.0.12
+FROM samsaffron/discourse_base:1.0.12
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
