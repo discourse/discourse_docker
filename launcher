@@ -102,16 +102,14 @@ prereqs() {
 
   # 2. running aufs or btrfs
   test=`$docker_path info 2> /dev/null | grep 'Driver: '`
-  if [[ "$test" =~ [aufs|btrfs] ]] ; then : ; else
-    echo "Your Docker installation is not using the recommended AuFS (union filesystem) and may be unstable."
-    echo "If you are unable to bootstrap / stop your image please report the issue at:"
-    echo "https://meta.discourse.org/t/discourse-docker-installation-without-aufs/15639"
+  if [[ "$test" =~ [aufs|btrfs|zfs|overlay] ]] ; then : ; else
+    echo "Your Docker installation is not using a supported filesystem if we were to proceed you may have a broken install."
+    echo "aufs is the recommended filesystem you should be using (zfs/btrfs and overlay may work as well)"
+    echo "You can tell what filesystem you are using by running \"docker info\" and looking at the driver"
     echo ""
-    read -p "Continue without proper filesystem? [yN]" yn
-    case $yn in
-        [Yy]* ) break;;
-            * ) exit 1;;
-    esac
+    echo "If you wish to continue anyway using your existing unsupported filesystem"
+    echo "read the source code of launcher and figure out how to bypass this."
+    exit 1
   fi
 
   # 3. running recommended docker version
