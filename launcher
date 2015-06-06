@@ -33,7 +33,9 @@ else
   attach_on_run="-d"
 fi
 
-if [ -x "$(which ip 2>/dev/null)" ]; then
+if [ -n "$DOCKER_HOST" ]; then
+  docker_ip=`sed -e 's/^tcp:\/\/\(.*\):.*$/\1/' <<< "$DOCKER_HOST"`
+elif [ -x "$(which ip 2>/dev/null)" ]; then
   docker_ip=`ip addr show docker0 | \
                   grep 'inet ' | \
                   awk '{ split($2,a,"/"); print a[1] }';`
