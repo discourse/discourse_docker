@@ -34,12 +34,13 @@ run:
         /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = #{v}" if k =~ /^DISCOURSE_(.*)/}' > $conf
 
   - file:
-      path: /etc/runit/1.d/ensure-web-nginx-read
-      chmod: "+x"
-      contents: |
+     path: /etc/runit/1.d/ensure-web-nginx-read
+     chmod: "+x"
+     contents: |
         #!/bin/bash
         chgrp -R www-data /var/log/nginx
         chgrp www-data /var/log/nginx
+
   - file:
      path: /etc/service/unicorn/run
      chmod: "+x"
