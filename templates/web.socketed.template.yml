@@ -1,5 +1,6 @@
 
 run:
+  - exec: rm -f /shared/nginx.http*.sock;
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /listen 80;/
