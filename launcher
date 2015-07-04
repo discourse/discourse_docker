@@ -481,7 +481,7 @@ run_bootstrap(){
      /bin/bash -c "$run_command") \
      || ($docker_path rm `cat $cidbootstrap` && rm $cidbootstrap)
 
-  [ ! -e $cidbootstrap ] && echo "FAILED TO BOOTSTRAP" && exit 1
+  [ ! -e $cidbootstrap ] && echo "** FAILED TO BOOTSTRAP ** please scroll up and look for earlier error messages" && exit 1
 
   sleep 5
 
