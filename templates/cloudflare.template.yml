@@ -1,0 +1,22 @@
+run:
+  - file:
+      path: /tmp/add-cloudflare-ips
+      chmod: +x
+      contents: |
+        #!/bin/bash -e
+        # Download list of CloudFlare ips
+        wget https://www.cloudflare.com/ips-v4 -O - > /tmp/cloudflare-ips
+        echo >> /tmp/cloudflare-ips
+        wget https://www.cloudflare.com/ips-v6 -O - >> /tmp/cloudflare-ips
+        # Make into nginx commands and escape for inclusion into sed append command
+        CONTENTS=$(</tmp/cloudflare-ips sed 's/^/set_real_ip_from /' | sed 's/$/;/' | tr '\n' '\\' | sed 's/\\/\\n/g')
+        
+        echo CloudFlare IPs:
+        echo $(echo | sed "/^/a $CONTENTS")
+        # Insert into discourse.conf
+        sed -i "/sendfile on;/a $CONTENTS\nreal_ip_header CF-Connecting-IP;" /etc/nginx/conf.d/discourse.conf
+        # Clean up
+        rm /tmp/cloudflare-ips
+
+  - exec: "/tmp/add-cloudflare-ips"
+  - exec: "rm /tmp/add-cloudflare-ips"
