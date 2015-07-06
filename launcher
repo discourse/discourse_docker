@@ -58,7 +58,6 @@ usage () {
   echo "    enter:      Use nsenter to enter a container"
   echo "    ssh:        Start a bash shell in a running container"
   echo "    logs:       Docker logs for container"
-  echo "    mailtest:   Test the mail settings in a container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
   echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
@@ -371,15 +370,6 @@ else
   restart_policy=${restart_policy:---restart=always}
 fi
 
-
-run_mailtest(){
-  if [ ! -e $config_file ]; then
-    echo "Config does not exist: $config_file" >&2
-    exit 1
-  fi
-  exec scripts/mailtest $config_file
-}
-
 set_existing_container(){
   existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
 }
@@ -493,11 +483,6 @@ case "$command" in
   bootstrap)
       run_bootstrap
       echo "Successfully bootstrapped, to startup use ./launcher start $config"
-      exit 0
-      ;;
-
-  mailtest)
-      run_mailtest
       exit 0
       ;;
 
