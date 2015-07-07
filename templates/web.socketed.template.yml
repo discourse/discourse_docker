@@ -1,6 +1,16 @@
-
 run:
-  - exec: rm -f /shared/nginx.http*.sock;
+  - file:
+     path: /etc/runit/1.d/remove-old-socket
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        rm -f /shared/nginx.http*.sock
+  - file:
+     path: /etc/runit/3.d/remove-old-socket
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        rm -f /shared/nginx.http*.sock
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /listen 80;/
