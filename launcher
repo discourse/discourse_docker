@@ -310,7 +310,7 @@ RUBY
   install_docker
 }
 
-[ $command == "cleanup" ] && {
+[ "$command" == "cleanup" ] && {
   echo
   echo "The following command will"
   echo "- Delete all docker images for old containers"
