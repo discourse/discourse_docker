@@ -58,7 +58,6 @@ Commands:
     enter:      Use nsenter to enter a container
     ssh:        Start a bash shell in a running container
     logs:       Docker logs for container
-    mailtest:   Test the mail settings in a container
     bootstrap:  Bootstrap a container for the config based on a template
     rebuild:    Rebuild a container (destroy old, bootstrap, start new)
 ```
