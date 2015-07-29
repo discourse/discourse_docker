@@ -195,10 +195,10 @@ install_docker() {
   echo "sudo reboot"
   echo
 
-  echo "sudo sh -c \"wget -qO- https://get.docker.io/gpg | apt-key add -\""
-  echo "sudo sh -c \"echo deb http://get.docker.io/ubuntu docker main > /etc/apt/sources.list.d/docker.list\""
+  echo "sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D"
+  echo "sudo sh -c \"echo deb https://apt.dockerproject.org/repo ubuntu-precise main > /etc/apt/sources.list.d/docker.list\""
   echo "sudo apt-get update"
-  echo "sudo apt-get install lxc-docker"
+  echo "sudo apt-get install docker-engine"
 
   exit 1
 }
