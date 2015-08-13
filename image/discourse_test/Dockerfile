@@ -10,6 +10,8 @@ RUN use_22 &&\
       sudo -u discourse bundle install --standalone &&\
       chown -R discourse /var/run/postgresql
 
+RUN npm install -g eslint babel-eslint
+
 WORKDIR /var/www/discourse
 ENV LANG en_US.UTF-8
 ENTRYPOINT sudo -E -u discourse ruby script/docker_test.rb
