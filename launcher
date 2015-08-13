@@ -401,6 +401,9 @@ run_start(){
    ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
           "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| '-p ' << p.to_s << ' '}.join"`
 
+   docker_args=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+          "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
+
    set_template_info
    set_volumes
    set_links
@@ -409,7 +412,8 @@ run_start(){
      hostname=`hostname`
      set -x
      $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "$hostname-$config" \
-        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $local_discourse/$config /sbin/boot
+        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $docker_args $local_discourse/$config \
+        /sbin/boot
 
    )
    exit 0
