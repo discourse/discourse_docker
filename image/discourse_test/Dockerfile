@@ -3,6 +3,7 @@ FROM samsaffron/discourse_fast_switch:1.0.12
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
 RUN use_22 &&\
+      gem update bundler &&\
       cd /var/www/discourse &&\
       chown -R discourse . &&\
       rm -fr .bundle &&\
