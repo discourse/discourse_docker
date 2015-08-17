@@ -187,16 +187,14 @@ get_ssh_pub_key() {
 
 install_docker() {
 
-  echo "Docker is not installed, make sure you are running on the 3.8 kernel"
-  echo "The best supported Docker release is Ubuntu 12.04.03 for it run the following"
+  echo "Docker is not installed, you will need to install Docker in order to run Discourse"
+  echo "Please visit https://docs.docker.com/installation/ for instructions on how to do this for your system"
   echo
-  echo "sudo apt-get update"
-  echo "sudo apt-get install linux-image-generic-lts-raring linux-headers-generic-lts-raring"
-  echo "sudo reboot"
+  echo "If you are running Ubuntu Trusty or later, you can try the following:"
   echo
 
   echo "sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D"
-  echo "sudo sh -c \"echo deb https://apt.dockerproject.org/repo ubuntu-precise main > /etc/apt/sources.list.d/docker.list\""
+  echo "sudo sh -c \"echo deb https://apt.dockerproject.org/repo ubuntu-$(lsb_release -sc) main > /etc/apt/sources.list.d/docker.list\""
   echo "sudo apt-get update"
   echo "sudo apt-get install docker-engine"
 
