@@ -12,6 +12,9 @@ expose:
   - "6379:6379"
   - "2221:22"
 
+# any extra arguments for Docker?
+# docker_args:
+
 params:
   db_default_text_search_config: "pg_catalog.english"
 
