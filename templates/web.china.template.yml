@@ -1,3 +1,7 @@
+env:
+  DISCOURSE_GRAVATAR_URL: https://secure.gravatar.com/avatar
+
+
 hooks:
   before_web:
     - exec:
