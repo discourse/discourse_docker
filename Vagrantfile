@@ -20,6 +20,8 @@ Vagrant.configure(2) do |config|
       apt-get -y remove --purge puppet juju
       apt-get -y autoremove --purge
       wget -qO- https://get.docker.com/ | sh
+
+      ln -s /vagrant /var/discourse
     EOF
 
     if ENV["http_proxy"]
