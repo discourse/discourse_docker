@@ -154,21 +154,26 @@ prereqs() {
 
   # 6. sufficient available resources
   # 6a. Memory
-  free_mem="$(LANG=C free -m | grep 'buffers/cache' | awk '{print $4}')"
-  if [ "$free_mem" -lt 800 ]; then
-    echo "You do not appear to have sufficient memory to run Discourse."
-    echo
-    echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#create-new-cloud-server"
-    exit 1
-  elif [ "$free_mem" -lt 1800 ]; then
-    total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
-    if [ "$total_swap" -lt 1000 ]; then
-      echo "You must have at least 1GB of swap when running in a low-memory environment."
-      echo
-      echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#set-up-swap-if-needed"
-      exit 1
-    fi
-  fi
+  #
+  # This was disable cause we always need to minus the memory of running containers from
+  # this total, this is fairly hard to do without docker stat and in particular some patches
+  # to it.
+  #
+  # free_mem="$(LANG=C free -m | grep 'buffers/cache' | awk '{print $4}')"
+  # if [ "$free_mem" -lt 800 ]; then
+  #   echo "You do not appear to have sufficient memory to run Discourse."
+  #   echo
+  #   echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#create-new-cloud-server"
+  #   exit 1
+  # elif [ "$free_mem" -lt 1800 ]; then
+  #   total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
+  #   if [ "$total_swap" -lt 1000 ]; then
+  #     echo "You must have at least 1GB of swap when running in a low-memory environment."
+  #     echo
+  #     echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#set-up-swap-if-needed"
+  #     exit 1
+  #   fi
+  # fi
 
   # 6b. Disk space
   free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
