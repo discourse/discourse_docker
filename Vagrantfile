@@ -1,5 +1,5 @@
 Vagrant.configure(2) do |config|
-  config.vm.define :ubuntu do |config|
+  config.vm.define :dockerhost do |config|
     config.vm.box = "trusty64"
     config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
 
@@ -15,13 +15,14 @@ Vagrant.configure(2) do |config|
       apt-get update
       apt-get -y remove --purge puppet juju
       apt-get -y autoremove --purge
+      wget -qO- https://get.docker.com/ | sh
     EOF
-  end
 
-  if ENV["http_proxy"]
-    config.vm.provision "shell", inline: <<-EOF
-      echo "Acquire::http::Proxy \\"#{ENV['http_proxy']}\\";" >/etc/apt/apt.conf.d/50proxy
-      echo "http_proxy=\"#{ENV['http_proxy']}\"" >/etc/profile.d/http_proxy.sh
-    EOF
+    if ENV["http_proxy"]
+      config.vm.provision "shell", inline: <<-EOF
+        echo "Acquire::http::Proxy \\"#{ENV['http_proxy']}\\";" >/etc/apt/apt.conf.d/50proxy
+        echo "http_proxy=\"#{ENV['http_proxy']}\"" >/etc/profile.d/http_proxy.sh
+      EOF
+    end
   end
 end
