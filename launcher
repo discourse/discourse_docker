@@ -152,9 +152,10 @@ prereqs() {
     exit 1
   fi
 
-  # 6. sufficient available resources
-  # 6a. Memory
-  #
+}
+
+check_resources() {
+  # Memory
   resources="ok"
   avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
   if [ "$avail_mem" -lt 900 ]; then
@@ -179,7 +180,7 @@ prereqs() {
     fi
   fi
 
-  # 6b. Disk space
+  # Disk space
   free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
   if [ "$free_disk" -lt 5000 ]; then
     resources="insufficient"
@@ -464,6 +465,8 @@ run_start(){
 }
 
 run_bootstrap(){
+
+  check_resources
 
   host_run
 
