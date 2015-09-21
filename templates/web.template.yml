@@ -32,7 +32,7 @@ run:
         conf=/var/www/discourse/config/discourse.conf
 
         # find DISCOURSE_ env vars, strip the leader, lowercase the key
-        /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = #{v}" if k =~ /^DISCOURSE_(.*)/}' > $conf
+        /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = \"#{v}\"" if k =~ /^DISCOURSE_(.*)/}' > $conf
 
   - file:
      path: /etc/runit/1.d/ensure-web-nginx-read
