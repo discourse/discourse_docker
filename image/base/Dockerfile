@@ -2,7 +2,7 @@
 # When new LTS ships we can upgrade
 
 # NAME:     discourse_base
-# VERSION:  1.0.12
+# VERSION:  1.0.13
 
 FROM ubuntu:14.04
 
@@ -84,7 +84,7 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test &&\
     echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p645 /usr/local &&\
+    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p647 /usr/local &&\
     gem update --system &&\
     gem install bundler &&\
     rm -rf /usr/local/share/ri/2.0.0/system &&\
@@ -102,6 +102,3 @@ ADD boot /sbin/boot
 
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
-
-# this is temporary, remove in 2015
-RUN cp /sbin/boot /sbin/runit
