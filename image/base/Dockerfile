@@ -22,7 +22,7 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get install -y curl && curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add - &&\
     echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list &&\
-    curl -sL https://deb.nodesource.com/setup | sudo bash - &&\
+    curl --silent --location https://deb.nodesource.com/setup_4.x | sudo bash - &&\
     apt-get -y update &&\
     apt-get -y install build-essential git curl wget \
                        libxslt-dev libcurl4-openssl-dev \
