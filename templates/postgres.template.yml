@@ -36,6 +36,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
+        echo -1000 >/proc/self/oom_score_adj
         HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
 
   - file:
