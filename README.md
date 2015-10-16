@@ -32,7 +32,7 @@ Placeholder spot for shared volumes with various Discourse containers. You may e
 
 #### `/templates`
 
-[pups](https://github.com/samsaffron/pups) managed pups templates you may use to bootstrap your environment.
+[pups](https://github.com/samsaffron/pups)-managed templates you may use to bootstrap your environment.
 
 #### `/image`
 
