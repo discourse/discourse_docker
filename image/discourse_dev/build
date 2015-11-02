@@ -2,5 +2,5 @@
 
 docker build -t discourse/dev:1.0.13 .
 docker save discourse/dev:1.0.13 | ../docker-squash -t discourse/dev:1.0.13 -verbose -from root | docker load
-docker tag discourse/dev:1.0.13 discourse/dev:latest
+docker tag -f discourse/dev:1.0.13 discourse/dev:latest
 
