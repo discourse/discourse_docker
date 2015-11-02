@@ -1,17 +1,39 @@
-FROM samsaffron/discourse_fast_switch
+FROM samsaffron/discourse_fast_switch:1.0.13
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN apt-get install -y vim &&\
-      wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.7-linux-x86_64.tar.bz2
-RUN tar -xjf phantomjs-1.9.7-linux-x86_64.tar.bz2
-RUN rm phantomjs-1.9.7-linux-x86_64.tar.bz2
-RUN cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /bin/phantomjs
-RUN rm -fr phantomjs-1.9.7-linux-x86_64
-RUN cd opt && git clone https://github.com/SamSaffron/vim-setup.git
-RUN cd opt/vim-setup && git submodule update --init
-RUN ln -s /opt/vim-setup/vimrc /etc/vim/vimrc.local
-RUN ln -s /opt/vim-setup/vimfiles/bundle /etc/vim/bundle
-RUN apt-get -y install ctags
-RUN apt-get -y install silversearcher-ag
-RUN cd /var/www/discourse && rm -fr .bundle && sudo -u discourse bundle install --standalone
+RUN use_22
+RUN rm -fr /usr/local/include/ruby-2.0.0
+
+RUN chown -R discourse:discourse /usr/ruby_22
+
+RUN rm /var/www/discourse/.bundle/config
+
+RUN cd /var/www/discourse && git pull && sudo -u discourse bundle install
+RUN use_22
+
+# CLEANUP
+RUN rm -fr /var/www/discourse/vendor/bundle/ruby
+RUN rm -fr /usr/ruby_20
+
+
+# get redis going
+ADD redis.template.yml /pups/redis.yml
+RUN /pups/bin/pups /pups/redis.yml
+
+RUN locale-gen en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US:en
+ENV LC_ALL en_US.UTF-8
+
+# get postgres going
+ADD postgres.template.yml /pups/postgres.yml
+RUN LANG=en_US.UTF-8 /pups/bin/pups /pups/postgres.yml
+
+# move pg out of the way
+RUN mv /shared/postgres_data /shared/postgres_data_orig
+
+# We got gems ... we need no source in the image ...
+RUN rm -fr /var/www/discourse
+
+ADD ensure-database /etc/runit/1.d/ensure-database
