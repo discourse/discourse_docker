@@ -50,6 +50,7 @@ env:
 
   ## TODO: How many concurrent web requests are supported?
   ## With 2GB we recommend 3-4 workers, with 1GB only 2
+  ## If you have lots of memory, use one or two workers per logical CPU core
   #UNICORN_WORKERS: 3
 
   ## TODO: List of comma delimited emails that will be made admin and developer
