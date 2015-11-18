@@ -1,4 +1,4 @@
-FROM samsaffron/discourse_fast_switch:1.0.12
+FROM discourse/discourse_fast_switch:1.0.14
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 

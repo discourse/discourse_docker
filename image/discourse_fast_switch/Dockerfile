@@ -1,6 +1,6 @@
 # Allow to easily switch Ruby version in images that derive off this
 
-FROM samsaffron/discourse:1.0.13
+FROM discourse/discourse:1.0.14
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 

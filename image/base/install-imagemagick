@@ -10,7 +10,7 @@ WDIR=/tmp/imagemagick
 mkdir -p $WDIR
 
 # Build and install libpng
-git clone -b v1.6.16 git://git.code.sf.net/p/libpng/code $WDIR/libpng
+git clone -b v1.6.19 git://git.code.sf.net/p/libpng/code $WDIR/libpng
 cd $WDIR/libpng
 ./autogen.sh
 ./configure --prefix=$PREFIX
