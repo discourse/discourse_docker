@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 PNGCRUSH_VERSION=1.7.87
 cd /tmp
 curl -O http://iweb.dl.sourceforge.net/project/pmt/pngcrush/$PNGCRUSH_VERSION/pngcrush-$PNGCRUSH_VERSION.tar.gz
