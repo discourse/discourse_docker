@@ -22,7 +22,7 @@ docker_rec_version='1.2.0'
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
-image=discourse/discourse:1.0.14
+image=discourse/discourse:1.0.15
 docker_path=`which docker.io || which docker`
 
 if [ "${SUPERVISED}" = "true" ]; then
