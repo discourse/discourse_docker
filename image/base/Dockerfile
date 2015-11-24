@@ -8,6 +8,8 @@ FROM ubuntu:14.04
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
+RUN echo "1.0.13" > /VERSION
+
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main restricted universe" > /etc/apt/sources.list &&\
     echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-updates main restricted universe" >> /etc/apt/sources.list &&\
