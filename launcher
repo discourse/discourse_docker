@@ -16,8 +16,8 @@ fi
 
 cd "$(dirname "$0")"
 
-docker_min_version='1.2.0'
-docker_rec_version='1.2.0'
+docker_min_version='1.6.0'
+docker_rec_version='1.6.0'
 
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
