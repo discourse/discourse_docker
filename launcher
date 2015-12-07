@@ -8,7 +8,7 @@ opt=$3
 re='[A-Z/ !@#$%^&*()+~`=]'
 if [[ $config =~ $re ]];
   then
-    echo 
+    echo
     echo "ERROR: Config name must not contain upper case characters, spaces or special characters. Correct config name and rerun $0."
     echo
     exit 1
@@ -114,20 +114,28 @@ prereqs() {
   fi
 
   # 3. running recommended docker version
-  test=($($docker_path --version))  # Get docker version string
-  test=${test[2]//,/}  # Get version alone and strip comma if exists
+  docker_server_version=($($docker_path --version))  # Get docker version string
+  docker_server_version=${docker_server_version[2]//,/}  # Get version alone and strip comma if exists
+  docker_client_version=$($docker_path version -f '{{.Client.Version}}' 2>/dev/null)
 
-  [[ "$test" =~ "0.12.0" ]] && echo "You are running a broken version of Docker, please upgrade ASAP. See: https://meta.discourse.org/t/the-installation-stopped-in-the-middle/16311/ for more details." && exit 1
+  if [ -n "$docker_client_version" ]; then
+    if [ "$docker_server_version" != "$docker_client_version" ]; then
+      echo "ERROR: There is a mismatch between your Docker server and client, please upgrade your Docker installation."
+      exit 1
+    fi
+  fi
+
+  [[ "$docker_server_version" == "0.12.0" ]] && echo "You are running a broken version of Docker, please upgrade ASAP. See: https://meta.discourse.org/t/the-installation-stopped-in-the-middle/16311/ for more details." && exit 1
 
   # At least minimum version
-  if compare_version "${docker_min_version}" "${test}"; then
-    echo "ERROR: Docker version ${test} not supported, please upgrade to at least ${docker_min_version}, or recommended ${docker_rec_version}"
+  if compare_version "${docker_min_version}" "${docker_server_version}"; then
+    echo "ERROR: Docker version ${docker_server_version} not supported, please upgrade to at least ${docker_min_version}, or recommended ${docker_rec_version}"
     exit 1
   fi
 
   # Recommend best version
-  if compare_version "${docker_rec_version}" "${test}"; then
-    echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer."
+  if compare_version "${docker_rec_version}" "${docker_server_version}"; then
+    echo "WARNING: Docker version ${docker_server_version} deprecated, recommend upgrade to ${docker_rec_version} or newer."
   fi
 
   # 4. discourse docker image is downloaded
