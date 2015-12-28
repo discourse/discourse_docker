@@ -63,7 +63,7 @@ usage () {
   echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
   echo
   echo "Options:"
-  echo "    --skip-prereqs   Don't check prerequisites"
+  echo "    --skip-prereqs   Don't check prerequisites or resource requirements"
   echo "    --docker-args    Extra arguments to pass when running docker"
   exit 1
 }
@@ -466,7 +466,9 @@ run_start(){
 
 run_bootstrap(){
 
-  check_resources
+  if [ "$opt" != "--skip-prereqs" ] ; then
+    check_resources
+  fi
 
   host_run
 
