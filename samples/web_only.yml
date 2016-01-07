@@ -2,13 +2,18 @@
 # TODO: change SOME_SECRET in this template
 
 templates:
-  - "templates/sshd.template.yml"
   - "templates/web.template.yml"
   - "templates/web.ratelimited.template.yml"
 
 expose:
   - "80:80"
   - "2222:22"
+
+# Use 'links' key to link containers together, aka use Docker --link flag.
+links:
+  - link:
+      name: data
+      alias: data
 
 # any extra arguments for Docker?
 # docker_args:
@@ -28,8 +33,8 @@ env:
   DISCOURSE_DB_SOCKET: ''
   #DISCOURSE_DB_USERNAME: discourse
   DISCOURSE_DB_PASSWORD: SOME_SECRET
-  DISCOURSE_DB_HOST: DB_IP_ADDRESS
-  DISCOURSE_REDIS_HOST: REDIS_IP_ADDRESS
+  DISCOURSE_DB_HOST: data
+  DISCOURSE_REDIS_HOST: data
   ##
   ## TODO: List of comma delimited emails that will be made admin and developer
   ## on initial signup example 'user1@example.com,user2@example.com'
@@ -54,12 +59,6 @@ volumes:
   - volume:
       host: /var/discourse/shared/web-only/log/var-log
       guest: /var/log
-
-#Use 'links' key to link containers together, aka use Docker --link flag.
-#links:
-#  - link:
-#      name: data
-#      alias: data
 
 ## The docker manager plugin allows you to one-click upgrade Discouse
 ## http://discourse.example.com/admin/docker
