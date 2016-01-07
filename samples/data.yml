@@ -5,12 +5,6 @@
 templates:
   - "templates/postgres.template.yml"
   - "templates/redis.template.yml"
-  - "templates/sshd.template.yml"
-
-# change to use your private IP 
-expose:
-  - "10.0.0.1:5432:5432"
-  - "10.0.0.1:6379:6379"
 
 # any extra arguments for Docker?
 # docker_args:
