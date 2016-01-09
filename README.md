@@ -55,8 +55,7 @@ Commands:
     stop:       Stop a running container
     restart:    Restart a container
     destroy:    Stop and remove a container
-    enter:      Use nsenter to enter a container
-    ssh:        Start a bash shell in a running container
+    enter:      Use docker exec to enter a container
     logs:       Docker logs for container
     bootstrap:  Bootstrap a container for the config based on a template
     rebuild:    Rebuild a container (destroy old, bootstrap, start new)
@@ -144,8 +143,6 @@ For a Discourse instance to function properly Email must be set up. Use the `SMT
 ### Troubleshooting
 
 View the container logs: `./launcher logs my_container`
-
-You can ssh into your container using `./launcher ssh my_container`, we will automatically set up ssh access during bootstrap.
 
 Spawn a shell inside your container using `./launcher enter my_container`. This is the most foolproof method if you have host root access.
 
