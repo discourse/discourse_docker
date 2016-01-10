@@ -6,5 +6,5 @@
 /etc/runit/2&
 RUNSVDIR=$!
 echo "Started runsvdir, PID is $RUNSVDIR"
-trap "echo Shutting Down && /etc/runit/3 && kill -HUP $RUNSVDIR && wait $RUNSVDIR" SIGTERM SIGHUP
+trap "echo Shutting Down && /etc/runit/3 && kill $RUNSVDIR && wait $RUNSVDIR" SIGTERM SIGHUP
 wait $RUNSVDIR
