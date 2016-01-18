@@ -2,7 +2,7 @@
 # When new LTS ships we can upgrade
 
 # NAME:     discourse_base
-# VERSION:  1.0.16
+# VERSION:  1.0.15
 
 FROM ubuntu:14.04
 
@@ -30,7 +30,6 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk \
-                       libicu-dev \
                        postgresql-9.3 postgresql-client-9.3 \
                        postgresql-contrib-9.3 libpq-dev libreadline-dev \
                        nginx language-pack-en sudo cron anacron \
