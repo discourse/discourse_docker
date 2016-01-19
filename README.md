@@ -38,7 +38,7 @@ Placeholder spot for shared volumes with various Discourse containers. You may e
 
 Dockerfile for both the base image `/discourse_base` and discourse image `/discourse`.
 
-- `/discourse_base` contains all the OS dependencies including sshd, runit, postgres, nginx, ruby.
+- `/discourse_base` contains all the OS dependencies including runit, postgres, nginx, ruby.
 
 - `/discourse` builds on the base image and configures a discourse user and `/var/www/discourse` directory for the Discourse source.
 
@@ -46,7 +46,7 @@ The Docker repository will always contain the latest built version at: https://i
 
 ### Launcher
 
-The base directory contains a single bash script which is used to manage containers. You can use it to "bootstrap" a new container, ssh in, start, stop and destroy a container.
+The base directory contains a single bash script which is used to manage containers. You can use it to "bootstrap" a new container, enter, start, stop and destroy a container.
 
 ```
 Usage: launcher COMMAND CONFIG [--skip-prereqs]
