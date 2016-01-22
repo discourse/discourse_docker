@@ -8,7 +8,7 @@ opt=$3
 re='[A-Z/ !@#$%^&*()+~`=]'
 if [[ $config =~ $re ]];
   then
-    echo 
+    echo
     echo "ERROR: Config name must not contain upper case characters, spaces or special characters. Correct config name and rerun $0."
     echo
     exit 1
@@ -24,6 +24,7 @@ cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
 image=discourse/discourse:1.0.15
 docker_path=`which docker.io || which docker`
+
 
 if [ "${SUPERVISED}" = "true" ]; then
   restart_policy="--restart=no"
@@ -420,6 +421,30 @@ run_stop(){
   fi
 }
 
+set_run_image() {
+  run_image=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+    "require 'yaml'; puts YAML.load(STDIN.readlines.join)['run_image']"`
+
+  if [ -z "$run_image" ]; then
+    run_image="$local_discourse/$config"
+  fi
+}
+
+set_boot_command() {
+  boot_command=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+    "require 'yaml'; puts YAML.load(STDIN.readlines.join)['boot_command']"`
+
+  if [ -z "$boot_command" ]; then
+
+    no_boot_command=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+      "require 'yaml'; puts YAML.load(STDIN.readlines.join)['no_boot_command']"`
+
+    if [ -z "$no_boot_command" ]; then
+      boot_command="/sbin/boot"
+    fi
+  fi
+}
+
 run_start(){
 
    existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
@@ -451,13 +476,14 @@ run_start(){
    set_template_info
    set_volumes
    set_links
+   set_run_image
+   set_boot_command
 
    (
      hostname=`hostname`
      set -x
      $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "$hostname-$config" \
-        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $docker_args $local_discourse/$config \
-        /sbin/boot
+        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $docker_args $run_image $boot_command
 
    )
    exit 0
@@ -516,6 +542,8 @@ run_bootstrap(){
   $docker_path commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
   $docker_path rm `cat $cidbootstrap` && rm $cidbootstrap
 }
+
+
 
 case "$command" in
   bootstrap)
