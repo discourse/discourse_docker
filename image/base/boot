@@ -2,9 +2,26 @@
 
 # we use this to boot up cause runit will not handle TERM and will not exit when done
 
+shutdown() {
+  echo Shutting Down
+  /etc/runit/3
+  ls /etc/service | SHELL=/bin/sh parallel sv force-stop {}
+  kill -HUP $RUNSVDIR
+  wait $RUNSVDIR
+
+  # give stuff a bit of time to finish
+  sleep 0.1
+
+  ORPHANS=`ps -eo pid | grep -v PID  | tr -d ' ' | grep -v '^1$'`
+  SHELL=/bin/bash parallel 'timeout 5 /bin/bash -c "kill {} && wait {}" || kill -9 {}' ::: $ORPHANS 2> /dev/null
+  exit
+}
+
 /etc/runit/1
 /etc/runit/2&
 RUNSVDIR=$!
 echo "Started runsvdir, PID is $RUNSVDIR"
-trap "echo Shutting Down && /etc/runit/3 && kill -HUP $RUNSVDIR && wait $RUNSVDIR" SIGTERM SIGHUP
+trap shutdown SIGTERM SIGHUP
 wait $RUNSVDIR
+
+shutdown
