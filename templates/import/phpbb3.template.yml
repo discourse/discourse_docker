@@ -1,0 +1,116 @@
+# This template installs MariaDB and all dependencies needed for importing from phpBB3.
+
+params:
+  home: /var/www/discourse
+
+hooks:
+  after_web_config:
+    - exec:
+        cd: /etc/service
+        cmd:
+          - rm -R unicorn
+          - rm -R nginx
+          - rm -R cron
+
+    - exec:
+        cd: /etc/runit/3.d
+        cmd:
+          - rm 01-nginx
+          - rm 02-unicorn
+
+    - file:
+        path: /etc/apt/sources.list.d/mariadb.list
+        contents: |
+          # MariaDB 10.1 repository list
+          # http://mariadb.org/mariadb/repositories/
+          deb [arch=amd64,i386] http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.1/ubuntu trusty main
+          deb-src http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.1/ubuntu trusty main
+
+    - file:
+        path: /etc/apt/preferences.d/mariadb
+        contents: |
+          Package: *
+          Pin: release o=MariaDB
+          Pin-Priority: 1000
+
+    - file:
+        path: /etc/mysql/conf.d/import.cnf
+        contents: |
+          [mysqld]
+          # disable InnoDB since it is extremly slow in Docker container
+          default-storage-engine=MyISAM
+          default-tmp-storage-engine=MyISAM
+          innodb=OFF
+
+          datadir=/shared/import/mysql/data
+
+          skip-host-cache
+          skip-name-resolve
+
+    - exec:
+        cmd:
+          - mkdir -p /shared/import/mysql/data
+          - apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
+          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadbclient-dev mariadb-server
+          - sed -Ei 's/^log/#&/' /etc/mysql/my.cnf
+
+    - file:
+        path: /etc/service/mysql/run
+        chmod: "+x"
+        contents: |
+          #!/bin/bash
+          # Make sure the datadir exists, is accessible and contains all system tables
+          mkdir -p /shared/import/mysql/data
+          chown mysql -R /shared/import/mysql/data
+          /usr/bin/mysql_install_db --user=mysql
+
+          # Shamelessly copied from http://smarden.org/runit1/runscripts.html#mysql
+          exec 2>&1
+          exec /usr/sbin/mysqld -u mysql
+
+    - file:
+        path: /etc/runit/3.d/99-mysql
+        chmod: "+x"
+        contents: |
+          #!/bin/bash
+          sv stop mysql
+
+    - file:
+        path: /usr/local/bin/import_phpbb3.sh
+        chmod: "+x"
+        contents: |
+          #!/bin/bash
+          chown discourse /shared/import/settings.yml
+          chown discourse -R /shared/import/data
+
+          if [ -f "/shared/import/data/phpbb_mysql.sql" ]; then
+            if [ ! -f "/shared/import/mysql/imported" ]; then
+              echo "Loading database dump into MySQL..."
+              mysql -uroot -e "DROP DATABASE IF EXISTS phpbb"
+              mysql -uroot -e "CREATE DATABASE phpbb"
+              mysql -uroot --default-character-set=utf8 --database=phpbb < /shared/import/data/phpbb_mysql.sql
+              touch /shared/import/mysql/imported
+            fi
+          else
+            sv stop mysql
+          fi
+
+          cd $home
+          echo "The phpBB3 import is starting..."
+          echo
+          su discourse -c 'bundle exec ruby script/import_scripts/phpbb3.rb /shared/import/settings.yml'
+
+    - exec:
+        cd: $home
+        cmd:
+          - mkdir -p /shared/import/data
+          - chown discourse -R /shared/import
+          - cp -n script/import_scripts/phpbb3/settings.yml /shared/import/settings.yml
+
+  after_bundle_exec:
+    - exec:
+        cd: $home
+        cmd:
+          - echo "gem 'mysql2'" >> Gemfile
+          - echo "gem 'ruby-bbcode-to-md', :github => 'nlalonde/ruby-bbcode-to-md'" >> Gemfile
+          - su discourse -c 'bundle install --no-deployment --without test --without development --path vendor/bundle'
