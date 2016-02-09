@@ -330,7 +330,7 @@ set_template_info() {
        end
     end
     # strip out blank env
-    env.delete_if{|k,v| v && v.empty?}
+    env.delete_if{|k,v| "#{v}".empty?}
     puts env.map{|k,v| "-e\n#{k}=#{v}" }.join("\n")
 RUBY
 
