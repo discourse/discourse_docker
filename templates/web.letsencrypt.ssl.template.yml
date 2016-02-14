@@ -1,5 +1,5 @@
 env:
-  LETSENCRYPT_DIR: "/shared/letsencrypt"
+  LETSENCRYPT_DIR: "/shared/standalone/letsencrypt"
 
 run:
   - exec:
