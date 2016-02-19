@@ -45,11 +45,6 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get clean &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US &&\
-    wget http://static.jonof.id.au/dl/kenutils/pngout-20150319-linux.tar.gz &&\
-      tar -xf pngout-20150319-linux.tar.gz &&\
-      rm pngout-20150319-linux.tar.gz &&\
-      cp pngout-20150319-linux/x86_64/pngout /bin/pngout &&\
-      rm -rf pngout-20150319-linux &&\
     apt-get install -y nodejs &&\
     npm install uglify-js -g &&\
     npm install svgo -g &&\
