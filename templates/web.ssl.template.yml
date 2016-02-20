@@ -14,6 +14,7 @@ run:
        }
        server {
   - replace:
+     hook: ssl
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /listen 80;\s+gzip on;/m
      to: |
@@ -31,8 +32,7 @@ run:
        ssl_session_timeout 1d;
        ssl_session_cache shared:SSL:1m;
 
-       # remember the certificate for a year and automatically connect to HTTPS for this domain
-       add_header Strict-Transport-Security 'max-age=31536000';
+       add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
 
        gzip on;
 
