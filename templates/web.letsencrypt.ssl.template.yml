@@ -1,0 +1,42 @@
+env:
+  LETSENCRYPT_DIR: "/shared/letsencrypt"
+
+hooks:
+  after_ssl:
+    - exec:
+       cmd:
+         - cd /root && git clone https://github.com/Neilpang/le.git
+         - touch /var/spool/cron/crontabs/root
+         - install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
+         - cd /root/le && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./le.sh install
+
+    - file:
+       path: /etc/runit/1.d/letsencrypt
+       chmod: "+x"
+       contents: |
+          #!/bin/bash
+          set -e
+          LE_WORKING_DIR="$$ENV_LETSENCRYPT_DIR" $$ENV_LETSENCRYPT_DIR/le.sh issue no $$ENV_DISCOURSE_HOSTNAME no 4096
+          LE_WORKING_DIR="$$ENV_LETSENCRYPT_DIR" $$ENV_LETSENCRYPT_DIR/le.sh installcert $$ENV_DISCOURSE_HOSTNAME /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer "sv reload nginx"
+          # After the initial install, switch to Webroot plugin
+          LE_WORKING_DIR="$$ENV_LETSENCRYPT_DIR" $$ENV_LETSENCRYPT_DIR/le.sh _setopt $$ENV_LETSENCRYPT_DIR/$$ENV_DISCOURSE_HOSTNAME/$$ENV_DISCOURSE_HOSTNAME.conf "Le_Webroot" "=" "/var/www/discourse/public"
+
+    - replace:
+       filename: "/etc/nginx/conf.d/discourse.conf"
+       from: /ssl_certificate.+/
+       to: |
+         ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer;
+
+    - replace:
+       filename: "/etc/nginx/conf.d/discourse.conf"
+       from: /ssl_certificate_key.+/
+       to: |
+         ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key; # remember the certificate for 2 months and automatically connect to HTTPS for this domain
+
+    - replace:
+       filename: "/etc/nginx/conf.d/discourse.conf"
+       from: /add_header.+/
+       to: |
+         add_header Strict-Transport-Security 'max-age=5184000';
+
+
