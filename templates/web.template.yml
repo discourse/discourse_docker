@@ -39,6 +39,7 @@ run:
      chmod: "+x"
      contents: |
         #!/bin/bash
+        mkdir -p /var/log/nginx
         chgrp -R www-data /var/log/nginx
         chgrp www-data /var/log/nginx
 
@@ -60,7 +61,6 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
-        mkdir -p /var/log/nginx
         exec /usr/sbin/nginx
 
   - file:
