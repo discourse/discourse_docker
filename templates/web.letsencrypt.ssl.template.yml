@@ -38,5 +38,3 @@ hooks:
        from: /add_header.+/
        to: |
          add_header Strict-Transport-Security 'max-age=5184000';
-
-
