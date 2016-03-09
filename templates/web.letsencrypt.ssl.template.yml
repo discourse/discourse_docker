@@ -5,6 +5,11 @@ hooks:
   after_ssl:
     - exec:
        cmd:
+         - if [ -z "$LETSENCRYPT_ACCOUNT_EMAIL" ]; then echo "LETSENCRYPT_ACCOUNT_EMAIL ENV variable is required and has not been set."; exit 1; fi
+         - /bin/bash -c "if [[ ! \"$LETSENCRYPT_ACCOUNT_EMAIL\" =~ ([^@]+)@([^\.]+) ]]; then echo \"LETSENCRYPT_ACCOUNT_EMAIL is not a valid email address\"; exit 1; fi"
+
+    - exec:
+       cmd:
          - cd /root && git clone https://github.com/Neilpang/le.git
          - touch /var/spool/cron/crontabs/root
          - install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
@@ -15,7 +20,6 @@ hooks:
        chmod: "+x"
        contents: |
           #!/bin/bash
-          set -e
           LE_WORKING_DIR="$$ENV_LETSENCRYPT_DIR" $$ENV_LETSENCRYPT_DIR/le.sh issue no $$ENV_DISCOURSE_HOSTNAME no 4096
           LE_WORKING_DIR="$$ENV_LETSENCRYPT_DIR" $$ENV_LETSENCRYPT_DIR/le.sh installcert $$ENV_DISCOURSE_HOSTNAME /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer "sv reload nginx"
           # After the initial install, switch to Webroot plugin
@@ -26,6 +30,12 @@ hooks:
        from: /ssl_certificate.+/
        to: |
          ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer;
+
+    - replace:
+       filename: /shared/letsencrypt/account.conf
+       from: /#ACCOUNT_EMAIL=.+/
+       to: |
+         ACCOUNT_EMAIL=$$ENV_LETSENCRYPT_ACCOUNT_EMAIL
 
     - replace:
        filename: "/etc/nginx/conf.d/discourse.conf"
