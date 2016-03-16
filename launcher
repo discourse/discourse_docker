@@ -52,16 +52,17 @@ fi
 usage () {
   echo "Usage: launcher COMMAND CONFIG [--skip-prereqs]"
   echo "Commands:"
-  echo "    start:      Start/initialize a container"
-  echo "    stop:       Stop a running container"
-  echo "    restart:    Restart a container"
-  echo "    destroy:    Stop and remove a container"
-  echo "    enter:      Use nsenter to enter a container"
-  echo "    ssh:        Start a bash shell in a running container"
-  echo "    logs:       Docker logs for container"
-  echo "    bootstrap:  Bootstrap a container for the config based on a template"
-  echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
-  echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
+  echo "    start:        Start/initialize a container"
+  echo "    stop:         Stop a running container"
+  echo "    restart:      Restart a container"
+  echo "    destroy:      Stop and remove a container"
+  echo "    enter:        Use nsenter to enter a container"
+  echo "    ssh:          Start a bash shell in a running container"
+  echo "    logs:         Docker logs for container"
+  echo "    bootstrap:    Bootstrap a container for the config based on a template"
+  echo "    rebuild:      Rebuild a container (destroy old, bootstrap, start new)"
+  echo "    cleanup:      Remove all containers that have stopped for > 24 hours"
+  echo "    simple_setup: Configure, bootstrap and start Discourse"
   echo
   echo "Options:"
   echo "    --skip-prereqs   Don't check prerequisites or resource requirements"
@@ -212,7 +213,7 @@ check_ports() {
   fi
 }
 
-if [ "$opt" != "--skip-prereqs" ] ; then
+if [ "$opt" != "--skip-prereqs" ] && [ "$command" != "simple_setup" ]; then
   prereqs
 fi
 
@@ -390,16 +391,16 @@ RUBY
   exit 0
 }
 
+
 [ $# -lt 2 ] && {
   usage
 }
 
-if [ ! -e $config_file ]
-  then
-    echo "Config file was not found, ensure $config_file exists"
-    echo ""
-    echo "Available configs ( `cd containers && ls -dm *.yml | tr -s '\n' ' ' | awk '{ gsub(/\.yml/, ""); print }'`)"
-    exit 1
+if [ ! -e $config_file ] && [ "$command" != "simple_setup" ]; then
+  echo "Config file was not found, ensure $config_file exists"
+  echo ""
+  echo "Available configs ( `cd containers && ls -dm *.yml | tr -s '\n' ' ' | awk '{ gsub(/\.yml/, ""); print }'`)"
+  exit 1
 fi
 
 
@@ -412,6 +413,13 @@ if compare_version "1.2.0" "$docker_version"; then
 else
   restart_policy=${restart_policy:---restart=always}
 fi
+
+run_ruby_script() {
+  ruby_file=$1
+  arguments=$2
+  cp containers/"$config".yml ruby_scripts/config.yml  # Add config to the data volume for easy access
+  echo `$docker_path run $user_args --rm -i -a stdout -a stdin -v /var/discourse/ruby_scripts:/ruby_scripts $image ruby /ruby_scripts/"$ruby_file" "$arguments"`
+}
 
 set_existing_container(){
   existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
@@ -513,8 +521,50 @@ run_start(){
 
 }
 
-run_bootstrap(){
+run_simple_setup() {
+  # Get the config variables by prompting the user for them
+  config_variables=(
+    DISCOURSE_HOSTNAME
+    DISCOURSE_DEVELOPER_EMAILS
+    DISCOURSE_SMTP_ADDRESS
+    DISCOURSE_SMTP_PORT
+    DISCOURSE_SMTP_USER_NAME
+    DISCOURSE_SMTP_PASSWORD
+  )
+  config_variables_desc=(
+    'Domain name'
+    "Initial admin and developer email(s)"
+    '(email provider) SMTP Address'
+    '(email provider) SMTP Port'
+    '(email provider) SMTP Username'
+    '(email provider) SMTP Password'
+  )
+  echo
+  echo "To configure discourse we need a few things from you:"
+  echo
+  echo "- The domain name this Discourse instance will respond to, example: discourse.example.org"
+  echo "- The emails that will be made admin and developer on initial signup, example: 'user1@example.com,user2@example.com'"
+  echo "- Your email provider configuration. For help, go to https://github.com/discourse/discourse/blob/master/docs/INSTALL-email.md"
+  echo
+  for index in ${!config_variables[*]}; do # The indexes of the array
+    read -p "${config_variables_desc[$index]}: " ${config_variables[$index]}
+    simple_setup_hash+="${config_variables[$index]}, ${!config_variables[$index]},"
+  done
 
+  # Copy the sample config if config doesn't exist
+  if [ ! -e $config_file ]; then
+    cp 'samples/standalone.yml' containers/"$config".yml
+  fi
+
+  # Install the docker image
+  prereqs
+
+  # Run the simple_installer ruby file with the config variables passed by the user
+  run_ruby_script 'simple_setup.rb' "$simple_setup_hash"
+  mv ruby_scripts/config.yml containers/"$config".yml  # overwrite the existing config with the updates
+}
+
+run_bootstrap(){
   if [ "$opt" != "--skip-prereqs" ] ; then
     check_resources
   fi
@@ -569,6 +619,15 @@ run_bootstrap(){
 
 
 case "$command" in
+  simple_setup)
+      run_simple_setup
+      echo "Bootstrapping app"
+      echo "This will take between 2 and 8 minutes to complete"
+      run_bootstrap
+      echo "Successfully bootstrapped, to startup use ./launcher start $config"
+      exit 0
+      ;;
+
   bootstrap)
       run_bootstrap
       echo "Successfully bootstrapped, to startup use ./launcher start $config"
