@@ -16,11 +16,11 @@ FileUtils.copy_file('samples/standalone.yml', config_path) unless File.exist?(co
   'DISCOURSE_DEVELOPER_EMAILS' => "List of comma delimited emails that will be made admin and developer on initial signup, example: 'user1@example.com,user2@example.com'"
 }
 
-def setup_prompter(keyword:, description:)
+def setup_prompter(keyword, description)
   puts description
   while (print "> "; input = gets) do
     input.chomp!
-    write_config(value: input, keyword: keyword)
+    write_config(keyword, input)
     break
   end
   input
@@ -28,25 +28,25 @@ end
 
 # Instead of just writing config to_yaml with the updates
 # find and replace in file to preserve the comments
-def write_config(value:, keyword:)
+def write_config(keyword, value)
   matcher = /
     \n\s+       # newline and some spaces
-    \#?(\s+)?     # maybe commented out
+    \#?(\s+)?   # maybe commented out
     #{keyword}  # the keyword
     [^\n]*      # rest of the line
   /x
-  @app_yml = @app_yml.gsub(matcher) { |match| "#{match[/\n\s+/]}#{keyword}: #{value.strip}" }
+  @app_yml = @app_yml.gsub(matcher) { |match| "#{match[/\n\s+/]}#{keyword}: #{value.to_s.strip}" }
 end
 
 def unicorns_from_cpus
-  `nproc` * 2
+  `nproc`.to_i * 2
 end
 
 def pg_memory_for_memory
-  case `awk '/MemTotal/ {print $2}' /proc/meminfo`
-  when >= 3_500_000
+  mem = `awk '/MemTotal/ {print $2}' /proc/meminfo`.to_i
+  if mem >= 3500000
     '1GB'
-  when <= 1_500_000
+  elsif mem <= 1500000
     '256MB'
   else
     '128MB'
@@ -57,15 +57,15 @@ end
 {
   'DISCOURSE_SMTP_ENABLE_START_TLS' => 'true',
   'UNICORN_WORKERS' => unicorns_from_cpus,
-  'db_shared_buffers' => postgres_from_memory
-}.each { |key, value| write_config(keyword: key, value: value) }
+  'db_shared_buffers' => pg_memory_for_memory
+}.each { |key, value| write_config(key, value) }
 
 def get_user_configuration(inputs = {})
   puts
-  @domain_config.each { |key, value| inputs[key] = setup_prompter(keyword: key, description: value) }
+  @domain_config.each { |key, value| inputs[key] = setup_prompter(key, value) }
 
   puts "\nThe next 4 questions are about your email provider. For help, go to https://github.com/discourse/discourse/blob/master/docs/INSTALL-email.md\n"
-  @email_config.each { |key, value|  inputs[key] = setup_prompter(keyword: key, description: value) }
+  @email_config.each { |key, value|  inputs[key] = setup_prompter(key, value) }
 
   puts "You entered:"
   inputs.each { |key, value| puts "   #{key}:  #{value}" }
@@ -87,4 +87,4 @@ rescue => e
 end
 
 puts "\nBootstrapping app\nWill take between 2 and 8 minutes to complete"
-exec('launcher bootstrap app')
+exec('./launcher bootstrap app && ./launcher start app')
