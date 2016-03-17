@@ -52,16 +52,17 @@ fi
 usage () {
   echo "Usage: launcher COMMAND CONFIG [--skip-prereqs]"
   echo "Commands:"
-  echo "    start:      Start/initialize a container"
-  echo "    stop:       Stop a running container"
-  echo "    restart:    Restart a container"
-  echo "    destroy:    Stop and remove a container"
-  echo "    enter:      Use nsenter to enter a container"
-  echo "    ssh:        Start a bash shell in a running container"
-  echo "    logs:       Docker logs for container"
-  echo "    bootstrap:  Bootstrap a container for the config based on a template"
-  echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
-  echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
+  echo "    start:        Start/initialize a container"
+  echo "    stop:         Stop a running container"
+  echo "    restart:      Restart a container"
+  echo "    destroy:      Stop and remove a container"
+  echo "    enter:        Use nsenter to enter a container"
+  echo "    ssh:          Start a bash shell in a running container"
+  echo "    logs:         Docker logs for container"
+  echo "    bootstrap:    Bootstrap a container for the config based on a template"
+  echo "    rebuild:      Rebuild a container (destroy old, bootstrap, start new)"
+  echo "    cleanup:      Remove all containers that have stopped for > 24 hours"
+  echo "    simple_setup: Configure, bootstrap and start Discourse"
   echo
   echo "Options:"
   echo "    --skip-prereqs   Don't check prerequisites or resource requirements"
@@ -389,6 +390,17 @@ RUBY
   fi
   exit 0
 }
+
+[ "$command" == "simple_setup" ] && {
+  if [[ `awk -F= '/^NAME/{print $2}' /etc/os-release` =~ [ebian|buntu] ]]; then
+    apt-get install ruby -y
+  else
+    yum install ruby -y
+  fi
+  ruby simple_setup.rb
+  exit 0
+}
+
 
 [ $# -lt 2 ] && {
   usage
