@@ -26,7 +26,7 @@ templates:
 ## which TCP/IP ports should this container expose?
 expose:
   - "80:80"   # fwd host port 80   to container port 80 (http)
-  - "443:443" # fwd host port 443   to container port 443 (https)
+  - "443:443" # fwd host port 443   to container port 443 (https) (ssl ready)
 # If you want Discourse to share a port with another webserver like Apache or nginx,
 # see https://meta.discourse.org/t/17247 for instructions.
 
