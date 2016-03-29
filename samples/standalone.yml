@@ -17,9 +17,11 @@ templates:
   - "templates/postgres.template.yml"
   - "templates/redis.template.yml"
   - "templates/web.template.yml"
-  - "templates/web.ssl.template.yml"
-  - "templates/web.letsencrypt.ssl.template.yml"
   - "templates/web.ratelimited.template.yml"
+
+ ## Comment out the following lines if you wish to add Lets Encrypt for your Discourse install
+ # - "templates/web.ssl.template.yml"
+ # - "templates/web.letsencrypt.ssl.template.yml"
 
 ## which TCP/IP ports should this container expose?
 expose:
@@ -70,8 +72,8 @@ env:
   #DISCOURSE_SMTP_PASSWORD: pa$$word               # (optional, WARNING the char '#' in pw can cause problems!)
   #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
   
-  ## The Lets Encrypt email will aloow you to register a FREE SSL certificate
-  LETSENCRYPT_ACCOUNT_EMAIL: email@awesomedomain.com
+  ## The Lets Encrypt email will allow you to register a FREE SSL certificate if you added the Lets Encrypt template, comment it out if you have set this up
+  # LETSENCRYPT_ACCOUNT_EMAIL: email@awesomedomain.com
 
   ## The CDN address for this Discourse instance (configured to pull)
   #DISCOURSE_CDN_URL: //discourse-cdn.example.com
