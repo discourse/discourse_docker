@@ -1,0 +1,49 @@
+# Adds another server on port 80 for hidden service hosting
+
+run:
+  - exec:
+      cmd:
+        # Check DISCOURSE_ONION variable has been configured
+        - if [ -z "$DISCOURSE_ONION" ]; then echo "DISCOURSE_ONION ENV variable is required and has not been set."; exit 1; fi
+
+  - exec:
+      cmd:
+        # Copy default nginx file
+        - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/onion.conf"
+
+  # Remove duplicate entries that would crash the server
+  - replace:
+      filename: "/etc/nginx/conf.d/onion.conf"
+      from: /upstream[^\}]+\}/m
+      to: ""
+
+  - replace:
+      filename: "/etc/nginx/conf.d/onion.conf"
+      from: /map[^\}]+\}/m
+      to: ""
+
+  - replace:
+      filename: "/etc/nginx/conf.d/onion.conf"
+      from: /types[^\}]+\}/m
+      to: ""
+
+  - replace:
+      filename: "/etc/nginx/conf.d/onion.conf"
+      from: /proxy_cache_path.*$/
+      to: ""
+
+  - replace:
+      filename: "/etc/nginx/conf.d/onion.conf"
+      from: /log_format.*$/
+      to: ""
+
+  - replace:
+      filename: "/etc/nginx/conf.d/onion.conf"
+      from: /server_name.+$/
+      to: server_name $$ENV_DISCOURSE_ONION;
+
+  # Apply the same replacements done on web.template.yml to the nginx file
+  - replace:
+      filename: "/etc/nginx/conf.d/onion.conf"
+      from: /client_max_body_size.+$/
+      to: client_max_body_size $upload_size ;
