@@ -576,7 +576,7 @@ case "$command" in
       ;;
 
   enter)
-      exec $docker_path exec -it $config /bin/bash
+      exec $docker_path exec -it $config /bin/bash --login
       ;;
 
   ssh)

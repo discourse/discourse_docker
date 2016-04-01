@@ -247,3 +247,10 @@ run:
           mkdir -p /shared/backups
           chown -R discourse:www-data /shared/backups
         fi
+
+  # change login directory to Discourse home
+  - file:
+     path: /root/.bash_profile
+     chmod: 644
+     contents: |
+        cd $home
