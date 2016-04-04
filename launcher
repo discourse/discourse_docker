@@ -208,6 +208,7 @@ check_ports() {
     echo ""
     echo "If you are trying to run Discourse simultaneously with another web server like Apache or nginx, you will need to bind to a different port."
     echo "See https://meta.discourse.org/t/17247 for help."
+    echo "To continue anyway, re-run Launcher with --skip-prereqs"
     exit 1
   fi
 }
