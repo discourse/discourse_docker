@@ -64,6 +64,10 @@ env:
 
   ## TODO: The domain name this Discourse instance will respond to
   DISCOURSE_HOSTNAME: 'discourse.example.com'
+  ## TODO: Uncomment if you want the container to be started with the same
+  ##       hostname (-h option) as specified above (default "$hostname-$config")
+  ## NOTE: 'true' is the only valid value here, any other will be ignored
+  #DOCKER_USE_HOSTNAME: true
 
   ## TODO: The mailserver this Discourse instance will use
   DISCOURSE_SMTP_ADDRESS: smtp.example.com         # (mandatory)

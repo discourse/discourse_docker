@@ -502,10 +502,28 @@ run_start(){
    set_run_image
    set_boot_command
 
+   # get hostname and settings from container configuration
+   for envar in "${env[@]}"
+   do
+     if [[ $envar == DOCKER_USE_HOSTNAME* ]] || [[ $envar == DISCOURSE_HOSTNAME* ]]
+     then
+       # use as environment variable
+       eval $envar
+     fi
+   done
+
    (
      hostname=`hostname`
+     # overwrite hostname
+     if [ "$DOCKER_USE_HOSTNAME" = "true" ]
+     then
+       hostname=$DISCOURSE_HOSTNAME
+     else
+       hostname=$hostname-$config
+     fi
+
      set -x
-     $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "$hostname-$config" \
+     $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "$hostname" \
         -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $docker_args $run_image $boot_command
 
    )
