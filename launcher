@@ -514,7 +514,7 @@ run_start(){
    done
 
    (
-     hostname=`hostname`
+     hostname=`hostname -s`
      # overwrite hostname
      if [ "$DOCKER_USE_HOSTNAME" = "true" ]
      then
