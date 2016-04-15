@@ -10,7 +10,7 @@ hooks:
 
     - exec:
        cmd:
-         - cd /root && git clone https://github.com/Neilpang/le.git
+         - cd /root && git clone https://github.com/Neilpang/le.git && cd /root/le && git reset --hard a7b7355dcf1f1b75fb581bf5d15cf26086d58c06
          - touch /var/spool/cron/crontabs/root
          - install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
          - cd /root/le && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./le.sh install
