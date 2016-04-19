@@ -528,9 +528,12 @@ run_start(){
      # docker added more hostname rules
      hostname=${hostname/_/-}
 
+     mac_address="--mac-address $(echo $hostname | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/')"
+
      set -x
      $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "$hostname" \
-        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $docker_args $run_image $boot_command
+        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $mac_address $docker_args \
+        $run_image $boot_command
 
    )
    exit 0
