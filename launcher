@@ -313,7 +313,6 @@ set_template_info() {
 
     input="hack: true"
 
-
     for template in "${arrTemplates[@]}"
     do
       [ ! -z $template ] && {
@@ -402,7 +401,6 @@ if [ ! -e $config_file ]
     echo "Available configs ( `cd containers && ls -dm *.yml | tr -s '\n' ' ' | awk '{ gsub(/\.yml/, ""); print }'`)"
     exit 1
 fi
-
 
 docker_version=($($docker_path --version))
 docker_version=${test[2]//,/}
@@ -537,11 +535,37 @@ run_start(){
 
 }
 
+mail_config_check(){
+ mail_config_verbose=0 # 1 prints mail config to stdout
+ mail_config="ok"
+  for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
+	   DISCOURSE_SMTP_PORT DISCOURSE_SMTP_ENABLE_START_TLS
+  do
+    mail_var=`grep "^  $x:" $config_file`
+    result=$?
+    if (( result == 0 ))
+    then
+      if [ "$mail_config_verbose" -eq 1 ]; then
+	  echo "$mail_var"
+      fi
+    else
+      echo "Warning: $x not configured."
+      mail_config="dubious"
+    fi
+  done
+  if [ -t 0 ] && [ "$mail_config" != "ok" ]; then
+    echo
+    read -p "Press ENTER to continue, or Ctrl-C to exit and fix your mail config."
+  fi
+}
+
 run_bootstrap(){
 
   if [ "$opt" != "--skip-prereqs" ] ; then
-    check_resources
+      check_resources
   fi
+
+  mail_config_check  
 
   host_run
 
