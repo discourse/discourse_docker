@@ -6,3 +6,4 @@ bin/*
 image/nsenter/nsenter
 image/docker-squash
 .gc-state/*
+ruby_scripts/config.yml
