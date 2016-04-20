@@ -58,7 +58,6 @@ usage () {
   echo "    restart:    Restart a container"
   echo "    destroy:    Stop and remove a container"
   echo "    enter:      Use nsenter to enter a container"
-  echo "    ssh:        Start a bash shell in a running container"
   echo "    logs:       Docker logs for container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
@@ -223,28 +222,6 @@ else
   user_args=""
 fi
 
-get_ssh_pub_key() {
-  local ${ssh_key_locations}
-  ssh_key_locations=(
-    ~/.ssh/id_ed25519.pub
-    ~/.ssh/id_ecdsa.pub
-    ~/.ssh/id_rsa.pub
-    ~/.ssh/id_dsa.pub
-    ~core/.ssh/authorized_keys
-  )
-
-  local $keyfile
-  for keyfile in "${ssh_key_locations[@]}"; do
-    if [[ -e ${keyfile} ]] ; then
-      ssh_pub_key="$(cat ${keyfile})"
-      return 0
-    fi
-  done
-
-  return 0
-}
-
-
 install_docker() {
 
   echo "Docker is not installed, you will need to install Docker in order to run Discourse"
@@ -306,7 +283,6 @@ set_template_info() {
 
     templates=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
       "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
-
 
     arrTemplates=(${templates// / })
     config_data=$(cat $config_file)
@@ -589,26 +565,28 @@ run_start(){
 
 }
 
-mail_config_check(){
- mail_config_verbose=0 # 1 prints mail config to stdout
- mail_config="ok"
-  for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD
+valid_config_check(){
+ valid_config="y"
+  for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
+           DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
   do
     mail_var=`grep "^  $x:" $config_file`
     result=$?
     if (( result == 0 ))
     then
-      if [ "$mail_config_verbose" -eq 1 ]; then
-	  echo "$mail_var"
+      if [[ $mail_var = *"example.com"* ]]
+      then
+        echo "Warning: $x left at incorrect default of example.com"
+        valid_config="n"
       fi
     else
       echo "Warning: $x not configured."
-      mail_config="dubious"
+      valid_config="n"
     fi
   done
-  if [ -t 0 ] && [ "$mail_config" != "ok" ]; then
+  if [ -t 0 ] && [ "$valid_config" != "y" ]; then
     echo
-    read -p "Press ENTER to continue, or Ctrl-C to exit and fix your mail config."
+    read -p "Press ENTER to continue, or Ctrl-C to exit and edit your config."
   fi
 }
 
@@ -618,11 +596,10 @@ run_bootstrap(){
       check_resources
   fi
 
-  mail_config_check  
-
+  # is our configuration valid?
+  valid_config_check
+  
   host_run
-
-  get_ssh_pub_key
 
   # Is the image available?
   # If not, pull it here so the user is aware what's happening.
@@ -653,8 +630,6 @@ run_bootstrap(){
 
   echo $run_command
 
-  env=("${env[@]}" "-e" "SSH_PUB_KEY=$ssh_pub_key")
-
   (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
      /bin/bash -c "$run_command") \
      || ($docker_path rm `cat $cidbootstrap` && rm $cidbootstrap)
@@ -678,19 +653,6 @@ case "$command" in
 
   enter)
       exec $docker_path exec -it $config /bin/bash --login
-      ;;
-
-  ssh)
-       existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
-
-       if [[ ! -z $existing ]]; then
-         address="`$docker_path port $config 22`"
-         split=(${address//:/ })
-         exec ssh -o StrictHostKeyChecking=no root@${split[0]} -p ${split[1]}
-       else
-         echo "$config is not running!"
-         exit 1
-       fi
       ;;
 
   stop)
