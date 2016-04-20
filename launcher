@@ -91,13 +91,28 @@ compare_version() {
     return 1  # They are equal
 }
 
+
+install_docker() {
+
+  echo "Docker is not installed, you will need to install Docker in order to run Discourse"
+  echo "Please visit https://docs.docker.com/installation/ for instructions on how to do this for your system"
+  echo
+  echo "If you are running a recent Ubuntu Server, try the following:"
+  echo "sudo apt-get install docker-engine"
+
+  exit 1
+}
+
 prereqs() {
+  
+  if [ -z $docker_path ]; then 
+    install_docker
+  fi
 
   # 1. docker daemon running?
   # we send stderr to /dev/null cause we don't care about warnings,
   # it usually complains about swap which does not matter
   test=`$docker_path info 2> /dev/null`
-
   if [[ $? -ne 0 ]] ; then
     echo "Cannot connect to the docker daemon - verify it is running and you have access"
     exit 1
@@ -157,7 +172,7 @@ prereqs() {
 check_resources() {
   # Memory
   resources="ok"
-  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
+  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"  
   if [ "$avail_mem" -lt 900 ]; then
     resources="insufficient"
     echo "WARNING: You do not appear to have sufficient memory to run Discourse."
@@ -221,22 +236,6 @@ if [ "$opt" == "--docker-args" ] ; then
 else
   user_args=""
 fi
-
-install_docker() {
-
-  echo "Docker is not installed, you will need to install Docker in order to run Discourse"
-  echo "Please visit https://docs.docker.com/installation/ for instructions on how to do this for your system"
-  echo
-  echo "If you are running Ubuntu Trusty or later, you can try the following:"
-  echo
-
-  echo "sudo apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 58118E89F3A912897C070ADBF76221572C52609D"
-  echo "sudo sh -c \"echo deb https://apt.dockerproject.org/repo ubuntu-$(lsb_release -sc) main > /etc/apt/sources.list.d/docker.list\""
-  echo "sudo apt-get update"
-  echo "sudo apt-get install docker-engine"
-
-  exit 1
-}
 
 host_run() {
   read -r -d '' env_ruby << 'RUBY'
@@ -339,9 +338,9 @@ RUBY
     fi
 }
 
-[ -z $docker_path ] && {
+if [ -z $docker_path ]; then
   install_docker
-}
+fi
 
 [ "$command" == "cleanup" ] && {
   echo
@@ -386,7 +385,7 @@ set_existing_container(){
   existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
 }
 
-run_stop(){
+run_stop() {
 
   set_existing_container
 
@@ -426,7 +425,7 @@ set_boot_command() {
   fi
 }
 
-run_memconfig(){
+run_memconfig() {
   if [ "$opt" != "--skip-prereqs" ] ; then
     check_resources
   fi
@@ -486,7 +485,7 @@ run_memconfig(){
   fi
 }
 
-run_start(){
+run_start() {
 
    existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
    echo $existing
@@ -565,8 +564,9 @@ run_start(){
 
 }
 
-valid_config_check(){
- valid_config="y"
+valid_config_check() {
+  
+  valid_config="y"
   for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
            DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
   do
@@ -586,17 +586,18 @@ valid_config_check(){
   done
   if [ -t 0 ] && [ "$valid_config" != "y" ]; then
     echo
-    read -p "Press ENTER to continue, or Ctrl-C to exit and edit your config."
+    read -p "Press ENTER to continue, or Ctrl-C to exit and edit $config_file."
   fi
 }
 
-run_bootstrap(){
+run_bootstrap() {
 
+  # Does your system meet the minimum requirements?
   if [ "$opt" != "--skip-prereqs" ] ; then
       check_resources
   fi
 
-  # is our configuration valid?
+  # is our configuration file valid?
   valid_config_check
   
   host_run
