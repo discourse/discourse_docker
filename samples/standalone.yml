@@ -5,10 +5,9 @@
 ##
 ## /var/discourse/launcher rebuild app
 ##
-## BE CAREFUL WHEN EDITING!
-## YAML FILES ARE SUPER SUPER SENSITIVE TO MISTAKES IN WHITESPACE!
+## BE *VERY* CAREFUL WHEN EDITING!
+## YAML FILES ARE SUPER SUPER SENSITIVE TO MISTAKES IN WHITESPACE OR ALIGNMENT!
 ## visit http://www.yamllint.com/ to validate this file as needed
-
 
 templates:
   - "templates/postgres.template.yml"
@@ -16,8 +15,8 @@ templates:
   - "templates/web.template.yml"
   - "templates/web.ratelimited.template.yml"
 ## Uncomment these two lines if you wish to add Lets Encrypt (https)
- # - "templates/web.ssl.template.yml"
- # - "templates/web.letsencrypt.ssl.template.yml"
+  #- "templates/web.ssl.template.yml"
+  #- "templates/web.letsencrypt.ssl.template.yml"
  
 ## which TCP/IP ports should this container expose?
 ## If you want Discourse to share a port with another webserver like Apache or nginx,
@@ -32,10 +31,10 @@ params:
   ## Set db_shared_buffers to a max of 25% of the total memory.
   ## this will be set automatically by ./launcher memconfig app
   #db_shared_buffers: "256MB"
-  #
+  
   ## this can improve sorting performance, but adds memory usage per-connection
   #db_work_mem: "40MB"
-  #
+  
   ## Which Git revision should this container use? (default: tests-passed)
   #version: tests-passed
 
@@ -53,7 +52,7 @@ env:
 
   ## TODO: The domain name this Discourse instance will respond to
   DISCOURSE_HOSTNAME: 'discourse.example.com'
-  ##
+  
   ## Uncomment if you want the container to be started with the same
   ## hostname (-h option) as specified above (default "$hostname-$config")
   #DOCKER_USE_HOSTNAME: true
