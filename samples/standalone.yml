@@ -27,7 +27,7 @@ params:
   db_default_text_search_config: "pg_catalog.english"
 
   ## Set db_shared_buffers to a max of 25% of the total memory.
-  ## will be set automatically by ./launcher memconfig app
+  ## will be set automatically by bootstrap based on detected RAM, or you can override
   #db_shared_buffers: "256MB"
   
   ## can improve sorting performance, but adds memory usage per-connection
@@ -41,7 +41,7 @@ env:
   # DISCOURSE_DEFAULT_LOCALE: en
 
   ## How many concurrent web requests are supported? Depends on memory and CPU cores.
-  ## will be set automatically by ./launcher memconfig app
+  ## will be set automatically by bootstrap based on detected CPUs, or you can override
   #UNICORN_WORKERS: 3
 
   ## TODO: List of comma delimited emails that will be made admin and developer
