@@ -492,13 +492,13 @@ run_memconfig(){
     db_shared_buffers=`expr $avail_gb \* 256`
   fi
   echo -e "Setting db_shared_buffers to ${db_shared_buffers}GB\c"
-  sed -i -e "s/^  db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}GB\"/w $changelog" $config_file
+  sed -i -e "s/^#  db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}GB\"/w $changelog" $config_file
   if [ -s $changelog ]
   then
     echo " successfully."
     rm $changelog
   else
-    echo -e ". . . oops!\n---> db_shared_buffers not found in $config_file. Retaining defaults."
+    echo -e ". . . oops!\n---> db_shared_buffers not found in $config_file."
   fi
 
   # set UNICORN_WORKERS: 2*GB or 2*cores (the same on DO)
@@ -510,13 +510,13 @@ run_memconfig(){
   fi
 
   echo -e "Setting UNICORN_WORKERS to $unicorn_workers\c"
-  sed -i -e "s/^  UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
+  sed -i -e "s/^#  UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
   if [ -s $changelog ]
   then
       echo " successfully."
       rm $changelog
   else
-    echo -e ". . . oops!\n---> UNICORN_WORKERS not found in $config_file. Retaining defaults.\n"
+    echo -e ". . . oops!\n---> UNICORN_WORKERS not found in $config_file.\n"
   fi
 }
 
