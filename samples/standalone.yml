@@ -1,8 +1,6 @@
 ## this is the all-in-one, standalone Discourse Docker container template
 ##
-## After making changes to this file, you MUST rebuild for any changes
-## to take effect in your live Discourse instance:
-##
+## After making changes to this file, you MUST rebuild
 ## /var/discourse/launcher rebuild app
 ##
 ## BE *VERY* CAREFUL WHEN EDITING!
@@ -29,10 +27,10 @@ params:
   db_default_text_search_config: "pg_catalog.english"
 
   ## Set db_shared_buffers to a max of 25% of the total memory.
-  ## this will be set automatically by ./launcher memconfig app
+  ## will be set automatically by ./launcher memconfig app
   #db_shared_buffers: "256MB"
   
-  ## this can improve sorting performance, but adds memory usage per-connection
+  ## can improve sorting performance, but adds memory usage per-connection
   #db_work_mem: "40MB"
   
   ## Which Git revision should this container use? (default: tests-passed)
@@ -43,7 +41,7 @@ env:
   # DISCOURSE_DEFAULT_LOCALE: en
 
   ## How many concurrent web requests are supported? Depends on memory and CPU cores.
-  ## this will be set automatically by ./launcher memconfig app
+  ## will be set automatically by ./launcher memconfig app
   #UNICORN_WORKERS: 3
 
   ## TODO: List of comma delimited emails that will be made admin and developer
@@ -57,22 +55,21 @@ env:
   ## hostname (-h option) as specified above (default "$hostname-$config")
   #DOCKER_USE_HOSTNAME: true
 
-  ## TODO: The mailserver this Discourse instance will use
-  DISCOURSE_SMTP_ADDRESS: smtp.example.com         # (mandatory)
+  ## TODO: The SMTP mail server used to validate new accounts and send notifications
+  DISCOURSE_SMTP_ADDRESS: smtp.example.com         # required
   #DISCOURSE_SMTP_PORT: 587                        # (optional)
-  #DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
-  #DISCOURSE_SMTP_PASSWORD: pa$$word               # (optional, WARNING the char '#' in pw can cause problems!)
+  #DISCOURSE_SMTP_USER_NAME: user@example.com      # required
+  #DISCOURSE_SMTP_PASSWORD: pa$$word               # required, WARNING the char '#' in pw can cause problems!
   #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
   
-  ## The Let's Encrypt email will allow you to register a FREE SSL certificate.
-  ## If you added the Let's Encrypt template, uncomment below to automatically get certificates.
-  #LETSENCRYPT_ACCOUNT_EMAIL: email@awesomedomain.com
+  ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
+  #LETSENCRYPT_ACCOUNT_EMAIL: your.email@example.com
 
   ## The CDN address for this Discourse instance (configured to pull)
   ## see https://meta.discourse.org/t/14857 for details
   #DISCOURSE_CDN_URL: //discourse-cdn.example.com
 
-## These containers are stateless, all data is stored in /shared
+## The Docker container is stateless; all data is stored in /shared
 volumes:
   - volume:
       host: /var/discourse/shared/standalone
@@ -81,8 +78,8 @@ volumes:
       host: /var/discourse/shared/standalone/log/var-log
       guest: /var/log
 
-## The docker manager plugin allows you to one-click upgrade Discourse
-## http://discourse.example.com/admin/upgrade
+## Plugins go here
+## Docker manager plugin lets you upgrade your Discourse to latest from your web browser
 hooks:
   after_code:
     - exec:
@@ -90,17 +87,10 @@ hooks:
         cmd:
           - git clone https://github.com/discourse/docker_manager.git
 
-## Remember, this is YAML syntax - you can only have one block with a name
+## Any custom commands to run after building
 run:
   - exec: echo "Beginning of custom commands"
-
   ## If you want to set the 'From' email address for your first registration, uncomment and change:
   ## After getting the first signup email, re-comment the line. It only needs to run once.
   #- exec: rails r "SiteSetting.notification_email='info@unconfigured.discourse.org'"
-  
-  ## If you want to configure password login for root, uncomment and change:
-  ## Use only one of the following lines:
-  #- exec: /usr/sbin/usermod -p 'PASSWORD_HASH' root
-  #- exec: /usr/sbin/usermod -p "$(mkpasswd -m sha-256 'RAW_PASSWORD')" root
-
   - exec: echo "End of custom commands"
