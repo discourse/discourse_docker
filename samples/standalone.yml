@@ -19,7 +19,7 @@ templates:
   - "templates/web.template.yml"
   - "templates/web.ratelimited.template.yml"
 
- ## Comment out the following lines if you wish to add Lets Encrypt for your Discourse install
+ ## Uncomment the following lines if you wish to add Lets Encrypt for your Discourse install
  # - "templates/web.ssl.template.yml"
  # - "templates/web.letsencrypt.ssl.template.yml"
 
