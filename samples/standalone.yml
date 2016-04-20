@@ -76,7 +76,8 @@ env:
   #DISCOURSE_SMTP_PASSWORD: pa$$word               # (optional, WARNING the char '#' in pw can cause problems!)
   #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
   
-  ## The Lets Encrypt email will allow you to register a FREE SSL certificate if you added the Lets Encrypt template, comment it out if you have set this up
+  ## The Let's Encrypt email will allow you to register a FREE SSL certificate.
+  # If you added the Lets Encrypt template, uncomment below if you have set this up
   # LETSENCRYPT_ACCOUNT_EMAIL: email@awesomedomain.com
 
   ## The CDN address for this Discourse instance (configured to pull)
