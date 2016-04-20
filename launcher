@@ -592,8 +592,7 @@ run_start(){
 mail_config_check(){
  mail_config_verbose=0 # 1 prints mail config to stdout
  mail_config="ok"
-  for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
-	   DISCOURSE_SMTP_PORT DISCOURSE_SMTP_ENABLE_START_TLS
+  for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD
   do
     mail_var=`grep "^  $x:" $config_file`
     result=$?
