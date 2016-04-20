@@ -24,7 +24,7 @@ cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
 image=discourse/discourse:1.0.17
 docker_path=`which docker.io || which docker`
-template_path=samples/standalone_template.yml
+template_path=samples/standalone.yml
 changelog=/tmp/changelog # used to test whether sed did anything
 
 if [ "${SUPERVISED}" = "true" ]; then
@@ -492,7 +492,7 @@ run_memconfig(){
     db_shared_buffers=`expr $avail_gb \* 256`
   fi
   echo -e "Setting db_shared_buffers to ${db_shared_buffers}GB\c"
-  sed -i -e "s/^#  db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}GB\"/w $changelog" $config_file
+  sed -i -e "s/^  #db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}GB\"/w $changelog" $config_file
   if [ -s $changelog ]
   then
     echo " successfully."
@@ -510,7 +510,7 @@ run_memconfig(){
   fi
 
   echo -e "Setting UNICORN_WORKERS to $unicorn_workers\c"
-  sed -i -e "s/^#  UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
+  sed -i -e "s/^  #UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
   if [ -s $changelog ]
   then
       echo " successfully."
