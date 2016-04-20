@@ -24,7 +24,8 @@ cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
 image=discourse/discourse:1.0.17
 docker_path=`which docker.io || which docker`
-
+template_path=samples/standalone_template.yml
+changelog=/tmp/changelog # used to test whether sed did anything
 
 if [ "${SUPERVISED}" = "true" ]; then
   restart_policy="--restart=no"
@@ -61,6 +62,7 @@ usage () {
   echo "    logs:       Docker logs for container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
+  echo "    memconfig:  Configure defaults based on available RAM"
   echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
   echo
   echo "Options:"
@@ -394,7 +396,7 @@ RUBY
   usage
 }
 
-if [ ! -e $config_file ]
+if [[ ! -e $config_file &&  $command -ne "memconfig" ]]
   then
     echo "Config file was not found, ensure $config_file exists"
     echo ""
@@ -453,6 +455,78 @@ set_boot_command() {
     if [ -z "$no_boot_command" ]; then
       boot_command="/sbin/boot"
     fi
+  fi
+}
+
+run_memconfig(){
+  if [ "$opt" != "--skip-prereqs" ] ; then
+    check_resources
+  fi
+  if [ -f $config_file ]
+  then
+    cp $config_file $config_file.bak
+    echo "Saving $config_file as $config_file.bak"
+  else
+    echo "Creating $config_file from $template_path"
+    if [ ! -f $template_path ]
+    then
+      echo "$template_path is missing. Exiting."
+      exit 1
+    fi
+    cp $template_path $config_file
+  fi
+
+  # get free mem
+  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
+  avail_gb=`expr $(($avail_mem / 950))`
+  avail_cores=`grep -c processor /proc/cpuinfo`
+  echo "Found $avail_mem (${avail_gb}GB), of memory and $avail_cores cores."
+
+  # set db_shared_buffers: "128MB" (1GB) or 256MB * GB
+  if [ "$avail_gb" -eq "1" ]
+  then
+    db_shared_buffers="128"
+  else
+    db_shared_buffers=`expr $avail_gb \* 256`
+  fi
+  echo -e "Setting db_shared_buffers to ${db_shared_buffers}GB\c"
+  sed -i -e "s/^  db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}GB\"/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+    echo " successfully."
+    rm $changelog
+  else
+    echo -e ". . . oops!\n---> db_shared_buffers not found in $config_file. Retaining defaults."
+  fi
+
+  # set db_work_mem: "10MB" * GB?
+  db_work_mem=`expr $avail_gb \* 10`
+  echo -e "Setting db_work_mem to $db_work_mem MB\c"
+  sudo sed -i -e "s/^  db_work_mem:.*/  db_work_mem: \"${db_work_mem}MB\"/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+    echo " successfully."
+    rm $changelog
+  else
+    echo -e ". . . oops!\n---> db_work_mem not found in $config_file. Retaining defaults."
+  fi
+
+  # set UNICORN_WORKERS: 2*GB or 2*cores (the same on DO)
+  if [ "$avail_gb" -le "2" ]
+  then
+    unicorn_workers=`expr $avail_gb \* 2`
+  else
+    unicorn_workers=`expr $avail_cores \* 2`
+  fi
+
+  echo -e "Setting UNICORN_WORKERS to $unicorn_workers\c"
+  sed -i -e "s/^  UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+      echo " successfully."
+      rm $changelog
+  else
+    echo -e ". . . oops!\n---> UNICORN_WORKERS not found in $config_file. Retaining defaults.\n"
   fi
 }
 
@@ -659,6 +733,11 @@ case "$command" in
 
   start)
       run_start
+      exit 0
+      ;;
+
+  memconfig)
+      run_memconfig
       exit 0
       ;;
 

@@ -1,0 +1,117 @@
+##
+## After making changes to this file, you MUST rebuild for any changes
+## to take effect in your live Discourse instance:
+##
+## /var/discourse/launcher rebuild app
+##
+## Make sure to obey YAML syntax! You can use this site to help check:
+## http://www.yamllint.com/
+
+## this is the all-in-one, standalone Discourse Docker container template
+
+# You may add rate limiting by uncommenting the web.ratelimited template.
+# Out of the box it allows 12 reqs a second per ip, and 100 per minute per ip
+# This is configurable by amending the params in this file
+
+templates:
+  - "templates/postgres.template.yml"
+  - "templates/redis.template.yml"
+  - "templates/web.template.yml"
+  - "templates/web.ratelimited.template.yml"
+
+ ## Comment out the following lines if you wish to add Lets Encrypt for your Discourse install
+ # - "templates/web.ssl.template.yml"
+ # - "templates/web.letsencrypt.ssl.template.yml"
+
+## which TCP/IP ports should this container expose?
+expose:
+  - "80:80"   # fwd host port 80   to container port 80 (http)
+  - "443:443" # fwd host port 443   to container port 443 (https) (ssl ready)
+# If you want Discourse to share a port with another webserver like Apache or nginx,
+# see https://meta.discourse.org/t/17247 for instructions.
+
+# any extra arguments for Docker?
+# docker_args:
+
+params:
+  db_default_text_search_config: "pg_catalog.english"
+
+  ## Set db_shared_buffers to a max of 25% of the total memory.
+  ##
+  ## On 1GB installs set to 128MB (to leave room for other processes)
+  ## on a 4GB instance you may raise to 1GB
+  db_shared_buffers: "128MB"
+  #
+
+  ## Set higher on large instances it defaults to 10MB, for a 3GB install 40MB is a good default
+  ## this improves sorting performance, but adds memory usage per-connection
+  db_work_mem: "10MB"
+  #
+  ## Which Git revision should this container use? (default: tests-passed)
+  #version: tests-passed
+
+env:
+  LANG: en_US.UTF-8
+  # DISCOURSE_DEFAULT_LOCALE: en
+
+  ## TODO: How many concurrent web requests are supported?
+  ## With 2GB we recommend 3-4 workers, with 1GB only 2
+  ## If you have lots of memory, use one or two workers per logical CPU core
+  UNICORN_WORKERS: 3
+
+  ## TODO: List of comma delimited emails that will be made admin and developer
+  ## on initial signup example 'user1@example.com,user2@example.com'
+  DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'
+
+  ## TODO: The domain name this Discourse instance will respond to
+  DISCOURSE_HOSTNAME: 'discourse.example.com'
+  ## TODO: Uncomment if you want the container to be started with the same
+  ##       hostname (-h option) as specified above (default "$hostname-$config")
+  ## NOTE: 'true' is the only valid value here, any other will be ignored
+  #DOCKER_USE_HOSTNAME: true
+
+  ## TODO: The mailserver this Discourse instance will use
+  DISCOURSE_SMTP_ADDRESS: smtp.example.com         # (mandatory)
+  #DISCOURSE_SMTP_PORT: 587                        # (optional)
+  #DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
+  #DISCOURSE_SMTP_PASSWORD: pa$$word               # (optional, WARNING the char '#' in pw can cause problems!)
+  #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
+
+  ## The Lets Encrypt email will allow you to register a FREE SSL certificate if you added the Lets Encrypt template, comment it out if you have set this up
+  # LETSENCRYPT_ACCOUNT_EMAIL: email@awesomedomain.com
+
+  ## The CDN address for this Discourse instance (configured to pull)
+  #DISCOURSE_CDN_URL: //discourse-cdn.example.com
+
+## These containers are stateless, all data is stored in /shared
+volumes:
+  - volume:
+      host: /var/discourse/shared/standalone
+      guest: /shared
+  - volume:
+      host: /var/discourse/shared/standalone/log/var-log
+      guest: /var/log
+
+## The docker manager plugin allows you to one-click upgrade Discourse
+## http://discourse.example.com/admin/docker
+hooks:
+  after_code:
+    - exec:
+        cd: $home/plugins
+        cmd:
+          - git clone https://github.com/discourse/docker_manager.git
+
+## Remember, this is YAML syntax - you can only have one block with a name
+run:
+  - exec: echo "Beginning of custom commands"
+
+  ## If you want to set the 'From' email address for your first registration, uncomment and change:
+  #- exec: rails r "SiteSetting.notification_email='info@unconfigured.discourse.org'"
+  ## After getting the first signup email, re-comment the line. It only needs to run once.
+
+  ## If you want to configure password login for root, uncomment and change:
+  ## Use only one of the following lines:
+  #- exec: /usr/sbin/usermod -p 'PASSWORD_HASH' root
+  #- exec: /usr/sbin/usermod -p "$(mkpasswd -m sha-256 'RAW_PASSWORD')" root
+
+  - exec: echo "End of custom commands"
