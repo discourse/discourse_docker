@@ -1,5 +1,24 @@
 #!/bin/bash
 
+usage () {
+  echo "Usage: launcher COMMAND CONFIG [--skip-prereqs]"
+  echo "Commands:"
+  echo "    start:      Start/initialize a container"
+  echo "    stop:       Stop a running container"
+  echo "    restart:    Restart a container"
+  echo "    destroy:    Stop and remove a container"
+  echo "    enter:      Use nsenter to enter a container"
+  echo "    logs:       Docker logs for container"
+  echo "    bootstrap:  Bootstrap a container for the config based on a template"
+  echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
+  echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
+  echo
+  echo "Options:"
+  echo "    --skip-prereqs   Don't check prerequisites or resource requirements"
+  echo "    --docker-args    Extra arguments to pass when running docker"
+  exit 1
+}
+
 command=$1
 config=$2
 opt=$3
@@ -48,27 +67,6 @@ else
                   grep docker0 | \
                   awk -F: '{ print $3 }';`
 fi
-
-
-usage () {
-  echo "Usage: launcher COMMAND CONFIG [--skip-prereqs]"
-  echo "Commands:"
-  echo "    start:      Start/initialize a container"
-  echo "    stop:       Stop a running container"
-  echo "    restart:    Restart a container"
-  echo "    destroy:    Stop and remove a container"
-  echo "    enter:      Use nsenter to enter a container"
-  echo "    logs:       Docker logs for container"
-  echo "    bootstrap:  Bootstrap a container for the config based on a template"
-  echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
-  echo "    memconfig:  Configure defaults based on available RAM"
-  echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
-  echo
-  echo "Options:"
-  echo "    --skip-prereqs   Don't check prerequisites or resource requirements"
-  echo "    --docker-args    Extra arguments to pass when running docker"
-  exit 1
-}
 
 compare_version() {
     declare -a ver_a
@@ -425,29 +423,13 @@ set_boot_command() {
   fi
 }
 
-run_memconfig() {
-  if [ "$opt" != "--skip-prereqs" ] ; then
-    check_resources
-  fi
-  if [ -f $config_file ]
-  then
-    cp $config_file $config_file.bak
-    echo "Saving $config_file as $config_file.bak"
-  else
-    echo "Creating $config_file from $template_path"
-    if [ ! -f $template_path ]
-    then
-      echo "$template_path is missing. Exiting."
-      exit 1
-    fi
-    cp $template_path $config_file
-  fi
+scale_ram_and_cpu() {
 
   # get free mem
   avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
   avail_gb=`expr $(($avail_mem / 950))`
   avail_cores=`grep -c processor /proc/cpuinfo`
-  echo "Found $avail_mem (${avail_gb}GB), of memory and $avail_cores cores."
+  echo "Found ${avail_gb}GB of memory and $avail_cores CPU cores"
 
   # set db_shared_buffers: "128MB" (1GB) or 256MB * GB
   if [ "$avail_gb" -eq "1" ]
@@ -455,42 +437,29 @@ run_memconfig() {
     db_shared_buffers="128"
   else
     db_shared_buffers=`expr $avail_gb \* 256`
-  fi
-  echo -e "Recommend setting for db_shared_buffers: ${db_shared_buffers}GB"
-  sed -i -e "s/^  #db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}GB\"/w $changelog" $config_file
+  fi  
+  sed -i -e "s/^  #db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $config_file
   if [ -s $changelog ]
   then
-    echo "db_shared_buffers set successfully."
+    echo "setting db_shared_buffers = ${db_shared_buffers}MB based on detected CPU/RAM"
     rm $changelog
-  else if grep "^  db_shared_buffers:" $config_file
-     then
-       echo "db_shared_buffers already set. Unchanged."
-     else
-       echo -e ". . . oops!\n---> db_shared_buffers not found in $config_file."
-     fi
   fi
+  
 
   # set UNICORN_WORKERS: 2*GB or 2*cores (the same on DO)
   if [ "$avail_gb" -le "2" ]
   then
     unicorn_workers=`expr $avail_gb \* 2`
   else
-    unicorn_workers=`expr $avail_cores \* 2`
+    unicorn_workers=`expr \$avail_cores \* 2`
   fi
-
-  echo -e "Recommended setting UNICORN_WORKERS: $unicorn_workers"
   sed -i -e "s/^  #UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
   if [ -s $changelog ]
   then
-      echo "UNICORN_WORKERS set successfully."
-      rm $changelog
-  else if grep "^  UNICORN_WORKERS:" $config_file
-     then
-       echo "UNICORN_WORKERS already set. Unchanged."
-     else
-       echo -e ". . . oops!\n---> UNICORN_WORKERS not found in $config_file.\n"
-     fi
+      echo "setting UNICORN_WORKERS = ${unicorn_workers} based on detected CPU/RAM"
+      rm $changelog      
   fi
+  
 }
 
 run_start() {
@@ -593,8 +562,9 @@ valid_config_check() {
     fi
   done
   if [ -t 0 ] && [ "$valid_config" != "y" ]; then
-    echo
-    read -p "Press ENTER to continue, or Ctrl-C to exit and edit $config_file."
+    echo ""
+    echo "Please edit $config_file to add missing settings."
+    exit 1
   fi
 }
 
@@ -607,6 +577,9 @@ run_bootstrap() {
 
   # is our configuration file valid?
   valid_config_check
+  
+  # make minor scaling adjustments for RAM and CPU
+  scale_ram_and_cpu
   
   host_run
 
@@ -683,11 +656,6 @@ case "$command" in
 
   start)
       run_start
-      exit 0
-      ;;
-
-  memconfig)
-      run_memconfig
       exit 0
       ;;
 
