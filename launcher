@@ -501,18 +501,6 @@ run_memconfig(){
     echo -e ". . . oops!\n---> db_shared_buffers not found in $config_file. Retaining defaults."
   fi
 
-  # set db_work_mem: "10MB" * GB?
-  db_work_mem=`expr $avail_gb \* 10`
-  echo -e "Setting db_work_mem to $db_work_mem MB\c"
-  sudo sed -i -e "s/^  db_work_mem:.*/  db_work_mem: \"${db_work_mem}MB\"/w $changelog" $config_file
-  if [ -s $changelog ]
-  then
-    echo " successfully."
-    rm $changelog
-  else
-    echo -e ". . . oops!\n---> db_work_mem not found in $config_file. Retaining defaults."
-  fi
-
   # set UNICORN_WORKERS: 2*GB or 2*cores (the same on DO)
   if [ "$avail_gb" -le "2" ]
   then

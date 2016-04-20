@@ -45,7 +45,7 @@ params:
 
   ## Set higher on large instances it defaults to 10MB, for a 3GB install 40MB is a good default
   ## this improves sorting performance, but adds memory usage per-connection
-  db_work_mem: "10MB"
+  # db_work_mem: "10MB"
   #
   ## Which Git revision should this container use? (default: tests-passed)
   #version: tests-passed
