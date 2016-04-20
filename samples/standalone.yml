@@ -57,7 +57,7 @@ env:
 
   ## TODO: The SMTP mail server used to validate new accounts and send notifications
   DISCOURSE_SMTP_ADDRESS: smtp.example.com         # required
-  #DISCOURSE_SMTP_PORT: 587                        # (optional)
+  #DISCOURSE_SMTP_PORT: 587                        # (optional, default 587)
   #DISCOURSE_SMTP_USER_NAME: user@example.com      # required
   #DISCOURSE_SMTP_PASSWORD: pa$$word               # required, WARNING the char '#' in pw can cause problems!
   #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
@@ -79,7 +79,7 @@ volumes:
       guest: /var/log
 
 ## Plugins go here
-## Docker manager plugin lets you upgrade your Discourse to latest from your web browser
+## see https://meta.discourse.org/t/19157 for details
 hooks:
   after_code:
     - exec:
