@@ -24,7 +24,7 @@ cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
 image=discourse/discourse:1.0.17
 docker_path=`which docker.io || which docker`
-template_path=samples/standalone_template.yml
+template_path=samples/standalone.yml
 changelog=/tmp/changelog # used to test whether sed did anything
 
 if [ "${SUPERVISED}" = "true" ]; then
@@ -456,14 +456,18 @@ run_memconfig() {
   else
     db_shared_buffers=`expr $avail_gb \* 256`
   fi
-  echo -e "Setting db_shared_buffers to ${db_shared_buffers}GB\c"
-  sed -i -e "s/^  db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}GB\"/w $changelog" $config_file
+  echo -e "Recommend setting for db_shared_buffers: ${db_shared_buffers}GB"
+  sed -i -e "s/^  #db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}GB\"/w $changelog" $config_file
   if [ -s $changelog ]
   then
-    echo " successfully."
+    echo "db_shared_buffers set successfully."
     rm $changelog
-  else
-    echo -e ". . . oops!\n---> db_shared_buffers not found in $config_file. Retaining defaults."
+  else if grep "^  db_shared_buffers:" $config_file
+     then
+       echo "db_shared_buffers already set. Unchanged."
+     else
+       echo -e ". . . oops!\n---> db_shared_buffers not found in $config_file."
+     fi
   fi
 
   # set UNICORN_WORKERS: 2*GB or 2*cores (the same on DO)
@@ -474,14 +478,18 @@ run_memconfig() {
     unicorn_workers=`expr $avail_cores \* 2`
   fi
 
-  echo -e "Setting UNICORN_WORKERS to $unicorn_workers\c"
-  sed -i -e "s/^  UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
+  echo -e "Recommended setting UNICORN_WORKERS: $unicorn_workers"
+  sed -i -e "s/^  #UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
   if [ -s $changelog ]
   then
-      echo " successfully."
+      echo "UNICORN_WORKERS set successfully."
       rm $changelog
-  else
-    echo -e ". . . oops!\n---> UNICORN_WORKERS not found in $config_file. Retaining defaults.\n"
+  else if grep "^  UNICORN_WORKERS:" $config_file
+     then
+       echo "UNICORN_WORKERS already set. Unchanged."
+     else
+       echo -e ". . . oops!\n---> UNICORN_WORKERS not found in $config_file.\n"
+     fi
   fi
 }
 
