@@ -15,8 +15,10 @@ hooks:
          - install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
          - cd /root/le && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./le.sh install
 
+    # Ideally, we want to name the file 'letsencrypt' but we can't until the following is fixed
+    # https://github.com/Neilpang/acme.sh/issues/164
     - file:
-       path: /etc/runit/1.d/letsencrypt
+       path: /etc/runit/1.d/install_ssl_cert
        chmod: "+x"
        contents: |
           #!/bin/bash
