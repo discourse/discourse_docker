@@ -102,8 +102,8 @@ install_docker() {
 }
 
 prereqs() {
-  
-  if [ -z $docker_path ]; then 
+
+  if [ -z $docker_path ]; then
     install_docker
   fi
 
@@ -170,7 +170,7 @@ prereqs() {
 check_resources() {
   # Memory
   resources="ok"
-  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"  
+  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
   if [ "$avail_mem" -lt 900 ]; then
     resources="insufficient"
     echo "WARNING: You do not appear to have sufficient memory to run Discourse."
@@ -203,6 +203,8 @@ check_resources() {
     echo "not even allow Discourse installation to complete successfully."
     echo
     echo "Please free up some space, or expand your disk, before continuing."
+    echo
+    echo "Run \`apt-get autoremove && apt-get autoclean\` to clean up unused packages and \`./launcher cleanup\` to remove stale Docker containers."
     exit 1
   fi
 
@@ -437,14 +439,14 @@ scale_ram_and_cpu() {
     db_shared_buffers="128"
   else
     db_shared_buffers=`expr $avail_gb \* 256`
-  fi  
+  fi
   sed -i -e "s/^  #db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $config_file
   if [ -s $changelog ]
   then
     echo "setting db_shared_buffers = ${db_shared_buffers}MB based on detected CPU/RAM"
     rm $changelog
   fi
-  
+
 
   # set UNICORN_WORKERS: 2*GB or 2*cores (the same on DO)
   if [ "$avail_gb" -le "2" ]
@@ -457,9 +459,9 @@ scale_ram_and_cpu() {
   if [ -s $changelog ]
   then
       echo "setting UNICORN_WORKERS = ${unicorn_workers} based on detected CPU/RAM"
-      rm $changelog      
+      rm $changelog
   fi
-  
+
 }
 
 run_start() {
@@ -542,7 +544,7 @@ run_start() {
 }
 
 valid_config_check() {
-  
+
   valid_config="y"
   for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
            DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
@@ -577,10 +579,10 @@ run_bootstrap() {
 
   # is our configuration file valid?
   valid_config_check
-  
+
   # make minor scaling adjustments for RAM and CPU
   scale_ram_and_cpu
-  
+
   host_run
 
   # Is the image available?
