@@ -44,16 +44,16 @@ env:
   ## will be set automatically by bootstrap based on detected CPUs, or you can override
   #UNICORN_WORKERS: 3
 
-  ## TODO: List of comma delimited emails that will be made admin and developer
-  ## on initial signup example 'user1@example.com,user2@example.com'
-  DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'
-
   ## TODO: The domain name this Discourse instance will respond to
   DISCOURSE_HOSTNAME: 'discourse.example.com'
   
   ## Uncomment if you want the container to be started with the same
   ## hostname (-h option) as specified above (default "$hostname-$config")
   #DOCKER_USE_HOSTNAME: true
+
+  ## TODO: List of comma delimited emails that will be made admin and developer
+  ## on initial signup example 'user1@example.com,user2@example.com'
+  DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'
 
   ## TODO: The SMTP mail server used to validate new accounts and send notifications
   DISCOURSE_SMTP_ADDRESS: smtp.example.com         # required
