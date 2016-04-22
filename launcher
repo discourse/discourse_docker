@@ -122,8 +122,8 @@ prereqs() {
     echo "Your Docker installation is not using a supported filesystem if we were to proceed you may have a broken install."
     echo "aufs is the recommended filesystem you should be using (zfs/btrfs and overlay may work as well)"
     echo "You can tell what filesystem you are using by running \"docker info\" and looking at the driver"
-    echo ""
-    echo "If you wish to continue anyway using your existing unsupported filesystem"
+    echo
+    echo "If you wish to continue anyway using your existing unsupported filesystem, "
     echo "read the source code of launcher and figure out how to bypass this."
     exit 1
   fi
@@ -219,7 +219,7 @@ check_ports() {
 
   if [ -n "$valid" ]; then
     echo "Launcher has detected that port ${1} is in use."
-    echo ""
+    echo
     echo "If you are trying to run Discourse simultaneously with another web server like Apache or nginx, you will need to bind to a different port."
     echo "See https://meta.discourse.org/t/17247 for help."
     echo "To continue anyway, re-run Launcher with --skip-prereqs"
@@ -372,7 +372,7 @@ fi
 if [[ ! -e $config_file &&  $command -ne "memconfig" ]]
   then
     echo "Config file was not found, ensure $config_file exists"
-    echo ""
+    echo
     echo "Available configs ( `cd containers && ls -dm *.yml | tr -s '\n' ' ' | awk '{ gsub(/\.yml/, ""); print }'`)"
     exit 1
 fi
@@ -427,19 +427,26 @@ set_boot_command() {
 
 scale_ram_and_cpu() {
 
-  # get free mem
+  # grab info about total system ram and physical (NOT LOGICAL!) CPU cores
   avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
-  avail_gb=`expr $(($avail_mem / 950))`
-  avail_cores=`grep -c processor /proc/cpuinfo`
-  echo "Found ${avail_gb}GB of memory and $avail_cores CPU cores"
+  avail_gb=$(( $avail_mem / 950 ))
+  avail_cores=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $4}'`
+  echo "Found ${avail_gb}GB of memory and $avail_cores physical CPU cores"
 
-  # set db_shared_buffers: "128MB" (1GB) or 256MB * GB
+  # db_shared_buffers: 128MB for 1GB, 256MB for 2GB, or 256MB * GB, max 4096MB
   if [ "$avail_gb" -eq "1" ]
   then
-    db_shared_buffers="128"
+    db_shared_buffers=128
   else
-    db_shared_buffers=`expr $avail_gb \* 256`
+    if [ "$avail_gb" -eq "2" ]
+    then
+      db_shared_buffers=256
+    else
+      db_shared_buffers=$(( 256 * $avail_gb ))
+    fi
   fi
+  db_shared_buffers=$(( db_shared_buffers < 4096 ? db_shared_buffers : 4096 ))
+  
   sed -i -e "s/^  #db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $config_file
   if [ -s $changelog ]
   then
@@ -448,13 +455,15 @@ scale_ram_and_cpu() {
   fi
 
 
-  # set UNICORN_WORKERS: 2*GB or 2*cores (the same on DO)
+  # UNICORN_WORKERS: 2 * GB for 2GB or less, or 2 * CPU, max 8
   if [ "$avail_gb" -le "2" ]
   then
-    unicorn_workers=`expr $avail_gb \* 2`
+    unicorn_workers=$(( 2 * $avail_gb ))
   else
-    unicorn_workers=`expr \$avail_cores \* 2`
+    unicorn_workers=$(( 2 * $avail_cores ))
   fi
+  unicorn_workers=$(( unicorn_workers < 8 ? unicorn_workers : 8 ))
+  
   sed -i -e "s/^  #UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
   if [ -s $changelog ]
   then
@@ -550,16 +559,17 @@ valid_config_check() {
            DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
   do
     mail_var=`grep "^  $x:" $config_file`
-    result=$?
+    local result=$?
+    local default="example.com"
     if (( result == 0 ))
     then
-      if [[ $mail_var = *"example.com"* ]]
+      if [[ $mail_var = *"$default"* ]]
       then
         echo "Warning: $x left at incorrect default of example.com"
         valid_config="n"
       fi
     else
-      echo "Warning: $x not configured."
+      echo "Warning: $x not configured"
       valid_config="n"
     fi
   done
@@ -582,6 +592,7 @@ run_bootstrap() {
   # make minor scaling adjustments for RAM and CPU
   scale_ram_and_cpu
 
+  # I got no frigging clue what this does, ask Sam Saffron. It RUNS STUFF ON THE HOST I GUESS?
   host_run
 
   # Is the image available?
