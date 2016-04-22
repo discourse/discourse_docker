@@ -37,12 +37,15 @@ cd "$(dirname "$0")"
 
 docker_min_version='1.6.0'
 docker_rec_version='1.6.0'
+git_min_version='1.8.0'
+git_rec_version='1.8.0'
 
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
 image=discourse/discourse:1.0.17
 docker_path=`which docker.io || which docker`
+git_path=`which git`
 template_path=samples/standalone.yml
 changelog=/tmp/changelog # used to test whether sed did anything
 
@@ -156,7 +159,22 @@ prereqs() {
 
   fi
 
-  # 5. able to attach stderr / out / tty
+  # 5. running recommended git version
+  test=($($git_path --version))  # Get git version string
+  test=${test[2]//,/}  # Get version alone and strip comma if exists
+
+  # At least minimum version
+  if compare_version "${git_min_version}" "${test}"; then
+    echo "ERROR: Git version ${test} not supported, please upgrade to at least ${git_min_version}, or recommended ${git_rec_version}"
+    exit 1
+  fi
+
+  # Recommend best version
+  if compare_version "${git_rec_version}" "${test}"; then
+    echo "WARNING: Git version ${test} deprecated, recommend upgrade to ${git_rec_version} or newer."
+  fi
+
+  # 6. able to attach stderr / out / tty
   test=`$docker_path run $user_args -i --rm -a stdout -a stderr $image echo working`
   if [[ "$test" =~ "working" ]] ; then : ; else
     echo "Your Docker installation is not working correctly"
@@ -166,6 +184,8 @@ prereqs() {
   fi
 
 }
+
+
 
 check_resources() {
   # Memory
@@ -584,6 +604,8 @@ run_bootstrap() {
   # Does your system meet the minimum requirements?
   if [ "$opt" != "--skip-prereqs" ] ; then
       check_resources
+      echo "done JP" 
+      exit
   fi
 
   # is our configuration file valid?
