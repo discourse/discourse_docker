@@ -471,7 +471,7 @@ run_start() {
    if [ ! -z $existing ]
    then
      echo "Nothing to do, your container has already started!"
-     exit 1
+     exit 0
    fi
 
    existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
