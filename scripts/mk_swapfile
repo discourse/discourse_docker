@@ -43,7 +43,7 @@ set_swappiness
 SWAPFILE=$(get_new_swapfile)
 
 umask 077
-dd if=/dev/zero of=$SWAPFILE bs=1k count=$(($num_gb * 1024)) conv=excl
+dd if=/dev/zero of=$SWAPFILE bs=1k count=$(($num_gb * 1024 * 1024)) conv=excl
 mkswap $SWAPFILE
 swapon $SWAPFILE
 echo "$SWAPFILE swap swap auto 0 0" >> /etc/fstab
