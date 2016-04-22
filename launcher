@@ -564,9 +564,8 @@ valid_config_check() {
     fi
   done
   if [ -t 0 ] && [ "$valid_config" != "y" ]; then
-    echo ""
-    echo "Please edit $config_file to add missing settings."
-    exit 1
+    echo
+    read -p "Press Ctrl-C to exit and edit $config_file or ENTER to continue"
   fi
 }
 
