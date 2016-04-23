@@ -604,8 +604,6 @@ run_bootstrap() {
   # Does your system meet the minimum requirements?
   if [ "$opt" != "--skip-prereqs" ] ; then
       check_resources
-      echo "done JP" 
-      exit
   fi
 
   # is our configuration file valid?
