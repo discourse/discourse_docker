@@ -1,7 +1,7 @@
 #!/bin/bash
 
 usage () {
-  echo "Usage: launcher COMMAND CONFIG [--skip-prereqs]"
+  echo "Usage: launcher COMMAND CONFIG [--skip-prereqs] [--skip-discourse-prereqs] [--docker-args STRING]"
   echo "Commands:"
   echo "    start:      Start/initialize a container"
   echo "    stop:       Stop a running container"
@@ -14,14 +14,42 @@ usage () {
   echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
   echo
   echo "Options:"
-  echo "    --skip-prereqs   Don't check prerequisites or resource requirements"
-  echo "    --docker-args    Extra arguments to pass when running docker"
+  echo "    --skip-prereqs             Don't check launcher prerequisites"
+  echo "    --skip-discourse-prereqs   Don't check prerequisites specifiy to Discourse"
+  echo "    --docker-args              Extra arguments to pass when running docker"
   exit 1
+}
+
+[ $# -lt 2 ] && {
+  usage
 }
 
 command=$1
 config=$2
-opt=$3
+shift 2
+user_args=""
+
+while [ ${#} -gt 0 ]; do
+  case "#{1}" in
+
+  --skip-prereqs)
+    SKIP_PREREQ="1"
+    ;;
+  --skip-discourse-prereqs)
+    SKIP_DISCOURSE_PREREQS="1"
+    ;;
+  --docker-args)
+    user_args="$2"
+    shift
+    ;;
+  *)
+    echo "Unknown options '${1}'"
+    usage
+    ;;
+  esac
+
+  shift 1
+done
 
 # Docker doesn't like uppercase characters, spaces or special characters, catch it now before we build everything out and then find out
 re='[A-Z/ !@#$%^&*()+~`=]'
@@ -247,14 +275,8 @@ check_ports() {
   fi
 }
 
-if [ "$opt" != "--skip-prereqs" ] ; then
+if [ -z "$SKIP_PREREQS" ] ; then
   prereqs
-fi
-
-if [ "$opt" == "--docker-args" ] ; then
-  user_args=$4
-else
-  user_args=""
 fi
 
 host_run() {
@@ -385,10 +407,6 @@ fi
   exit 0
 }
 
-[ $# -lt 2 ] && {
-  usage
-}
-
 if [[ ! -e $config_file ]]
   then
     echo "Config file was not found, ensure $config_file exists"
@@ -515,19 +533,22 @@ run_start() {
    fi
 
    host_run
-   ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+
+  if [ -z "$SKIP_DISCOURSE_PREREQS" ] ; then
+    ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
           "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| \"-p #{p}\"}.join(' ')"`
 
-   IFS='-p ' read -a array <<< "$ports"
-   for element in "${array[@]}"
-   do
+    IFS='-p ' read -a array <<< "$ports"
+    for element in "${array[@]}"
+    do
      IFS=':' read -a args <<< "$element"
      if [ "${#args[@]}" == "2" ]; then
        check_ports "${args[0]}"
      elif [ "${#args[@]}" == "3" ]; then
        check_ports "${args[1]}"
      fi
-   done
+    done
+  fi
 
    docker_args=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
           "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
@@ -600,17 +621,16 @@ valid_config_check() {
 }
 
 run_bootstrap() {
+  if [ -z "$SKIP_DISCOURSE_PREREQS" ] ; then
+    # Does your system meet the minimum requirements?
+    check_resources
 
-  # Does your system meet the minimum requirements?
-  if [ "$opt" != "--skip-prereqs" ] ; then
-      check_resources
+    # is our configuration file valid?
+    valid_config_check
+
+    # make minor scaling adjustments for RAM and CPU
+    scale_ram_and_cpu
   fi
-
-  # is our configuration file valid?
-  valid_config_check
-
-  # make minor scaling adjustments for RAM and CPU
-  scale_ram_and_cpu
 
   # I got no frigging clue what this does, ask Sam Saffron. It RUNS STUFF ON THE HOST I GUESS?
   host_run
