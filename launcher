@@ -389,7 +389,7 @@ fi
   usage
 }
 
-if [[ ! -e $config_file &&  $command -ne "memconfig" ]]
+if [[ ! -e $config_file ]]
   then
     echo "Config file was not found, ensure $config_file exists"
     echo
@@ -466,7 +466,7 @@ scale_ram_and_cpu() {
     fi
   fi
   db_shared_buffers=$(( db_shared_buffers < 4096 ? db_shared_buffers : 4096 ))
-  
+
   sed -i -e "s/^  #db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $config_file
   if [ -s $changelog ]
   then
@@ -483,7 +483,7 @@ scale_ram_and_cpu() {
     unicorn_workers=$(( 2 * $avail_cores ))
   fi
   unicorn_workers=$(( unicorn_workers < 8 ? unicorn_workers : 8 ))
-  
+
   sed -i -e "s/^  #UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
   if [ -s $changelog ]
   then
