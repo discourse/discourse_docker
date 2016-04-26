@@ -473,56 +473,62 @@ scale_ram_and_cpu() {
 
 }
 
-# JP
 set_config() {
-  if [ -f  ~/tmp/debugjp ]
-  then
-      echo "THIS CODE SHOULD NEVER BE COMMITTED!!"
-  fi
+  local skip_config="n"
   if grep -q "DISCOURSE_HOSTNAME: 'discourse.example.com'" $config_file
   then
       local hostname="discourse.example.com"
   else
-    echo "DISCOURSE_HOSTNAME set. Not changing."
+    #echo "DISCOURSE_HOSTNAME modified. Not changing."
+    skip_config="y"
   fi
   if grep -q "DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'" $config_file
   then
       local developer_emails="me@example.com"
   else
-    echo "DISCOURSE_DEVELOPER_EMAILS set. Not changing."
+    #echo "DISCOURSE_DEVELOPER_EMAILS modified. Not changing."
+    skip_config="y"
   fi
   if grep -q "DISCOURSE_SMTP_ADDRESS: smtp.example.com" $config_file
   then
       local smtp_address="smtp.example.com"
   else
-    echo "DISCOURSE_SMTP_ADDRESS set. Not changing."
+    #echo "DISCOURSE_SMTP_ADDRESS modified. Not changing."
+    skip_config="y"
   fi
   if grep -q "#DISCOURSE_SMTP_USER_NAME: user@example.com" $config_file
   then
       local smtp_user_name="user@example.com"
   else
-    echo "SMTP_USER_NAME set. Not changing."
+    #echo "SMTP_USER_NAME modified. Not changing."
+    skip_config="y"
   fi
   if grep -q "#DISCOURSE_SMTP_PASSWORD: pa\$\$word" $config_file
   then
       local smtp_password="pa\$\$word"
   else
-    echo "DISCOURSE_SMTP_PASSWORD set. Not changing."
+    #echo "DISCOURSE_SMTP_PASSWORD modified. Not changing."
+    skip_config="y"
   fi
   if grep -q "#LETSENCRYPT_ACCOUNT_EMAIL:" $config_file
   then
     local letsencrypt_account_email="your.email@example.com"
   else
-    echo "#LETSENCRYPT_ACCOUNT_EMAIL set. Not changing."
+    #echo "#LETSENCRYPT_ACCOUNT_EMAIL modified. Not changing."
+    skip_config="y"
   fi
-  #- "templates/web.ssl.template.yml"
-  #- "templates/web.letsencrypt.ssl.template.yml"
-  #DISCOURSE_CDN_URL: //discourse-cdn.example.com
 
-  local config_ok="n"
+  if [ "$skip_config" == "y" ]
+  then
+      echo "Default values changed in $config_file. Skipping interactive configuration."
+      return
+  fi
   local new_value=""
   local letsencrypt_status="change to enable"
-  while [ $config_ok == "n" ]
+  local config_sane="n"
+  local config_ok="n"
+  local update_ok="y"
+  while [[ "$config_ok" == "n" || "$config_sane" == "n" ]]
   do
     echo "Getting config"
     if [ ! -z $hostname ]
@@ -551,6 +557,15 @@ set_config() {
 	    smtp_address=$new_value
 	fi
     fi
+    if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
+    then
+	smtp_user_name="SMTP_Injection"
+	
+    fi
+    if [ "$smtp_address" == "smtp.sendgrid.net" ]
+    then
+	smtp_user_name="apikey"
+    fi
     if [ ! -z $smtp_user_name ]
     then
 	read -p "smtp_user_name [$smtp_user_name]: " new_value
@@ -572,41 +587,138 @@ set_config() {
 	read -p "letsencrypt_account_email ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
 	if [ ! -z $new_value ]
 	then
-	    letsencrypt_account_emails=$new_value
-	    letsencrypt_status="enabled"
-	    echo "Letsencrypt enabled."
+	    letsencrypt_account_email=$new_value
+	    if [ "$new_value" == "off" ]
+	    then
+		letsencrypt_status="change to enable"
+	    else
+	      letsencrypt_status="Enter 'OFF' to disable."
+	      echo "Letsencrypt enabled."
+	    fi
 	else
 	  echo "letsencrypt unchanged"
 	fi
     fi
 
-    echo -e "\n\nThat's it! Everything is set. How does it look?\n"
+    #TODO sanity check these values.  For now we trust the user's input.
+    config_sane="y"
+
+    if [ "$config_sane" == "y" ]
+    then
+	echo -e "\n\nThat's it! Everything is set. Read carefully before continuing.\n"
+    else
+      echo "Errors found in settings"
+    fi
 
     echo "DISCOURSE_HOSTNAME: $hostname"
     echo "DISCOURSE_DEVELOPER_EMAILS: $developer_emails"
     echo "DISCOURSE_SMTP_ADDRESS: $smtp_address"
     echo "DISCOURSE_SMTP_USER_NAME: $smtp_user_name"
     echo "DISCOURSE_SMTP_PASSWORD: $smtp_password"
-    echo -e "DISCOURSE_SMTP_ENABLE_START_TLS: $smtp_enable_start_tls\c"
-    if [ $letsencrypt_status == "enabled" ]
+    if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
     then
-	echo "LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_emails"
-	echo "LETSENCRYPT enabled."
+	echo "LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email"
+	echo "LETSENCRYPT will be enabled."
     else
-      echo "LETSENCRYPT not enabled."
+      echo "LETSENCRYPT will not be enabled."
     fi
     echo 
-    read -p "Enter to continue with these settings, 'N' to edit or ^C to start again:" config_ok
+    read -p "Enter to write these settings to $config_file, 'N' to retry, or ^C to start again: " config_ok
   done
 
-  echo "CONFIG DONE! BUT NOT WRITTEN"
-  echo "THIS CODE SHOULD NEVER BE COMMITTED!!"
-
-  if [ -f  ~/tmp/debugjp ]
+  echo -e "\nWriting changes to $config_file:"
+  sed -i -e "s/^  DISCOURSE_HOSTNAME: 'discourse.example.com'/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $config_file
+  if [ -s $changelog ]
   then
-      echo "IF you are reading this you should delete this line and the next one."
-      exit
+      cat $changelog
+      rm $changelog
+  else
+    echo DISCOURSE_HOSTNAME change failed.
+    update_ok="n"  
   fi
+
+  sed -i -e "s/^  DISCOURSE_DEVELOPER_EMAILS:.*/  DISCOURSE_DEVELOPER_EMAILS: \'$developer_emails\'/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+      cat $changelog
+      rm $changelog
+  else
+    echo DISCOURSE_DEVELOPER_EMAILS change failed.
+    update_ok="n"  
+  fi
+
+  sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS: smtp.example.com.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+      cat $changelog
+      rm $changelog
+  else
+    echo DISCOURSE_SMTP_ADDRESS change failed.
+    update_ok="n"  
+  fi
+
+  sed -i -e "s/^  #DISCOURSE_SMTP_USER_NAME: user@example.com.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+      cat $changelog
+      rm $changelog
+  else
+    echo DISCOURSE_SMTP_USER_NAME change failed.
+    update_ok="n"  
+  fi
+
+  sed -i -e "s/^  #DISCOURSE_SMTP_PASSWORD: pa\$\$word.*/  DISCOURSE_SMTP_PASSWORD: $smtp_password/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+      cat $changelog
+      rm $changelog
+  else
+    echo DISCOURSE_SMTP_PASSWORD change failed.
+    update_ok="n"  
+  fi
+
+  if [ "$letsencrypt_status" != "change to enable" ]
+  then
+      sed -i -e "s/^  #LETSENCRYPT_ACCOUNT_EMAIL: your.email@example.com/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $config_file
+      if [ -s $changelog ]
+      then
+	  cat $changelog
+	  rm $changelog
+      else
+	echo LETSENCRYPT_ACCOUNT_EMAIL change failed.
+	update_ok="n"   
+      fi
+      local src='^  #- "templates\/web.ssl.template.yml"'
+      local dst='  \- "templates\/web.ssl.template.yml"'
+      sed -i -e "s/$src/$dst/w $changelog" $config_file
+      if [ -s $changelog ]
+      then
+	  echo "  web.ssl.template.yml enabled"
+      else
+	update_ok="n"  
+	echo "  web.ssl.template.yml NOT ENABLED--was it on already?"
+      fi
+      local src='^  #- "templates\/web.letsencrypt.ssl.template.yml"'
+      local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
+  
+      sed -i -e "s/$src/$dst/w $changelog" $config_file
+      if [ -s $changelog ]
+      then
+	  echo "  letsencrypt.ssl.template.yml enabled"
+      else
+	update_ok="n"  
+	echo "letsencrypt.ssl.template.yml NOT ENABLED--was it on already?"
+      fi
+  fi # enable letsencrypt
+
+  if [ "$update_ok" == "y" ]
+  then
+      echo -e "\n$config_file updated successfully."
+  else
+    echo -e "There was an error changing the configuration.\n"
+  fi
+  read -p "Enter to continue or ^C to exit: " config_o
+
 }
 
 run_start() {
