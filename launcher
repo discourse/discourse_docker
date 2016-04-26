@@ -9,6 +9,7 @@ usage () {
   echo "    destroy:    Stop and remove a container"
   echo "    enter:      Use nsenter to enter a container"
   echo "    logs:       Docker logs for container"
+  echo "    setup:      Create a configuration file"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
   echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
@@ -474,63 +475,35 @@ scale_ram_and_cpu() {
 }
 
 set_config() {
-  local skip_config="n"
-  if grep -q "DISCOURSE_HOSTNAME: 'discourse.example.com'" $config_file
+  if [ -f $config_file ]
   then
-      local hostname="discourse.example.com"
-  else
-    #echo "DISCOURSE_HOSTNAME modified. Not changing."
-    skip_config="y"
+      echo $config_file exists already. 
+      echo To remove it use: rm $config_file
+      exit 1
   fi
-  if grep -q "DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'" $config_file
+  cp ./samples/standalone.yml $config_file
+  if [ ! -f $config_file ]
   then
-      local developer_emails="me@example.com"
-  else
-    #echo "DISCOURSE_DEVELOPER_EMAILS modified. Not changing."
-    skip_config="y"
-  fi
-  if grep -q "DISCOURSE_SMTP_ADDRESS: smtp.example.com" $config_file
-  then
-      local smtp_address="smtp.example.com"
-  else
-    #echo "DISCOURSE_SMTP_ADDRESS modified. Not changing."
-    skip_config="y"
-  fi
-  if grep -q "#DISCOURSE_SMTP_USER_NAME: user@example.com" $config_file
-  then
-      local smtp_user_name="user@example.com"
-  else
-    #echo "SMTP_USER_NAME modified. Not changing."
-    skip_config="y"
-  fi
-  if grep -q "#DISCOURSE_SMTP_PASSWORD: pa\$\$word" $config_file
-  then
-      local smtp_password="pa\$\$word"
-  else
-    #echo "DISCOURSE_SMTP_PASSWORD modified. Not changing."
-    skip_config="y"
-  fi
-  if grep -q "#LETSENCRYPT_ACCOUNT_EMAIL:" $config_file
-  then
-    local letsencrypt_account_email="your.email@example.com"
-  else
-    #echo "#LETSENCRYPT_ACCOUNT_EMAIL modified. Not changing."
-    skip_config="y"
+      echo Unable to copy $config_file. Are you root?
+      exit 1
   fi
 
-  if [ "$skip_config" == "y" ]
-  then
-      echo "Default values changed in $config_file. Skipping interactive configuration."
-      return
-  fi
+  local hostname="discourse.example.com"
+  local developer_emails="me@example.com"
+  local smtp_address="smtp.example.com"
+  local smtp_user_name="user@example.com"
+  local smtp_password="pa\$\$word"
+  local letsencrypt_account_email="your.email@example.com"
+  local letsencrypt_status="change to enable"
+
   local new_value=""
   local letsencrypt_status="change to enable"
   local config_sane="n"
   local config_ok="n"
   local update_ok="y"
+
   while [[ "$config_ok" == "n" || "$config_sane" == "n" ]]
   do
-    echo "Getting config"
     if [ ! -z $hostname ]
     then
 	read -p "hostname: [$hostname]: " new_value
@@ -605,7 +578,7 @@ set_config() {
 
     if [ "$config_sane" == "y" ]
     then
-	echo -e "\n\nThat's it! Everything is set. Read carefully before continuing.\n"
+	echo -e "\nThat's it! Everything is set. Read carefully before continuing.\n"
     else
       echo "Errors found in settings"
     fi
@@ -717,8 +690,6 @@ set_config() {
   else
     echo -e "There was an error changing the configuration.\n"
   fi
-  read -p "Enter to continue or ^C to exit: " config_o
-
 }
 
 run_start() {
@@ -834,9 +805,6 @@ run_bootstrap() {
       check_resources
   fi
 
-  #  run config wizard
-  set_config
-
   # is our configuration file valid?
   valid_config_check
 
@@ -893,6 +861,13 @@ case "$command" in
   bootstrap)
       run_bootstrap
       echo "Successfully bootstrapped, to startup use ./launcher start $config"
+      exit 0
+      ;;
+
+  setup)
+      set_config
+      read -p "Press ENTER to continue, or Ctrl-C to exit to check $config_file"
+      run_bootstrap
       exit 0
       ;;
 
