@@ -473,6 +473,142 @@ scale_ram_and_cpu() {
 
 }
 
+# JP
+set_config() {
+  if [ -f  ~/tmp/debugjp ]
+  then
+      echo "THIS CODE SHOULD NEVER BE COMMITTED!!"
+  fi
+  if grep -q "DISCOURSE_HOSTNAME: 'discourse.example.com'" $config_file
+  then
+      local hostname="discourse.example.com"
+  else
+    echo "DISCOURSE_HOSTNAME set. Not changing."
+  fi
+  if grep -q "DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'" $config_file
+  then
+      local developer_emails="me@example.com"
+  else
+    echo "DISCOURSE_DEVELOPER_EMAILS set. Not changing."
+  fi
+  if grep -q "DISCOURSE_SMTP_ADDRESS: smtp.example.com" $config_file
+  then
+      local smtp_address="smtp.example.com"
+  else
+    echo "DISCOURSE_SMTP_ADDRESS set. Not changing."
+  fi
+  if grep -q "#DISCOURSE_SMTP_USER_NAME: user@example.com" $config_file
+  then
+      local smtp_user_name="user@example.com"
+  else
+    echo "SMTP_USER_NAME set. Not changing."
+  fi
+  if grep -q "#DISCOURSE_SMTP_PASSWORD: pa\$\$word" $config_file
+  then
+      local smtp_password="pa\$\$word"
+  else
+    echo "DISCOURSE_SMTP_PASSWORD set. Not changing."
+  fi
+  if grep -q "#LETSENCRYPT_ACCOUNT_EMAIL:" $config_file
+  then
+    local letsencrypt_account_email="your.email@example.com"
+  else
+    echo "#LETSENCRYPT_ACCOUNT_EMAIL set. Not changing."
+  fi
+  #- "templates/web.ssl.template.yml"
+  #- "templates/web.letsencrypt.ssl.template.yml"
+  #DISCOURSE_CDN_URL: //discourse-cdn.example.com
+
+  local config_ok="n"
+  local new_value=""
+  local letsencrypt_status="change to enable"
+  while [ $config_ok == "n" ]
+  do
+    echo "Getting config"
+    if [ ! -z $hostname ]
+    then
+	read -p "hostname: [$hostname]: " new_value
+	if [ ! -z $new_value ]
+	then
+	    hostname=$new_value
+	else
+	  echo "Unchanged."
+	fi
+    fi 
+    if [ ! -z $developer_emails ]
+    then
+	read -p "developer_emails [$developer_emails]: " new_value
+	if [ ! -z $new_value ]
+	then
+	    developer_emails=$new_value
+	fi
+    fi
+    if [ ! -z $smtp_address ]
+    then
+	read -p "smtp_address [$smtp_address]: " new_value
+	if [ ! -z $new_value ]
+	then
+	    smtp_address=$new_value
+	fi
+    fi
+    if [ ! -z $smtp_user_name ]
+    then
+	read -p "smtp_user_name [$smtp_user_name]: " new_value
+	if [ ! -z $new_value ]
+	then
+	    smtp_user_name=$new_value
+	fi
+    fi
+    if [ ! -z $smtp_password ]
+    then
+	read -p "smtp_password [$smtp_password]: " new_value
+	if [ ! -z $new_value ]
+	then
+	    smtp_password=$new_value
+	fi
+    fi
+    if [ ! -z $letsencrypt_account_email ]
+    then
+	read -p "letsencrypt_account_email ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
+	if [ ! -z $new_value ]
+	then
+	    letsencrypt_account_emails=$new_value
+	    letsencrypt_status="enabled"
+	    echo "Letsencrypt enabled."
+	else
+	  echo "letsencrypt unchanged"
+	fi
+    fi
+
+    echo -e "\n\nThat's it! Everything is set. How does it look?\n"
+
+    echo "DISCOURSE_HOSTNAME: $hostname"
+    echo "DISCOURSE_DEVELOPER_EMAILS: $developer_emails"
+    echo "DISCOURSE_SMTP_ADDRESS: $smtp_address"
+    echo "DISCOURSE_SMTP_USER_NAME: $smtp_user_name"
+    echo "DISCOURSE_SMTP_PASSWORD: $smtp_password"
+    echo -e "DISCOURSE_SMTP_ENABLE_START_TLS: $smtp_enable_start_tls\c"
+    if [ $letsencrypt_status == "enabled" ]
+    then
+	echo "LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_emails"
+	echo "LETSENCRYPT enabled."
+    else
+      echo "LETSENCRYPT not enabled."
+    fi
+    echo 
+    read -p "Enter to continue with these settings, 'N' to edit or ^C to start again:" config_ok
+  done
+
+  echo "CONFIG DONE! BUT NOT WRITTEN"
+  echo "THIS CODE SHOULD NEVER BE COMMITTED!!"
+
+  if [ -f  ~/tmp/debugjp ]
+  then
+      echo "IF you are reading this you should delete this line and the next one."
+      exit
+  fi
+}
+
 run_start() {
 
    existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
@@ -585,6 +721,9 @@ run_bootstrap() {
   if [ "$opt" != "--skip-prereqs" ] ; then
       check_resources
   fi
+
+  #  run config wizard
+  set_config
 
   # is our configuration file valid?
   valid_config_check
