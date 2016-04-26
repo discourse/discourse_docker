@@ -30,7 +30,7 @@ shift 2
 user_args=""
 
 while [ ${#} -gt 0 ]; do
-  case "#{1}" in
+  case "${1}" in
 
   --skip-prereqs)
     SKIP_PREREQ="1"
