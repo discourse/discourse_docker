@@ -21,18 +21,13 @@ usage () {
   exit 1
 }
 
-
 command=$1
 config=$2
-shift 2
+
 user_args=""
 
-[ $# -lt 2 ] && {
-  usage
-}
-
 while [ ${#} -gt 0 ]; do
-  case "$command" in
+  case "${1}" in
 
   --skip-prereqs)
     SKIP_PREREQ="1"
@@ -43,10 +38,6 @@ while [ ${#} -gt 0 ]; do
   --docker-args)
     user_args="$2"
     shift
-    ;;
-  *)
-    echo "Unknown options '${1}'"
-    usage
     ;;
   esac
 
@@ -409,12 +400,17 @@ fi
   exit 0
 }
 
-if [[ ! -e $config_file ]]
-  then
+if [ -z "$command" -a -z "$config" ]; then
+  usage
+fi
+
+if [ ! "$command" == "setup" ]; then
+  if [[ ! -e $config_file ]]; then
     echo "Config file was not found, ensure $config_file exists"
     echo
     echo "Available configs ( `cd containers && ls -dm *.yml | tr -s '\n' ' ' | awk '{ gsub(/\.yml/, ""); print }'`)"
     exit 1
+  fi
 fi
 
 docker_version=($($docker_path --version))
@@ -516,7 +512,7 @@ scale_ram_and_cpu() {
 set_config() {
   if [ -f $config_file ]
   then
-      echo $config_file exists already. 
+      echo $config_file exists already.
       echo To remove it use: rm $config_file
       exit 1
   fi
@@ -552,7 +548,7 @@ set_config() {
 	else
 	  echo "Unchanged."
 	fi
-    fi 
+    fi
     if [ ! -z $developer_emails ]
     then
 	read -p "developer_emails [$developer_emails]: " new_value
@@ -572,7 +568,7 @@ set_config() {
     if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
     then
 	smtp_user_name="SMTP_Injection"
-	
+
     fi
     if [ "$smtp_address" == "smtp.sendgrid.net" ]
     then
@@ -634,7 +630,7 @@ set_config() {
     else
       echo "LETSENCRYPT will not be enabled."
     fi
-    echo 
+    echo
     read -p "Enter to write these settings to $config_file, 'N' to retry, or ^C to start again: " config_ok
   done
 
@@ -646,7 +642,7 @@ set_config() {
       rm $changelog
   else
     echo DISCOURSE_HOSTNAME change failed.
-    update_ok="n"  
+    update_ok="n"
   fi
 
   sed -i -e "s/^  DISCOURSE_DEVELOPER_EMAILS:.*/  DISCOURSE_DEVELOPER_EMAILS: \'$developer_emails\'/w $changelog" $config_file
@@ -656,7 +652,7 @@ set_config() {
       rm $changelog
   else
     echo DISCOURSE_DEVELOPER_EMAILS change failed.
-    update_ok="n"  
+    update_ok="n"
   fi
 
   sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS: smtp.example.com.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $config_file
@@ -666,7 +662,7 @@ set_config() {
       rm $changelog
   else
     echo DISCOURSE_SMTP_ADDRESS change failed.
-    update_ok="n"  
+    update_ok="n"
   fi
 
   sed -i -e "s/^  #DISCOURSE_SMTP_USER_NAME: user@example.com.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $config_file
@@ -676,7 +672,7 @@ set_config() {
       rm $changelog
   else
     echo DISCOURSE_SMTP_USER_NAME change failed.
-    update_ok="n"  
+    update_ok="n"
   fi
 
   sed -i -e "s/^  #DISCOURSE_SMTP_PASSWORD: pa\$\$word.*/  DISCOURSE_SMTP_PASSWORD: $smtp_password/w $changelog" $config_file
@@ -686,7 +682,7 @@ set_config() {
       rm $changelog
   else
     echo DISCOURSE_SMTP_PASSWORD change failed.
-    update_ok="n"  
+    update_ok="n"
   fi
 
   if [ "$letsencrypt_status" != "change to enable" ]
@@ -698,7 +694,7 @@ set_config() {
 	  rm $changelog
       else
 	echo LETSENCRYPT_ACCOUNT_EMAIL change failed.
-	update_ok="n"   
+	update_ok="n"
       fi
       local src='^  #- "templates\/web.ssl.template.yml"'
       local dst='  \- "templates\/web.ssl.template.yml"'
@@ -707,18 +703,18 @@ set_config() {
       then
 	  echo "  web.ssl.template.yml enabled"
       else
-	update_ok="n"  
+	update_ok="n"
 	echo "  web.ssl.template.yml NOT ENABLED--was it on already?"
       fi
       local src='^  #- "templates\/web.letsencrypt.ssl.template.yml"'
       local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
-  
+
       sed -i -e "s/$src/$dst/w $changelog" $config_file
       if [ -s $changelog ]
       then
 	  echo "  letsencrypt.ssl.template.yml enabled"
       else
-	update_ok="n"  
+	update_ok="n"
 	echo "letsencrypt.ssl.template.yml NOT ENABLED--was it on already?"
       fi
   fi # enable letsencrypt
