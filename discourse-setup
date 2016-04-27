@@ -5,19 +5,19 @@
 ##
 check_disk_and_memory() {
   
-  resources="ok"
   avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
   if [ "$avail_mem" -lt 900 ]; then
-    resources="insufficient"
     echo "WARNING: Discourse requires 1GB RAM to run. This system does not appear"
     echo "to have sufficient memory."
     echo
     echo "Your site may not work properly, or future upgrades of Discourse may not"
     echo "complete successfully."
-  elif [ "$avail_mem" -lt 1800 ]; then
+    exit 1
+  fi
+    
+  if [ "$avail_mem" -lt 1800 ]; then
     total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
     if [ "$total_swap" -lt 1000 ]; then
-      resources="insufficient"
       echo "WARNING: Discourse requires at least 1GB of swap when running with less "
       echo "than 2GB of RAM. This system does not appear to have sufficient swap space."
       echo
@@ -48,7 +48,6 @@ check_disk_and_memory() {
 
   free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
   if [ "$free_disk" -lt 5000 ]; then
-    resources="insufficient"
     echo "WARNING: Discourse requires at least 5GB free disk space. This system"
     echo "does not appear to have sufficient disk space."
     echo
@@ -62,10 +61,6 @@ check_disk_and_memory() {
     exit 1
   fi
 
-  if [ -t 0 ] && [ "$resources" != "ok" ]; then
-    echo
-    read -p "Press ENTER to continue, or Ctrl-C to exit and give your system more resources"
-  fi
 }
 
 
