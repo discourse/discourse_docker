@@ -412,6 +412,9 @@ run_start() {
 
    host_run
 
+   ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| \"-p #{p}\"}.join(' ')"`
+
    docker_args=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
           "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
 
