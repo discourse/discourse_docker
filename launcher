@@ -21,15 +21,14 @@ usage () {
   exit 1
 }
 
+[ $# -lt 2 ] && {
+  usage
+}
 
 command=$1
 config=$2
 shift 2
 user_args=""
-
-[ $# -lt 2 ] && {
-  usage
-}
 
 while [ ${#} -gt 0 ]; do
   case "$command" in
