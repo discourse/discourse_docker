@@ -9,33 +9,38 @@ check_disk_and_memory() {
   avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
   if [ "$avail_mem" -lt 900 ]; then
     resources="insufficient"
-    echo "WARNING: Discourse requires 1GB RAM to run. This system does not appear to have sufficient memory."
+    echo "WARNING: Discourse requires 1GB RAM to run. This system does not appear"
+    echo "to have sufficient memory."
     echo
-    echo "Your site may not work properly, or future upgrades of Discourse may not complete successfully."
-    echo
-    echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#create-new-cloud-server"
+    echo "Your site may not work properly, or future upgrades of Discourse may not"
+    echo "complete successfully."
   elif [ "$avail_mem" -lt 1800 ]; then
     total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
     if [ "$total_swap" -lt 1000 ]; then
       resources="insufficient"
-      echo "WARNING: Discourse requires at least 1GB of swap when running with less than 2GB of RAM. This system does not appear to have sufficient swap space."
+      echo "WARNING: Discourse requires at least 1GB of swap when running with less "
+      echo "than 2GB of RAM. This system does not appear to have sufficient swap space."
       echo
-      echo "Without sufficient swap space, your site may not work properly, or future upgrades of Discourse may not complete successfully."
+      echo "Without sufficient swap space, your site may not work properly, or future"
+      echo "upgrades of Discourse may not complete successfully."
       echo
-      echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#set-up-swap-if-needed"
+      echo "See https://meta.discourse.org/t/13880"
     fi
   fi
 
   free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
   if [ "$free_disk" -lt 5000 ]; then
     resources="insufficient"
-    echo "WARNING: Discourse requires at least 5GB free disk space. This system does not appear to have sufficient disk space."
+    echo "WARNING: Discourse requires at least 5GB free disk space. This system"
+    echo "does not appear to have sufficient disk space."
     echo
-    echo "Insufficient disk space may result in problems running your site, and may not even allow Discourse installation to complete successfully."
+    echo "Insufficient disk space may result in problems running your site, and"
+    echo "may not even allow Discourse installation to complete successfully."
     echo
     echo "Please free up some space, or expand your disk, before continuing."
     echo
-    echo "Run \`apt-get autoremove && apt-get autoclean\` to clean up unused packages and \`./launcher cleanup\` to remove stale Docker containers."
+    echo "Run \`apt-get autoremove && apt-get autoclean\` to clean up unused"
+    echo "packages and \`./launcher cleanup\` to remove stale Docker containers."
     exit 1
   fi
 
@@ -118,7 +123,10 @@ check_port() {
   if [ -n "$valid" ]; then
     echo "Port ${1} appears to already be in use."
     echo
-    echo "If you are trying to run Discourse simultaneously with another web server like Apache or nginx, you will need to bind to a different port -- see https://meta.discourse.org/t/17247 for help."
+    echo "If you are trying to run Discourse simultaneously with another web"
+    echo "server like Apache or nginx, you will need to bind to a different port"
+    echo 
+    echo "See https://meta.discourse.org/t/17247"
     exit 1
   fi
 }
@@ -212,7 +220,7 @@ ask_user_for_config() {
       fi
     fi
 
-    echo -e "\nThat's it! Everything is set. Does this look right?\n"
+    echo -e "\nDoes this look right?\n"
     echo "Hostname      : $hostname"
     echo "Email         : $developer_emails"
     echo "SMTP address  : $smtp_address"
