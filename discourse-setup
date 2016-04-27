@@ -21,10 +21,28 @@ check_disk_and_memory() {
       echo "WARNING: Discourse requires at least 1GB of swap when running with less "
       echo "than 2GB of RAM. This system does not appear to have sufficient swap space."
       echo
-      echo "Without sufficient swap space, your site may not work properly, or future"
+      echo "Without sufficient swap space, your site may not work properly, and future"
       echo "upgrades of Discourse may not complete successfully."
       echo
-      echo "See https://meta.discourse.org/t/13880"
+      read -p "Press ENTER to create a 2GB swapfile automatically, or Ctrl-C to exit"
+      
+      ##
+      ## derived from https://meta.discourse.org/t/13880
+      ## 
+      install -o root -g root -m 0600 /dev/null /swapfile
+      dd if=/dev/zero of=/swapfile bs=1k count=2048k
+      mkswap /swapfile
+      swapon /swapfile
+      echo "/swapfile       swap    swap    auto      0       0" | sudo tee -a /etc/fstab
+      sudo sysctl -w vm.swappiness=10
+      echo vm.swappiness = 10 | sudo tee -a /etc/sysctl.conf
+
+      total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
+      if [ "$total_swap" -lt 1000 ]; then
+        echo "Failed to create swap, sorry!"
+        exit 1
+      fi
+      
     fi
   fi
 
