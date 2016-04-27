@@ -1,0 +1,388 @@
+#!/bin/bash
+
+##
+## Do we have enough memory and disk space for Discourse?
+##
+check_disk_and_memory() {
+  
+  resources="ok"
+  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
+  if [ "$avail_mem" -lt 900 ]; then
+    resources="insufficient"
+    echo "WARNING: You do not appear to have sufficient memory to run Discourse."
+    echo
+    echo "Your system may not work properly, or future upgrades of Discourse may"
+    echo "not complete successfully."
+    echo
+    echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#create-new-cloud-server"
+  elif [ "$avail_mem" -lt 1800 ]; then
+    total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
+    if [ "$total_swap" -lt 1000 ]; then
+      resources="insufficient"
+      echo "WARNING: You must have at least 1GB of swap when running with less"
+      echo "than 2GB of RAM."
+      echo
+      echo "Your system may not work properly, or future upgrades of Discourse may"
+      echo "not complete successfully."
+      echo
+      echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#set-up-swap-if-needed"
+    fi
+  fi
+
+  free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
+  if [ "$free_disk" -lt 5000 ]; then
+    resources="insufficient"
+    echo "WARNING: You must have at least 5GB of *free* disk space to run Discourse."
+    echo
+    echo "Insufficient disk space may result in problems running your site, and may"
+    echo "not even allow Discourse installation to complete successfully."
+    echo
+    echo "Please free up some space, or expand your disk, before continuing."
+    echo
+    echo "Run \`apt-get autoremove && apt-get autoclean\` to clean up unused packages and \`./launcher cleanup\` to remove stale Docker containers."
+    exit 1
+  fi
+
+  if [ -t 0 ] && [ "$resources" != "ok" ]; then
+    echo
+    read -p "Press ENTER to continue, or Ctrl-C to exit and give your system more resources"
+  fi
+}
+
+
+##
+## If we have lots of RAM or lots of CPUs, bump up the defaults to scale better
+##
+scale_ram_and_cpu() {
+
+  # grab info about total system ram and physical (NOT LOGICAL!) CPU cores
+  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
+  avail_gb=$(( $avail_mem / 950 ))
+  avail_cores=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $4}'`
+  echo "Found ${avail_gb}GB of memory and $avail_cores physical CPU cores"
+
+  # db_shared_buffers: 128MB for 1GB, 256MB for 2GB, or 256MB * GB, max 4096MB
+  if [ "$avail_gb" -eq "1" ]
+  then
+    db_shared_buffers=128
+  else
+    if [ "$avail_gb" -eq "2" ]
+    then
+      db_shared_buffers=256
+    else
+      db_shared_buffers=$(( 256 * $avail_gb ))
+    fi
+  fi
+  db_shared_buffers=$(( db_shared_buffers < 4096 ? db_shared_buffers : 4096 ))
+
+  sed -i -e "s/^  #db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+    echo "setting db_shared_buffers = ${db_shared_buffers}MB"
+    rm $changelog
+  fi
+
+
+  # UNICORN_WORKERS: 2 * GB for 2GB or less, or 2 * CPU, max 8
+  if [ "$avail_gb" -le "2" ]
+  then
+    unicorn_workers=$(( 2 * $avail_gb ))
+  else
+    unicorn_workers=$(( 2 * $avail_cores ))
+  fi
+  unicorn_workers=$(( unicorn_workers < 8 ? unicorn_workers : 8 ))
+
+  sed -i -e "s/^  #UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+      echo "setting UNICORN_WORKERS = ${unicorn_workers}"
+      rm $changelog
+  fi
+
+}
+
+
+## 
+## standard http / https ports must not be occupied
+##
+check_ports() {
+    check_port "80"
+    check_port "443"
+    echo "Ports 80 and 443 are free for use"
+}
+
+
+##
+## check a port to see if it is already in use
+##
+check_port() {
+  
+  local valid=$(netstat -tln | awk '{print $4}' | grep ":${1}\$")
+
+  if [ -n "$valid" ]; then
+    echo "Port ${1} appears to already be in use."
+    echo
+    echo "If you are trying to run Discourse simultaneously with another web server like Apache or nginx, you will need to bind to a different port -- see https://meta.discourse.org/t/17247 for help."
+    exit 1
+  fi
+}
+
+##
+## prompt user for typical Discourse config file values
+##
+set_config() {
+  
+  local hostname="discourse.example.com"
+  local developer_emails="me@example.com"
+  local smtp_address="smtp.example.com"
+  local smtp_user_name="postmaster@discourse.example.com"
+  local smtp_password=""
+  local letsencrypt_account_email="me@example.com"
+  local letsencrypt_status="ENTER to skip"
+
+  local new_value=""
+  local config_ok="n"
+  local update_ok="y"
+  
+  echo ""
+
+  while [[ "$config_ok" == "n" ]]
+  do
+    if [ ! -z $hostname ]
+    then
+      read -p "Hostname for your Discourse? [$hostname]: " new_value
+      if [ ! -z $new_value ]
+      then
+          hostname=$new_value
+      fi
+    fi
+    
+    if [ ! -z $developer_emails ]
+    then
+      read -p "Email address for admin account? [$developer_emails]: " new_value
+      if [ ! -z $new_value ]
+      then
+          developer_emails=$new_value
+      fi
+    fi
+    
+    if [ ! -z $smtp_address ]
+    then
+      read -p "SMTP server address? [$smtp_address]: " new_value
+      if [ ! -z $new_value ]
+      then
+        smtp_address=$new_value
+      fi
+    fi
+    
+    if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
+    then
+    	smtp_user_name="SMTP_Injection"
+    fi
+    
+    if [ "$smtp_address" == "smtp.sendgrid.net" ]
+    then
+	    smtp_user_name="apikey"
+    fi
+    
+    if [ ! -z $smtp_user_name ]
+    then
+      read -p "SMTP user name? [$smtp_user_name]: " new_value
+      if [ ! -z $new_value ]
+      then
+          smtp_user_name=$new_value
+      fi
+    fi
+    
+    read -p "SMTP password? [$smtp_password]: " new_value
+    if [ ! -z $new_value ]
+    then
+        smtp_password=$new_value
+    fi
+    
+    if [ ! -z $letsencrypt_account_email ]
+    then
+      read -p "Let's Encrypt account email? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
+      if [ ! -z $new_value ]
+      then
+          letsencrypt_account_email=$new_value
+          if [ "$new_value" == "off" ]
+          then
+            letsencrypt_status="ENTER to skip"
+          else
+            letsencrypt_status="Enter 'OFF' to disable."
+          fi
+      fi
+    fi
+
+    echo -e "\nThat's it! Everything is set. Does this look right?\n"
+    echo "Hostname      : $hostname"
+    echo "Email         : $developer_emails"
+    echo "SMTP address  : $smtp_address"
+    echo "SMTP username : $smtp_user_name"
+    echo "SMTP password : $smtp_password"
+    
+    if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
+    then
+      echo "Let's Encrypt : $letsencrypt_account_email"
+    fi
+    
+    echo ""
+    read -p "Press ENTER to continue, 'n' to try again, or ^C to exit: " config_ok
+  done
+
+  sed -i -e "s/^  DISCOURSE_HOSTNAME: 'discourse.example.com'/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "DISCOURSE_HOSTNAME change failed."
+    update_ok="n"
+  fi
+
+  sed -i -e "s/^  DISCOURSE_DEVELOPER_EMAILS:.*/  DISCOURSE_DEVELOPER_EMAILS: \'$developer_emails\'/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "DISCOURSE_DEVELOPER_EMAILS change failed."
+    update_ok="n"
+  fi
+
+  sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS: smtp.example.com.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "DISCOURSE_SMTP_ADDRESS change failed."
+    update_ok="n"
+  fi
+
+  sed -i -e "s/^  #DISCOURSE_SMTP_USER_NAME: user@example.com.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "DISCOURSE_SMTP_USER_NAME change failed."
+    update_ok="n"
+  fi
+
+  sed -i -e "s/^  #DISCOURSE_SMTP_PASSWORD: pa\$\$word.*/  DISCOURSE_SMTP_PASSWORD: $smtp_password/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+      rm $changelog
+  else
+    echo "DISCOURSE_SMTP_PASSWORD change failed."
+    update_ok="n"
+  fi
+
+  if [ "$letsencrypt_status" != "ENTER to skip" ]
+  then
+      sed -i -e "s/^  #LETSENCRYPT_ACCOUNT_EMAIL: your.email@example.com/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $config_file
+      if [ -s $changelog ]
+      then
+        rm $changelog
+      else
+        echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
+        update_ok="n"
+      fi
+      local src='^  #- "templates\/web.ssl.template.yml"'
+      local dst='  \- "templates\/web.ssl.template.yml"'
+      sed -i -e "s/$src/$dst/w $changelog" $config_file
+      if [ -s $changelog ]
+      then
+	      echo "web.ssl.template.yml enabled"
+      else
+        update_ok="n"
+        echo "web.ssl.template.yml NOT ENABLED--was it on already?"
+      fi
+      local src='^  #- "templates\/web.letsencrypt.ssl.template.yml"'
+      local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
+
+      sed -i -e "s/$src/$dst/w $changelog" $config_file
+      if [ -s $changelog ]
+      then
+	      echo "letsencrypt.ssl.template.yml enabled"
+      else
+        update_ok="n"
+        echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
+      fi
+  fi 
+
+  if [ "$update_ok" == "y" ]
+  then
+    echo -e "\nConfiguration file at $config_file updated successfully!\n"
+  else
+    echo -e "\nUnfortunately, there was an error changing $config_file\n"
+    exit 1
+  fi
+}
+
+##
+## is our config file valid? Does it have the required fields set?
+##
+valid_config_check() {
+
+  valid_config="y"
+  
+  for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
+           DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
+  do
+    config_line=`grep "^  $x:" $config_file` 
+    local result=$?
+    local default="example.com"
+
+    if (( result == 0 ))
+    then
+      if [[ $config_line = *"$default"* ]]
+      then
+        echo "$x left at incorrect default of example.com"
+        valid_config="n"
+      fi
+      config_val=`echo $config_line | awk '{print $2}'`
+      if [ -z $config_val ]
+      then
+        echo "$x was left blank"
+        valid_config="n"
+      fi
+    else
+      echo "$x not present"
+      valid_config="n"
+    fi
+  done
+  
+  if [ "$valid_config" != "y" ]; then
+    echo -e "\nSorry, these $config_file settings aren't valid -- can't continue!"
+    exit 1
+  fi
+}
+
+
+##
+## template file names
+##
+app_name=app
+template_path=samples/standalone.yml
+config_file=containers/$app_name.yml
+changelog=/tmp/changelog
+
+## make a copy of the simple standalone config file
+
+if [ -a $config_file ]
+then
+  echo "The configuration file $config_file already exists!"
+  echo ""
+  echo "If you want to delete your old configuration file and start over:"
+  echo "rm $config_file"
+  exit 1
+else
+  cp $template_path $config_file
+fi
+
+check_disk_and_memory
+check_ports
+scale_ram_and_cpu
+set_config
+valid_config_check
+
+./launcher bootstrap $app_name

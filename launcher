@@ -1,29 +1,26 @@
 #!/bin/bash
 
 usage () {
-  echo "Usage: launcher COMMAND CONFIG [--skip-prereqs] [--skip-discourse-prereqs] [--docker-args STRING]"
+  echo "Usage: launcher COMMAND CONFIG [--skip-prereqs] [--docker-args STRING]"
   echo "Commands:"
   echo "    start:      Start/initialize a container"
   echo "    stop:       Stop a running container"
   echo "    restart:    Restart a container"
   echo "    destroy:    Stop and remove a container"
-  echo "    enter:      Use nsenter to enter a container"
-  echo "    logs:       Docker logs for container"
+  echo "    enter:      Use nsenter to get a shell into a container"
+  echo "    logs:       View the Docker logs for a container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
   echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
-  echo "    setup:      Create a new configuration file and bootstrap"
   echo
   echo "Options:"
   echo "    --skip-prereqs             Don't check launcher prerequisites"
-  echo "    --skip-discourse-prereqs   Don't check prerequisites specifiy to Discourse"
   echo "    --docker-args              Extra arguments to pass when running docker"
   exit 1
 }
 
 command=$1
 config=$2
-
 user_args=""
 
 while [ ${#} -gt 0 ]; do
@@ -31,9 +28,6 @@ while [ ${#} -gt 0 ]; do
 
   --skip-prereqs)
     SKIP_PREREQ="1"
-    ;;
-  --skip-discourse-prereqs)
-    SKIP_DISCOURSE_PREREQS="1"
     ;;
   --docker-args)
     user_args="$2"
@@ -67,8 +61,6 @@ local_discourse=local_discourse
 image=discourse/discourse:1.0.17
 docker_path=`which docker.io || which docker`
 git_path=`which git`
-template_path=samples/standalone.yml
-changelog=/tmp/changelog # used to test whether sed did anything
 
 if [ "${SUPERVISED}" = "true" ]; then
   restart_policy="--restart=no"
@@ -115,13 +107,11 @@ compare_version() {
 
 
 install_docker() {
-
-  echo "Docker is not installed, you will need to install Docker in order to run Discourse"
+  echo "Docker is not installed, you will need to install Docker in order to run Launcher"
   echo "Please visit https://docs.docker.com/installation/ for instructions on how to do this for your system"
   echo
   echo "If you are running a recent Ubuntu Server, try the following:"
   echo "sudo apt-get install docker-engine"
-
   exit 1
 }
 
@@ -177,7 +167,6 @@ check_prereqs() {
     echo
     echo "Please be patient"
     echo
-
   fi
 
   # 5. running recommended git version
@@ -206,67 +195,6 @@ check_prereqs() {
 
 }
 
-
-
-check_resources() {
-  # Memory
-  resources="ok"
-  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
-  if [ "$avail_mem" -lt 900 ]; then
-    resources="insufficient"
-    echo "WARNING: You do not appear to have sufficient memory to run Discourse."
-    echo
-    echo "Your system may not work properly, or future upgrades of Discourse may"
-    echo "not complete successfully."
-    echo
-    echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#create-new-cloud-server"
-  elif [ "$avail_mem" -lt 1800 ]; then
-    total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
-    if [ "$total_swap" -lt 1000 ]; then
-      resources="insufficient"
-      echo "WARNING: You must have at least 1GB of swap when running with less"
-      echo "than 2GB of RAM."
-      echo
-      echo "Your system may not work properly, or future upgrades of Discourse may"
-      echo "not complete successfully."
-      echo
-      echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#set-up-swap-if-needed"
-    fi
-  fi
-
-  # Disk space
-  free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
-  if [ "$free_disk" -lt 5000 ]; then
-    resources="insufficient"
-    echo "WARNING: You must have at least 5GB of *free* disk space to run Discourse."
-    echo
-    echo "Insufficient disk space may result in problems running your site, and may"
-    echo "not even allow Discourse installation to complete successfully."
-    echo
-    echo "Please free up some space, or expand your disk, before continuing."
-    echo
-    echo "Run \`apt-get autoremove && apt-get autoclean\` to clean up unused packages and \`./launcher cleanup\` to remove stale Docker containers."
-    exit 1
-  fi
-
-  if [ -t 0 ] && [ "$resources" != "ok" ]; then
-    echo
-    read -p "Press ENTER to continue, or Ctrl-C to exit and give your system more resources"
-  fi
-}
-
-check_ports() {
-  local valid=$(netstat -tln | awk '{print $4}' | grep ":${1}\$")
-
-  if [ -n "$valid" ]; then
-    echo "Launcher has detected that port ${1} is in use."
-    echo
-    echo "If you are trying to run Discourse simultaneously with another web server like Apache or nginx, you will need to bind to a different port."
-    echo "See https://meta.discourse.org/t/17247 for help."
-    echo "To continue anyway, re-run Launcher with --skip-prereqs"
-    exit 1
-  fi
-}
 
 if [ -z "$SKIP_PREREQS" ] ; then
   check_prereqs
@@ -368,7 +296,7 @@ RUBY
 
     if [ "$ok" -ne 1 ]; then
       echo "${env[@]}"
-      echo "YAML syntax error. Please check your /var/discourse/containers/*.yml config files."
+      echo "YAML syntax error. Please check your containers/*.yml config files."
       exit 1
     fi
 }
@@ -461,272 +389,6 @@ set_boot_command() {
   fi
 }
 
-scale_ram_and_cpu() {
-
-  # grab info about total system ram and physical (NOT LOGICAL!) CPU cores
-  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
-  avail_gb=$(( $avail_mem / 950 ))
-  avail_cores=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $4}'`
-  echo "Found ${avail_gb}GB of memory and $avail_cores physical CPU cores"
-
-  # db_shared_buffers: 128MB for 1GB, 256MB for 2GB, or 256MB * GB, max 4096MB
-  if [ "$avail_gb" -eq "1" ]
-  then
-    db_shared_buffers=128
-  else
-    if [ "$avail_gb" -eq "2" ]
-    then
-      db_shared_buffers=256
-    else
-      db_shared_buffers=$(( 256 * $avail_gb ))
-    fi
-  fi
-  db_shared_buffers=$(( db_shared_buffers < 4096 ? db_shared_buffers : 4096 ))
-
-  sed -i -e "s/^  #db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $config_file
-  if [ -s $changelog ]
-  then
-    echo "setting db_shared_buffers = ${db_shared_buffers}MB based on detected CPU/RAM"
-    rm $changelog
-  fi
-
-
-  # UNICORN_WORKERS: 2 * GB for 2GB or less, or 2 * CPU, max 8
-  if [ "$avail_gb" -le "2" ]
-  then
-    unicorn_workers=$(( 2 * $avail_gb ))
-  else
-    unicorn_workers=$(( 2 * $avail_cores ))
-  fi
-  unicorn_workers=$(( unicorn_workers < 8 ? unicorn_workers : 8 ))
-
-  sed -i -e "s/^  #UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
-  if [ -s $changelog ]
-  then
-      echo "setting UNICORN_WORKERS = ${unicorn_workers} based on detected CPU/RAM"
-      rm $changelog
-  fi
-
-}
-
-set_config() {
-  if [ -f $config_file ]
-  then
-      echo $config_file exists already.
-      echo To remove it use: rm $config_file
-      exit 1
-  fi
-  cp ./samples/standalone.yml $config_file
-  if [ ! -f $config_file ]
-  then
-      echo Unable to copy $config_file. Are you root?
-      exit 1
-  fi
-
-  local hostname="discourse.example.com"
-  local developer_emails="me@example.com"
-  local smtp_address="smtp.example.com"
-  local smtp_user_name="user@example.com"
-  local smtp_password="pa\$\$word"
-  local letsencrypt_account_email="your.email@example.com"
-  local letsencrypt_status="change to enable"
-
-  local new_value=""
-  local letsencrypt_status="change to enable"
-  local config_sane="n"
-  local config_ok="n"
-  local update_ok="y"
-
-  while [[ "$config_ok" == "n" || "$config_sane" == "n" ]]
-  do
-    if [ ! -z $hostname ]
-    then
-	read -p "hostname: [$hostname]: " new_value
-	if [ ! -z $new_value ]
-	then
-	    hostname=$new_value
-	else
-	  echo "Unchanged."
-	fi
-    fi
-    if [ ! -z $developer_emails ]
-    then
-	read -p "developer_emails [$developer_emails]: " new_value
-	if [ ! -z $new_value ]
-	then
-	    developer_emails=$new_value
-	fi
-    fi
-    if [ ! -z $smtp_address ]
-    then
-	read -p "smtp_address [$smtp_address]: " new_value
-	if [ ! -z $new_value ]
-	then
-	    smtp_address=$new_value
-	fi
-    fi
-    if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
-    then
-	smtp_user_name="SMTP_Injection"
-
-    fi
-    if [ "$smtp_address" == "smtp.sendgrid.net" ]
-    then
-	smtp_user_name="apikey"
-    fi
-    if [ ! -z $smtp_user_name ]
-    then
-	read -p "smtp_user_name [$smtp_user_name]: " new_value
-	if [ ! -z $new_value ]
-	then
-	    smtp_user_name=$new_value
-	fi
-    fi
-    if [ ! -z $smtp_password ]
-    then
-	read -p "smtp_password [$smtp_password]: " new_value
-	if [ ! -z $new_value ]
-	then
-	    smtp_password=$new_value
-	fi
-    fi
-    if [ ! -z $letsencrypt_account_email ]
-    then
-	read -p "letsencrypt_account_email ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
-	if [ ! -z $new_value ]
-	then
-	    letsencrypt_account_email=$new_value
-	    if [ "$new_value" == "off" ]
-	    then
-		letsencrypt_status="change to enable"
-	    else
-	      letsencrypt_status="Enter 'OFF' to disable."
-	      echo "Letsencrypt enabled."
-	    fi
-	else
-	  echo "letsencrypt unchanged"
-	fi
-    fi
-
-    #TODO sanity check these values.  For now we trust the user's input.
-    config_sane="y"
-
-    if [ "$config_sane" == "y" ]
-    then
-	echo -e "\nThat's it! Everything is set. Read carefully before continuing.\n"
-    else
-      echo "Errors found in settings"
-    fi
-
-    echo "DISCOURSE_HOSTNAME: $hostname"
-    echo "DISCOURSE_DEVELOPER_EMAILS: $developer_emails"
-    echo "DISCOURSE_SMTP_ADDRESS: $smtp_address"
-    echo "DISCOURSE_SMTP_USER_NAME: $smtp_user_name"
-    echo "DISCOURSE_SMTP_PASSWORD: $smtp_password"
-    if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
-    then
-	echo "LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email"
-	echo "LETSENCRYPT will be enabled."
-    else
-      echo "LETSENCRYPT will not be enabled."
-    fi
-    echo
-    read -p "Enter to write these settings to $config_file, 'N' to retry, or ^C to start again: " config_ok
-  done
-
-  echo -e "\nWriting changes to $config_file:"
-  sed -i -e "s/^  DISCOURSE_HOSTNAME: 'discourse.example.com'/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $config_file
-  if [ -s $changelog ]
-  then
-      cat $changelog
-      rm $changelog
-  else
-    echo DISCOURSE_HOSTNAME change failed.
-    update_ok="n"
-  fi
-
-  sed -i -e "s/^  DISCOURSE_DEVELOPER_EMAILS:.*/  DISCOURSE_DEVELOPER_EMAILS: \'$developer_emails\'/w $changelog" $config_file
-  if [ -s $changelog ]
-  then
-      cat $changelog
-      rm $changelog
-  else
-    echo DISCOURSE_DEVELOPER_EMAILS change failed.
-    update_ok="n"
-  fi
-
-  sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS: smtp.example.com.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $config_file
-  if [ -s $changelog ]
-  then
-      cat $changelog
-      rm $changelog
-  else
-    echo DISCOURSE_SMTP_ADDRESS change failed.
-    update_ok="n"
-  fi
-
-  sed -i -e "s/^  #DISCOURSE_SMTP_USER_NAME: user@example.com.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $config_file
-  if [ -s $changelog ]
-  then
-      cat $changelog
-      rm $changelog
-  else
-    echo DISCOURSE_SMTP_USER_NAME change failed.
-    update_ok="n"
-  fi
-
-  sed -i -e "s/^  #DISCOURSE_SMTP_PASSWORD: pa\$\$word.*/  DISCOURSE_SMTP_PASSWORD: $smtp_password/w $changelog" $config_file
-  if [ -s $changelog ]
-  then
-      cat $changelog
-      rm $changelog
-  else
-    echo DISCOURSE_SMTP_PASSWORD change failed.
-    update_ok="n"
-  fi
-
-  if [ "$letsencrypt_status" != "change to enable" ]
-  then
-      sed -i -e "s/^  #LETSENCRYPT_ACCOUNT_EMAIL: your.email@example.com/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $config_file
-      if [ -s $changelog ]
-      then
-	  cat $changelog
-	  rm $changelog
-      else
-	echo LETSENCRYPT_ACCOUNT_EMAIL change failed.
-	update_ok="n"
-      fi
-      local src='^  #- "templates\/web.ssl.template.yml"'
-      local dst='  \- "templates\/web.ssl.template.yml"'
-      sed -i -e "s/$src/$dst/w $changelog" $config_file
-      if [ -s $changelog ]
-      then
-	  echo "  web.ssl.template.yml enabled"
-      else
-	update_ok="n"
-	echo "  web.ssl.template.yml NOT ENABLED--was it on already?"
-      fi
-      local src='^  #- "templates\/web.letsencrypt.ssl.template.yml"'
-      local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
-
-      sed -i -e "s/$src/$dst/w $changelog" $config_file
-      if [ -s $changelog ]
-      then
-	  echo "  letsencrypt.ssl.template.yml enabled"
-      else
-	update_ok="n"
-	echo "letsencrypt.ssl.template.yml NOT ENABLED--was it on already?"
-      fi
-  fi # enable letsencrypt
-
-  if [ "$update_ok" == "y" ]
-  then
-      echo -e "\n$config_file updated successfully."
-  else
-    echo -e "There was an error changing the configuration.\n"
-  fi
-}
-
 run_start() {
 
    existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
@@ -749,22 +411,6 @@ run_start() {
    fi
 
    host_run
-
-  if [ -z "$SKIP_DISCOURSE_PREREQS" ] ; then
-    ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
-          "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| \"-p #{p}\"}.join(' ')"`
-
-    IFS='-p ' read -a array <<< "$ports"
-    for element in "${array[@]}"
-    do
-     IFS=':' read -a args <<< "$element"
-     if [ "${#args[@]}" == "2" ]; then
-       check_ports "${args[0]}"
-     elif [ "${#args[@]}" == "3" ]; then
-       check_ports "${args[1]}"
-     fi
-    done
-  fi
 
    docker_args=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
           "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
@@ -809,44 +455,8 @@ run_start() {
 
 }
 
-valid_config_check() {
-
-  valid_config="y"
-  for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
-           DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
-  do
-    mail_var=`grep "^  $x:" $config_file`
-    local result=$?
-    local default="example.com"
-    if (( result == 0 ))
-    then
-      if [[ $mail_var = *"$default"* ]]
-      then
-        echo "Warning: $x left at incorrect default of example.com"
-        valid_config="n"
-      fi
-    else
-      echo "Warning: $x not configured"
-      valid_config="n"
-    fi
-  done
-  if [ -t 0 ] && [ "$valid_config" != "y" ]; then
-    echo
-    read -p "Press Ctrl-C to exit and edit $config_file or ENTER to continue"
-  fi
-}
 
 run_bootstrap() {
-  if [ -z "$SKIP_DISCOURSE_PREREQS" ] ; then
-    # Does your system meet the minimum requirements?
-    check_resources
-
-    # is our configuration file valid?
-    valid_config_check
-
-    # make minor scaling adjustments for RAM and CPU
-    scale_ram_and_cpu
-  fi
 
   # I got no frigging clue what this does, ask Sam Saffron. It RUNS STUFF ON THE HOST I GUESS?
   host_run
@@ -901,13 +511,6 @@ case "$command" in
       exit 0
       ;;
 
-  setup)
-      set_config
-      read -p "Press ENTER to continue, or Ctrl-C to exit to check $config_file"
-      run_bootstrap
-      exit 0
-      ;;
-
   enter)
       exec $docker_path exec -it $config /bin/bash --login
       ;;
@@ -936,7 +539,7 @@ case "$command" in
 
   rebuild)
       if [ "$(git symbolic-ref --short HEAD)" == "master" ]; then
-        echo "Ensuring discourse docker is up to date"
+        echo "Ensuring launcher is up to date"
 
         git remote update
 
@@ -945,18 +548,18 @@ case "$command" in
         BASE=$(git merge-base @ @{u})
 
         if [ $LOCAL = $REMOTE ]; then
-          echo "Discourse Docker is up-to-date"
+          echo "Launcher is up-to-date"
 
         elif [ $LOCAL = $BASE ]; then
-          echo "Updating Discourse Docker"
+          echo "Updating Launcher"
           git pull || (echo 'failed to update' && exit 1)
           exec /bin/bash $0 $@
 
         elif [ $REMOTE = $BASE ]; then
-          echo "Your version of Discourse Docker is ahead of origin"
+          echo "Your version of Launcher is ahead of origin"
 
         else
-          echo "Discourse Docker has diverged source, this is only expected in Dev mode"
+          echo "Launcher has diverged source, this is only expected in Dev mode"
         fi
 
       fi
