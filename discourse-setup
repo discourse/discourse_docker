@@ -232,7 +232,7 @@ set_config() {
     read -p "Press ENTER to continue, 'n' to try again, or ^C to exit: " config_ok
   done
 
-  sed -i -e "s/^  DISCOURSE_HOSTNAME: 'discourse.example.com'/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $config_file
+  sed -i -e "s/^  DISCOURSE_HOSTNAME:.*/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $config_file
   if [ -s $changelog ]
   then
     rm $changelog
@@ -250,7 +250,7 @@ set_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS: smtp.example.com.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $config_file
+  sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS:.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $config_file
   if [ -s $changelog ]
   then
     rm $changelog
@@ -259,7 +259,7 @@ set_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  #DISCOURSE_SMTP_USER_NAME: user@example.com.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $config_file
+  sed -i -e "s/^  #DISCOURSE_SMTP_USER_NAME:.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $config_file
   if [ -s $changelog ]
   then
     rm $changelog
@@ -268,7 +268,7 @@ set_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  #DISCOURSE_SMTP_PASSWORD: pa\$\$word.*/  DISCOURSE_SMTP_PASSWORD: $smtp_password/w $changelog" $config_file
+  sed -i -e "s/^  #DISCOURSE_SMTP_PASSWORD:.*/  DISCOURSE_SMTP_PASSWORD: $smtp_password/w $changelog" $config_file
   if [ -s $changelog ]
   then
       rm $changelog
