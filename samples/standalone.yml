@@ -63,7 +63,7 @@ env:
   #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
   
   ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
-  #LETSENCRYPT_ACCOUNT_EMAIL: your.email@example.com
+  #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
 
   ## The CDN address for this Discourse instance (configured to pull)
   ## see https://meta.discourse.org/t/14857 for details
