@@ -55,6 +55,7 @@ check_disk_and_memory() {
 ##
 scale_ram_and_cpu() {
 
+  local changelog=/tmp/changelog.$PPID
   # grab info about total system ram and physical (NOT LOGICAL!) CPU cores
   avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
   avail_gb=$(( $avail_mem / 950 ))
@@ -81,7 +82,6 @@ scale_ram_and_cpu() {
     echo "setting db_shared_buffers = ${db_shared_buffers}MB"
     rm $changelog
   fi
-
 
   # UNICORN_WORKERS: 2 * GB for 2GB or less, or 2 * CPU, max 8
   if [ "$avail_gb" -le "2" ]
@@ -132,8 +132,9 @@ check_port() {
 ##
 set_config() {
   
+  local changelog=/tmp/changelog.$PPID
   local hostname="discourse.example.com"
-  local developer_emails="me@example.com"
+  local developer_emails="me@example.com,you@example.com"
   local smtp_address="smtp.example.com"
   local smtp_user_name="postmaster@discourse.example.com"
   local smtp_password=""
@@ -278,7 +279,7 @@ set_config() {
 
   if [ "$letsencrypt_status" != "ENTER to skip" ]
   then
-      sed -i -e "s/^  #LETSENCRYPT_ACCOUNT_EMAIL: your.email@example.com/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $config_file
+      sed -i -e "s/^  #LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $config_file
       if [ -s $changelog ]
       then
         rm $changelog
@@ -291,7 +292,7 @@ set_config() {
       sed -i -e "s/$src/$dst/w $changelog" $config_file
       if [ -s $changelog ]
       then
-	      echo "web.ssl.template.yml enabled"
+	  echo "web.ssl.template.yml enabled"
       else
         update_ok="n"
         echo "web.ssl.template.yml NOT ENABLED--was it on already?"
@@ -366,6 +367,11 @@ template_path=samples/standalone.yml
 config_file=containers/$app_name.yml
 changelog=/tmp/changelog
 
+## Check requirements before creating a config file we won't edit
+
+check_disk_and_memory
+check_ports
+
 ## make a copy of the simple standalone config file
 
 if [ -a $config_file ]
@@ -379,8 +385,6 @@ else
   cp $template_path $config_file
 fi
 
-check_disk_and_memory
-check_ports
 scale_ram_and_cpu
 set_config
 valid_config_check
