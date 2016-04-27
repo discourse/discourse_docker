@@ -7,7 +7,7 @@ usage () {
   echo "    stop:       Stop a running container"
   echo "    restart:    Restart a container"
   echo "    destroy:    Stop and remove a container"
-  echo "    enter:      Use nsenter to get a shell into a container"
+  echo "    enter:      Use nsenter to get a shell into a container"a
   echo "    logs:       View the Docker logs for a container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
@@ -108,10 +108,7 @@ compare_version() {
 
 install_docker() {
   echo "Docker is not installed, you will need to install Docker in order to run Launcher"
-  echo "Please visit https://docs.docker.com/installation/ for instructions on how to do this for your system"
-  echo
-  echo "If you are running a recent Ubuntu Server, try the following:"
-  echo "sudo apt-get install docker-engine"
+  echo "See https://docs.docker.com/installation/"
   exit 1
 }
 
