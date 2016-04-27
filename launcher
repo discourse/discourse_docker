@@ -798,7 +798,7 @@ run_start() {
      # we got to normalize so we only have allowed strings, this is more comprehensive but lets see how bash does first
      # hostname=`$docker_path run $user_args --rm $image ruby -e 'print ARGV[0].gsub(/[^a-zA-Z-]/, "-")' $hostname`
      # docker added more hostname rules
-     hostname=${hostname/_/-}
+     hostname=${hostname//_/-}
 
      set -x
      $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "$hostname" \
