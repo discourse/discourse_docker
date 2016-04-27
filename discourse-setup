@@ -9,21 +9,18 @@ check_disk_and_memory() {
   avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
   if [ "$avail_mem" -lt 900 ]; then
     resources="insufficient"
-    echo "WARNING: You do not appear to have sufficient memory to run Discourse."
+    echo "WARNING: Discourse requires 1GB RAM to run. This system does not appear to have sufficient memory."
     echo
-    echo "Your system may not work properly, or future upgrades of Discourse may"
-    echo "not complete successfully."
+    echo "Your site may not work properly, or future upgrades of Discourse may not complete successfully."
     echo
     echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#create-new-cloud-server"
   elif [ "$avail_mem" -lt 1800 ]; then
     total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
     if [ "$total_swap" -lt 1000 ]; then
       resources="insufficient"
-      echo "WARNING: You must have at least 1GB of swap when running with less"
-      echo "than 2GB of RAM."
+      echo "WARNING: Discourse requires at least 1GB of swap when running with less than 2GB of RAM. This system does not appear to have sufficient swap space."
       echo
-      echo "Your system may not work properly, or future upgrades of Discourse may"
-      echo "not complete successfully."
+      echo "Without sufficient swap space, your site may not work properly, or future upgrades of Discourse may not complete successfully."
       echo
       echo "See https://github.com/discourse/discourse/blob/master/docs/INSTALL-cloud.md#set-up-swap-if-needed"
     fi
@@ -32,10 +29,9 @@ check_disk_and_memory() {
   free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
   if [ "$free_disk" -lt 5000 ]; then
     resources="insufficient"
-    echo "WARNING: You must have at least 5GB of *free* disk space to run Discourse."
+    echo "WARNING: Discourse requires at least 5GB free disk space. This system does not appear to have sufficient disk space."
     echo
-    echo "Insufficient disk space may result in problems running your site, and may"
-    echo "not even allow Discourse installation to complete successfully."
+    echo "Insufficient disk space may result in problems running your site, and may not even allow Discourse installation to complete successfully."
     echo
     echo "Please free up some space, or expand your disk, before continuing."
     echo
@@ -130,7 +126,7 @@ check_port() {
 ##
 ## prompt user for typical Discourse config file values
 ##
-set_config() {
+ask_user_for_config() {
   
   local changelog=/tmp/changelog.$PPID
   local hostname="discourse.example.com"
@@ -322,7 +318,7 @@ set_config() {
 ##
 ## is our config file valid? Does it have the required fields set?
 ##
-valid_config_check() {
+validate_config() {
 
   valid_config="y"
   
@@ -367,13 +363,15 @@ template_path=samples/standalone.yml
 config_file=containers/$app_name.yml
 changelog=/tmp/changelog
 
-## Check requirements before creating a config file we won't edit
-
+##
+## Check requirements before creating a copy of a config file we won't edit
+##
 check_disk_and_memory
 check_ports
 
+##
 ## make a copy of the simple standalone config file
-
+##
 if [ -a $config_file ]
 then
   echo "The configuration file $config_file already exists!"
@@ -386,7 +384,11 @@ else
 fi
 
 scale_ram_and_cpu
-set_config
-valid_config_check
+ask_user_for_config
+validate_config
 
+##
+## if we reach this point without exiting, OK to proceed
+##
 ./launcher bootstrap $app_name
+./launcher start $app_name
