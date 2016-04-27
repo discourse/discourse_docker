@@ -24,7 +24,7 @@ check_disk_and_memory() {
       echo "Without sufficient swap space, your site may not work properly, and future"
       echo "upgrades of Discourse may not complete successfully."
       echo
-      read -p "Press ENTER to create a 2GB swapfile automatically, or Ctrl-C to exit"
+      read -p "ENTER to create a 2GB swapfile automatically, or Ctrl-C to exit"
       
       ##
       ## derived from https://meta.discourse.org/t/13880
@@ -246,7 +246,7 @@ ask_user_for_config() {
     fi
     
     echo ""
-    read -p "Press ENTER to continue, 'n' to try again, or ^C to exit: " config_ok
+    read -p "ENTER to continue, 'n' to try again, or ^C to exit: " config_ok
   done
 
   sed -i -e "s/^  DISCOURSE_HOSTNAME:.*/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $config_file
