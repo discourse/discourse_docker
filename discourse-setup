@@ -411,5 +411,4 @@ validate_config
 ##
 ## if we reach this point without exiting, OK to proceed
 ##
-./launcher bootstrap $app_name
-./launcher start $app_name
+./launcher bootstrap $app_name && ./launcher start $app_name
