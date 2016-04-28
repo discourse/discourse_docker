@@ -412,5 +412,7 @@ validate_config
 ##
 ## if we reach this point without exiting, OK to proceed
 ##
+echo "Running bootstrap in 5 seconds. ^C to check your configuration first."
+sleep 5
 ./launcher bootstrap $app_name
 ./launcher start $app_name
