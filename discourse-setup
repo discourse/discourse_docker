@@ -371,6 +371,8 @@ validate_config() {
   
   if [ "$valid_config" != "y" ]; then
     echo -e "\nSorry, these $config_file settings aren't valid -- can't continue!"
+    echo "If you have unusual requirements, edit $config_file and then: "
+    echo "./launcher bootstrap $app_name"
     exit 1
   fi
 }
