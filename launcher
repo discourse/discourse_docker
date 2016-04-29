@@ -25,7 +25,9 @@ user_args=""
 
 while [ ${#} -gt 0 ]; do
   case "${1}" in
-
+  --debug)
+    DEBUG="1"
+    ;;
   --skip-prereqs)
     SKIP_PREREQ="1"
     ;;
@@ -490,11 +492,21 @@ run_bootstrap() {
 
   echo $run_command
 
+  unset FAILED
   (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
-     /bin/bash -c "$run_command") \
-     || ($docker_path rm `cat $cidbootstrap` && rm $cidbootstrap)
+     /bin/bash -c "$run_command") || FAILED="TRUE"
 
-  [ ! -e $cidbootstrap ] && echo "** FAILED TO BOOTSTRAP ** please scroll up and look for earlier error messages, there may be more than one" && exit 1
+  if [[ $FAILED = "TRUE" ]]; then
+    if [[ ! -z "$DEBUG" ]]; then
+      $docker_path commit `cat $cidbootstrap` $local_discourse/$config-debug || echo 'FAILED TO COMMIT'
+      echo "** DEBUG ** Maintaining image for diagnostics $local_discourse/$config-debug"
+    fi
+
+    $docker_path rm `cat $cidbootstrap`
+    rm $cidbootstrap
+    echo "** FAILED TO BOOTSTRAP ** please scroll up and look for earlier error messages, there may be more than one"
+    exit 1
+  fi
 
   sleep 5
 
