@@ -21,6 +21,16 @@ params:
   upload_size: 10m
 
 run:
+  - replace:
+      filename: /usr/local/etc/ImageMagick-6/policy.xml
+      from: "<policymap>"
+      to: |
+        <policymap>
+          <policy domain="coder" rights="none" pattern="EPHEMERAL" />
+          <policy domain="coder" rights="none" pattern="HTTPS" />
+          <policy domain="coder" rights="none" pattern="MVG" />
+          <policy domain="coder" rights="none" pattern="MSL" />
+
   - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
   - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
   - exec: chown -R discourse /home/discourse
