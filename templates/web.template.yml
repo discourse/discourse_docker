@@ -21,6 +21,7 @@ params:
   upload_size: 10m
 
 run:
+  # see: https://www.imagemagick.org/discourse-server/viewtopic.php?f=4&t=29588
   - replace:
       filename: /usr/local/etc/ImageMagick-6/policy.xml
       from: "<policymap>"
