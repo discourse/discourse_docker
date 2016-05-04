@@ -29,7 +29,7 @@ while [ ${#} -gt 0 ]; do
     DEBUG="1"
     ;;
   --skip-prereqs)
-    SKIP_PREREQ="1"
+    SKIP_PREREQS="1"
     ;;
   --docker-args)
     user_args="$2"
