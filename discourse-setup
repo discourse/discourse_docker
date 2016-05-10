@@ -1,6 +1,16 @@
 #!/bin/bash
 
 ##
+## Make sure only root can run our script
+##
+check_root() {
+  if [[ $EUID -ne 0 ]]; then
+    echo "This script must be run as root. Please sudo or log in as root first." 1>&2
+    exit 1
+  fi
+}
+
+##
 ## Do we have enough memory and disk space for Discourse?
 ##
 check_disk_and_memory() {
@@ -389,6 +399,7 @@ changelog=/tmp/changelog
 ##
 ## Check requirements before creating a copy of a config file we won't edit
 ##
+check_root
 check_disk_and_memory
 check_ports
 
