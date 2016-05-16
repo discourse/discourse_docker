@@ -1,0 +1,75 @@
+hooks:
+  before_code:
+    - replace:
+       filename: /etc/service/unicorn/run
+       from: "# postgres"
+       to: sv start postgres || exit 1
+
+run:
+  - exec: mkdir -p /shared/postgres_run
+  - exec: chown postgres:postgres /shared/postgres_run
+  - exec: chmod 775 /shared/postgres_run
+  - exec: rm -fr /var/run/postgresql
+  - exec: ln -s /shared/postgres_run /var/run/postgresql
+  - exec: socat /dev/null UNIX-CONNECT:/shared/postgres_run/.s.PGSQL.5432 || exit 0 && echo postgres already running stop container ; exit 1
+  - exec: rm -fr /shared/postgres_run/.s*
+  - exec: rm -fr /shared/postgres_run/*.pid
+  - exec: mkdir -p /shared/postgres_run/9.3-main.pg_stat_tmp
+  - exec: chown postgres:postgres /shared/postgres_run/9.3-main.pg_stat_tmp
+  - file:
+     path: /etc/service/postgres/run
+     chmod: "+x"
+     contents: |
+        #!/bin/sh
+        exec 2>&1
+        echo -1000 >/proc/self/oom_score_adj
+        HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
+
+  - file:
+     path: /etc/runit/3.d/99-postgres
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       sv stop postgres
+
+  - exec:
+      cmd:
+        - chown -R root /var/lib/postgresql/9.3/main
+        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/9.3/bin/initdb -D /shared/postgres_data || exit 0"
+        - chown -R postgres:postgres /shared/postgres_data
+        - chown -R postgres:postgres /var/run/postgresql
+
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: "data_directory = '/var/lib/postgresql/9.3/main'"
+      to: "data_directory = '/shared/postgres_data'"
+
+  # listen on all interfaces
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /#?listen_addresses *=.*/
+      to: "listen_addresses = '*'"
+
+  - replace:
+      filename: "/etc/postgresql/9.3/main/pg_hba.conf"
+      from: /^#local +replication +postgres +peer$/
+      to: "local replication postgres  peer"
+
+  # allow all to connect in with md5 auth
+  - replace:
+      filename: "/etc/postgresql/9.3/main/pg_hba.conf"
+      from: /^host.*all.*all.*127.*$/
+      to: "host all all 0.0.0.0/0 md5"
+
+  - exec:
+      background: true
+      # use fast shutdown for pg
+      stop_signal: INT
+      cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
+
+  # give db a few secs to start up
+  - exec: "sleep 5"
+
+  - exec:
+      hook: postgres
+      cmd: "echo postgres installed!"

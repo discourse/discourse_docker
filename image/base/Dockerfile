@@ -1,10 +1,10 @@
-# Official repo only has a ppa for postgresql 9.3 at the moment (14/3/2014)
-# When new LTS ships we can upgrade
-
 # NAME:     discourse_base
-# VERSION:  1.0.17
+# VERSION:  1.0.18
 
 FROM ubuntu:14.04
+
+ENV PG_MAJOR 9.5
+ENV PG_VERSION 9.5.3-1.pgdg14.04+1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
@@ -30,8 +30,8 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk parallel \
-                       postgresql-9.3 postgresql-client-9.3 \
-                       postgresql-contrib-9.3 libpq-dev libreadline-dev \
+                       postgresql-${PG_MAJOR}=${PG_VERSION} postgresql-client-${PG_MAJOR}=${PG_VERSION} \
+                       postgresql-contrib-${PG_MAJOR}=${PG_VERSION} libpq-dev libreadline-dev \
                        nginx language-pack-en sudo cron anacron \
                        psmisc rsyslog vim whois &&\
     sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron &&\
