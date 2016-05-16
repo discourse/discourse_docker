@@ -6,7 +6,7 @@ env:
   # slightly less aggressive than "recommendation" but works fine with oobgc
   RUBY_GC_MALLOC_LIMIT: 40000000
   # this ensures we have enough heap space to handle a big pile of small reqs
-  RUBY_HEAP_MIN_SLOTS: 800000
+  RUBY_GC_HEAP_INIT_SLOTS: 800000
 
   DISCOURSE_DB_SOCKET: /var/run/postgresql
   DISCOURSE_DB_HOST:
