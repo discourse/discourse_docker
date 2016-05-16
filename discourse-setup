@@ -43,9 +43,9 @@ check_disk_and_memory() {
       dd if=/dev/zero of=/swapfile bs=1k count=2048k
       mkswap /swapfile
       swapon /swapfile
-      echo "/swapfile       swap    swap    auto      0       0" | sudo tee -a /etc/fstab
+      echo "/swapfile       swap    swap    auto      0       0" | tee -a /etc/fstab
       sysctl -w vm.swappiness=10
-      echo vm.swappiness = 10 | sudo tee -a /etc/sysctl.conf
+      echo vm.swappiness = 10 | tee -a /etc/sysctl.conf
 
       total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
       if [ "$total_swap" -lt 1000 ]; then
@@ -163,7 +163,8 @@ ask_user_for_config() {
   local hostname="discourse.example.com"
   local developer_emails="me@example.com,you@example.com"
   local smtp_address="smtp.example.com"
-  local smtp_user_name="postmaster@discourse.example.com"
+  local smtp_port="587"
+  local smtp_user_name="postmaster@discourse.example.com"  
   local smtp_password=""
   local letsencrypt_account_email="me@example.com"
   local letsencrypt_status="ENTER to skip"
@@ -203,14 +204,29 @@ ask_user_for_config() {
       fi
     fi
     
+    if [ ! -z $smtp_port ]
+    then
+      read -p "SMTP port? [$smtp_port]: " new_value
+      if [ ! -z $new_value ]
+      then
+        smtp_port=$new_value
+      fi
+    fi
+    
+    ##
+    ## automatically set correct user name based on common mail providers
+    ##
     if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
     then
     	smtp_user_name="SMTP_Injection"
-    fi
-    
+    fi    
     if [ "$smtp_address" == "smtp.sendgrid.net" ]
     then
 	    smtp_user_name="apikey"
+    fi
+    if [ "$smtp_address" == "smtp.mailgun.org" ]
+    then
+	    smtp_user_name="postmaster@$hostname"
     fi
     
     if [ ! -z $smtp_user_name ]
@@ -247,6 +263,7 @@ ask_user_for_config() {
     echo "Hostname      : $hostname"
     echo "Email         : $developer_emails"
     echo "SMTP address  : $smtp_address"
+    echo "SMTP port     : $smtp_port"
     echo "SMTP username : $smtp_user_name"
     echo "SMTP password : $smtp_password"
     
@@ -283,6 +300,15 @@ ask_user_for_config() {
     rm $changelog
   else
     echo "DISCOURSE_SMTP_ADDRESS change failed."
+    update_ok="n"
+  fi
+
+  sed -i -e "s/^  #DISCOURSE_SMTP_PORT:.*/  DISCOURSE_SMTP_PORT: $smtp_port/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "DISCOURSE_SMTP_PORT change failed."
     update_ok="n"
   fi
 
