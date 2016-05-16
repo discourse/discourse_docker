@@ -28,7 +28,7 @@ check_disk_and_memory() {
   if [ "$avail_mem" -lt 1800 ]; then
     total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
     if [ "$total_swap" -lt 1000 ]; then
-      echo "WARNING: Discourse requires at least 1GB of swap when running with less "
+      echo "WARNING: Discourse requires at least 2GB of swap when running with less "
       echo "than 2GB of RAM. This system does not appear to have sufficient swap space."
       echo
       echo "Without sufficient swap space, your site may not work properly, and future"
