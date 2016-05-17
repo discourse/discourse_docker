@@ -33,6 +33,10 @@ run:
   - exec: rm -fr /shared/postgres_run/*.pid
   - exec: mkdir -p /shared/postgres_run/9.3-main.pg_stat_tmp
   - exec: chown postgres:postgres /shared/postgres_run/9.3-main.pg_stat_tmp
+  - replace:
+      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      from: /port =.*/
+      to: "port = 5432"
   - file:
      path: /etc/service/postgres/run
      chmod: "+x"
