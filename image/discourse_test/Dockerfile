@@ -1,8 +1,8 @@
-FROM discourse/discourse_fast_switch:1.0.17
+FROM discourse/discourse_fast_switch:1.0.18
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN use_22 &&\
+RUN use_23 &&\
       gem update bundler &&\
       cd /var/www/discourse &&\
       chown -R discourse . &&\

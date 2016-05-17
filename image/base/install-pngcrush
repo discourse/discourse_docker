@@ -2,7 +2,7 @@
 set -e
 PNGCRUSH_VERSION=1.7.92
 cd /tmp
-curl -O http://iweb.dl.sourceforge.net/project/pmt/pngcrush/$PNGCRUSH_VERSION/pngcrush-$PNGCRUSH_VERSION.tar.gz
+wget http://iweb.dl.sourceforge.net/project/pmt/pngcrush/$PNGCRUSH_VERSION/pngcrush-$PNGCRUSH_VERSION.tar.gz
 tar zxf pngcrush-$PNGCRUSH_VERSION.tar.gz
 cd pngcrush-$PNGCRUSH_VERSION
 make && cp -f pngcrush /usr/local/bin

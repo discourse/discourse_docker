@@ -1,45 +1,45 @@
-# Official repo only has a ppa for postgresql 9.3 at the moment (14/3/2014)
-# When new LTS ships we can upgrade
-
 # NAME:     discourse_base
-# VERSION:  1.0.17
+# VERSION:  1.0.18
 
-FROM ubuntu:14.04
+FROM ubuntu:16.04
+
+ENV PG_MAJOR 9.5
+ENV PG_VERSION 9.5.3-1.pgdg16.04+1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
 RUN echo "1.0.13" > /VERSION
 
-RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
-    echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main restricted universe" > /etc/apt/sources.list &&\
-    echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-updates main restricted universe" >> /etc/apt/sources.list &&\
-    echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-security main restricted universe" >> /etc/apt/sources.list &&\
-    apt-get update && apt-get -y install fping &&\
-    sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt-get update || true" &&\
-    apt-get -y install software-properties-common &&\
-    apt-mark hold initscripts &&\
-    apt-get -y upgrade &&\
-    add-apt-repository -y ppa:rwky/redis &&\
-    add-apt-repository -y ppa:nginx/development &&\
-    apt-get install -y curl && curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add - &&\
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" | \
-        tee /etc/apt/sources.list.d/postgres.list &&\
-    curl --silent --location https://deb.nodesource.com/setup_4.x | sudo bash - &&\
-    apt-get -y update &&\
-    apt-get -y install build-essential git curl wget \
+RUN apt-get update && apt-get install -y lsb-release sudo curl
+RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
+RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main restricted universe" > /etc/apt/sources.list
+RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-updates main restricted universe" >> /etc/apt/sources.list
+RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-security main restricted universe" >> /etc/apt/sources.list
+RUN apt-get update && apt-get -y install fping
+RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt-get update || true"
+RUN apt-get -y install software-properties-common
+RUN apt-mark hold initscripts
+RUN apt-get -y upgrade
+RUN add-apt-repository -y ppa:nginx/development
+RUN curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" | \
+        tee /etc/apt/sources.list.d/postgres.list
+RUN curl --silent --location https://deb.nodesource.com/setup_4.x | sudo bash -
+RUN apt-get -y update
+RUN apt-get -y install build-essential git wget \
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk parallel \
-                       postgresql-9.3 postgresql-client-9.3 \
-                       postgresql-contrib-9.3 libpq-dev libreadline-dev \
-                       nginx language-pack-en sudo cron anacron \
-                       psmisc rsyslog vim whois &&\
-    sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron &&\
-    sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf &&\
-    dpkg-divert --local --rename --add /sbin/initctl &&\
-    sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl" &&\
-    apt-get -y install redis-server haproxy openssh-server &&\
-    cd / &&\
+                       postgresql-${PG_MAJOR}=${PG_VERSION} postgresql-client-${PG_MAJOR}=${PG_VERSION} \
+                       postgresql-contrib-${PG_MAJOR}=${PG_VERSION} libpq-dev libreadline-dev \
+                       nginx language-pack-en cron anacron \
+                       psmisc rsyslog vim whois
+RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
+RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
+RUN dpkg-divert --local --rename --add /sbin/initctl
+RUN sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"
+RUN apt-get -y install redis-server haproxy openssh-server
+RUN cd / &&\
     apt-get -y install runit monit socat &&\
     mkdir -p /etc/runit/1.d &&\
     apt-get clean &&\
@@ -47,15 +47,8 @@ RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     locale-gen en_US &&\
     apt-get install -y nodejs &&\
     npm install uglify-js -g &&\
-    npm install svgo -g &&\
-    apt-get -y install advancecomp jhead jpegoptim libjpeg-progs optipng
-
-# TODO check when binary packages are ready (not yet)
-RUN wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
-      tar -xjf phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
-      rm phantomjs-1.9.8-linux-x86_64.tar.bz2 &&\
-      cp phantomjs-1.9.8-linux-x86_64/bin/phantomjs /bin/phantomjs &&\
-      rm -fr phantomjs-1.9.8-linux-x86_64
+    npm install svgo -g
+RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng phantomjs
 
 RUN mkdir /jemalloc && cd /jemalloc &&\
       wget http://www.canonware.com/download/jemalloc/jemalloc-3.6.0.tar.bz2 &&\
@@ -81,10 +74,10 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test &&\
     echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p647 /usr/local &&\
+    cd / && rm -rf /src/ruby-build && ruby-build 2.3.1 /usr/local &&\
     gem update --system &&\
     gem install bundler &&\
-    rm -rf /usr/local/share/ri/2.0.0/system &&\
+    rm -rf /usr/local/share/ri/2.3.1/system &&\
     cd / && git clone https://github.com/SamSaffron/pups.git
 
 # clean up for docker squash

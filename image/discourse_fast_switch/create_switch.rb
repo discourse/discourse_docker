@@ -9,7 +9,7 @@ end
 
 system("cd /var/www/discourse && git pull")
 
-['22','20'].each do |v|
+['22', '23'].each do |v|
 
   bin = "/usr/local/bin/use_#{v}"
 

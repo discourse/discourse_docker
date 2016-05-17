@@ -1,6 +1,6 @@
 # Allow to easily switch Ruby version in images that derive off this
 
-FROM discourse/discourse:1.0.17
+FROM discourse/discourse:1.0.18
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
@@ -10,7 +10,7 @@ RUN apt-get -y install ruby bison autoconf &&\
     ruby-build /src/2.2.3-github /usr/ruby_22 &&\
     apt-get -y remove ruby
 
-RUN cd / && rm -rf /src/ruby-build && ruby-build 2.0.0-p647 /usr/ruby_20
+RUN cd / && rm -rf /src/ruby-build && ruby-build 2.3.1 /usr/ruby_23
 
 ADD create_switch.rb /src/create_switch.rb
 RUN ruby /src/create_switch.rb
