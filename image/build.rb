@@ -2,13 +2,12 @@
 #
 require 'pty'
 
-$version = "1.0.17"
+$version = "1.3.0"
 
 $docker_squash = "https://github.com/jwilder/docker-squash/releases/download/v0.2.0/docker-squash-linux-amd64-v0.2.0.tar.gz"
 
 $base_image = "discourse/base:#{$version}"
 $image = "discourse/discourse:#{$version}"
-$fast_switch= "discourse/discourse_fast_switch:#{$version}"
 $test = "discourse/discourse_test:#{$version}"
 
 if ENV["USER"] != "root"
@@ -50,5 +49,4 @@ end
 
 build("base",$base_image,true)
 build("discourse",$image,false)
-build("discourse_fast_switch",$fast_switch,false)
 build("discourse_test",$test,false)
