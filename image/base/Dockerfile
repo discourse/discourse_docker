@@ -1,5 +1,5 @@
 # NAME:     discourse_base
-# VERSION:  1.0.18
+# VERSION:  1.3.0
 
 FROM ubuntu:16.04
 
@@ -8,7 +8,7 @@ ENV PG_VERSION 9.5.3-1.pgdg16.04+1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN echo "1.0.13" > /VERSION
+RUN echo "1.3.0" > /VERSION
 
 RUN apt-get update && apt-get install -y lsb-release sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
@@ -50,6 +50,7 @@ RUN cd / &&\
     npm install svgo -g
 RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng phantomjs
 
+# consider upgrading this
 RUN mkdir /jemalloc && cd /jemalloc &&\
       wget http://www.canonware.com/download/jemalloc/jemalloc-3.6.0.tar.bz2 &&\
       tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure && make &&\
@@ -67,15 +68,12 @@ RUN /tmp/install-gifsicle
 ADD install-pngquant /tmp/install-pngquant
 RUN /tmp/install-pngquant
 
-RUN add-apt-repository ppa:ubuntu-toolchain-r/test &&\
-    apt-get update &&\
-    apt-get install -y gcc-4.9 &&\
-    (cd /usr/bin && rm gcc && ln -s gcc-4.9 gcc) &&\
-    echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
+RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.3.1 /usr/local &&\
-    gem update --system &&\
+    cd / && rm -rf /src/ruby-build && ruby-build 2.3.1 /usr/local
+
+RUN gem update --system &&\
     gem install bundler &&\
     rm -rf /usr/local/share/ri/2.3.1/system &&\
     cd / && git clone https://github.com/SamSaffron/pups.git
