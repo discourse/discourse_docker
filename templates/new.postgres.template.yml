@@ -87,19 +87,24 @@ run:
              echo
            fi
 
-           echo Run "./launcher bootstrap" again
+           echo Run "./launcher rebuild app" again
            echo
            echo When your instance is running:
-           echo - Go to the admin UI, enable readonly and backup your site
+           echo Run "./launcher enter app"
+           echo Run "cd /shared/postgres_backup && sudo -u postgres pg_dump discourse > backup.db"
            echo
-           echo Then destroy your container "./launcher destroy standalone"
            echo Undo the base_image and postgres template from your container config
+           echo Run: "./launcher stop app"
            echo Run: "sudo mv /var/discourse/shared/postgres_data /var/shared/postgres_data_old"
-           echo Run: "./launcher bootstrap"
+           echo Run: "./launcher rebuild app"
            echo
-           echo "Login to the blank site, and import your backup (remember to set the allow_restore site setting)"
-           echo Restart your container: "./launcher restart"
-           echo -------------------------------------------------------------------------------------
+           echo Run: "./launcher enter app"
+           echo Run: "cd /shared/postgres_backup"
+           echo Run: "sv stop unicorn"
+           echo Run: "sudo -iu postgres dropdb discourse"
+           echo Run: "sudo -iu postgres createdb discourse"
+           echo Run: "sudo -iu postgres psql discourse < backup.db"
+           echo Run: "sv start unicorn"
            exit 1
          fi
 
