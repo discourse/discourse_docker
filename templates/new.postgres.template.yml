@@ -104,7 +104,8 @@ run:
            echo Run: "sudo -iu postgres dropdb discourse"
            echo Run: "sudo -iu postgres createdb discourse"
            echo Run: "sudo -iu postgres psql discourse < backup.db"
-           echo Run: "sv start unicorn"
+           echo Run: "exit"
+           echo Run: "./launcher rebuild app"
            exit 1
          fi
 
