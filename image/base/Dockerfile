@@ -48,7 +48,8 @@ RUN cd / &&\
     apt-get install -y nodejs &&\
     npm install uglify-js -g &&\
     npm install svgo -g
-RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng phantomjs
+RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
+
 
 # consider upgrading this
 RUN mkdir /jemalloc && cd /jemalloc &&\
@@ -75,11 +76,25 @@ RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
 
 RUN gem update --system &&\
     gem install bundler &&\
-    rm -rf /usr/local/share/ri/2.3.1/system &&\
+    rm -rf /usr/local/share/ri/2.3.0/system &&\
     cd / && git clone https://github.com/SamSaffron/pups.git
 
 # clean up for docker squash
-RUN rm -fr /usr/share/man && rm -fr /usr/share/doc && mkdir -p /etc/runit/3.d
+RUN   rm -fr /usr/share/man &&\
+      rm -fr /usr/share/doc &&\
+      rm -fr /usr/share/vim/vim74/tutor &&\
+      rm -fr /usr/share/vim/vim74/doc &&\
+      rm -fr /usr/share/vim/vim74/lang &&\
+      rm -fr /usr/local/share/doc &&\
+      rm -fr /usr/local/share/ruby-build &&\
+      rm -fr /root/.gem &&\
+      rm -fr /root/.npm
+
+# this can probably be done, but I worry that people changing PG locales will have issues
+# cd /usr/share/locale && rm -fr `ls -d */ | grep -v en`
+
+
+RUN mkdir -p /etc/runit/3.d
 
 ADD runit-1 /etc/runit/1
 ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
