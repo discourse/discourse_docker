@@ -1,5 +1,5 @@
 # NAME:     discourse_base
-# VERSION:  1.3.0
+# VERSION:  1.3.1
 
 FROM ubuntu:16.04
 
@@ -79,6 +79,10 @@ RUN gem update --system &&\
     rm -rf /usr/local/share/ri/2.3.0/system &&\
     cd / && git clone https://github.com/SamSaffron/pups.git
 
+RUN cd tmp && wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
+
+RUN cd tmp && tar jxf phantomjs-2.1.1-linux-x86_64.tar.bz2 && mv /tmp/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/local/bin
+
 # clean up for docker squash
 RUN   rm -fr /usr/share/man &&\
       rm -fr /usr/share/doc &&\
@@ -88,7 +92,10 @@ RUN   rm -fr /usr/share/man &&\
       rm -fr /usr/local/share/doc &&\
       rm -fr /usr/local/share/ruby-build &&\
       rm -fr /root/.gem &&\
-      rm -fr /root/.npm
+      rm -fr /root/.npm &&\
+      rm -fr /tmp/* &&\
+      rm -fr /usr/share/vim/vim74/spell/en*
+
 
 # this can probably be done, but I worry that people changing PG locales will have issues
 # cd /usr/share/locale && rm -fr `ls -d */ | grep -v en`
