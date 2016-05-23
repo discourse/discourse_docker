@@ -70,7 +70,7 @@ ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
 # Validate install
-RUN ruby -e "v='`convert -version`'; ['png','gif','tiff','jpeg','freetype'].each{ |f| ((STDERR.puts('no ' + f +  ' support in imagemagick')); exit(-1)) unless v.include?(f)}"
+RUN ruby -e "v='`convert -version`'; ['png','tiff','jpeg','freetype'].each{ |f| ((STDERR.puts('no ' + f +  ' support in imagemagick')); exit(-1)) unless v.include?(f)}"
 
 #
 ADD install-pngcrush /tmp/install-pngcrush
