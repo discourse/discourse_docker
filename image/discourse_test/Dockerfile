@@ -1,4 +1,4 @@
-FROM discourse/discourse:1.3.2
+FROM discourse/discourse:1.3.3
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
