@@ -28,8 +28,8 @@ run:
   - exec: socat /dev/null UNIX-CONNECT:/shared/postgres_run/.s.PGSQL.5432 || exit 0 && echo postgres already running stop container ; exit 1
   - exec: rm -fr /shared/postgres_run/.s*
   - exec: rm -fr /shared/postgres_run/*.pid
-  - exec: mkdir -p /shared/postgres_run/9.3-main.pg_stat_tmp
-  - exec: chown postgres:postgres /shared/postgres_run/9.3-main.pg_stat_tmp
+  - exec: mkdir -p /shared/postgres_run/9.5-main.pg_stat_tmp
+  - exec: chown postgres:postgres /shared/postgres_run/9.5-main.pg_stat_tmp
   - file:
      path: /etc/service/postgres/run
      chmod: "+x"
@@ -37,7 +37,7 @@ run:
         #!/bin/sh
         exec 2>&1
         echo -1000 >/proc/self/oom_score_adj
-        HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
+        HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.5/bin/postmaster -D /etc/postgresql/9.5/main
 
   - file:
      path: /etc/runit/3.d/99-postgres
@@ -51,20 +51,22 @@ run:
      chmod: "+x"
      contents: |
        #!/bin/bash
-       if [ "9.2" = `cat /shared/postgres_data/PG_VERSION` ]; then
-         echo Upgrading PostgreSQL to from version 9.2 to 9.3
+       PG_MAJOR_OLD=`cat /shared/postgres_data/PG_VERSION`
+
+       if [ ! "9.5" = "$PG_MAJOR_OLD" ]; then
+         echo Upgrading PostgreSQL to from version ${PG_MAJOR_OLD} to 9.5
          rm -fr /shared/postgres_data_new
-         install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/9.3/bin/initdb -D /shared/postgres_data_new || exit 0
+         install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/9.5/bin/initdb -D /shared/postgres_data_new || exit 0
          apt-get update
-         apt-get install -y postgresql-9.2
+         apt-get install -y postgresql-${PG_MAJOR_OLD}
          /etc/init.d/postgresql stop
          rm -fr /shared/postgres_data/postmaster.pid
          cd ~postgres
-         cp /etc/postgresql/9.2/main/*.conf /shared/postgres_data
+         cp /etc/postgresql/${PG_MAJOR_OLD}/main/*.conf /shared/postgres_data
          echo  >> /shared/postgres_data/postgresql.conf
          echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
          SUCCESS=true
-         sudo -u postgres /usr/lib/postgresql/9.3/bin/pg_upgrade -d /shared/postgres_data -D /shared/postgres_data_new -b /usr/lib/postgresql/9.2/bin -B /usr/lib/postgresql/9.3/bin || SUCCESS=false
+         sudo -u postgres /usr/lib/postgresql/9.5/bin/pg_upgrade -d /shared/postgres_data -D /shared/postgres_data_new -b /usr/lib/postgresql/${PG_MAJOR_OLD}/bin -B /usr/lib/postgresql/9.5/bin || SUCCESS=false
 
          if [[ "$SUCCESS" == 'false' ]]; then
            echo -------------------------------------------------------------------------------------
@@ -72,22 +74,38 @@ run:
            echo
            echo You are going to need to export your data and import into a clean instance:
            echo
-           echo Add the line: 'base_image: "samsaffron/discourse:0.1.1"'
-           echo Change: "templates/postgres.template.yml TO templates/postgres.9.2.template.yml"
-           echo
-           echo Run "./launcher bootstrap" again
+
+           if [ "$PG_MAJOR_OLD" = "9.2" ]; then
+             echo Add the line: 'base_image: "samsaffron/discourse:0.1.1"'
+             echo Change: "templates/postgres.template.yml TO templates/postgres.9.2.template.yml"
+             echo
+           fi
+
+           if [ "$PG_MAJOR_OLD" = "9.3" ]; then
+             echo Add the line: 'base_image: "discourse/discourse:1.0.17"'
+             echo Change: "templates/postgres.template.yml TO templates/postgres.9.3.template.yml"
+             echo
+           fi
+
+           echo Run "./launcher rebuild app" again
            echo
            echo When your instance is running:
-           echo - Go to the admin UI, enable readonly and backup your site
+           echo Run "./launcher enter app"
+           echo Run "cd /shared/postgres_backup && sudo -u postgres pg_dump discourse > backup.db"
            echo
-           echo Then destroy your container "./launcher destroy standalone"
-           echo Undo the base_image and postgres.9.2 template from your container config
+           echo Undo the base_image and postgres template from your container config
+           echo Run: "./launcher stop app"
            echo Run: "sudo mv /var/discourse/shared/postgres_data /var/shared/postgres_data_old"
-           echo Run: "./launcher bootstrap"
+           echo Run: "./launcher rebuild app"
            echo
-           echo "Login to the blank site, and import your backup (remember to set the allow_restore site setting)"
-           echo Restart your container: "./launcher restart"
-           echo -------------------------------------------------------------------------------------
+           echo Run: "./launcher enter app"
+           echo Run: "cd /shared/postgres_backup"
+           echo Run: "sv stop unicorn"
+           echo Run: "sudo -iu postgres dropdb discourse"
+           echo Run: "sudo -iu postgres createdb discourse"
+           echo Run: "sudo -iu postgres psql discourse < backup.db"
+           echo Run: "exit"
+           echo Run: "./launcher rebuild app"
            exit 1
          fi
 
@@ -97,7 +115,7 @@ run:
          echo -------------------------------------------------------------------------------------
          echo UPGRADE OF POSTGRES COMPLETE
          echo
-         echo Old 9.2 database is stored at /shared/postgres_data_old
+         echo Old ${PG_MAJOR_OLD} database is stored at /shared/postgres_data_old
          echo
          echo Please run "./launcher bootstrap" again
          echo -------------------------------------------------------------------------------------
@@ -105,8 +123,8 @@ run:
        fi
   - exec:
       cmd:
-        - chown -R root /var/lib/postgresql/9.3/main
-        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/9.3/bin/initdb -D /shared/postgres_data || exit 0"
+        - chown -R root /var/lib/postgresql/9.5/main
+        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/9.5/bin/initdb -D /shared/postgres_data || exit 0"
         - chown -R postgres:postgres /shared/postgres_data
         - chown -R postgres:postgres /var/run/postgresql
 
@@ -114,37 +132,37 @@ run:
   - exec: rm /root/upgrade_postgres
 
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
-      from: "data_directory = '/var/lib/postgresql/9.3/main'"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
+      from: "data_directory = '/var/lib/postgresql/9.5/main'"
       to: "data_directory = '/shared/postgres_data'"
 
   # listen on all interfaces
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
       from: /#?listen_addresses *=.*/
       to: "listen_addresses = '*'"
 
   # sync commit off is faster and less spiky, also marginally less safe
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
       from: /#?synchronous_commit *=.*/
       to: "synchronous_commit = $db_synchronous_commit"
 
   # default is 128MB which is way too small
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
       from: /#?shared_buffers *=.*/
       to: "shared_buffers = $db_shared_buffers"
 
   # default is 1MB which is too small
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
       from: /#?work_mem *=.*/
       to: "work_mem = $db_work_mem"
 
   # allow for other
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
       from: /#?default_text_search_config *=.*/
       to: "default_text_search_config = '$db_default_text_search_config'"
 
@@ -154,38 +172,38 @@ run:
         - install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
 
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
       from: /#?max_wal_senders *=.*/
       to: "max_wal_senders = $db_max_wal_senders"
 
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
       from: /#?wal_level *=.*/
       to: "wal_level = $db_wal_level"
 
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
       from: /#?checkpoint_segments *=.*/
       to: "checkpoint_segments = $db_checkpoint_segments"
 
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
       from: /#?logging_collector *=.*/
       to: "logging_collector = $db_logging_collector"
 
   - replace:
-      filename: "/etc/postgresql/9.3/main/postgresql.conf"
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
       from: /#?log_min_duration_statement *=.*/
       to: "log_min_duration_statement = $db_log_min_duration_statement"
 
   - replace:
-      filename: "/etc/postgresql/9.3/main/pg_hba.conf"
+      filename: "/etc/postgresql/9.5/main/pg_hba.conf"
       from: /^#local +replication +postgres +peer$/
       to: "local replication postgres  peer"
 
   # allow all to connect in with md5 auth
   - replace:
-      filename: "/etc/postgresql/9.3/main/pg_hba.conf"
+      filename: "/etc/postgresql/9.5/main/pg_hba.conf"
       from: /^host.*all.*all.*127.*$/
       to: "host all all 0.0.0.0/0 md5"
 
@@ -193,7 +211,7 @@ run:
       background: true
       # use fast shutdown for pg
       stop_signal: INT
-      cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.3/bin/postmaster -D /etc/postgresql/9.3/main
+      cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.5/bin/postmaster -D /etc/postgresql/9.5/main
 
   # give db a few secs to start up
   - exec: "sleep 5"
