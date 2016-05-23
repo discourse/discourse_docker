@@ -1,5 +1,5 @@
 # NAME:     discourse_base
-# VERSION:  1.3.1
+# VERSION:  1.3.2
 
 FROM ubuntu:16.04
 
@@ -8,7 +8,7 @@ ENV PG_VERSION 9.5.3-1.pgdg16.04+1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN echo "1.3.0" > /VERSION
+RUN echo "1.3.2" > /VERSION
 
 RUN apt-get update && apt-get install -y lsb-release sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
@@ -74,8 +74,7 @@ RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     cd /src/ruby-build && ./install.sh &&\
     cd / && rm -rf /src/ruby-build && ruby-build 2.3.1 /usr/local
 
-RUN gem update --system &&\
-    gem install bundler &&\
+RUN gem install bundler &&\
     rm -rf /usr/local/share/ri/2.3.0/system &&\
     cd / && git clone https://github.com/SamSaffron/pups.git
 

@@ -1,5 +1,5 @@
-# Current version 1.3.1
-FROM discourse/base:1.3.1
+# Current version 1.3.2
+FROM discourse/base:1.3.2
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
@@ -15,7 +15,3 @@ RUN useradd discourse -s /bin/bash -m -U &&\
          --without test --without development &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
 
-
-# For a smaller but less flexible image:
-#RUN apt-get -y autoremove build-essential gcc gcc-4.7 .+-dev
-#RUN echo image size: $(du -hsx /)
