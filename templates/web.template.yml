@@ -7,6 +7,8 @@ env:
   RUBY_GC_MALLOC_LIMIT: 40000000
   # this ensures we have enough heap space to handle a big pile of small reqs
   RUBY_GC_HEAP_INIT_SLOTS: 800000
+    # this gives us very good cache coverage, 96 -> 99
+  RUBY_GLOBAL_METHOD_CACHE_SIZE: 131072
 
   DISCOURSE_DB_SOCKET: /var/run/postgresql
   DISCOURSE_DB_HOST:
