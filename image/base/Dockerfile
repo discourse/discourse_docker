@@ -1,5 +1,5 @@
 # NAME:     discourse_base
-# VERSION:  1.3.1
+# VERSION:  1.3.3
 
 FROM ubuntu:16.04
 
@@ -8,7 +8,7 @@ ENV PG_VERSION 9.5.3-1.pgdg16.04+1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN echo "1.3.0" > /VERSION
+RUN echo "1.3.3" > /VERSION
 
 RUN apt-get update && apt-get install -y lsb-release sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
@@ -57,9 +57,22 @@ RUN mkdir /jemalloc && cd /jemalloc &&\
       tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure && make &&\
       mv lib/libjemalloc.so.1 /usr/lib && cd / && rm -rf /jemalloc
 
+RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
+    mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
+    cd /src/ruby-build && ./install.sh &&\
+    cd / && rm -rf /src/ruby-build && ruby-build 2.3.1 /usr/local
+
+RUN gem install bundler &&\
+    rm -rf /usr/local/share/ri/2.3.0/system &&\
+    cd / && git clone https://github.com/SamSaffron/pups.git
+
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
+# Validate install
+RUN ruby -e "v='`convert -version`'; ['png','tiff','jpeg','freetype'].each{ |f| ((STDERR.puts('no ' + f +  ' support in imagemagick')); exit(-1)) unless v.include?(f)}"
+
+#
 ADD install-pngcrush /tmp/install-pngcrush
 RUN /tmp/install-pngcrush
 
@@ -69,18 +82,7 @@ RUN /tmp/install-gifsicle
 ADD install-pngquant /tmp/install-pngquant
 RUN /tmp/install-pngquant
 
-RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
-    mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
-    cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.3.1 /usr/local
-
-RUN gem update --system &&\
-    gem install bundler &&\
-    rm -rf /usr/local/share/ri/2.3.0/system &&\
-    cd / && git clone https://github.com/SamSaffron/pups.git
-
 RUN cd tmp && wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
-
 RUN cd tmp && tar jxf phantomjs-2.1.1-linux-x86_64.tar.bz2 && mv /tmp/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/local/bin
 
 # clean up for docker squash
