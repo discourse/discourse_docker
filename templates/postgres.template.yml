@@ -82,7 +82,6 @@ run:
            fi
 
            if [ "$PG_MAJOR_OLD" = "9.3" ]; then
-             echo Add the line: 'base_image: "discourse/discourse:1.0.17"'
              echo Change: "templates/postgres.template.yml TO templates/postgres.9.3.template.yml"
              echo
            fi
