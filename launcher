@@ -502,8 +502,10 @@ run_bootstrap() {
   unset FAILED
   # magic exit code that indicates a retry
   if [[ "$ERR" == 77 ]]; then
+    $docker_path rm `cat $cidbootstrap`
+    rm $cidbootstrap
     exit 77
-  else
+  elif [[ "$ERR" > 0 ]]; then
     FAILED=TRUE
   fi
 
