@@ -495,9 +495,17 @@ run_bootstrap() {
 
   echo $run_command
 
-  unset FAILED
+  unset ERR
   (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
-     /bin/bash -c "$run_command") || FAILED="TRUE"
+    /bin/bash -c "$run_command") || ERR=$?
+
+  unset FAILED
+  # magic exit code that indicates a retry
+  if [[ "$ERR" == 77 ]]; then
+    exit 77
+  else
+    FAILED=TRUE
+  fi
 
   if [[ $FAILED = "TRUE" ]]; then
     if [[ ! -z "$DEBUG" ]]; then

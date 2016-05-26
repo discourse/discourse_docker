@@ -77,12 +77,12 @@ run:
 
            if [ "$PG_MAJOR_OLD" = "9.2" ]; then
              echo Add the line: 'base_image: "samsaffron/discourse:0.1.1"'
-             echo Change: "templates/postgres.template.yml TO templates/postgres.9.2.template.yml"
+             echo 'In containers/app.yml: Change "templates/postgres.template.yml" TO "templates/postgres.9.2.template.yml"'
              echo
            fi
 
            if [ "$PG_MAJOR_OLD" = "9.3" ]; then
-             echo Change: "templates/postgres.template.yml TO templates/postgres.9.3.template.yml"
+             echo 'In containers/app.yml: Change "templates/postgres.template.yml" TO "templates/postgres.9.3.template.yml"'
              echo
            fi
 
@@ -118,7 +118,8 @@ run:
          echo
          echo Please run "./launcher bootstrap" again
          echo -------------------------------------------------------------------------------------
-         exit 1
+         # Magic exit status to denote no failure
+         exit 77
        fi
   - exec:
       cmd:
