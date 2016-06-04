@@ -45,6 +45,13 @@ run:
   - exec:
       cmd: echo redis installed
       hook: redis
+  - exec: cat /etc/redis/redis.conf | grep logfile
+
+  - exec:
+      background: true
+      cmd: exec chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
+
+  - exec: sleep 10
 
 # we can not migrate without redis, launch it if needed
 hooks:

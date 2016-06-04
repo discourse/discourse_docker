@@ -116,7 +116,7 @@ run:
          echo
          echo Old ${PG_MAJOR_OLD} database is stored at /shared/postgres_data_old
          echo
-         echo Please run "./launcher bootstrap" again
+         echo Please run "./launcher rebuild" again
          echo -------------------------------------------------------------------------------------
          # Magic exit status to denote no failure
          exit 77
