@@ -118,6 +118,7 @@ run:
         - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
         - "rm /etc/nginx/sites-enabled/default"
         - "mkdir -p /var/nginx/cache"
+        - '[ ! -z "$COMPRESS_BROTLI"] && sed -i "s/# brotli/brotli/" /etc/nginx/conf.d/discourse.conf'
 
   - replace:
       filename: /etc/nginx/nginx.conf
