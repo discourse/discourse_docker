@@ -1,5 +1,5 @@
-# NAME:     discourse_base
-# VERSION:  1.3.3
+# NAME:     discourse/base
+# VERSION:  1.3.4
 
 FROM ubuntu:16.04
 
@@ -8,7 +8,7 @@ ENV PG_VERSION 9.5.3-1.pgdg16.04+1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN echo "1.3.3" > /VERSION
+RUN echo "1.3.4" > /VERSION
 
 RUN apt-get update && apt-get install -y lsb-release sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
@@ -20,7 +20,6 @@ RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://p
 RUN apt-get -y install software-properties-common
 RUN apt-mark hold initscripts
 RUN apt-get -y upgrade
-RUN add-apt-repository -y ppa:nginx/development
 RUN curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
@@ -32,8 +31,8 @@ RUN apt-get -y install build-essential git wget \
                        libxml2-dev gawk parallel \
                        postgresql-${PG_MAJOR}=${PG_VERSION} postgresql-client-${PG_MAJOR}=${PG_VERSION} \
                        postgresql-contrib-${PG_MAJOR}=${PG_VERSION} libpq-dev libreadline-dev \
-                       nginx language-pack-en cron anacron \
-                       psmisc rsyslog vim whois
+                       language-pack-en cron anacron \
+                       psmisc rsyslog vim whois brotli
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
 RUN dpkg-divert --local --rename --add /sbin/initctl
@@ -48,6 +47,10 @@ RUN cd / &&\
     apt-get install -y nodejs &&\
     npm install uglify-js -g &&\
     npm install svgo -g
+
+ADD install-nginx /tmp/install-nginx
+RUN /tmp/install-nginx
+
 RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
 
@@ -82,8 +85,11 @@ RUN /tmp/install-gifsicle
 ADD install-pngquant /tmp/install-pngquant
 RUN /tmp/install-pngquant
 
-RUN cd tmp && wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
-RUN cd tmp && tar jxf phantomjs-2.1.1-linux-x86_64.tar.bz2 && mv /tmp/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/local/bin
+ADD phantomjs /usr/local/bin/phantomjs
+
+# Not using the official repo until they compile against a recent openssl
+# RUN cd tmp && wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
+# RUN cd tmp && tar jxf phantomjs-2.1.1-linux-x86_64.tar.bz2 && mv /tmp/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/local/bin
 
 # clean up for docker squash
 RUN   rm -fr /usr/share/man &&\

@@ -47,6 +47,8 @@ def build(path, tag, is_base)
   run("docker save #{img} | ./docker-squash -t #{tag} -verbose #{is_base && "-from root"} | docker load")
 end
 
+run "(cd base && ./download_phantomjs)"
+
 build("base",$base_image,true)
 build("discourse",$image,false)
 build("discourse_test",$test,false)
