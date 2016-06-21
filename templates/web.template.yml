@@ -56,8 +56,8 @@ run:
        #!/bin/bash
        # TODO this should be moved into the base image
        chown -fR www-data:adm /var/log/nginx
-       chown -f syslog:syslog /var/log/syslog*
-       chown -f syslog:syslog /var/log/auth.log*
+       chown -f syslog:adm /var/log/syslog*
+       chown -f syslog:adm /var/log/auth.log*
        chown -f syslog:adm /var/log/kern.log*
 
   - file:
