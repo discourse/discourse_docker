@@ -49,6 +49,16 @@ run:
 
         # find DISCOURSE_ env vars, strip the leader, lowercase the key
         /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = #{v}" if k =~ /^DISCOURSE_(.*)/}' > $conf
+  - file:
+     path: /etc/runit/1.d/fix-log-permissions
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       # TODO this should be moved into the base image
+       chown -fR www-data:adm /var/log/nginx
+       chown -f syslog:syslog /var/log/syslog*
+       chown -f syslog:syslog /var/log/auth.log*
+       chown -f syslog:adm /var/log/kern.log*
 
   - file:
      path: /etc/runit/1.d/enable-brotli
