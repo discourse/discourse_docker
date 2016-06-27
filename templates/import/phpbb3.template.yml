@@ -19,14 +19,6 @@ hooks:
           - rm 02-unicorn
 
     - file:
-        path: /etc/apt/sources.list.d/mariadb.list
-        contents: |
-          # MariaDB 10.1 repository list
-          # http://mariadb.org/mariadb/repositories/
-          deb [arch=amd64,i386] http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.1/ubuntu trusty main
-          deb-src http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.1/ubuntu trusty main
-
-    - file:
         path: /etc/apt/preferences.d/mariadb
         contents: |
           Package: *
@@ -50,7 +42,8 @@ hooks:
     - exec:
         cmd:
           - mkdir -p /shared/import/mysql/data
-          - apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
+          - apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8
+          - add-apt-repository 'deb [arch=amd64,i386] http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.1/ubuntu xenial main'
           - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadbclient-dev mariadb-server
           - sed -Ei 's/^log/#&/' /etc/mysql/my.cnf
 
