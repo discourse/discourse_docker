@@ -50,12 +50,13 @@ run:
         # find DISCOURSE_ env vars, strip the leader, lowercase the key
         /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = #{v}" if k =~ /^DISCOURSE_(.*)/}' > $conf
   - file:
-     path: /etc/runit/1.d/fix-log-permissions
+     path: /etc/runit/1.d/00-fix-log-permissions
      chmod: "+x"
      contents: |
        #!/bin/bash
-       # TODO this should be moved into the base image
-       chown -fR www-data:www-data /var/log/nginx
+       mkdir -p /var/log/nginx
+       chown -R www-data:www-data /var/log/nginx
+       chown www-data:www-data /var/log/nginx
        chown -f syslog:adm /var/log/syslog*
        chown -f syslog:adm /var/log/auth.log*
        chown -f syslog:adm /var/log/kern.log*
@@ -66,15 +67,6 @@ run:
      contents: |
         #!/bin/bash
         [ ! -z "$COMPRESS_BROTLI" ] && sed -i "s/. brotli/  brotli/" /etc/nginx/conf.d/discourse.conf || sed -i "s/. brotli/# brotli/" /etc/nginx/conf.d/discourse.conf
-
-  - file:
-     path: /etc/runit/1.d/ensure-web-nginx-read
-     chmod: "+x"
-     contents: |
-        #!/bin/bash
-        mkdir -p /var/log/nginx
-        chgrp -R www-data /var/log/nginx
-        chgrp www-data /var/log/nginx
 
   - file:
      path: /etc/service/unicorn/run
