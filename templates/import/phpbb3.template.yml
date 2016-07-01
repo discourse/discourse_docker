@@ -33,6 +33,7 @@ hooks:
           default-storage-engine=MyISAM
           default-tmp-storage-engine=MyISAM
           innodb=OFF
+          sql_mode=NO_AUTO_CREATE_USER
 
           datadir=/shared/import/mysql/data
 
@@ -81,7 +82,7 @@ hooks:
               echo "Loading database dump into MySQL..."
               mysql -uroot -e "DROP DATABASE IF EXISTS phpbb"
               mysql -uroot -e "CREATE DATABASE phpbb"
-              mysql -uroot --default-character-set=utf8 --database=phpbb < /shared/import/data/phpbb_mysql.sql
+              mysql -uroot --default-character-set=utf8 --database=phpbb < /shared/import/data/phpbb_mysql.sql && \
               touch /shared/import/mysql/imported
             fi
           else
