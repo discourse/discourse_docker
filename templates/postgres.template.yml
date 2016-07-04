@@ -116,7 +116,9 @@ run:
          echo
          echo Old ${PG_MAJOR_OLD} database is stored at /shared/postgres_data_old
          echo
-         echo Please run "./launcher rebuild" again
+         echo To complete the upgrade, rebuild again using:
+         echo
+         echo     ./launcher rebuild app
          echo -------------------------------------------------------------------------------------
          # Magic exit status to denote no failure
          exit 77
