@@ -108,15 +108,16 @@ RUN   rm -fr /usr/share/man &&\
 # this can probably be done, but I worry that people changing PG locales will have issues
 # cd /usr/share/locale && rm -fr `ls -d */ | grep -v en`
 
-
 RUN mkdir -p /etc/runit/3.d
 
 ADD runit-1 /etc/runit/1
 ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
 ADD runit-1.d-anacron /etc/runit/1.d/anacron
+ADD runit-1.d-00-fix-var-logs /etc/runit/1.d/00-fix-var-logs
 ADD runit-2 /etc/runit/2
 ADD runit-3 /etc/runit/3
 ADD boot /sbin/boot
 
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
+ADD cron.d-anacron /etc/cron.d/anacron

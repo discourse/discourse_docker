@@ -39,6 +39,15 @@ run:
   - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
   - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
   - exec: chown -R discourse /home/discourse
+  # TODO: move to base image (anacron can not be fired up using rc.d)
+  - exec: rm -f /etc/cron.d/anacron
+  - file:
+     path: /etc/cron.d/anacron
+     contents: |
+        SHELL=/bin/sh
+        PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+        30 7    * * *   root	/usr/sbin/anacron -s >/dev/null
   - file:
      path: /etc/runit/1.d/copy-env
      chmod: "+x"

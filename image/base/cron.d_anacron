@@ -1,0 +1,6 @@
+# this avoids using invoke-rc.d which is bust in image
+
+SHELL=/bin/sh
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+30 7    * * *   root	/usr/sbin/anacron -s >/dev/null
