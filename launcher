@@ -7,7 +7,7 @@ usage () {
   echo "    stop:       Stop a running container"
   echo "    restart:    Restart a container"
   echo "    destroy:    Stop and remove a container"
-  echo "    enter:      Use nsenter to get a shell into a container"
+  echo "    enter:      Open a shell to run commands inside the container"
   echo "    logs:       View the Docker logs for a container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
