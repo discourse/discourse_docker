@@ -321,7 +321,7 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  #DISCOURSE_SMTP_PASSWORD:.*/  DISCOURSE_SMTP_PASSWORD: \"$smtp_password\"/w $changelog" $config_file
+  sed -i -e "s/^  #DISCOURSE_SMTP_PASSWORD:.*/  DISCOURSE_SMTP_PASSWORD: \"${smtp_password/\//\\/}\"/w $changelog" $config_file
   if [ -s $changelog ]
   then
       rm $changelog
