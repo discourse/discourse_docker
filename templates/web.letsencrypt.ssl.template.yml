@@ -11,7 +11,7 @@ hooks:
     - exec:
        cmd:
          - apt-get install -y netcat
-         - cd /root && git clone https://github.com/Neilpang/acme.sh.git && cd /root/acme.sh && git reset --hard 8d5618c44a2ab973aa7eb243db740e22c742b809
+         - cd /root && git clone https://github.com/Neilpang/acme.sh.git && cd /root/acme.sh && git reset --hard 1e6b68f5d187fa3d64c889d04a77ee1c79726282
          - touch /var/spool/cron/crontabs/root
          - install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
          - cd /root/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --install
