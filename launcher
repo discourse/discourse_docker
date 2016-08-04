@@ -250,7 +250,7 @@ find_templates() {
 
     local arrTemplates=${templates// / }
 
-    if [ ! -z $templates ]; then
+    if [ ! -z "$templates" ]; then
       for template in "${arrTemplates[@]}"
       do
         local nested_templates=$(find_templates $template)
