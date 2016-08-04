@@ -244,10 +244,30 @@ set_links() {
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['links'].map{|l| '--link ' << l['link']['name'] << ':' << l['link']['alias'] << ' '}.join"`
 }
 
-set_template_info() {
-
-    templates=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+find_templates() {
+    local templates=`cat $1 | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
       "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
+
+    local arrTemplates=${templates// / }
+
+    if [ ! -z $templates ]; then
+      for template in "${arrTemplates[@]}"
+      do
+        local nested_templates=$(find_templates $template)
+
+        if [ ! -z "$nested_templates" ]; then
+          templates="$templates $nested_templates"
+        fi
+      done
+
+      echo $templates
+    else
+      echo ""
+    fi
+}
+
+set_template_info() {
+    templates=$(find_templates $config_file)
 
     arrTemplates=(${templates// / })
     config_data=$(cat $config_file)
