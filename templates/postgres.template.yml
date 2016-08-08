@@ -92,7 +92,12 @@ run:
            echo Run "./launcher enter app"
            echo Run "cd /shared/postgres_backup && sudo -u postgres pg_dump discourse > backup.db"
            echo
-           echo Undo the base_image and postgres template from your container config
+           if [ "$PG_MAJOR_OLD" = "9.2" ]; then
+             echo Undo the base_image in your container config
+           fi
+           if [ "$PG_MAJOR_OLD" = "9.3" ]; then
+             echo Undo the postgres template in your container config
+           fi
            echo Run: "./launcher stop app"
            echo Run: "sudo mv /var/discourse/shared/standalone/postgres_data /var/discourse/shared/standalone/postgres_data_old"
            echo Run: "./launcher rebuild app"
