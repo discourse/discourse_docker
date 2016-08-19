@@ -74,16 +74,23 @@ hooks:
         chmod: "+x"
         contents: |
           #!/bin/bash
+          set -e
+
           chown discourse /shared/import/settings.yml
           chown discourse -R /shared/import/data
 
           if [ -f "/shared/import/data/phpbb_mysql.sql" ]; then
+            if [ -f "/shared/import/mysql/imported" ] && ! sha256sum --check /shared/import/mysql/imported &>/dev/null ; then
+              echo "Checksum of database dump changed..."
+              rm /shared/import/mysql/imported
+            fi
+
             if [ ! -f "/shared/import/mysql/imported" ]; then
               echo "Loading database dump into MySQL..."
               mysql -uroot -e "DROP DATABASE IF EXISTS phpbb"
               mysql -uroot -e "CREATE DATABASE phpbb"
-              mysql -uroot --default-character-set=utf8 --database=phpbb < /shared/import/data/phpbb_mysql.sql && \
-              touch /shared/import/mysql/imported
+              mysql -uroot --default-character-set=utf8 --database=phpbb < /shared/import/data/phpbb_mysql.sql
+              sha256sum /shared/import/data/phpbb_mysql.sql > /shared/import/mysql/imported
             fi
           else
             sv stop mysql
