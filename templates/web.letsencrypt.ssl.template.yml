@@ -55,11 +55,11 @@ hooks:
           #!/bin/bash
           /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf
 
-          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 -w /var/www/discourse/public --staging --force
+          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 -w /var/www/discourse/public --force
 
           if [ ! "$(cd $$ENV_LETSENCRYPT_DIR/$$ENV_DISCOURSE_HOSTNAME && openssl verify -CAfile ca.cer fullchain.cer | grep "OK")" ]; then
             # Try to issue the cert again if something goes wrong
-            LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 --force --staging -w /var/www/discourse/public
+            LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 --force -w /var/www/discourse/public
           fi
 
           LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --installcert -d $$ENV_DISCOURSE_HOSTNAME --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key --reloadcmd "sv reload nginx"
