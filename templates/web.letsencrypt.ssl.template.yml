@@ -55,7 +55,7 @@ hooks:
           #!/bin/bash
           /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf
 
-          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 -w /var/www/discourse/public --force
+          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 -w /var/www/discourse/public
 
           if [ ! "$(cd $$ENV_LETSENCRYPT_DIR/$$ENV_DISCOURSE_HOSTNAME && openssl verify -CAfile ca.cer fullchain.cer | grep "OK")" ]; then
             # Try to issue the cert again if something goes wrong
