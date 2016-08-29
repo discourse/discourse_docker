@@ -10,27 +10,61 @@ hooks:
 
     - exec:
        cmd:
-         - apt-get install -y netcat
          - cd /root && git clone https://github.com/Neilpang/acme.sh.git && cd /root/acme.sh && git reset --hard 1e6b68f5d187fa3d64c889d04a77ee1c79726282
          - touch /var/spool/cron/crontabs/root
          - install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
          - cd /root/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --install
 
     - file:
+       path: "/etc/nginx/letsencrypt.conf"
+       contents: |
+        user www-data;
+        worker_processes auto;
+        daemon on;
+
+        events {
+          worker_connections 768;
+          # multi_accept on;
+        }
+
+        http {
+          sendfile on;
+          tcp_nopush on;
+          tcp_nodelay on;
+          keepalive_timeout 65;
+          types_hash_max_size 2048;
+
+          access_log /var/log/nginx/access.letsencrypt.log;
+          error_log /var/log/nginx/error.letsencrypt.log;
+
+          server {
+            listen 80;
+            listen [::]:80;
+
+            location ~ /.well-known {
+              root /var/www/discourse/public;
+              allow all;
+            }
+          }
+        }
+
+    - file:
        path: /etc/runit/1.d/letsencrypt
        chmod: "+x"
        contents: |
           #!/bin/bash
-          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 --standalone
+          /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf
+
+          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 -w /var/www/discourse/public --staging --force
 
           if [ ! "$(cd $$ENV_LETSENCRYPT_DIR/$$ENV_DISCOURSE_HOSTNAME && openssl verify -CAfile ca.cer fullchain.cer | grep "OK")" ]; then
             # Try to issue the cert again if something goes wrong
-            LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 --standalone --force
+            LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 --force --staging -w /var/www/discourse/public
           fi
 
           LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --installcert -d $$ENV_DISCOURSE_HOSTNAME --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key --reloadcmd "sv reload nginx"
-          # After the initial install, switch to Webroot plugin
-          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh _setopt $$ENV_LETSENCRYPT_DIR/$$ENV_DISCOURSE_HOSTNAME/$$ENV_DISCOURSE_HOSTNAME.conf "Le_Webroot" "=" "/var/www/discourse/public"
+
+          /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf -s stop
 
     - replace:
        filename: "/etc/nginx/conf.d/discourse.conf"
