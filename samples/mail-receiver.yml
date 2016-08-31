@@ -15,6 +15,10 @@ expose:
 env:
   LANG: en_US.UTF-8
 
+  ## Where e-mail to your forum should be sent.  In general, it's perfectly fine
+  ## to use the same domain as the forum itself here.
+  MAIL_DOMAIN: discourse.example.com
+
   ## The URL of the mail processing endpoint of your Discourse forum.
   ## This is simply your forum's base URL, with `/admin/email/handle_mail`
   ## appended.  Be careful if you're running a subfolder setup -- in that case,
