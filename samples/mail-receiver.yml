@@ -1,0 +1,35 @@
+## this is the incoming mail receiver container template
+##
+## After making changes to this file, you MUST rebuild
+## /var/discourse/launcher rebuild mail-receiver
+##
+## BE *VERY* CAREFUL WHEN EDITING!
+## YAML FILES ARE SUPER SUPER SENSITIVE TO MISTAKES IN WHITESPACE OR ALIGNMENT!
+## visit http://www.yamllint.com/ to validate this file as needed
+
+base_image: discourse/mail-receiver:1.0.0
+
+expose:
+  - "25:25"   # SMTP
+
+env:
+  LANG: en_US.UTF-8
+
+  ## The URL of the mail processing endpoint of your Discourse forum.
+  ## This is simply your forum's base URL, with `/admin/email/handle_mail`
+  ## appended.  Be careful if you're running a subfolder setup -- in that case,
+  ## the URL needs to have the subfolder included!
+  DISCOURSE_MAIL_ENDPOINT: 'http://discourse.example.com/admin/email/handle_mail'
+
+  ## The master API key of your Discourse forum.  You can get this from
+  ## the "API" tab of your admin panel.
+  DISCOURSE_API_TOKEN: abcdefghijklmnop
+
+  ## The username to use for processing incoming e-mail.  Unless you have
+  ## renamed the `system` user, you should leave this as-is.
+  DISCOURSE_API_USERNAME: system
+
+volumes:
+  - volume:
+      host: /var/discourse/shared/mail-receiver/postfix-spool
+      guest: /var/spool/postfix
