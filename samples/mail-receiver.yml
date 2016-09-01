@@ -8,6 +8,7 @@
 ## visit http://www.yamllint.com/ to validate this file as needed
 
 base_image: discourse/mail-receiver:1.0.0
+update_pups: false
 
 expose:
   - "25:25"   # SMTP
