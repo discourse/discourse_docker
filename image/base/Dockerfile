@@ -1,10 +1,10 @@
 # NAME:     discourse/base
-# VERSION:  1.3.5
+# VERSION:  1.3.6
 
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
-ENV PG_VERSION 9.5.3-1.pgdg16.04+1
+ENV PG_VERSION 9.5.4-1.pgdg16.04+1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
@@ -120,4 +120,4 @@ ADD boot /sbin/boot
 
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
-ADD cron.d-anacron /etc/cron.d/anacron
+ADD cron.d_anacron /etc/cron.d/anacron
