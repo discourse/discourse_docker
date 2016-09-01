@@ -28,7 +28,7 @@ env:
 
   ## The master API key of your Discourse forum.  You can get this from
   ## the "API" tab of your admin panel.
-  DISCOURSE_API_TOKEN: abcdefghijklmnop
+  DISCOURSE_API_KEY: abcdefghijklmnop
 
   ## The username to use for processing incoming e-mail.  Unless you have
   ## renamed the `system` user, you should leave this as-is.
