@@ -15,19 +15,19 @@ check_root() {
 ##
 check_disk_and_memory() {
   
-  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
-  if [ "$avail_mem" -lt 900 ]; then
+  avail_mem=`free -g --si | awk ' /Mem:/  {print $2} '`
+  if [ "$avail_mem" -lt 1 ]; then
     echo "WARNING: Discourse requires 1GB RAM to run. This system does not appear"
     echo "to have sufficient memory."
     echo
     echo "Your site may not work properly, or future upgrades of Discourse may not"
     echo "complete successfully."
-    exit 1
+    echo exit 1
   fi
     
-  if [ "$avail_mem" -lt 1800 ]; then
-    total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
-    if [ "$total_swap" -lt 1000 ]; then
+  if [ "$avail_mem" -lt 2 ]; then
+    total_swap=`free -g --si | awk ' /Swap:/  {print $2} '`
+    if [ "$total_swap" -lt 2 ]; then
       echo "WARNING: Discourse requires at least 2GB of swap when running with less "
       echo "than 2GB of RAM. This system does not appear to have sufficient swap space."
       echo
@@ -47,14 +47,15 @@ check_disk_and_memory() {
       sysctl -w vm.swappiness=10
       echo vm.swappiness = 10 | tee -a /etc/sysctl.conf
 
-      total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
-      if [ "$total_swap" -lt 1000 ]; then
+      total_swap=`free -g --si | awk ' /Swap:/ {print $2} '`
+      if [ "$total_swap" -lt 2 ]; then
         echo "Failed to create swap, sorry!"
         exit 1
       fi
       
     fi
   fi
+
 
   free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
   if [ "$free_disk" -lt 5000 ]; then
@@ -81,8 +82,7 @@ scale_ram_and_cpu() {
 
   local changelog=/tmp/changelog.$PPID
   # grab info about total system ram and physical (NOT LOGICAL!) CPU cores
-  avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
-  avail_gb=$(( $avail_mem / 950 ))
+  avail_gb="$(LANG=C free -g --si | grep '^Mem:' | awk '{print $2}')"
   avail_cores=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $4}'`
   echo "Found ${avail_gb}GB of memory and $avail_cores physical CPU cores"
 
