@@ -15,10 +15,12 @@ check_root() {
 ## Do we have docker?
 ##
 check_and_install_docker () {
+  docker_path=`which docker.io || which docker`
   if [ -z $docker_path ]; then
     read  -p "Docker not installed. Enter to install from https://get.docker.com/ or Ctrl+C to exit"
     curl https://get.docker.com/ | sh    
   fi
+  docker_path=`which docker.io || which docker`
   if [ -z $docker_path ]; then
     echo Docker install failed. Quitting.
     exit
