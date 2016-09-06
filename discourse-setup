@@ -10,6 +10,22 @@ check_root() {
   fi
 }
 
+
+## 
+## Do we have docker?
+##
+check_and_install_docker () {
+  if [ -z $docker_path ]; then
+    read  -p "Docker not installed. Enter to install from https://get.docker.com/ or Ctrl+C to exit"
+    curl https://get.docker.com/ | sh    
+  fi
+  if [ -z $docker_path ]; then
+    echo Docker install failed. Quitting.
+    exit
+  fi
+}
+
+ 
 ##
 ## Do we have enough memory and disk space for Discourse?
 ##
@@ -426,6 +442,7 @@ changelog=/tmp/changelog
 ## Check requirements before creating a copy of a config file we won't edit
 ##
 check_root
+check_and_install_docker
 check_disk_and_memory
 check_ports
 
