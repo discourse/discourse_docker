@@ -10,11 +10,29 @@ check_root() {
   fi
 }
 
+
+##
+## Do we have docker?
+##
+check_and_install_docker () {
+  docker_path=`which docker.io || which docker`
+  if [ -z $docker_path ]; then
+    read  -p "Docker not installed. Enter to install from https://get.docker.com/ or Ctrl+C to exit"
+    curl https://get.docker.com/ | sh
+  fi
+  docker_path=`which docker.io || which docker`
+  if [ -z $docker_path ]; then
+    echo Docker install failed. Quitting.
+    exit
+  fi
+}
+
+
 ##
 ## Do we have enough memory and disk space for Discourse?
 ##
 check_disk_and_memory() {
-  
+
   avail_mem="$(LANG=C free -m | grep '^Mem:' | awk '{print $2}')"
   if [ "$avail_mem" -lt 900 ]; then
     echo "WARNING: Discourse requires 1GB RAM to run. This system does not appear"
@@ -24,7 +42,7 @@ check_disk_and_memory() {
     echo "complete successfully."
     exit 1
   fi
-    
+
   if [ "$avail_mem" -lt 1800 ]; then
     total_swap="$(LANG=C free -m | grep ^Swap: | awk '{print $2}')"
     if [ "$total_swap" -lt 1000 ]; then
@@ -35,10 +53,10 @@ check_disk_and_memory() {
       echo "upgrades of Discourse may not complete successfully."
       echo
       read -p "ENTER to create a 2GB swapfile now, or Ctrl+C to exit"
-      
+
       ##
       ## derived from https://meta.discourse.org/t/13880
-      ## 
+      ##
       install -o root -g root -m 0600 /dev/null /swapfile
       dd if=/dev/zero of=/swapfile bs=1k count=2048k
       mkswap /swapfile
@@ -52,7 +70,7 @@ check_disk_and_memory() {
         echo "Failed to create swap, sorry!"
         exit 1
       fi
-      
+
     fi
   fi
 
@@ -126,7 +144,7 @@ scale_ram_and_cpu() {
 }
 
 
-## 
+##
 ## standard http / https ports must not be occupied
 ##
 check_ports() {
@@ -140,7 +158,7 @@ check_ports() {
 ## check a port to see if it is already in use
 ##
 check_port() {
-  
+
   local valid=$(netstat -tln | awk '{print $4}' | grep ":${1}\$")
 
   if [ -n "$valid" ]; then
@@ -148,7 +166,7 @@ check_port() {
     echo
     echo "If you are trying to run Discourse simultaneously with another web"
     echo "server like Apache or nginx, you will need to bind to a different port"
-    echo 
+    echo
     echo "See https://meta.discourse.org/t/17247"
     exit 1
   fi
@@ -158,13 +176,13 @@ check_port() {
 ## prompt user for typical Discourse config file values
 ##
 ask_user_for_config() {
-  
+
   local changelog=/tmp/changelog.$PPID
   local hostname="discourse.example.com"
   local developer_emails="me@example.com,you@example.com"
   local smtp_address="smtp.example.com"
   local smtp_port="587"
-  local smtp_user_name="postmaster@discourse.example.com"  
+  local smtp_user_name="postmaster@discourse.example.com"
   local smtp_password=""
   local letsencrypt_account_email="me@example.com"
   local letsencrypt_status="ENTER to skip"
@@ -172,7 +190,7 @@ ask_user_for_config() {
   local new_value=""
   local config_ok="n"
   local update_ok="y"
-  
+
   echo ""
 
   while [[ "$config_ok" == "n" ]]
@@ -185,7 +203,7 @@ ask_user_for_config() {
           hostname=$new_value
       fi
     fi
-    
+
     if [ ! -z $developer_emails ]
     then
       read -p "Email address for admin account? [$developer_emails]: " new_value
@@ -194,7 +212,7 @@ ask_user_for_config() {
           developer_emails=$new_value
       fi
     fi
-    
+
     if [ ! -z $smtp_address ]
     then
       read -p "SMTP server address? [$smtp_address]: " new_value
@@ -203,7 +221,7 @@ ask_user_for_config() {
         smtp_address=$new_value
       fi
     fi
-    
+
     if [ ! -z $smtp_port ]
     then
       read -p "SMTP port? [$smtp_port]: " new_value
@@ -212,14 +230,14 @@ ask_user_for_config() {
         smtp_port=$new_value
       fi
     fi
-    
+
     ##
     ## automatically set correct user name based on common mail providers
     ##
     if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
     then
     	smtp_user_name="SMTP_Injection"
-    fi    
+    fi
     if [ "$smtp_address" == "smtp.sendgrid.net" ]
     then
 	    smtp_user_name="apikey"
@@ -228,7 +246,7 @@ ask_user_for_config() {
     then
 	    smtp_user_name="postmaster@$hostname"
     fi
-    
+
     if [ ! -z $smtp_user_name ]
     then
       read -p "SMTP user name? [$smtp_user_name]: " new_value
@@ -237,13 +255,13 @@ ask_user_for_config() {
           smtp_user_name=$new_value
       fi
     fi
-    
+
     read -p "SMTP password? [$smtp_password]: " new_value
     if [ ! -z $new_value ]
     then
         smtp_password=$new_value
     fi
-    
+
     if [ ! -z $letsencrypt_account_email ]
     then
       read -p "Let's Encrypt account email? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
@@ -266,12 +284,12 @@ ask_user_for_config() {
     echo "SMTP port     : $smtp_port"
     echo "SMTP username : $smtp_user_name"
     echo "SMTP password : $smtp_password"
-    
+
     if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
     then
       echo "Let's Encrypt : $letsencrypt_account_email"
     fi
-    
+
     echo ""
     read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
   done
@@ -361,7 +379,7 @@ ask_user_for_config() {
         update_ok="n"
         echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
       fi
-  fi 
+  fi
 
   if [ "$update_ok" == "y" ]
   then
@@ -378,11 +396,11 @@ ask_user_for_config() {
 validate_config() {
 
   valid_config="y"
-  
+
   for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
            DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
   do
-    config_line=`grep "^  $x:" $config_file` 
+    config_line=`grep "^  $x:" $config_file`
     local result=$?
     local default="example.com"
 
@@ -404,7 +422,7 @@ validate_config() {
       valid_config="n"
     fi
   done
-  
+
   if [ "$valid_config" != "y" ]; then
     echo -e "\nSorry, these $config_file settings aren't valid -- can't continue!"
     echo "If you have unusual requirements, edit $config_file and then: "
@@ -426,6 +444,7 @@ changelog=/tmp/changelog
 ## Check requirements before creating a copy of a config file we won't edit
 ##
 check_root
+check_and_install_docker
 check_disk_and_memory
 check_ports
 
