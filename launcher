@@ -322,6 +322,45 @@ RUBY
       echo "YAML syntax error. Please check your containers/*.yml config files."
       exit 1
     fi
+
+    read -r -d '' labels_ruby << 'RUBY'
+    require 'yaml'
+
+    input=STDIN.readlines.join
+    # default to UTF-8 for the dbs sake
+    labels = {}
+    input.split('_FILE_SEPERATOR_').each do |yml|
+       yml.strip!
+       begin
+         labels.merge!(YAML.load(yml)['labels'] || {})
+       rescue Psych::SyntaxError => e
+        puts e
+        puts "*ERROR."
+       rescue => e
+        puts yml
+        p e
+       end
+    end
+    puts labels.map{|k,v| "-l\n#{k}=#{v}" }.join("\n")
+RUBY
+
+    raw=`exec echo "$input" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$labels_ruby"`
+
+    labels=()
+    ok=1
+    while read i; do
+      if [ "$i" == "*ERROR." ]; then
+        ok=0
+      elif [ -n "$i" ]; then
+        labels[${#labels[@]}]=$i
+      fi
+    done <<< "$raw"
+
+    if [ "$ok" -ne 1 ]; then
+      echo "${labels[@]}"
+      echo "YAML syntax error. Please check your containers/*.yml config files."
+      exit 1
+    fi
 }
 
 if [ -z $docker_path ]; then
@@ -478,7 +517,7 @@ run_start() {
      fi
 
      set -x
-     $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" -h "$hostname" \
+     $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" "${labels[@]}" -h "$hostname" \
         -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $mac_address $docker_args \
         $run_image $boot_command
 
