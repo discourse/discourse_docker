@@ -1,6 +1,5 @@
 # NAME:     discourse/base
-# VERSION:  1.3.6
-
+# VERSION:  1.3.7
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
@@ -8,7 +7,7 @@ ENV PG_VERSION 9.5.4-1.pgdg16.04+1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN echo "1.3.5" > /VERSION
+RUN echo "1.3.7" > /VERSION
 
 RUN apt-get update && apt-get install -y lsb-release sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
@@ -121,3 +120,8 @@ ADD boot /sbin/boot
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
 ADD cron.d_anacron /etc/cron.d/anacron
+
+# Create discourse user and /var/www location for both
+# discourse and dev images.
+RUN useradd discourse -s /bin/bash -m -U &&\
+    mkdir -p /var/www

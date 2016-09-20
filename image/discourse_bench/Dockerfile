@@ -1,4 +1,6 @@
-FROM samsaffron/discourse_test:latest
+# NAME:     discourse/discourse_bench
+# VERSION:  1.3.7
+FROM discourse/discourse_test:1.3.7
 
 MAINTAINER Gerhard Schlager <mail@gerhard-schlager.at>
 
@@ -17,11 +19,12 @@ RUN gem install facter &&\
 
 # reconfigure PostgreSQL template databases to use UTF-8
 # otherwise rake db:create fails
-RUN pg_dropcluster --stop 9.3 main &&\
-    pg_createcluster --start -e UTF-8 9.3 main
+RUN pg_dropcluster --stop 9.5 main &&\
+    pg_createcluster --start -e UTF-8 9.5 main
 
 # create role "discourse"
 RUN /etc/init.d/postgresql start &&\
+    sleep 10 &&\
     sudo -u postgres createuser --superuser discourse
 
 ADD run_bench.sh /tmp/run_bench.sh

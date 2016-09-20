@@ -1,21 +1,11 @@
-FROM samsaffron/discourse_fast_switch:1.0.13
+# NAME:     discourse/discourse_dev
+# VERSION:  1.3.7
+FROM discourse/base:1.3.7
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN use_22
-RUN rm -fr /usr/local/include/ruby-2.0.0
-
-RUN chown -R discourse:discourse /usr/ruby_22
-
-RUN rm /var/www/discourse/.bundle/config
-
-RUN cd /var/www/discourse && git pull && sudo -u discourse bundle install
-RUN use_22
-
-# CLEANUP
-RUN rm -fr /var/www/discourse/vendor/bundle/ruby
-RUN rm -fr /usr/ruby_20
-
+# Give discourse user no-passwd sudo permissions (for bundle install)
+ADD sudoers.discourse /etc/sudoers.d/discourse
 
 # get redis going
 ADD redis.template.yml /pups/redis.yml
@@ -30,10 +20,9 @@ ENV LC_ALL en_US.UTF-8
 ADD postgres.template.yml /pups/postgres.yml
 RUN LANG=en_US.UTF-8 /pups/bin/pups /pups/postgres.yml
 
-# move pg out of the way
+# move default postgres_data out of the way
 RUN mv /shared/postgres_data /shared/postgres_data_orig
 
-# We got gems ... we need no source in the image ...
-RUN rm -fr /var/www/discourse
-
+# re-instantiate data on boot if needed (this will allow it to persist across
+# invocations when used with a mounted volume)
 ADD ensure-database /etc/runit/1.d/ensure-database
