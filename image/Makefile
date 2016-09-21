@@ -3,7 +3,10 @@ IMAGE_VERSION := 1.3.7
 SHELL         := /bin/bash
 OS            := $(shell uname | tr '[:upper:]' '[:lower:]')
 
+SQUASH        ?= YES
+
 DOCKER_SQUASH_URL := https://github.com/jwilder/docker-squash/releases/download/v0.2.0/docker-squash-${OS}-amd64-v0.2.0.tar.gz
+
 
 
 # omitting discourse_fast_switch from 'all' as it seems obsolete.
@@ -37,23 +40,22 @@ discourse_dev-deps:
 	cp ../templates/redis.template.yml discourse_dev/redis.template.yml
 .PHONY: discourse_dev-deps
 
-# docker-squash doesn't seem to work on OSX... there's an error about calling
-# tar with an unsuported "--xattrs" option.  If/when that gets fixed, the ifeq
-# can be removed.  For now, OSX skips the docker-squash step, so don't push
-# images built on OSX!
+# If you don't want to docker-squash the image, prefix your command line with
+# SQUASH=NO, like:
+#     SQUASH=NO make discourse_dev
 build-image: docker-squash update-dockerfile
 	@echo "----- building image: discourse/${IMAGE_DIR}:${IMAGE_VERSION} -----"
-ifeq ($(OS), darwin)
-	docker build -t discourse/${IMAGE_DIR}:${IMAGE_VERSION} ${IMAGE_DIR}
-else
+ifeq (${SQUASH}, YES)
 	docker build ${IMAGE_DIR} | tee .build.out
-	@echo "squashing $(shell tail -1 .build.out | awk '/^Successfully built / {print $$3}')..."
-	docker save -o img.tar $(shell tail -1 .build.out | awk '/^Successfully built / {print $$3}')
-	./docker-squash -verbose -i img.tar -o squash.tar $(if $(IS_BASE),-from root) -t discourse/${IMAGE_DIR}:${IMAGE_VERSION}
+	@echo "squashing $$(tail -1 .build.out | awk '/^Successfully built / {print $$3}')..."
+	docker save -o img.tar $$(tail -1 .build.out | awk '/^Successfully built / {print $$3}')
+	sudo ./docker-squash -verbose -i img.tar -o squash.tar $(if $(IS_BASE),-from root) -t discourse/${IMAGE_DIR}:${IMAGE_VERSION}
 	docker load -i squash.tar
 	rm -f squash.tar
 	rm -f img.tar
 	rm -f .build.out
+else
+	docker build -t discourse/${IMAGE_DIR}:${IMAGE_VERSION} ${IMAGE_DIR}
 endif
 .PHONY: build-image
 
