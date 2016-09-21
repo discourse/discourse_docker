@@ -4,9 +4,15 @@
 
 To build a new set of images, update the `Makefile` with the new version number, and then `make all`.  This will automatically update the header comments in the Dockerfiles and update any `FROM` statements to ensure that the image verions remain in lock-step with each other.  (The downside is that if you only wanted to tweak a "leaf" image, you'll still be touching/updating _all_ of the images.  But reasoning about the images is much easier if they all have the same version.)
 
-> _A note about building on OSX:_ While the `Makefile` has provisions for acquiring an OS-specific version of docker-squash, running the Darwin (OSX) version doesn't work on my machine.  To cope, OSX builds simply skip the docker-squash step.  Since I'm not going to be pushing images up to Docker Hub, that's okay with me.
-
 The build process will tag the images with the version number, but not with "latest", nor will it push the images up to Docker Hub.  Both of those steps must be performed manually.
+
+> _A note about docker-squash:_ Getting docker-squash configured correctly on OSX takes a bit of doing, so if you want to simply skip the squashing step entirely, just prefix the make command with `SQUASH=NO`, as follows:
+>
+> ```sh
+> SQUASH=NO make all
+> ```
+
+
 
 ## More about the images
 
