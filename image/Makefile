@@ -23,7 +23,7 @@ discourse_dev: discourse_dev-deps
 base:
 	@IMAGE_DIR=$@ IS_BASE=YES ${MAKE} build-image
 
-discourse discourse_fast_switch discourse_dev discourse_test discourse_bench:
+discourse discourse_dev discourse_test discourse_bench discourse_fast_switch:
 	@IMAGE_DIR=$@ ${MAKE} build-image
 
 
@@ -47,12 +47,15 @@ build-image: docker-squash update-dockerfile
 	@echo "----- building image: discourse/${IMAGE_DIR}:${IMAGE_VERSION} -----"
 ifeq (${SQUASH}, YES)
 	docker build ${IMAGE_DIR} | tee .build.out
-	@echo "squashing $$(tail -1 .build.out | awk '/^Successfully built / {print $$3}')..."
-	docker save -o img.tar $$(tail -1 .build.out | awk '/^Successfully built / {print $$3}')
-	sudo ./docker-squash -verbose -i img.tar -o squash.tar $(if $(IS_BASE),-from root) -t discourse/${IMAGE_DIR}:${IMAGE_VERSION}
+	tail -1 .build.out | awk '/^Successfully built / {print $$3}' > .build.hash
+	@echo "squashing $$(cat .build.hash)..."
+	docker save -o img.tar $$(cat .build.hash)
+	sudo ./docker-squash -verbose -i img.tar -o squash.tar $(if $(IS_BASE),-from root)
 	docker load -i squash.tar
+	docker tag $$(cat .build.hash) discourse/${IMAGE_DIR}:${IMAGE_VERSION}
 	rm -f squash.tar
 	rm -f img.tar
+	rm -f .build.hash
 	rm -f .build.out
 else
 	docker build -t discourse/${IMAGE_DIR}:${IMAGE_VERSION} ${IMAGE_DIR}

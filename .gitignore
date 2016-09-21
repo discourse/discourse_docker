@@ -4,6 +4,8 @@ containers/*
 cids/*
 bin/*
 image/.build.out
+image/.build.hash
+image/.docker_temp_*
 image/img.tar
 image/squash.tar
 image/nsenter/nsenter
