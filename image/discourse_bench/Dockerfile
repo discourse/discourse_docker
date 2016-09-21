@@ -24,7 +24,7 @@ RUN pg_dropcluster --stop 9.5 main &&\
 
 # create role "discourse"
 RUN /etc/init.d/postgresql start &&\
-    sleep 10 &&\
+    sleep 5 &&\
     sudo -u postgres createuser --superuser discourse
 
 ADD run_bench.sh /tmp/run_bench.sh
