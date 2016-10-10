@@ -644,7 +644,12 @@ case "$command" in
         elif [ $LOCAL = $BASE ]; then
           echo "Updating Launcher"
           git pull || (echo 'failed to update' && exit 1)
-          exec /bin/bash $0 $@
+          
+          for (( i=${#BASH_ARGV[@]}-1,j=0; i>=0,j<${#BASH_ARGV[@]}; i--,j++ ))
+          do
+            args[$j]=${BASH_ARGV[$i]}
+          done
+          exec /bin/bash $0 "${args[@]}" # $@ is empty, because of shift at the beginning. Use BASH_ARGV instead.
 
         elif [ $REMOTE = $BASE ]; then
           echo "Your version of Launcher is ahead of origin"
