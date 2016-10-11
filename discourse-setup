@@ -34,6 +34,19 @@ check_OS() {
   echo `uname -s`
 }
 
+##
+## OS X available memory
+##
+check_osx_memory() {
+  echo `top -l 1 | awk '/PhysMem:/ {print $2}' | sed s/G//`
+}
+
+##
+## Linux available memory
+##
+check_linux_memory() {
+  echo `free -g --si | awk ' /Mem:/  {print $2} '`
+}
 
 ##
 ## Do we have enough memory and disk space for Discourse?
@@ -43,9 +56,9 @@ check_disk_and_memory() {
   os_type=$(check_OS)
   avail_mem=0
   if [ $os_type == "Darwin" ]; then
-    avail_mem=`top -l 1 | awk '/PhysMem:/ {print $2}' | sed s/G//`
+    avail_mem=$(check_osx_memory)
   else
-    avail_mem=`free -g --si | awk ' /Mem:/  {print $2} '`  
+    avail_mem=$(check_linux_memory)
   fi
 
   if [ "$avail_mem" -lt 1 ]; then
@@ -114,8 +127,16 @@ scale_ram_and_cpu() {
 
   local changelog=/tmp/changelog.$PPID
   # grab info about total system ram and physical (NOT LOGICAL!) CPU cores
-  avail_gb="$(LANG=C free -g --si | grep '^Mem:' | awk '{print $2}')"
-  avail_cores=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $4}'`
+  avail_gb=0
+  avail_cores=0
+  os_type=$(check_OS)
+  if [ $os_type == "Darwin" ]; then
+    avail_gb=$(check_osx_memory)
+    avail_cores=`sysctl hw.ncpu | awk '/hw.ncpu:/ {print $2}'`
+  else
+    avail_gb=$(check_linux_memory) 
+    avail_cores=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $4}'`
+  fi
   echo "Found ${avail_gb}GB of memory and $avail_cores physical CPU cores"
 
   # db_shared_buffers: 128MB for 1GB, 256MB for 2GB, or 256MB * GB, max 4096MB
