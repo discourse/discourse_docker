@@ -27,13 +27,27 @@ check_and_install_docker () {
   fi
 }
 
+##
+## What are we running on
+##
+check_OS() {
+  echo `uname -s`
+}
+
 
 ##
 ## Do we have enough memory and disk space for Discourse?
 ##
 check_disk_and_memory() {
 
-  avail_mem=`free -g --si | awk ' /Mem:/  {print $2} '`
+  os_type=$(check_OS)
+  avail_mem=0
+  if [ $os_type == "Darwin" ]; then
+    avail_mem=`top -l 1 | awk '/PhysMem:/ {print $2}' | sed s/G//`
+  else
+    avail_mem=`free -g --si | awk ' /Mem:/  {print $2} '`  
+  fi
+
   if [ "$avail_mem" -lt 1 ]; then
     echo "WARNING: Discourse requires 1GB RAM to run. This system does not appear"
     echo "to have sufficient memory."
