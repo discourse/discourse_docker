@@ -4,8 +4,6 @@ require 'pty'
 
 $version = "1.3.6"
 
-$docker_squash = "https://github.com/jwilder/docker-squash/releases/download/v0.2.0/docker-squash-linux-amd64-v0.2.0.tar.gz"
-
 $base_image = "discourse/base:#{$version}"
 $image = "discourse/discourse:#{$version}"
 $test = "discourse/discourse_test:#{$version}"
@@ -32,23 +30,23 @@ def run(command)
 end
 
 def ensure_docker_squash
-  return if File.exist?("docker-squash")
-  run ("wget #{$docker_squash}")
-  run ("tar -xzvf *.tar.gz")
-  run ("rm -f docker-squash-linux*")
+  run ("apt install python-pip")
+  run ("pip install docker_squash --upgrade")
 end
 
 ensure_docker_squash
 
-def build(path, tag, is_base)
+def build(path, tag)
   lines = run("cd #{path} && docker build .")
   img = lines[-1]["successfully built ".length..-1].strip
 
-  run("docker save #{img} | ./docker-squash -t #{tag} -verbose #{is_base && "-from root"} | docker load")
+  run('echo "here it comes!!@!@"')
+
+  run("docker-squash --tag #{tag} --verbose #{img}")
 end
 
 run "(cd base && ./download_phantomjs)"
 
-build("base",$base_image,true)
-build("discourse",$image,false)
-build("discourse_test",$test,false)
+build("base",$base_image)
+build("discourse",$image)
+build("discourse_test",$test)
