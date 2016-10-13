@@ -496,16 +496,39 @@ template_path=samples/standalone.yml
 config_file=containers/$app_name.yml
 changelog=/tmp/changelog
 interactive=1
+do_bootstrap=1
+do_start=1
 
 ##
 ## Check for Command line arguments
 ##
 
-while getopts ":a" opt; do
+while getopts ":hibs" opt; do
   case $opt in
-    a)
+    h)
+      echo -e "Usage: $0 [OPTS]"
+      echo -e ""
+      echo -e "OPTS:"
+      echo -e ""
+      echo -e "\t-h\tthis cruft"
+      echo -e "\t-i\tenable non-interactive mode"
+      echo -e "\t-b\tskip bootstrap"
+      echo -e "\t-s\tskip container start"
+      echo -e ""
+      non_interactive_help
+      exit 0
+      ;;
+    i)
       echo "triggered non-interactive mode"
       interactive=0
+      ;;
+    b)
+      echo "skip bootstrap"
+      do_bootstrap=0
+      ;;
+    s)
+      echo "skip start"
+      do_start=0
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -543,4 +566,21 @@ validate_config
 ##
 ## if we reach this point without exiting, OK to proceed
 ##
-./launcher bootstrap $app_name && ./launcher start $app_name
+
+if [ $do_bootstrap -eq 1 ]; then
+  ./launcher bootstrap $app_name
+  RET_CODE=$?
+  if [ $RET_CODE -ne 0 ]; then
+    echo ERROR: bootstrap failed with status $RET_CODE.
+    exit 1
+  fi
+fi
+
+if [ $do_start -eq 1 ]; then
+  ./launcher start $app_name
+  RET_CODE=$?
+  if [ $RET_CODE -ne 0 ]; then
+    echo ERROR: start failed with status $RET_CODE.
+    exit 1
+  fi
+fi
