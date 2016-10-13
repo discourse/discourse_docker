@@ -104,8 +104,8 @@ check_disk_and_memory() {
           exit 1
         fi
       else
-        echo "Quitting, not enough memory($avail_mem) and/or swap($total_swap) available."
-        exit 1
+        echo "WARNING: not enough memory($avail_mem) and/or swap($total_swap) available."
+	echo "Continuing anyway due to non-interactive mode."
       fi
     fi
   fi
