@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=2.4.1
+VERSION=2.6.0
 cd /tmp
 wget https://github.com/pornel/pngquant/archive/$VERSION.tar.gz
 tar zxf $VERSION.tar.gz

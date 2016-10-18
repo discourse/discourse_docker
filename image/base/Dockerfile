@@ -3,7 +3,7 @@
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
-ENV PG_VERSION 9.5.4-1.pgdg16.04+1
+ENV PG_VERSION 9.5.4-1.pgdg16.04+2
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
