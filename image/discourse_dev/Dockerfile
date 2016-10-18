@@ -4,6 +4,11 @@ FROM discourse/base:1.3.7
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
+# Create discourse user and /var/www location for both
+# discourse and dev images.
+RUN useradd discourse -s /bin/bash -m -U &&\
+    mkdir -p /var/www
+
 # Give discourse user no-passwd sudo permissions (for bundle install)
 ADD sudoers.discourse /etc/sudoers.d/discourse
 

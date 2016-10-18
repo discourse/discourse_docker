@@ -120,8 +120,3 @@ ADD boot /sbin/boot
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
 ADD cron.d_anacron /etc/cron.d/anacron
-
-# Create discourse user and /var/www location for both
-# discourse and dev images.
-RUN useradd discourse -s /bin/bash -m -U &&\
-    mkdir -p /var/www
