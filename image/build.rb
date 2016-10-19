@@ -31,7 +31,7 @@ def build(image, version)
 
   if image[:squash]
 
-    layers_to_squash = run("docker history #{img} | wc -l").first.to_i - (1 + image[:layers_to_keep])
+    layers_to_squash = run("docker history #{img} | wc -l").first.to_i - (1 + image[:layers_to_keep]) if image[:layers_to_keep] != nil
 
     if layers_to_keep != nil
       run("docker-squash -t #{image[:tag]} --verbose -f #{layers_to_squash} #{img}")
