@@ -7,7 +7,7 @@ ENV PG_VERSION 9.5.4-1.pgdg16.04+2
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN echo "1.3.7" > /VERSION
+RUN echo "${version}" > /VERSION
 
 RUN apt-get update && apt-get install -y lsb-release sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
