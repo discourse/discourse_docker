@@ -25,19 +25,20 @@ def ensure_docker_squash
 end
 
 
-def build(image, version)
-  lines = run("cd #{image[:name]} && docker build --build-arg version=#{version} .")
+def build(image)
+  lines = run("cd #{image[:name]} && docker build .")
   img = lines[-1]["successfully built ".length..-1].strip
 
   if image[:squash]
 
-    layers_to_squash = run("docker history #{img} | wc -l").first.to_i - (1 + image[:layers_to_keep]) if image[:layers_to_keep] != nil
-
-    if layers_to_keep != nil
-      run("docker-squash -t #{image[:tag]} --verbose -f #{layers_to_squash} #{img}")
+    if image[:layers_to_keep] == nil
+      run("docker-squash -t #{image[:tag]} --cleanup --verbose #{img}")
     else
-      run("docker-squash -t #{image[:tag]} --verbose #{img}")
+      layers_to_squash = run("docker history #{img} | wc -l").first.to_i - (1 + image[:layers_to_keep])
+      run("docker-squash -t #{image[:tag]} --cleanup --verbose -f #{layers_to_squash} #{img}")
     end
+
+    run("docker rmi #{img}")
 
   else
     run("docker tag #{img} #{image[:tag]}")
@@ -45,16 +46,22 @@ def build(image, version)
 end
 
 def bump(image, image_version)
-  run("sed -i '' -e 's/^\(# NAME:\).*$$/\1     discourse\/#{image_dir}/' #{image_dir}/Dockerfile")
-  run("sed -i '' -e 's/^\(# VERSION:\).*$$/\1  #{image_version}/' #{image_dir}/Dockerfile")
-  run("sed -i '' -e 's/^\(FROM discourse\/[^:]*:\).*/\1#{image_version}/' #{image_dir}/Dockerfile")
+  run("echo #{image_version} > base/VERSION") if image == 'base'
+  run("sed -i '' -e 's/^\(# NAME:\).*$$/\1     discourse\/#{image}/' #{image}/Dockerfile")
+  run("sed -i '' -e 's/^\(# VERSION:\).*$$/\1  #{image_version}/' #{image}/Dockerfile")
+  run("sed -i '' -e 's/^\(FROM discourse\/[^:]*:\).*/\1#{image_version}/' #{image}/Dockerfile")
+end
+
+def dev_deps()
+  run("sed -e 's/\(db_name: discourse\)/\1_development/' ../templates/postgres.template.yml > discourse_dev/postgres.template.yml")
+  run("cp ../templates/redis.template.yml discourse_dev/redis.template.yml")
 end
 
 options = {}
 OptionParser.new do |parser|
   parser.on("-i", "--image image",
             "Build the image. No parameter means [base discourse discourse_test].") do |i|
-    options[:image] = [i]
+    options[:image] = [i.to_sym]
   end
   parser.on("-b", "--bump version",
             "Bumps the version in the Dockerfiles specified by --image") do |v|
@@ -85,6 +92,9 @@ images = {
 todo.each do |image|
   puts images[image]
   bump(images[image][:name], options[:version]) if options[:version]
-  run "(cd base && ./download_phantomjs)" if image == 'base'  
-  build(images[image], version)
+
+  dev_deps() if image == 'discourse_dev'
+  run "(cd base && ./download_phantomjs)" if image == 'base'
+
+  build(images[image])
 end
