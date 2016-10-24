@@ -3,6 +3,14 @@ shared/*
 containers/*
 cids/*
 bin/*
+image/.build.out
+image/.build.hash
+image/.docker_temp_*
+image/img.tar
+image/squash.tar
 image/nsenter/nsenter
 image/docker-squash
+image/docker-squash.tar.gz
+image/discourse_dev/postgres.template.yml
+image/discourse_dev/redis.template.yml
 .gc-state/*

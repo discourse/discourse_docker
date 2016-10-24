@@ -36,13 +36,9 @@ Placeholder spot for shared volumes with various Discourse containers. You may e
 
 #### `/image`
 
-Dockerfile for both the base image `/discourse_base` and discourse image `/discourse`.
+Dockerfiles for Discourse; see [the README](image/README.md) for further details.
 
-- `/discourse_base` contains all the OS dependencies including runit, postgres, nginx, ruby.
-
-- `/discourse` builds on the base image and configures a discourse user and `/var/www/discourse` directory for the Discourse source.
-
-The Docker repository will always contain the latest built version at: https://index.docker.io/u/samsaffron/discourse/ , you should not need to build the base image.
+The Docker repository will always contain the latest built version at: https://hub.docker.com/r/discourse/discourse/, you should not need to build the base image.
 
 ### Launcher
 

@@ -1,14 +1,13 @@
 # NAME:     discourse/base
-# VERSION:  1.3.6
-
+# VERSION:  1.3.7
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
-ENV PG_VERSION 9.5.4-1.pgdg16.04+1
+ENV PG_VERSION 9.5.4-1.pgdg16.04+2
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN echo "1.3.5" > /VERSION
+ADD VERSION /VERSION
 
 RUN apt-get update && apt-get install -y lsb-release sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections

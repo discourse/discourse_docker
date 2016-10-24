@@ -1,19 +1,7 @@
 # simple build file to be used locally by Sam
 #
 require 'pty'
-
-$version = "1.3.6"
-
-$docker_squash = "https://github.com/jwilder/docker-squash/releases/download/v0.2.0/docker-squash-linux-amd64-v0.2.0.tar.gz"
-
-$base_image = "discourse/base:#{$version}"
-$image = "discourse/discourse:#{$version}"
-$test = "discourse/discourse_test:#{$version}"
-
-if ENV["USER"] != "root"
-  STDERR.puts "Build script must be ran as root due to docker-squash"
-  exit 1
-end
+require 'optparse'
 
 def run(command)
   lines = []
@@ -32,23 +20,81 @@ def run(command)
 end
 
 def ensure_docker_squash
-  return if File.exist?("docker-squash")
-  run ("wget #{$docker_squash}")
-  run ("tar -xzvf *.tar.gz")
-  run ("rm -f docker-squash-linux*")
+  docker_squash = "https://github.com/goldmann/docker-squash/archive/master.zip"
+  run ("pip install --user #{$docker_squash} --upgrade")
+end
+
+
+def build(image)
+  lines = run("cd #{image[:name]} && docker build .")
+  img = lines[-1]["successfully built ".length..-1].strip
+
+  if image[:squash]
+
+    if image[:layers_to_keep] == nil
+      run("docker-squash -t #{image[:tag]} --cleanup --verbose #{img}")
+    else
+      layers_to_squash = run("docker history #{img} | wc -l").first.to_i - (1 + image[:layers_to_keep])
+      run("docker-squash -t #{image[:tag]} --cleanup --verbose -f #{layers_to_squash} #{img}")
+    end
+
+    run("docker rmi #{img}")
+
+  else
+    run("docker tag #{img} #{image[:tag]}")
+  end
+end
+
+def bump(image, image_version)
+  run("echo #{image_version} > base/VERSION") if image == 'base'
+  run("sed -i '' -e 's/^\(# NAME:\).*$$/\1     discourse\/#{image}/' #{image}/Dockerfile")
+  run("sed -i '' -e 's/^\(# VERSION:\).*$$/\1  #{image_version}/' #{image}/Dockerfile")
+  run("sed -i '' -e 's/^\(FROM discourse\/[^:]*:\).*/\1#{image_version}/' #{image}/Dockerfile")
+end
+
+def dev_deps()
+  run("sed -e 's/\(db_name: discourse\)/\1_development/' ../templates/postgres.template.yml > discourse_dev/postgres.template.yml")
+  run("cp ../templates/redis.template.yml discourse_dev/redis.template.yml")
+end
+
+options = {}
+OptionParser.new do |parser|
+  parser.on("-i", "--image image",
+            "Build the image. No parameter means [base discourse discourse_test].") do |i|
+    options[:image] = [i.to_sym]
+  end
+  parser.on("-b", "--bump version",
+            "Bumps the version in the Dockerfiles specified by --image") do |v|
+    options[:version] = [v]
+  end
+end.parse!
+
+DEFAULT_IMAGES = %i[base discourse discourse_test discourse_dev discourse_bench]
+
+todo = options[:image] || DEFAULT_IMAGES
+version = options[:version] || '1.3.7'
+
+if ENV["USER"] != "root"
+  STDERR.puts "Build script must be ran as root due to docker-squash"
+  exit 1
 end
 
 ensure_docker_squash
 
-def build(path, tag, is_base)
-  lines = run("cd #{path} && docker build .")
-  img = lines[-1]["successfully built ".length..-1].strip
+images = {
+  base: { name: 'base', tag: "discourse/base:#{version}", squash: true },
+  discourse: { name: 'discourse', tag: "discourse/discourse:#{version}", squash: true, layers_to_keep: 1 },
+  discourse_test: { name: 'discourse_test', tag: "discourse/discourse_test:#{version}", squash: true, layers_to_keep: 2 },
+  discourse_dev: { name: 'discourse_dev', tag: "discourse/discourse_dev:#{version}", squash: false },
+  discourse_bench: { name: 'discourse_bench', tag: "discourse/discourse_bench:#{version}", squash: false }
+}
 
-  run("docker save #{img} | ./docker-squash -t #{tag} -verbose #{is_base && "-from root"} | docker load")
+todo.each do |image|
+  puts images[image]
+  bump(images[image][:name], options[:version]) if options[:version]
+
+  dev_deps() if image == 'discourse_dev'
+  run "(cd base && ./download_phantomjs)" if image == 'base'
+
+  build(images[image])
 end
-
-run "(cd base && ./download_phantomjs)"
-
-build("base",$base_image,true)
-build("discourse",$image,false)
-build("discourse_test",$test,false)
