@@ -21,7 +21,8 @@ end
 
 def ensure_docker_squash
   docker_squash = "https://github.com/goldmann/docker-squash/archive/master.zip"
-  run ("pip install --user #{$docker_squash} --upgrade")
+  run ("apt install python-pip")
+  run ("pip install --user '#{docker_squash}' --upgrade")
 end
 
 
