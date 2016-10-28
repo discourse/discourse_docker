@@ -22,7 +22,7 @@ end
 def ensure_docker_squash
   docker_squash = "https://github.com/goldmann/docker-squash/archive/master.zip"
   run ("apt install python-pip")
-  run ("pip install --user '#{docker_squash}' --upgrade")
+  run ("pip install '#{docker_squash}' --upgrade")
 end
 
 
@@ -94,8 +94,8 @@ todo.each do |image|
   puts images[image]
   bump(images[image][:name], options[:version]) if options[:version]
 
-  dev_deps() if image == 'discourse_dev'
-  run "(cd base && ./download_phantomjs)" if image == 'base'
+  dev_deps() if image == :discourse_dev
+  run "(cd base && ./download_phantomjs)" if image == :base
 
   build(images[image])
 end
