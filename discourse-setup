@@ -134,8 +134,8 @@ scale_ram_and_cpu() {
     avail_gb=$(check_osx_memory)
     avail_cores=`sysctl hw.ncpu | awk '/hw.ncpu:/ {print $2}'`
   else
-    avail_gb=$(check_linux_memory) 
-    avail_cores=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $4}'`
+    avail_gb=$(check_linux_memory)
+    avail_cores=$((`awk '/cpu cores/ {print $4;exit}' /proc/cpuinfo`*`sort /proc/cpuinfo | uniq | grep -c "physical id"`))
   fi
   echo "Found ${avail_gb}GB of memory and $avail_cores physical CPU cores"
 
