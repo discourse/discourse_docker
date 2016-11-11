@@ -65,7 +65,7 @@ config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
 image=discourse/discourse:1.3.7
-docker_path=`which docker.io || which docker`
+docker_path=`which docker.io 2>/dev/null || which docker 2>/dev/null`
 git_path=`which git`
 
 if [ "${SUPERVISED}" = "true" ]; then
