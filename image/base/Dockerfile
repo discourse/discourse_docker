@@ -53,10 +53,9 @@ RUN /tmp/install-nginx
 RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
 
-# consider upgrading this
 RUN mkdir /jemalloc && cd /jemalloc &&\
-      wget http://www.canonware.com/download/jemalloc/jemalloc-3.6.0.tar.bz2 &&\
-      tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure && make &&\
+      wget https://github.com/jemalloc/jemalloc/releases/download/4.3.1/jemalloc-4.3.1.tar.bz2 &&\
+      tar -xjf jemalloc-4.3.1.tar.bz2 && cd jemalloc-4.3.1 && ./configure && make &&\
       mv lib/libjemalloc.so.1 /usr/lib && cd / && rm -rf /jemalloc
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
