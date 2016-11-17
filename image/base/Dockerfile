@@ -55,12 +55,12 @@ RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
 RUN mkdir /jemalloc && cd /jemalloc &&\
       wget https://github.com/jemalloc/jemalloc/releases/download/4.3.1/jemalloc-4.3.1.tar.bz2 &&\
-      tar -xjf jemalloc-4.3.1.tar.bz2 && cd jemalloc-4.3.1 && ./configure && make &&\
-      mv lib/libjemalloc.so.1 /usr/lib && cd / && rm -rf /jemalloc
+      tar -xjf jemalloc-4.3.1.tar.bz2 && cd jemalloc-4.3.1 && ./configure && make && make install &&\
+      cd / && rm -rf /jemalloc
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
-    cd /src/ruby-build && ./install.sh &&\
+    cd /src/ruby-build && RUBY_CONFIGURE_OPTS='--with-jemalloc' ./install.sh &&\
     cd / && rm -rf /src/ruby-build && ruby-build 2.3.2 /usr/local
 
 RUN gem install bundler &&\
