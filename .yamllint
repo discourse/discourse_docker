@@ -1,0 +1,7 @@
+---
+
+extends: relaxed
+
+rules:
+    line-length: disable
+    indent-sequences: whatever

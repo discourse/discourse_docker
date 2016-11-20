@@ -5,7 +5,7 @@ require 'optparse'
 
 def run(command)
   lines = []
-  PTY.spawn(command) do |stdin, stdout, pid|
+  PTY.spawn(command) do |stdin, _stdout, _pid|
     begin
       stdin.each do |line|
         lines << line
@@ -20,19 +20,17 @@ def run(command)
 end
 
 def ensure_docker_squash
-  docker_squash = "https://github.com/goldmann/docker-squash/archive/master.zip"
-  run ("apt install python-pip")
-  run ("pip install '#{docker_squash}' --upgrade")
+  docker_squash = 'https://github.com/goldmann/docker-squash/archive/master.zip'
+  run('apt install python-pip')
+  run("pip install '#{docker_squash}' --upgrade")
 end
-
 
 def build(image)
   lines = run("cd #{image[:name]} && docker build .")
-  img = lines[-1]["successfully built ".length..-1].strip
+  img = lines[-1]['successfully built '.length..-1].strip
 
   if image[:squash]
-
-    if image[:layers_to_keep] == nil
+    if image[:layers_to_keep].nill?
       run("docker-squash -t #{image[:tag]} --cleanup --verbose #{img}")
     else
       layers_to_squash = run("docker history #{img} | wc -l").first.to_i - (1 + image[:layers_to_keep])
@@ -53,30 +51,30 @@ def bump(image, image_version)
   run("sed -i '' -e 's/^\(FROM discourse\/[^:]*:\).*/\1#{image_version}/' #{image}/Dockerfile")
 end
 
-def dev_deps()
+def dev_deps
   run("sed -e 's/\(db_name: discourse\)/\1_development/' ../templates/postgres.template.yml > discourse_dev/postgres.template.yml")
-  run("cp ../templates/redis.template.yml discourse_dev/redis.template.yml")
+  run('cp ../templates/redis.template.yml discourse_dev/redis.template.yml')
 end
 
 options = {}
 OptionParser.new do |parser|
-  parser.on("-i", "--image image",
-            "Build the image. No parameter means [base discourse discourse_test].") do |i|
+  parser.on('-i', '--image image',
+            'Build the image. No parameter means [base discourse discourse_test].') do |i|
     options[:image] = [i.to_sym]
   end
-  parser.on("-b", "--bump version",
-            "Bumps the version in the Dockerfiles specified by --image") do |v|
+  parser.on('-b', '--bump version',
+            'Bumps the version in the Dockerfiles specified by --image') do |v|
     options[:version] = [v]
   end
 end.parse!
 
-DEFAULT_IMAGES = %i[base discourse discourse_test discourse_dev discourse_bench]
+DEFAULT_IMAGES = %i(base discourse discourse_test discourse_dev discourse_bench]).freeze
 
 todo = options[:image] || DEFAULT_IMAGES
 version = options[:version] || '1.3.10'
 
-if ENV["USER"] != "root"
-  STDERR.puts "Build script must be ran as root due to docker-squash"
+if ENV['USER'] != 'root'
+  STDERR.puts 'Build script must be ran as root due to docker-squash'
   exit 1
 end
 
@@ -94,8 +92,8 @@ todo.each do |image|
   puts images[image]
   bump(images[image][:name], options[:version]) if options[:version]
 
-  dev_deps() if image == :discourse_dev
-  run "(cd base && ./download_phantomjs)" if image == :base
+  dev_deps if image == :discourse_dev
+  run '(cd base && ./download_phantomjs)' if image == :base
 
   build(images[image])
 end

@@ -1,0 +1,32 @@
+[default]
+bears = FilenameBear
+files = **.rb, **.md, **.yml
+ignore =
+
+[markdown]
+bears = MarkdownBear, LineLengthBear
+files = **.md
+language = markdown
+max_line_length = 80
+ignore_length_regex = .*(https?:\/\/) # ignore long link
+markdown_strong = *
+markdown_emphasis = _
+
+[ruby]
+bears = RubySyntaxBear, RuboCopBear
+files = **.rb
+language = ruby
+rubocop_config = .rubocop.yml
+
+# Disabled because ShellCheckBear enforce rule `cd ... || exit`
+# it's cannot disabled through coala.
+#[shell]
+#bears = ShellCheckBear
+#files = **.sh, image/base/*
+#shell = bash
+
+[yaml]
+bears = YAMLLintBear
+files = **.yml
+language = yaml
+yamllint_config = .yamllint
