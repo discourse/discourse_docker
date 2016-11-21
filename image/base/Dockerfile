@@ -3,7 +3,6 @@
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
-ENV PG_VERSION 9.5.5-1.pgdg16.04+1
 ENV CONFIGURE_OPTS --with-jemalloc
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
@@ -29,8 +28,8 @@ RUN apt-get -y install build-essential git wget \
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk parallel \
-                       postgresql-${PG_MAJOR}=${PG_VERSION} postgresql-client-${PG_MAJOR}=${PG_VERSION} \
-                       postgresql-contrib-${PG_MAJOR}=${PG_VERSION} libpq-dev libreadline-dev \
+                       postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
+                       postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
                        language-pack-en cron anacron \
                        psmisc rsyslog vim whois brotli
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
