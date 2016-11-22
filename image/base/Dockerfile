@@ -1,9 +1,9 @@
 # NAME:     discourse/base
-# VERSION:  1.3.7
+# VERSION:  1.3.8
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
-ENV PG_VERSION 9.5.5-1.pgdg16.04+1
+ENV CONFIGURE_OPTS --with-jemalloc
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
@@ -22,14 +22,14 @@ RUN apt-get -y upgrade
 RUN curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
-RUN curl --silent --location https://deb.nodesource.com/setup_4.x | sudo bash -
+RUN curl --silent --location https://deb.nodesource.com/setup_6.x | sudo bash -
 RUN apt-get -y update
 RUN apt-get -y install build-essential git wget \
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk parallel \
-                       postgresql-${PG_MAJOR}=${PG_VERSION} postgresql-client-${PG_MAJOR}=${PG_VERSION} \
-                       postgresql-contrib-${PG_MAJOR}=${PG_VERSION} libpq-dev libreadline-dev \
+                       postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
+                       postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
                        language-pack-en cron anacron \
                        psmisc rsyslog vim whois brotli
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
@@ -53,16 +53,15 @@ RUN /tmp/install-nginx
 RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
 
-# consider upgrading this
 RUN mkdir /jemalloc && cd /jemalloc &&\
-      wget http://www.canonware.com/download/jemalloc/jemalloc-3.6.0.tar.bz2 &&\
-      tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure && make &&\
-      mv lib/libjemalloc.so.1 /usr/lib && cd / && rm -rf /jemalloc
+      wget https://github.com/jemalloc/jemalloc/releases/download/4.3.1/jemalloc-4.3.1.tar.bz2 &&\
+      tar -xjf jemalloc-4.3.1.tar.bz2 && cd jemalloc-4.3.1 && ./configure --prefix=/usr && make && make install &&\
+      cd / && rm -rf /jemalloc
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.3.1 /usr/local
+    cd / && rm -rf /src/ruby-build && ruby-build 2.3.3 /usr/local
 
 RUN gem install bundler &&\
     rm -rf /usr/local/share/ri/2.3.0/system &&\
