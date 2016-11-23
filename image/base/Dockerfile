@@ -1,5 +1,5 @@
 # NAME:     discourse/base
-# VERSION:  1.3.8
+# VERSION:  latest
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
@@ -8,6 +8,7 @@ ENV CONFIGURE_OPTS --with-jemalloc
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
 ADD VERSION /VERSION
+RUN date -u +%FT%TZ > /BUILD
 
 RUN apt-get update && apt-get install -y lsb-release sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections

@@ -1,6 +1,6 @@
 # NAME:     discourse/discourse_dev
-# VERSION:  1.3.8
-FROM discourse/base:1.3.8
+# VERSION:  latest
+FROM discourse/base:latest
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 

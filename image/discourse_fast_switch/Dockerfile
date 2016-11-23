@@ -1,8 +1,8 @@
 # NAME:     discourse/discourse_fast_switch
-# VERSION:  1.3.8
+# VERSION:  latest
 
 # Allow to easily switch Ruby version in images that derive off this
-FROM discourse/base:1.3.8
+FROM discourse/base:latest
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
