@@ -52,7 +52,7 @@ OptionParser.new do |parser|
   end
 end.parse!
 
-DEFAULT_IMAGES = %i[base discourse discourse_test discourse_dev discourse_bench]
+DEFAULT_IMAGES = [:base, :discourse, :discourse_test, :discourse_dev, :discourse_bench]
 
 todo = options[:image] || DEFAULT_IMAGES
 version = 'latest'
