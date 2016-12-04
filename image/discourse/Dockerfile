@@ -12,7 +12,6 @@ RUN useradd discourse -s /bin/bash -m -U &&\
     cd discourse &&\
     git remote set-branches --add origin tests-passed &&\
     chown -R discourse:discourse /var/www/discourse &&\
-    cd /var/www/discourse &&\
     sudo -u discourse bundle install --deployment \
          --without test --without development &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
