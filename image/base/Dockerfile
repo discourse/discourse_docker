@@ -3,6 +3,7 @@
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
+ENV ALLOCATOR /usr/lib/libtcmalloc_minimal.so.4.3.0
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
