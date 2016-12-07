@@ -54,8 +54,8 @@ RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
 
 RUN mkdir /jemalloc && cd /jemalloc &&\
-      wget https://github.com/jemalloc/jemalloc/releases/download/4.3.1/jemalloc-4.3.1.tar.bz2 &&\
-      tar -xjf jemalloc-4.3.1.tar.bz2 && cd jemalloc-4.3.1 && ./configure --prefix=/usr && make && make install &&\
+      wget https://github.com/jemalloc/jemalloc/releases/download/3.6.0/jemalloc-3.6.0.tar.bz2 &&\
+      tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure --prefix=/usr && make && make install &&\
       cd / && rm -rf /jemalloc
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
