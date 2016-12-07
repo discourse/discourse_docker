@@ -73,7 +73,7 @@ end.parse!
 DEFAULT_IMAGES = %i[base discourse discourse_test discourse_dev discourse_bench]
 
 todo = options[:image] || DEFAULT_IMAGES
-version = options[:version] || '1.3.8'
+version = options[:version] || '1.3.9'
 
 if ENV["USER"] != "root"
   STDERR.puts "Build script must be ran as root due to docker-squash"
