@@ -1,9 +1,9 @@
 # NAME:     discourse/base
-# VERSION:  1.3.8
+# VERSION:  1.3.9
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
-ENV CONFIGURE_OPTS --with-jemalloc
+ENV ALLOCATOR /usr/lib/libtcmalloc_minimal.so.4.3.0
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
@@ -31,7 +31,7 @@ RUN apt-get -y install build-essential git wget \
                        postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
                        postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
                        language-pack-en cron anacron \
-                       psmisc rsyslog vim whois brotli
+                       psmisc rsyslog vim whois brotli libunwind-dev
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
 RUN dpkg-divert --local --rename --add /sbin/initctl
@@ -54,9 +54,17 @@ RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
 
 RUN mkdir /jemalloc && cd /jemalloc &&\
-      wget https://github.com/jemalloc/jemalloc/releases/download/4.3.1/jemalloc-4.3.1.tar.bz2 &&\
-      tar -xjf jemalloc-4.3.1.tar.bz2 && cd jemalloc-4.3.1 && ./configure --prefix=/usr && make && make install &&\
+      wget https://github.com/jemalloc/jemalloc/releases/download/3.6.0/jemalloc-3.6.0.tar.bz2 &&\
+      tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure --prefix=/usr && make && make install &&\
       cd / && rm -rf /jemalloc
+
+RUN mkdir /gperftools && git clone https://github.com/gperftools/gperftools.git /gperftools &&\
+      cd /gperftools && git checkout gperftools-2.5 && ./autogen.sh && ./configure --prefix=$PWD/lib &&\
+      make install && mv lib/lib/libtcmalloc_minimal.so.4.3.0 /usr/lib && cd / && rm -rf /gperftools
+
+RUN mkdir /lockless && cd /lockless && curl -O https://locklessinc.com/downloads/lockless_allocator_linux.tgz &&\
+      tar zxf lockless_allocator_linux.tgz && mv lockless_allocator_linux/64bit/libllalloc.so.1.4 /usr/lib &&\
+      cd / && rm -rf /lockless
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
