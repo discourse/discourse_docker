@@ -25,6 +25,10 @@ ENV LC_ALL en_US.UTF-8
 ADD postgres.template.yml /pups/postgres.yml
 RUN LANG=en_US.UTF-8 /pups/bin/pups /pups/postgres.yml
 
+# add dev databases
+ADD postgres_dev.template.yml /pups/postgres_dev.yml
+RUN /pups/bin/pups /pups/postgres_dev.yml
+
 # move default postgres_data out of the way
 RUN mv /shared/postgres_data /shared/postgres_data_orig
 

@@ -5,4 +5,6 @@ if [ ! -f /shared/postgres_data/PG_VERSION ]; then
   chown -R postgres:postgres /shared/postgres_data
   chmod 700 /shared/postgres_data
   cp -R /shared/postgres_data_orig/* /shared/postgres_data
+  chown -R postgres:postgres /shared/postgres_data
+  chmod 700 /shared/postgres_data
 fi
