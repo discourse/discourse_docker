@@ -4,6 +4,10 @@ FROM discourse/base:1.3.9
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
+# Istall some development environment dependencies
+RUN apt-get update && apt-get install -y libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Create discourse user and /var/www location for both
 # discourse and dev images.
 RUN useradd discourse -s /bin/bash -m -U &&\
