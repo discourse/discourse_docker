@@ -26,4 +26,5 @@ run:
   - exec: cd tmp && git clone https://github.com/discourse/discourse.git --depth=1 && cd /tmp/discourse && sudo -u discourse bundle install
   - exec: chown -R discourse /tmp/discourse
   - exec: cd /tmp/discourse && sudo -u discourse bundle exec rake db:migrate
+  - exec: cd /tmp/discourse && sudo -u discourse RAILS_ENV=test bundle exec rake db:migrate
   - exec: rm -fr /tmp/discourse
