@@ -1,4 +1,15 @@
 run:
+
+  - replace:
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
+      from: /#?fullpage_writes *=.*/
+      to: "fullpage_writes = off"
+
+  - replace:
+      filename: "/etc/postgresql/9.5/main/postgresql.conf"
+      from: /#?fsync *=.*/
+      to: "fsync = off"
+
   - exec:
       background: true
       # use fast shutdown for pg
