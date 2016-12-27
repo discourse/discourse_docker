@@ -517,8 +517,8 @@ run_start() {
      fi
 
      set -x
-     $docker_path run $user_args $links $attach_on_run $restart_policy "${env[@]}" "${labels[@]}" -h "$hostname" \
-        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $mac_address $docker_args \
+     $docker_path run $links $attach_on_run $restart_policy "${env[@]}" "${labels[@]}" -h "$hostname" \
+        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $mac_address $docker_args $user_args \
         $run_image $boot_command
 
    )
