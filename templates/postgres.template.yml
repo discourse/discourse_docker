@@ -10,6 +10,7 @@ params:
   db_checkpoint_segments: 6
   db_logging_collector: off
   db_log_min_duration_statement: 100
+  db_start_sleep_seconds: 5
 
 
 hooks:
@@ -221,7 +222,7 @@ run:
       cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.5/bin/postmaster -D /etc/postgresql/9.5/main
 
   # give db a few secs to start up
-  - exec: "sleep 5"
+  - exec: "sleep $db_start_sleep_seconds"
 
   - exec: su postgres -c 'createdb $db_name' || true
   - exec: su postgres -c 'psql $db_name -c "create user $db_user;"' || true
