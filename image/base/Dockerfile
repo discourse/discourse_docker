@@ -3,7 +3,7 @@
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
-ENV RUBY_ALLOCATOR /usr/lib/libtcmalloc_minimal.so.4.3.0
+ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
