@@ -19,7 +19,7 @@ make all && make install
 
 
 # Build and install ImageMagick
-wget -O $WDIR/ImageMagick.tar.gz "http://www.imagemagick.org/download/ImageMagick-6.9.6-7.tar.gz"
+wget -O $WDIR/ImageMagick.tar.gz "http://www.imagemagick.org/download/ImageMagick-6.9.7-0.tar.gz"
 IMDIR=$WDIR/$(tar tzf $WDIR/ImageMagick.tar.gz --wildcards "ImageMagick-*/configure" |cut -d/ -f1)
 tar zxf $WDIR/ImageMagick.tar.gz -C $WDIR
 cd $IMDIR
