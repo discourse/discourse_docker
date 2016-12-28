@@ -1,5 +1,5 @@
 # NAME:     discourse/base
-# VERSION:  1.3.9
+# VERSION:  1.3.10
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5

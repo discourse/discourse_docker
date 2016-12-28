@@ -1,6 +1,6 @@
 # NAME:     discourse/discourse_bench
-# VERSION:  1.3.9
-FROM discourse/discourse_test:1.3.9
+# VERSION:  1.3.10
+FROM discourse/discourse_test:1.3.10
 
 MAINTAINER Gerhard Schlager <mail@gerhard-schlager.at>
 
