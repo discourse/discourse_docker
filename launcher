@@ -25,16 +25,20 @@ if [[ $1 =~ $commands_re ]]; then
   command=$1
   config=$2
 else
-  if [[ $2 =~ $commands_re ]]; then
-    command=$2
-    config=$1
-    echo
-    echo "WARNING: The correct usage is 'launcher $command $config' rather than 'launcher $config $command'."
-    echo
-  else
+  if [[ ! $2 =~ $commands_re ]]; then
     echo
     echo "ERROR: '$1' is not a correct command: $commands_re"
     echo
+    exit 1;
+  fi
+
+  echo "'$1' is not a valid command name."
+  read -p "Did you mean 'launcher $2 $1' (Y/n): " -n 1 -r && echo
+  if [[ $REPLY =~ ^[Yy]$ || ! $REPLY ]]; then
+    command=$2
+    config=$1
+  else
+    echo "Aborted."
     exit 1;
   fi
 fi
