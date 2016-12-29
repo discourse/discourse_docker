@@ -37,7 +37,7 @@ run:
         #!/bin/sh
         exec 2>&1
         echo -1000 >/proc/self/oom_score_adj
-        HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.5/bin/postmaster -D /etc/postgresql/9.5/main
+        HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.5/bin/pg_ctl -D /etc/postgresql/9.5/main -w start
 
   - file:
      path: /etc/runit/3.d/99-postgres
@@ -218,7 +218,7 @@ run:
       background: true
       # use fast shutdown for pg
       stop_signal: INT
-      cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.5/bin/postmaster -D /etc/postgresql/9.5/main
+      cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/9.5/bin/pg_ctl -D /etc/postgresql/9.5/main -w start
 
   # give db a few secs to start up
   - exec: "sleep 5"
