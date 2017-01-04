@@ -518,7 +518,7 @@ run_start() {
 
      set -x
      $docker_path run $links $attach_on_run $restart_policy "${env[@]}" "${labels[@]}" -h "$hostname" \
-        -e DOCKER_HOST_IP=$docker_ip --name $config -t $ports $volumes $mac_address $docker_args $user_args \
+        -e DOCKER_HOST_IP="$docker_ip" --name $config -t $ports $volumes $mac_address $docker_args $user_args \
         $run_image $boot_command
 
    )
@@ -562,7 +562,7 @@ run_bootstrap() {
   echo $run_command
 
   unset ERR
-  (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP=$docker_ip --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+  (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
     /bin/bash -c "$run_command") || ERR=$?
 
   unset FAILED
