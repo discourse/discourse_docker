@@ -1,6 +1,6 @@
 [default]
 bears = FilenameBear
-files = **.rb, **.md, **.yml
+files = **.md, **.yml
 ignore =
 
 [markdown]

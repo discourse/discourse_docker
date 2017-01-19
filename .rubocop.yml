@@ -25,7 +25,7 @@ Metrics/AbcSize:
 Performance/FixedSize:
     Enabled: false
 
-# Many line is tricky or became less unreadable when splited
+# Many line is tricky or became less readable when splited
 # especially line of executing shell command via run(...).
 Metrics/LineLength:
     Enabled: false
