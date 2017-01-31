@@ -1,5 +1,5 @@
 # NAME:     discourse/base
-# VERSION:  1.3.10
+# VERSION:  build
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
@@ -128,3 +128,17 @@ ADD boot /sbin/boot
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
 ADD cron.d_anacron /etc/cron.d/anacron
+
+
+# Discourse specific bits
+RUN useradd discourse -s /bin/bash -m -U &&\
+    mkdir -p /var/www &&\
+    cd /var/www &&\
+    git clone https://github.com/discourse/discourse.git &&\
+    cd discourse &&\
+    git remote set-branches --add origin tests-passed &&\
+    chown -R discourse:discourse /var/www/discourse &&\
+    cd /var/www/discourse &&\
+    sudo -u discourse bundle install --deployment \
+         --without test --without development &&\
+    find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
