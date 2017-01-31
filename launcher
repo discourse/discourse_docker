@@ -133,15 +133,15 @@ check_prereqs() {
     exit 1
   fi
 
-  # 2. running aufs or btrfs
-  test=`$docker_path info 2> /dev/null | grep 'Driver: '`
-  if [[ "$test" =~ [aufs|btrfs|zfs|overlay] ]] ; then : ; else
-    echo "Your Docker installation is not using a supported filesystem if we were to proceed you may have a broken install."
-    echo "aufs is the recommended filesystem you should be using (zfs/btrfs and overlay may work as well)"
-    echo "You can tell what filesystem you are using by running \"docker info\" and looking at the driver"
+  # 2. running an approved storage driver?
+  if ! $docker_path info 2> /dev/null | egrep -q '^Storage Driver: (aufs|btrfs|zfs|overlay)$'; then
+    echo "Your Docker installation is not using a supported storage driver.  If we were to proceed you may have a broken install."
+    echo "aufs is the recommended storage driver, although zfs/btrfs and overlay may work as well."
+    echo "Other storage drivers are known to be problematic."
+    echo "You can tell what filesystem you are using by running \"docker info\" and looking at the 'Storage Driver' line."
     echo
-    echo "If you wish to continue anyway using your existing unsupported filesystem, "
-    echo "read the source code of launcher and figure out how to bypass this."
+    echo "If you wish to continue anyway using your existing unsupported storage driver,"
+    echo "read the source code of launcher and figure out how to bypass this check."
     exit 1
   fi
 
