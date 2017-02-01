@@ -1,5 +1,5 @@
 # NAME:     discourse/base
-# VERSION:  build
+# VERSION:  release
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
@@ -80,7 +80,7 @@ ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
 # Validate install
-RUN ruby -e "v='`convert -version`'; ['png','tiff','jpeg','freetype'].each{ |f| ((STDERR.puts('no ' + f +  ' support in imagemagick')); exit(-1)) unless v.include?(f)}"
+RUN ruby -e "v = %x(convert -version); ['png','tiff','jpeg','freetype'].each{ |f| ((STDERR.puts('no ' + f +  ' support in imagemagick')); exit(-1)) unless v.include?(f)}"
 
 #
 ADD install-pngcrush /tmp/install-pngcrush

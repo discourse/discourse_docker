@@ -3,6 +3,15 @@
 require 'pty'
 require 'optparse'
 
+TODO = [:base, :discourse_test, :discourse_dev]
+VERSION = "2.0.#{Time.now.strftime('%Y%m%d')}"
+
+images = {
+  base: { name: 'base', tag: "discourse/base:", squash: true },
+  discourse_test: { name: 'discourse_test', tag: "discourse/discourse_test:", squash: false},
+  discourse_dev: { name: 'discourse_dev', tag: "discourse/discourse_dev:", squash: false }
+}
+
 def run(command)
   lines = []
   PTY.spawn(command) do |stdin, stdout, pid|
@@ -20,9 +29,9 @@ def run(command)
 end
 
 def build(image)
-  sucess = false
-  lines = run("cd #{image[:name]} && docker build . --tag #{image[:tag]} #{image[:squash] ? '--squash' : ''}")
-  sucess = true if lines[-1] =~ 'successfully built'
+  lines = run("cd #{image[:name]} && docker build . --tag #{image[:tag] + VERSION} #{image[:squash] ? '#--squash' : ''}")
+  raise "Error building the image for #{image[:name]}: #{lines[-1]}" if lines[-1] =~ /successfully built/
+  run("docker tag #{image[:tag] + VERSION} #{image[:tag]}release")
 end
 
 def dev_deps()
@@ -30,28 +39,8 @@ def dev_deps()
   run("cp ../templates/redis.template.yml discourse_dev/redis.template.yml")
 end
 
-options = {}
-OptionParser.new do |parser|
-  parser.on("-i", "--image image",
-            "Build the image. No parameter means [base discourse discourse_test].") do |i|
-    options[:image] = [i.to_sym]
-  end
-end.parse!
-
-DEFAULT_IMAGES = [:base, :discourse, :discourse_test, :discourse_dev, :discourse_bench]
-
-todo = options[:image] || DEFAULT_IMAGES
-version = 'release'
-
-images = {
-  base: { name: 'base', tag: "discourse/base:#{version}", squash: true },
-  discourse_test: { name: 'discourse_test', tag: "discourse/discourse_test:#{version}", squash: false},
-  discourse_dev: { name: 'discourse_dev', tag: "discourse/discourse_dev:#{version}", squash: false }
-}
-
-todo.each do |image|
+TODO.each do |image|
   puts images[image]
-  bump(images[image][:name], options[:version]) if options[:version]
 
   dev_deps() if image == :discourse_dev
   run "(cd base && ./download_phantomjs)" if image == :base

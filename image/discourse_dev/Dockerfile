@@ -1,5 +1,5 @@
 # NAME:     discourse/discourse_dev
-# VERSION:  build
+# VERSION:  release
 FROM discourse/base:release
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
