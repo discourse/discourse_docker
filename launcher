@@ -134,9 +134,9 @@ check_prereqs() {
   fi
 
   # 2. running an approved storage driver?
-  if ! $docker_path info 2> /dev/null | egrep -q '^Storage Driver: (aufs|btrfs|zfs|overlay)$'; then
+  if ! $docker_path info 2> /dev/null | egrep -q '^Storage Driver: (aufs|btrfs|zfs|overlay|overlay2)$'; then
     echo "Your Docker installation is not using a supported storage driver.  If we were to proceed you may have a broken install."
-    echo "aufs is the recommended storage driver, although zfs/btrfs and overlay may work as well."
+    echo "aufs is the recommended storage driver, although zfs/btrfs/overlay and overlay2 may work as well."
     echo "Other storage drivers are known to be problematic."
     echo "You can tell what filesystem you are using by running \"docker info\" and looking at the 'Storage Driver' line."
     echo
