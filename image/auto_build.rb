@@ -3,13 +3,10 @@
 require 'pty'
 require 'optparse'
 
-TODO = [:base, :discourse_test, :discourse_dev]
-VERSION = "2.0.#{Time.now.strftime('%Y%m%d')}"
-
 images = {
-  base: { name: 'base', tag: "discourse/base:", squash: true },
-  discourse_test: { name: 'discourse_test', tag: "discourse/discourse_test:", squash: false},
-  discourse_dev: { name: 'discourse_dev', tag: "discourse/discourse_dev:", squash: false }
+  base: { name: 'base', tag: "discourse/base:build", squash: true },
+  discourse_test: { name: 'discourse_test', tag: "discourse/discourse_test:build", squash: false},
+  discourse_dev: { name: 'discourse_dev', tag: "discourse/discourse_dev:build", squash: false }
 }
 
 def run(command)
@@ -29,9 +26,8 @@ def run(command)
 end
 
 def build(image)
-  lines = run("cd #{image[:name]} && docker build . --no-cache --tag #{image[:tag] + VERSION} #{image[:squash] ? '#--squash' : ''}")
+  lines = run("cd #{image[:name]} && docker build . --no-cache --tag #{image[:tag]} #{image[:squash] ? '#--squash' : ''}")
   raise "Error building the image for #{image[:name]}: #{lines[-1]}" if lines[-1] =~ /successfully built/
-  run("docker tag #{image[:tag] + VERSION} #{image[:tag]}release")
 end
 
 def dev_deps()
@@ -39,11 +35,11 @@ def dev_deps()
   run("cp ../templates/redis.template.yml discourse_dev/redis.template.yml")
 end
 
-TODO.each do |image|
-  puts images[image]
+image = ARGV[0].intern
+raise 'Image not found' unless images.include?(image)
 
-  dev_deps() if image == :discourse_dev
-  run "(cd base && ./download_phantomjs)" if image == :base
+puts "Building #{images[image]}"
+dev_deps() if image == :discourse_dev
+run "(cd base && ./download_phantomjs)" if image == :base
 
-  build(images[image])
-end
+build(images[image])
