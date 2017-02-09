@@ -32,6 +32,8 @@ run:
 
        gzip on;
 
+       add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
+
        if ($http_host != $$ENV_DISCOURSE_HOSTNAME) {
           rewrite (.*) https://$$ENV_DISCOURSE_HOSTNAME$1 permanent;
        }
