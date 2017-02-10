@@ -219,6 +219,7 @@ ask_user_for_config() {
   local smtp_port="587"
   local smtp_user_name="postmaster@discourse.example.com"
   local smtp_password=""
+  local language="en"
   local letsencrypt_account_email="me@example.com"
   local letsencrypt_status="ENTER to skip"
 
@@ -297,6 +298,16 @@ ask_user_for_config() {
         smtp_password=$new_value
     fi
 
+    if [ ! -z $language ]
+    then
+      echo -e "\nPlease choose a default language:\nar, bs_BA, cs, da, de, en, es, et, fa_IR, fi, fr, gl, he, id, it, ja, ko, nb_NO, nl, pl_PL, pt, pt_BR, ro, ru, sk, sq, sv, te, tr_TR, uk, ur, vi, zh_CN, zh_TW\n"
+      read -p "Default language for Discourse? [$language]: " new_value
+      if [ ! -z $new_value ]
+      then
+        language=$new_value
+      fi
+    fi
+
     if [ ! -z $letsencrypt_account_email ]
     then
       read -p "Let's Encrypt account email? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
@@ -319,6 +330,7 @@ ask_user_for_config() {
     echo "SMTP port     : $smtp_port"
     echo "SMTP username : $smtp_user_name"
     echo "SMTP password : $smtp_password"
+    echo "Language      : $language"
 
     if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
     then
@@ -380,6 +392,15 @@ ask_user_for_config() {
       rm $changelog
   else
     echo "DISCOURSE_SMTP_PASSWORD change failed."
+    update_ok="n"
+  fi
+
+  sed -i -e "s/^  #DISCOURSE_DEFAULT_LOCALE:.*/  DISCOURSE_DEFAULT_LOCALE: \"${language/\//\\/}\"/w $changelog" $config_file
+  if [ -s $changelog ]
+  then
+      rm $changelog
+  else
+    echo "DISCOURSE_DEFAULT_LOCALE change failed."
     update_ok="n"
   fi
 
