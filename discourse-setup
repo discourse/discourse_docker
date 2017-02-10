@@ -12,13 +12,45 @@ check_root() {
 
 
 ##
+## Print help for non-interactive mode
+##
+
+non_interactive_help(){
+  cat << EOF
+
+  Here is a list of required and optional ENVIRONMENT variables to
+  complete a non-interactive setup:
+
+  Required:
+
+    DISCOURSE_SETUP_HOSTNAME
+    DISCOURSE_SETUP_SMTP_ADDRESS
+    DISCOURSE_SETUP_SMTP_USER_NAME
+
+  Optional:
+
+    DISCOURSE_SETUP_DEVELOPER_EMAILS
+    DISCOURSE_SETUP_SMTP_PORT
+    DISCOURSE_SETUP_SMTP_PASSWORD
+    DISCOURSE_SETUP_LETSENCRYPT_ACCOUNT_EMAIL
+
+EOF
+}
+
+##
 ## Do we have docker?
 ##
 check_and_install_docker () {
   docker_path=`which docker.io || which docker`
   if [ -z $docker_path ]; then
-    read  -p "Docker not installed. Enter to install from https://get.docker.com/ or Ctrl+C to exit"
-    curl https://get.docker.com/ | sh
+    echo -n "Docker not installed. "
+    if [ $interactive -eq 1 ]; then
+      read  -p "Enter to install from https://get.docker.com/ or Ctrl+C to exit"
+      curl https://get.docker.com/ | sh
+    else
+      echo Quitting due to non-interactive mode.
+      exit
+    fi
   fi
   docker_path=`which docker.io || which docker`
   if [ -z $docker_path ]; then
@@ -79,25 +111,29 @@ check_disk_and_memory() {
       echo "Without sufficient swap space, your site may not work properly, and future"
       echo "upgrades of Discourse may not complete successfully."
       echo
-      read -p "ENTER to create a 2GB swapfile now, or Ctrl+C to exit"
+      if [ $interactive -eq 1 ]; then
+        read -p "ENTER to create a 2GB swapfile now, or Ctrl+C to exit"
 
-      ##
-      ## derived from https://meta.discourse.org/t/13880
-      ##
-      install -o root -g root -m 0600 /dev/null /swapfile
-      dd if=/dev/zero of=/swapfile bs=1k count=2048k
-      mkswap /swapfile
-      swapon /swapfile
-      echo "/swapfile       swap    swap    auto      0       0" | tee -a /etc/fstab
-      sysctl -w vm.swappiness=10
-      echo vm.swappiness = 10 | tee -a /etc/sysctl.conf
+        ##
+        ## derived from https://meta.discourse.org/t/13880
+        ##
+        install -o root -g root -m 0600 /dev/null /swapfile
+        dd if=/dev/zero of=/swapfile bs=1k count=2048k
+        mkswap /swapfile
+        swapon /swapfile
+        echo "/swapfile       swap    swap    auto      0       0" | tee -a /etc/fstab
+        sysctl -w vm.swappiness=10
+        echo vm.swappiness = 10 | tee -a /etc/sysctl.conf
 
-      total_swap=`free -g --si | awk ' /Swap:/ {print $2} '`
-      if [ "$total_swap" -lt 2 ]; then
-        echo "Failed to create swap, sorry!"
-        exit 1
+        total_swap=`free -g --si | awk ' /Swap:/ {print $2} '`
+        if [ "$total_swap" -lt 2 ]; then
+          echo "Failed to create swap, sorry!"
+          exit 1
+        fi
+      else
+        echo "WARNING: not enough memory($avail_mem) and/or swap($total_swap) available."
+	echo "Continuing anyway due to non-interactive mode."
       fi
-
     fi
   fi
 
@@ -210,7 +246,7 @@ check_port() {
 ##
 ## prompt user for typical Discourse config file values
 ##
-ask_user_for_config() {
+setup_config() {
 
   local changelog=/tmp/changelog.$PPID
   local hostname="discourse.example.com"
@@ -228,80 +264,81 @@ ask_user_for_config() {
 
   echo ""
 
-  while [[ "$config_ok" == "n" ]]
-  do
-    if [ ! -z $hostname ]
-    then
-      read -p "Hostname for your Discourse? [$hostname]: " new_value
-      if [ ! -z $new_value ]
+  if [ $interactive -eq 1 ]; then
+    while [[ "$config_ok" == "n" ]]
+    do
+      if [ ! -z $hostname ]
       then
-          hostname=$new_value
+        read -p "Hostname for your Discourse? [$hostname]: " new_value
+        if [ ! -z $new_value ]
+        then
+            hostname=$new_value
+        fi
       fi
-    fi
 
-    if [ ! -z $developer_emails ]
-    then
-      read -p "Email address for admin account? [$developer_emails]: " new_value
-      if [ ! -z $new_value ]
+      if [ ! -z $developer_emails ]
       then
-          developer_emails=$new_value
+        read -p "Email address for admin account? [$developer_emails]: " new_value
+        if [ ! -z $new_value ]
+        then
+            developer_emails=$new_value
+        fi
       fi
-    fi
 
-    if [ ! -z $smtp_address ]
-    then
-      read -p "SMTP server address? [$smtp_address]: " new_value
-      if [ ! -z $new_value ]
+      if [ ! -z $smtp_address ]
       then
-        smtp_address=$new_value
+        read -p "SMTP server address? [$smtp_address]: " new_value
+        if [ ! -z $new_value ]
+        then
+          smtp_address=$new_value
+        fi
       fi
-    fi
 
-    if [ ! -z $smtp_port ]
-    then
-      read -p "SMTP port? [$smtp_port]: " new_value
-      if [ ! -z $new_value ]
+      if [ ! -z $smtp_port ]
       then
-        smtp_port=$new_value
+        read -p "SMTP port? [$smtp_port]: " new_value
+        if [ ! -z $new_value ]
+        then
+          smtp_port=$new_value
+        fi
       fi
-    fi
 
-    ##
-    ## automatically set correct user name based on common mail providers
-    ##
-    if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
-    then
-    	smtp_user_name="SMTP_Injection"
-    fi
-    if [ "$smtp_address" == "smtp.sendgrid.net" ]
-    then
-	    smtp_user_name="apikey"
-    fi
-    if [ "$smtp_address" == "smtp.mailgun.org" ]
-    then
-	    smtp_user_name="postmaster@$hostname"
-    fi
-
-    if [ ! -z $smtp_user_name ]
-    then
-      read -p "SMTP user name? [$smtp_user_name]: " new_value
-      if [ ! -z $new_value ]
+      ##
+      ## automatically set correct user name based on common mail providers
+      ##
+      if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
       then
+              smtp_user_name="SMTP_Injection"
+      fi
+      if [ "$smtp_address" == "smtp.sendgrid.net" ]
+      then
+        smtp_user_name="apikey"
+      fi
+      if [ "$smtp_address" == "smtp.mailgun.org" ]
+      then
+        smtp_user_name="postmaster@$hostname"
+      fi
+
+      if [ ! -z $smtp_user_name ]
+      then
+        read -p "SMTP user name? [$smtp_user_name]: " new_value
+        if [ ! -z $new_value ]
+        then
           smtp_user_name=$new_value
+        fi
       fi
-    fi
 
-    read -p "SMTP password? [$smtp_password]: " new_value
-    if [ ! -z $new_value ]
-    then
-        smtp_password=$new_value
-    fi
-
-    if [ ! -z $letsencrypt_account_email ]
-    then
-      read -p "Let's Encrypt account email? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
+      read -p "SMTP password? [$smtp_password]: " new_value
       if [ ! -z $new_value ]
       then
+        smtp_password=$new_value
+      fi
+
+      if [ ! -z $letsencrypt_account_email ]
+      then
+        read -p "Let's Encrypt account email? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
+        if [ ! -z $new_value ]
+        then
           letsencrypt_account_email=$new_value
           if [ "$new_value" == "off" ]
           then
@@ -309,25 +346,40 @@ ask_user_for_config() {
           else
             letsencrypt_status="Enter 'OFF' to disable."
           fi
+        fi
       fi
-    fi
 
-    echo -e "\nDoes this look right?\n"
-    echo "Hostname      : $hostname"
-    echo "Email         : $developer_emails"
-    echo "SMTP address  : $smtp_address"
-    echo "SMTP port     : $smtp_port"
-    echo "SMTP username : $smtp_user_name"
-    echo "SMTP password : $smtp_password"
+      echo -e "\nDoes this look right?\n"
+      echo "Hostname      : $hostname"
+      echo "Email         : $developer_emails"
+      echo "SMTP address  : $smtp_address"
+      echo "SMTP port     : $smtp_port"
+      echo "SMTP username : $smtp_user_name"
+      echo "SMTP password : $smtp_password"
 
-    if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
+      if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
+      then
+        echo "Let's Encrypt : $letsencrypt_account_email"
+      fi
+
+      echo ""
+      read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
+    done
+  else # non-interactive
+    hostname=$DISCOURSE_SETUP_HOSTNAME
+    developer_emails=$DISCOURSE_SETUP_DEVELOPER_EMAILS
+    smtp_address=$DISCOURSE_SETUP_SMTP_ADDRESS
+    smtp_port=$DISCOURSE_SETUP_SMTP_PORT
+    smtp_user_name=$DISCOURSE_SETUP_SMTP_USER_NAME
+    smtp_password=$DISCOURSE_SETUP_SMTP_PASSWORD
+    letsencrypt_account_email=$DISCOURSE_SETUP_LETSENCRYPT_ACCOUNT_EMAIL
+    if [ -z $letsencrypt_account_email ]
     then
-      echo "Let's Encrypt : $letsencrypt_account_email"
+      letsencrypt_status="ENTER to skip" # This means disabled.
+    else
+      letsencrypt_status="Enter 'OFF' to disable." # This means enabled.
     fi
-
-    echo ""
-    read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
-  done
+  fi
 
   sed -i -e "s/^  DISCOURSE_HOSTNAME:.*/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $config_file
   if [ -s $changelog ]
@@ -460,8 +512,12 @@ validate_config() {
 
   if [ "$valid_config" != "y" ]; then
     echo -e "\nSorry, these $config_file settings aren't valid -- can't continue!"
-    echo "If you have unusual requirements, edit $config_file and then: "
-    echo "./launcher bootstrap $app_name"
+    if [ $interactive -eq 1 ]; then
+      echo "If you have unusual requirements, edit $config_file and then: "
+      echo "./launcher bootstrap $app_name"
+    else
+      non_interactive_help
+    fi
     exit 1
   fi
 }
@@ -474,6 +530,47 @@ app_name=app
 template_path=samples/standalone.yml
 config_file=containers/$app_name.yml
 changelog=/tmp/changelog
+interactive=1
+do_bootstrap=1
+do_start=1
+
+##
+## Check for Command line arguments
+##
+
+while getopts ":hibs" opt; do
+  case $opt in
+    h)
+      echo -e "Usage: $0 [OPTS]"
+      echo -e ""
+      echo -e "OPTS:"
+      echo -e ""
+      echo -e "\t-h\tthis cruft"
+      echo -e "\t-i\tenable non-interactive mode"
+      echo -e "\t-b\tskip bootstrap"
+      echo -e "\t-s\tskip container start"
+      echo -e ""
+      non_interactive_help
+      exit 0
+      ;;
+    i)
+      echo "triggered non-interactive mode"
+      interactive=0
+      ;;
+    b)
+      echo "skip bootstrap"
+      do_bootstrap=0
+      ;;
+    s)
+      echo "skip start"
+      do_start=0
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+  esac
+done
 
 ##
 ## Check requirements before creating a copy of a config file we won't edit
@@ -498,10 +595,27 @@ else
 fi
 
 scale_ram_and_cpu
-ask_user_for_config
+setup_config
 validate_config
 
 ##
 ## if we reach this point without exiting, OK to proceed
 ##
-./launcher bootstrap $app_name && ./launcher start $app_name
+
+if [ $do_bootstrap -eq 1 ]; then
+  ./launcher bootstrap $app_name
+  RET_CODE=$?
+  if [ $RET_CODE -ne 0 ]; then
+    echo ERROR: bootstrap failed with status $RET_CODE.
+    exit 1
+  fi
+fi
+
+if [ $do_start -eq 1 ]; then
+  ./launcher start $app_name
+  RET_CODE=$?
+  if [ $RET_CODE -ne 0 ]; then
+    echo ERROR: start failed with status $RET_CODE.
+    exit 1
+  fi
+fi
