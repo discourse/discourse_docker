@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ##
 ## Make sure only root can run our script
@@ -27,13 +27,40 @@ check_and_install_docker () {
   fi
 }
 
+##
+## What are we running on
+##
+check_OS() {
+  echo `uname -s`
+}
+
+##
+## OS X available memory
+##
+check_osx_memory() {
+  echo `top -l 1 | awk '/PhysMem:/ {print $2}' | sed s/G//`
+}
+
+##
+## Linux available memory
+##
+check_linux_memory() {
+  echo `free -g --si | awk ' /Mem:/  {print $2} '`
+}
 
 ##
 ## Do we have enough memory and disk space for Discourse?
 ##
 check_disk_and_memory() {
 
-  avail_mem=`free -g --si | awk ' /Mem:/  {print $2} '`
+  os_type=$(check_OS)
+  avail_mem=0
+  if [ $os_type == "Darwin" ]; then
+    avail_mem=$(check_osx_memory)
+  else
+    avail_mem=$(check_linux_memory)
+  fi
+
   if [ "$avail_mem" -lt 1 ]; then
     echo "WARNING: Discourse requires 1GB RAM to run. This system does not appear"
     echo "to have sufficient memory."
@@ -43,11 +70,11 @@ check_disk_and_memory() {
     exit 1
   fi
 
-  if [ "$avail_mem" -lt 2 ]; then
+  if [ "$avail_mem" -le 2 ]; then
     total_swap=`free -g --si | awk ' /Swap:/  {print $2} '`
     if [ "$total_swap" -lt 2 ]; then
-      echo "WARNING: Discourse requires at least 2GB of swap when running with less "
-      echo "than 2GB of RAM. This system does not appear to have sufficient swap space."
+      echo "WARNING: Discourse requires at least 2GB of swap when running with 2GB of RAM"
+      echo "or less. This system does not appear to have sufficient swap space."
       echo
       echo "Without sufficient swap space, your site may not work properly, and future"
       echo "upgrades of Discourse may not complete successfully."
@@ -100,8 +127,16 @@ scale_ram_and_cpu() {
 
   local changelog=/tmp/changelog.$PPID
   # grab info about total system ram and physical (NOT LOGICAL!) CPU cores
-  avail_gb="$(LANG=C free -g --si | grep '^Mem:' | awk '{print $2}')"
-  avail_cores=`cat /proc/cpuinfo | grep "cpu cores" | uniq | awk '{print $4}'`
+  avail_gb=0
+  avail_cores=0
+  os_type=$(check_OS)
+  if [ $os_type == "Darwin" ]; then
+    avail_gb=$(check_osx_memory)
+    avail_cores=`sysctl hw.ncpu | awk '/hw.ncpu:/ {print $2}'`
+  else
+    avail_gb=$(check_linux_memory)
+    avail_cores=$((`awk '/cpu cores/ {print $4;exit}' /proc/cpuinfo`*`sort /proc/cpuinfo | uniq | grep -c "physical id"`))
+  fi
   echo "Found ${avail_gb}GB of memory and $avail_cores physical CPU cores"
 
   # db_shared_buffers: 128MB for 1GB, 256MB for 2GB, or 256MB * GB, max 4096MB
@@ -118,7 +153,7 @@ scale_ram_and_cpu() {
   fi
   db_shared_buffers=$(( db_shared_buffers < 4096 ? db_shared_buffers : 4096 ))
 
-  sed -i -e "s/^  #db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $config_file
+  sed -i -e "s/^  #\?db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $config_file
   if [ -s $changelog ]
   then
     echo "setting db_shared_buffers = ${db_shared_buffers}MB"
@@ -134,7 +169,7 @@ scale_ram_and_cpu() {
   fi
   unicorn_workers=$(( unicorn_workers < 8 ? unicorn_workers : 8 ))
 
-  sed -i -e "s/^  #UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
+  sed -i -e "s/^  #\?UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
   if [ -s $changelog ]
   then
       echo "setting UNICORN_WORKERS = ${unicorn_workers}"
@@ -168,24 +203,62 @@ check_port() {
     echo "server like Apache or nginx, you will need to bind to a different port"
     echo
     echo "See https://meta.discourse.org/t/17247"
+    echo
+    echo "If you are reconfiguring an already-configured Discourse, use "
+    echo
+    echo "./launcher stop app"
+    echo
+    echo "to stop Discourse before you reconfigure it and try again."
     exit 1
   fi
 }
+
+##
+## read a variable from the config file
+##
+read_config() {
+
+  config_line=`egrep "^  #?$1:" $config_file`
+  read_config_result=`echo $config_line | awk '{print $2}'`
+  read_config_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
+}
+
+
 
 ##
 ## prompt user for typical Discourse config file values
 ##
 ask_user_for_config() {
 
+  # NOTE: Defaults now come from standalone.yml
+
   local changelog=/tmp/changelog.$PPID
-  local hostname="discourse.example.com"
-  local developer_emails="me@example.com,you@example.com"
-  local smtp_address="smtp.example.com"
-  local smtp_port="587"
-  local smtp_user_name="postmaster@discourse.example.com"
-  local smtp_password=""
-  local letsencrypt_account_email="me@example.com"
-  local letsencrypt_status="ENTER to skip"
+  read_config "DISCOURSE_SMTP_ADDRESS"
+  local smtp_address=$read_config_result
+  # NOTE: if there are spaces between emails, this breaks, but a human should be paying attention
+  read_config "DISCOURSE_DEVELOPER_EMAILS"
+  local developer_emails=$read_config_result
+  read_config "DISCOURSE_SMTP_PASSWORD"
+  local smtp_password=$read_config_result
+  read_config "DISCOURSE_SMTP_PORT"
+  local smtp_port=$read_config_result
+  read_config "DISCOURSE_SMTP_USER_NAME"
+  local smtp_user_name=$read_config_result
+  if [ "$smtp_password" = "pa$$word" ]
+  then
+      smtp_password = ""
+  fi
+  read_config "LETSENCRYPT_ACCOUNT_EMAIL"
+  local letsencrypt_account_email=$read_config_result
+  if [ $letsencrypt_account_email = "me@example.com" ]
+  then
+      local letsencrypt_status="ENTER to skip"
+  else
+    local letsencrypt_status="Enter 'OFF' to disable."
+  fi
+
+  read_config "DISCOURSE_HOSTNAME"
+  hostname=$read_config_result
 
   local new_value=""
   local config_ok="n"
@@ -206,7 +279,7 @@ ask_user_for_config() {
 
     if [ ! -z $developer_emails ]
     then
-      read -p "Email address for admin account? [$developer_emails]: " new_value
+      read -p "Email address for admin account(s)? [$developer_emails]: " new_value
       if [ ! -z $new_value ]
       then
           developer_emails=$new_value
@@ -268,7 +341,7 @@ ask_user_for_config() {
       if [ ! -z $new_value ]
       then
           letsencrypt_account_email=$new_value
-          if [ "$new_value" == "off" ]
+          if [ "${new_value,,}" = "off" ]
           then
             letsencrypt_status="ENTER to skip"
           else
@@ -321,7 +394,7 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  #DISCOURSE_SMTP_PORT:.*/  DISCOURSE_SMTP_PORT: $smtp_port/w $changelog" $config_file
+  sed -i -e "s/^  #\?DISCOURSE_SMTP_PORT:.*/  DISCOURSE_SMTP_PORT: $smtp_port/w $changelog" $config_file
   if [ -s $changelog ]
   then
     rm $changelog
@@ -330,7 +403,7 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  #DISCOURSE_SMTP_USER_NAME:.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $config_file
+  sed -i -e "s/^  #\?DISCOURSE_SMTP_USER_NAME:.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $config_file
   if [ -s $changelog ]
   then
     rm $changelog
@@ -339,7 +412,7 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  #DISCOURSE_SMTP_PASSWORD:.*/  DISCOURSE_SMTP_PASSWORD: \"${smtp_password/\//\\/}\"/w $changelog" $config_file
+  sed -i -e "s/^  #\?DISCOURSE_SMTP_PASSWORD:.*/  DISCOURSE_SMTP_PASSWORD: \"${smtp_password/\//\\/}\"/w $changelog" $config_file
   if [ -s $changelog ]
   then
       rm $changelog
@@ -348,9 +421,33 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  if [ "$letsencrypt_status" != "ENTER to skip" ]
+  if [ "$letsencrypt_status" = "ENTER to skip" ]
   then
-      sed -i -e "s/^  #LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $config_file
+      echo "Let's Encrypt will not be configured"
+      local src='^  #\?- "templates\/web.ssl.template.yml"'
+      local dst='  #\- "templates\/web.ssl.template.yml"'
+      sed -i -e "s/$src/$dst/w $changelog" $config_file
+      if [ -s $changelog ]
+      then
+	  echo "web.ssl.template.yml disabled"
+      else
+        update_ok="n"
+        echo "web.ssl.template.yml NOT DISABLED--Are you using a non-standard template?"
+      fi
+      local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
+      local dst='  #- "templates\/web.letsencrypt.ssl.template.yml"'
+
+      sed -i -e "s/$src/$dst/w $changelog" $config_file
+      if [ -s $changelog ]
+      then
+	      echo "letsencrypt.ssl.template.yml disabled"
+      else
+        update_ok="n"
+        echo "web.ssl.template.yml NOT DISABLED--Are you using a non-standard template?"
+      fi
+  else # enable let's encrypt
+    echo "Let's Encrypt will be enabled for $letsencrypt_account_email"
+      sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $config_file
       if [ -s $changelog ]
       then
         rm $changelog
@@ -358,7 +455,7 @@ ask_user_for_config() {
         echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
         update_ok="n"
       fi
-      local src='^  #- "templates\/web.ssl.template.yml"'
+      local src='^  #\?- "templates\/web.ssl.template.yml"'
       local dst='  \- "templates\/web.ssl.template.yml"'
       sed -i -e "s/$src/$dst/w $changelog" $config_file
       if [ -s $changelog ]
@@ -368,7 +465,7 @@ ask_user_for_config() {
         update_ok="n"
         echo "web.ssl.template.yml NOT ENABLED--was it on already?"
       fi
-      local src='^  #- "templates\/web.letsencrypt.ssl.template.yml"'
+      local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
       local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
 
       sed -i -e "s/$src/$dst/w $changelog" $config_file
@@ -454,10 +551,9 @@ check_ports
 if [ -a $config_file ]
 then
   echo "The configuration file $config_file already exists!"
-  echo ""
-  echo "If you want to delete your old configuration file and start over:"
-  echo "rm $config_file"
-  exit 1
+  echo
+  echo ". . . reconfiguring . . ."
+  echo
 else
   cp $template_path $config_file
 fi
@@ -468,5 +564,7 @@ validate_config
 
 ##
 ## if we reach this point without exiting, OK to proceed
+## rebuild won't fail if there's nothing to rebuild and does the restart
 ##
-./launcher bootstrap $app_name && ./launcher start $app_name
+sleep 5 # Just a chance to ^C in case they were too fast on the draw
+time ./launcher rebuild $app_name
