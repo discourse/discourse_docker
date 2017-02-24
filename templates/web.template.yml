@@ -163,6 +163,16 @@ run:
       from: /client_max_body_size.+$/
       to: client_max_body_size $upload_size ;
 
+#  Uncomment the following section for discourse_docker behind a reverse proxy
+#  - replace:
+#      filename: "/etc/nginx/conf.d/discourse.conf"
+#      from: /listen 80;/
+#      to: |
+#         listen 80;
+#         
+#         set_real_ip_from <reverse-proxy-addr>; # address or CIDR
+#         real_ip_header X-Forwarded-For;
+
   - exec:
       cmd: echo "done configuring web"
       hook: web_config
