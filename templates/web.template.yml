@@ -15,6 +15,9 @@ env:
   DISCOURSE_DB_HOST:
   DISCOURSE_DB_PORT:
 
+  # unbuffer output during the build
+  TERM: xterm
+
 
 params:
   # SSH key is required for remote access into the container
