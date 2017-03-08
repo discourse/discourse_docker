@@ -12,6 +12,50 @@ check_root() {
 
 
 ##
+## Does the current IP match the domain name?
+##
+check_IP_match () {
+  echo
+  echo Checking your domain name . . .
+  sleep 1
+  local IFACE=none
+  local IFCONFIG=`which ifconfig`
+  /sbin/route |grep default > /tmp/route$PPID
+
+  if grep default /tmp/route$PPID > /dev/null
+  then
+      local IFACE=`cut -c 73-100 /tmp/route$PPID |head -1`
+  else
+    echo WARNING: Cannot check your IP number.
+  fi
+  local IP=`$IFCONFIG $IFACE|grep  "inet addr:" |cut -d":" -f 2|cut -d" " -f1|head -1`
+  local RESOLVED_IP=`dig +short $1`
+
+  IP_LOOKS_GOOD=0
+  if [[ ! -z $RESOLVED_IP ]]
+  then
+      if [ $IP == $RESOLVED_IP ]
+      then
+	  echo $1 resolves to $IP. Looks good!
+	  echo
+	  local IP_LOOKS_GOOD=1
+      fi
+  fi
+  if [ $IP_LOOKS_GOOD == 0 ]
+  then
+      echo "-----------------------------------------"
+      echo $1 does not resolve to $IP.
+      echo IT IS ALMOST CERTAINLY A BAD IDEA TO TURN ON LET\'S ENCRYPT!!
+      echo Unless you know why this check failed, DO NOT USE Let\'s Encrypt.
+      echo
+      echo You should answer \"n\" at the next prompt and disable Let\'s Encrypt.
+      echo You have been warned.
+      echo "-----------------------------------------"
+  fi
+  sleep 1
+}
+
+##
 ## Do we have docker?
 ##
 check_and_install_docker () {
@@ -350,6 +394,11 @@ ask_user_for_config() {
       fi
     fi
 
+    if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
+    then
+       check_IP_match $hostname
+    fi
+
     echo -e "\nDoes this look right?\n"
     echo "Hostname      : $hostname"
     echo "Email         : $developer_emails"
@@ -362,6 +411,7 @@ ask_user_for_config() {
     then
       echo "Let's Encrypt : $letsencrypt_account_email"
     fi
+
 
     echo ""
     read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
