@@ -292,6 +292,8 @@ ask_user_for_config() {
   then
       smtp_password = ""
   fi
+  read_config "DISCOURSE_SMTP_ENABLE_SSL"
+  local smtp_enable_ssl=$read_config_result
   read_config "LETSENCRYPT_ACCOUNT_EMAIL"
   local letsencrypt_account_email=$read_config_result
   if [ $letsencrypt_account_email = "me@example.com" ]

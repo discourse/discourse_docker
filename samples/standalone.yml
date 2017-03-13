@@ -61,6 +61,7 @@ env:
   #DISCOURSE_SMTP_USER_NAME: user@example.com      # required
   #DISCOURSE_SMTP_PASSWORD: pa$$word               # required, WARNING the char '#' in pw can cause problems!
   #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
+  #DISCOURSE_SMTP_ENABLE_SSL: true                 # (optional, default true)
 
   ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
   #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
