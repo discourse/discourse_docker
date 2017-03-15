@@ -74,7 +74,7 @@ hooks:
 
     - replace:
        filename: /shared/letsencrypt/account.conf
-       from: /#ACCOUNT_EMAIL=.+/
+       from: /#?ACCOUNT_EMAIL=.+/
        to: |
          ACCOUNT_EMAIL=$$ENV_LETSENCRYPT_ACCOUNT_EMAIL
 
