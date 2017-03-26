@@ -473,13 +473,11 @@ ask_user_for_config() {
 
   if [ "$letsencrypt_status" = "ENTER to skip" ]
   then
-      echo "Let's Encrypt will not be configured"
       local src='^  #\?- "templates\/web.ssl.template.yml"'
       local dst='  #\- "templates\/web.ssl.template.yml"'
       sed -i -e "s/$src/$dst/w $changelog" $config_file
       if [ -s $changelog ]
       then
-	  echo "web.ssl.template.yml disabled"
       else
         update_ok="n"
         echo "web.ssl.template.yml NOT DISABLED--Are you using a non-standard template?"
@@ -490,7 +488,6 @@ ask_user_for_config() {
       sed -i -e "s/$src/$dst/w $changelog" $config_file
       if [ -s $changelog ]
       then
-	      echo "letsencrypt.ssl.template.yml disabled"
       else
         update_ok="n"
         echo "web.ssl.template.yml NOT DISABLED--Are you using a non-standard template?"
