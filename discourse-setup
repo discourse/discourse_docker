@@ -476,9 +476,8 @@ ask_user_for_config() {
       local src='^  #\?- "templates\/web.ssl.template.yml"'
       local dst='  #\- "templates\/web.ssl.template.yml"'
       sed -i -e "s/$src/$dst/w $changelog" $config_file
-      if [ -s $changelog ]
+      if [ ! -s $changelog ]
       then
-      else
         update_ok="n"
         echo "web.ssl.template.yml NOT DISABLED--Are you using a non-standard template?"
       fi
@@ -486,9 +485,8 @@ ask_user_for_config() {
       local dst='  #- "templates\/web.letsencrypt.ssl.template.yml"'
 
       sed -i -e "s/$src/$dst/w $changelog" $config_file
-      if [ -s $changelog ]
+      if [ ! -s $changelog ]
       then
-      else
         update_ok="n"
         echo "web.ssl.template.yml NOT DISABLED--Are you using a non-standard template?"
       fi
