@@ -26,6 +26,12 @@ env:
   ## the URL needs to have the subfolder included!
   DISCOURSE_MAIL_ENDPOINT: 'http://discourse.example.com/admin/email/handle_mail'
 
+  ## The URL of the smtp_should_reject endpoint of your Discourse forum.
+  ## This is your forum's base URL, with `/admin/email/smtp_should_reject.json`
+  ## appended.  Be careful if you're running a subfolder setup -- in that case,
+  ## the URL needs to have the subfolder included!
+  DISCOURSE_SMTP_SHOULD_REJECT_ENDPOINT: 'http://discourse.example.com/admin/email/smtp_should_reject.json'
+
   ## The master API key of your Discourse forum.  You can get this from
   ## the "API" tab of your admin panel.
   DISCOURSE_API_KEY: abcdefghijklmnop
