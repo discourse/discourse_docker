@@ -20,17 +20,10 @@ env:
   ## to use the same domain as the forum itself here.
   MAIL_DOMAIN: discourse.example.com
 
-  ## The URL of the mail processing endpoint of your Discourse forum.
-  ## This is simply your forum's base URL, with `/admin/email/handle_mail`
-  ## appended.  Be careful if you're running a subfolder setup -- in that case,
-  ## the URL needs to have the subfolder included!
-  DISCOURSE_MAIL_ENDPOINT: 'http://discourse.example.com/admin/email/handle_mail'
-
-  ## The URL of the smtp_should_reject endpoint of your Discourse forum.
-  ## This is your forum's base URL, with `/admin/email/smtp_should_reject.json`
-  ## appended.  Be careful if you're running a subfolder setup -- in that case,
-  ## the URL needs to have the subfolder included!
-  DISCOURSE_SMTP_SHOULD_REJECT_ENDPOINT: 'http://discourse.example.com/admin/email/smtp_should_reject.json'
+  ## Your forum's base URL.  Be careful if you're running a subfolder
+  ## setup -- in that case, the URL needs to have the subfolder included!
+  ## (that is, "http://example.com/forum" instead of "http://example.com")
+  DISCOURSE_BASE_URL: 'http://discourse.example.com'
 
   ## The master API key of your Discourse forum.  You can get this from
   ## the "API" tab of your admin panel.
