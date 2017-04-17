@@ -1,6 +1,6 @@
 # NAME:     discourse/discourse_test
-# VERSION:  1.3.10
-FROM discourse/discourse:1.3.10
+# VERSION:  1.4.0
+FROM discourse/discourse:1.4.0
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 

@@ -1,5 +1,5 @@
 # NAME:     discourse/base
-# VERSION:  1.3.10
+# VERSION:  1.4.0
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
@@ -70,19 +70,18 @@ RUN mkdir /lockless && cd /lockless && curl -O https://locklessinc.com/downloads
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.3.3 /usr/local
+    cd / && rm -rf /src/ruby-build && ruby-build 2.4.1 /usr/local
 
 RUN gem install bundler &&\
-    rm -rf /usr/local/share/ri/2.3.0/system &&\
+    rm -rf /usr/local/share/ri/2.4.1/system &&\
     cd / && git clone https://github.com/SamSaffron/pups.git
 
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
 # Validate install
-RUN ruby -e "v='`convert -version`'; ['png','tiff','jpeg','freetype'].each{ |f| ((STDERR.puts('no ' + f +  ' support in imagemagick')); exit(-1)) unless v.include?(f)}"
+RUN ruby -Eutf-8 -e "v = \`convert -version\`; %w{png tiff jpeg freetype}.each { |f| unless v.include?(f); STDERR.puts('no ' + f +  ' support in imagemagick'); exit(-1); end }"
 
-#
 ADD install-pngcrush /tmp/install-pngcrush
 RUN /tmp/install-pngcrush
 

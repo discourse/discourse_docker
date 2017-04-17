@@ -644,7 +644,7 @@ case "$command" in
         elif [ $LOCAL = $BASE ]; then
           echo "Updating Launcher"
           git pull || (echo 'failed to update' && exit 1)
-          
+
           for (( i=${#BASH_ARGV[@]}-1,j=0; i>=0,j<${#BASH_ARGV[@]}; i--,j++ ))
           do
             args[$j]=${BASH_ARGV[$i]}
