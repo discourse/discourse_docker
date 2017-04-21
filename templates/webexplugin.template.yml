@@ -1,0 +1,130 @@
+# This template allows you to have plugins in the shared container folder.
+env:
+  # You can have redis on a different box
+  RAILS_ENV: 'production'
+  UNICORN_WORKERS: 3
+  # slightly less aggressive than "recommendation" but works fine with oobgc
+  RUBY_GC_MALLOC_LIMIT: 40000000
+  # this ensures we have enough heap space to handle a big pile of small reqs
+  RUBY_HEAP_MIN_SLOTS: 800000
+
+  DISCOURSE_DB_SOCKET: /var/run/postgresql
+  DISCOURSE_DB_HOST:
+  DISCOURSE_DB_PORT:
+
+
+params:
+  # SSH key is required for remote access into the container
+  version: HEAD
+
+  home: /var/www/discourse
+
+run:
+  - file:
+     path: /etc/service/copy_env/run
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        conf=/var/www/discourse/config/discourse.conf
+        sudo -u discourse echo > $conf
+
+        for x in `env | /usr/bin/awk -F= '{if($1 ~ /DISCOURSE_/) print $1}'`
+          do
+             c=${x,,}
+             c=${c:10}
+             echo "$c"=${!x} >> $conf
+          done
+        # I dunno there may be a cleaner way to handle this
+        exec sleep 2147483647
+
+  - file:
+     path: /etc/service/unicorn/run
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        exec 2>&1
+        # redis
+        # postgres
+        sv start copy_env || exit 1
+        cd $home
+        exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
+
+  - file:
+     path: /etc/service/sidekiq/run
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        exec 2>&1
+        # redis
+        # postgres
+        sv start copy_env || exit 1
+        cd $home
+        exec sudo -E -u discourse LD_PRELOAD=/usr/lib/libjemalloc.so.1 bundle exec sidekiq
+
+  - file:
+     path: /etc/service/nginx/run
+     chmod: "+x"
+     contents: |
+        #!/bin/sh
+        exec 2>&1
+        exec /usr/sbin/nginx
+
+  - exec:
+      cd: $home
+      hook: code
+      cmd:
+        - git reset --hard
+        - git clean -f
+        - git pull
+        - git checkout $version
+        - mkdir -p tmp/pids
+        - mkdir -p tmp/sockets
+        - touch tmp/.gitkeep
+        - mkdir -p /shared/log/rails
+        - rm -r log
+        - ln -s /shared/log/rails $home/log
+        - mkdir -p /shared/uploads
+        - ln -s /shared/uploads $home/public/uploads
+        - chown -R discourse:www-data /shared/uploads
+        - chown -R discourse:www-data /shared/log/rails
+        - mkdir -p /shared/plugins
+        - rm -rf /shared/plugins/docker_manager
+        - chown -R discourse:www-data /shared/plugins
+        - mv -f $home/plugins $home/plugins-old
+        - ln -s /shared/plugins $home/plugins
+        - cp -af $home/plugins-old/* $home/plugins
+        - rm -rf $home/plugins-old
+  - exec:
+      cmd:
+        - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
+        - "rm /etc/nginx/sites-enabled/default"
+
+  - replace:
+      filename: /etc/nginx/nginx.conf
+      from: pid /run/nginx.pid;
+      to: daemon off;
+
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /upstream[^\}]+\}/m
+      to: "upstream discourse {
+        server 127.0.0.1:3000;
+      }"
+
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /server_name.+$/
+      to: server_name _ ;
+
+  - exec:
+      cmd: echo "done configuring web"
+      hook: web_config
+
+  - exec:
+      cd: $home
+      cmd:
+        - chown -R discourse $home
+        - sudo -E -u discourse bundle install --deployment --verbose --without test --without development
+        - sudo -E -u discourse bundle exec rake db:migrate
+        - sudo -E -u discourse bundle exec rake assets:precompile
+
