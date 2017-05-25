@@ -1,0 +1,13 @@
+# This template adds the 'mysql2' gem for import scripts depending on it
+
+params:
+  home: /var/www/discourse
+
+hooks:
+  after_bundle_exec:
+    - exec:
+        cd: $home
+        cmd:
+          - echo "gem 'mysql2'" >> Gemfile
+          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libmysqlclient-dev
+          - su discourse -c 'bundle install --no-deployment --without test --without development --path vendor/bundle'
