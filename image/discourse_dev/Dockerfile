@@ -1,6 +1,6 @@
 # NAME:     discourse/discourse_dev
-# VERSION:  1.4.0
-FROM discourse/base:1.4.0
+# VERSION:  release
+FROM discourse/base:release
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
@@ -8,10 +8,8 @@ MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 RUN apt-get update && apt-get install -y libsqlite3-dev \
     && gem install mailcatcher && rm -rf /var/lib/apt/lists/*
 
-# Create discourse user and /var/www location for both
-# discourse and dev images.
-RUN useradd discourse -s /bin/bash -m -U &&\
-    mkdir -p /var/www
+# Remove the code added on base image
+RUN rm -rf /var/www/*
 
 # Give discourse user no-passwd sudo permissions (for bundle install)
 ADD sudoers.discourse /etc/sudoers.d/discourse

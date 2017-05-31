@@ -1,5 +1,5 @@
 # NAME:     discourse/base
-# VERSION:  1.4.0
+# VERSION:  release
 FROM ubuntu:16.04
 
 ENV PG_MAJOR 9.5
@@ -45,7 +45,7 @@ RUN cd / &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US &&\
     apt-get install -y nodejs &&\
-    npm install uglify-js -g &&\
+    npm install -g uglify-js@"<3" &&\
     npm install svgo -g
 
 ADD install-nginx /tmp/install-nginx
@@ -127,3 +127,17 @@ ADD boot /sbin/boot
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
 ADD cron.d_anacron /etc/cron.d/anacron
+
+
+# Discourse specific bits
+RUN useradd discourse -s /bin/bash -m -U &&\
+    mkdir -p /var/www &&\
+    cd /var/www &&\
+    git clone https://github.com/discourse/discourse.git &&\
+    cd discourse &&\
+    git remote set-branches --add origin tests-passed &&\
+    chown -R discourse:discourse /var/www/discourse &&\
+    cd /var/www/discourse &&\
+    sudo -u discourse bundle install --deployment \
+         --without test --without development &&\
+    find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
