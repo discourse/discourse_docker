@@ -45,7 +45,7 @@ RUN cd / &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US &&\
     apt-get install -y nodejs &&\
-    npm install uglify-js -g &&\
+    npm install -g uglify-js@"<3" &&\
     npm install svgo -g
 
 ADD install-nginx /tmp/install-nginx
