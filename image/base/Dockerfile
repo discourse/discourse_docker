@@ -8,7 +8,7 @@ ENV COMPRESS_BROTLI 1
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-ADD VERSION /VERSION
+RUN echo 2.0.`date +%Y%m%d` > /VERSION
 
 RUN apt-get update && apt-get install -y lsb-release sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
