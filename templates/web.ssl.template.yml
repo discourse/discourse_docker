@@ -9,7 +9,7 @@ run:
      to: |
        server {
          listen 80;
-         rewrite ^ https://$$ENV_DISCOURSE_HOSTNAME$request_uri? permanent;
+         return 301 https://$$ENV_DISCOURSE_HOSTNAME$request_uri;
        }
        server {
   - replace:
