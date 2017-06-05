@@ -34,7 +34,7 @@ check_IP_match () {
   IP_LOOKS_GOOD=0
   if [[ ! -z $RESOLVED_IP ]]
   then
-      if [ $IP == $RESOLVED_IP ]
+      if [ "$IP" == "$RESOLVED_IP" ]
       then
 	  echo $1 resolves to $IP. Looks good!
 	  echo
@@ -44,12 +44,13 @@ check_IP_match () {
   if [ $IP_LOOKS_GOOD == 0 ]
   then
       echo "-----------------------------------------"
-      echo $1 does not resolve to $IP.
-      echo IT IS ALMOST CERTAINLY A BAD IDEA TO TURN ON LET\'S ENCRYPT!!
-      echo Unless you know why this check failed, DO NOT USE Let\'s Encrypt.
+      echo WARNING:: $1 does not appear to resolve to $IP.
+      echo ""
+      echo LET\'S ENCRYPT cannot work if their servers cannot access your host by name.
+      echo Unless you think you know why this naive check failed, DO NOT USE Let\'s Encrypt.
+      echo "(A typical reason for failure is an AWS server with an elastic IP.)"
       echo
-      echo You should answer \"n\" at the next prompt and disable Let\'s Encrypt.
-      echo You have been warned.
+      echo You should probably answer \"n\" at the next prompt and disable Let\'s Encrypt.
       echo "-----------------------------------------"
   fi
   sleep 1
@@ -99,7 +100,7 @@ check_disk_and_memory() {
 
   os_type=$(check_OS)
   avail_mem=0
-  if [ $os_type == "Darwin" ]; then
+  if [ "$os_type" == "Darwin" ]; then
     avail_mem=$(check_osx_memory)
   else
     avail_mem=$(check_linux_memory)
@@ -174,7 +175,7 @@ scale_ram_and_cpu() {
   avail_gb=0
   avail_cores=0
   os_type=$(check_OS)
-  if [ $os_type == "Darwin" ]; then
+  if [ "$os_type" == "Darwin" ]; then
     avail_gb=$(check_osx_memory)
     avail_cores=`sysctl hw.ncpu | awk '/hw.ncpu:/ {print $2}'`
   else
@@ -294,7 +295,11 @@ ask_user_for_config() {
   fi
   read_config "LETSENCRYPT_ACCOUNT_EMAIL"
   local letsencrypt_account_email=$read_config_result
-  if [ $letsencrypt_account_email = "me@example.com" ]
+  if [ -z $letsencrypt_account_email ]
+  then
+      letsencrypt_account_email="me@example.com"
+  fi
+  if [ "$letsencrypt_account_email" = "me@example.com" ]
   then
       local letsencrypt_status="ENTER to skip"
   else
@@ -548,7 +553,7 @@ validate_config() {
 
     if (( result == 0 ))
     then
-      if [[ $config_line = *"$default"* ]]
+      if [[ "$config_line" = *"$default"* ]]
       then
         echo "$x left at incorrect default of example.com"
         valid_config="n"
@@ -598,6 +603,11 @@ then
   echo "The configuration file $config_file already exists!"
   echo
   echo ". . . reconfiguring . . ."
+  echo
+  DATE=`date +"%Y-%m-%d-%H%M%S"`
+  BACKUP=$app_name.yml.$DATE.bak
+  echo Saving old file as $BACKUP
+  cp $config_file containers/$BACKUP
   echo
 else
   cp $template_path $config_file
