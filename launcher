@@ -497,7 +497,14 @@ run_start() {
    done
 
    (
-     hostname=`hostname -s`
+     # To account for Docker Bug
+     if grep -q "coreos" <(uname -a)
+     then
+       hostname=`hostname`
+     else
+       hostname=`hostname -s`
+     fi
+     
      # overwrite hostname
      if [ "$DOCKER_USE_HOSTNAME" = "true" ]
      then
