@@ -553,17 +553,16 @@ run_bootstrap() {
 
   rm -f $cidbootstrap
 
-  envs=$(echo "${env[@]}" | awk '{gsub("-e ", "");print}')
   run_command="cd /pups &&"
   if [[ ! "false" =  $update_pups ]]; then
     run_command="$run_command git pull &&"
   fi
-  run_command="$run_command $envs /pups/bin/pups --stdin"
+  run_command="$run_command /pups/bin/pups --stdin"
 
   echo $run_command
 
   unset ERR
-  (exec echo "$input" | $docker_path run $user_args $links -e DOCKER_HOST_IP="$docker_ip" --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+  (exec echo "$input" | $docker_path run $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
     /bin/bash -c "$run_command") || ERR=$?
 
   unset FAILED
