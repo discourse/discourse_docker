@@ -688,7 +688,7 @@ case "$command" in
 
 
   destroy)
-      (set -x; $docker_path stop -t 10 $user_args $config && $docker_path rm $config) || (echo "$config was not found" && exit 0)
+      (set -x; $docker_path stop -t 10 $config && $docker_path rm $config) || (echo "$config was not found" && exit 0)
       exit 0
       ;;
 esac
