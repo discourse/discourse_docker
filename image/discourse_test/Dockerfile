@@ -1,6 +1,7 @@
 # NAME:     discourse/discourse_test
 # VERSION:  release
-FROM discourse/base:build
+ARG tag=build
+FROM discourse/base:$tag
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
