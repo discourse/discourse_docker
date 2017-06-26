@@ -1,11 +1,8 @@
 #!/bin/bash
 VERSION=2.8.0
 cd /tmp
-wget https://github.com/pornel/pngquant/archive/$VERSION.tar.gz
-tar zxf $VERSION.tar.gz
-cd pngquant-$VERSION
-./configure
+git clone -b $VERSION --single-branch https://github.com/pornel/pngquant
+cd pngquant
 make && make install
 cd /
 rm -fr /tmp/pngq*
-rm -fr /tmp/$VERSION*
