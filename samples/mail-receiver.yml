@@ -7,7 +7,7 @@
 ## YAML FILES ARE SUPER SUPER SENSITIVE TO MISTAKES IN WHITESPACE OR ALIGNMENT!
 ## visit http://www.yamllint.com/ to validate this file as needed
 
-base_image: discourse/mail-receiver:1.0.0
+base_image: discourse/mail-receiver:1.1.2
 update_pups: false
 
 expose:
