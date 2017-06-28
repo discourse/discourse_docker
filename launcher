@@ -196,6 +196,15 @@ check_prereqs() {
     exit 1
   fi
 
+  # 7. enough space for the bootstrap on docker folder
+  folder=`docker info --format '{{(index (index .DriverStatus 0) 1)}}'`
+  test=$(($(stat -f --format="%a*%S" $folder)/1024**3 < 5))
+  if [[ $test -ne 0 ]] ; then
+    echo "You have less than 5GB of free space on the disk."
+    echo "Provide more space by either purging old files or upgrading your server."
+    echo "For help visit: https://meta.discourse.org/t/how-do-i-update-my-docker-image-to-latest/23325"
+    exit 1
+  fi
 }
 
 
