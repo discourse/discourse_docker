@@ -197,8 +197,8 @@ check_prereqs() {
   fi
 
   # 7. enough space for the bootstrap on docker folder
-  folder=`docker info --format '{{(index (index .DriverStatus 0) 1)}}'`
-  safe_folder=${folder:-/var/lib/docker/aufs}
+  folder=`$docker_path info --format '{{.DockerRootDir}}'`
+  safe_folder=${folder:-/var/lib/docker}
   test=$(($(stat -f --format="%a*%S" $safe_folder)/1024**3 < 5))
   if [[ $test -ne 0 ]] ; then
     echo "You have less than 5GB of free space on the disk. You will need more space to continue"
