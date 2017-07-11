@@ -54,10 +54,15 @@ RUN /tmp/install-nginx
 RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
 
-RUN mkdir /jemalloc && cd /jemalloc &&\
+RUN mkdir /jemalloc-stable && cd /jemalloc-stable &&\
       wget https://github.com/jemalloc/jemalloc/releases/download/3.6.0/jemalloc-3.6.0.tar.bz2 &&\
       tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure --prefix=/usr && make && make install &&\
-      cd / && rm -rf /jemalloc
+      cd / && rm -rf /jemalloc-stable
+
+RUN mkdir /jemalloc-new && cd /jemalloc-new &&\
+      wget https://github.com/jemalloc/jemalloc/releases/download/5.0.1/jemalloc-5.0.1.tar.bz2 &&\
+      tar -xjf jemalloc-5.0.1.tar.bz2 && cd jemalloc-5.0.1 && ./configure --prefix=/usr --with-install-suffix=5.0.1 && make build_lib && make install_lib &&\
+      cd / && rm -rf /jemalloc-new
 
 RUN mkdir /gperftools && git clone https://github.com/gperftools/gperftools.git /gperftools &&\
       cd /gperftools && git checkout gperftools-2.5 && ./autogen.sh && ./configure --prefix=$PWD/lib &&\
