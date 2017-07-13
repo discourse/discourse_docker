@@ -10,7 +10,7 @@ hooks:
 
     - exec:
        cmd:
-         - cd /root && git clone https://github.com/Neilpang/acme.sh.git && cd /root/acme.sh && git reset --hard c4c5ecd03de497fd4c3079cbac9d3c56edaffc89
+         - cd /root && git clone https://github.com/Neilpang/acme.sh.git && cd /root/acme.sh && git reset --hard e5244cf3c04a5cad274d5a0be31ce80c336be388
          - touch /var/spool/cron/crontabs/root
          - install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
          - cd /root/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --install --log "${LETSENCRYPT_DIR}/acme.sh.log"
