@@ -17,4 +17,4 @@ RUN npm install -g eslint babel-eslint
 
 WORKDIR /var/www/discourse
 ENV LANG en_US.UTF-8
-ENTRYPOINT sudo -E -u discourse ruby script/docker_test.rb
+ENTRYPOINT sudo -E -u discourse -H ruby script/docker_test.rb
