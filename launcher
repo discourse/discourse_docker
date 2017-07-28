@@ -215,7 +215,7 @@ check_prereqs() {
 }
 
 
-if [ -z "$SKIP_PREREQS" ] ; then
+if [ -z "$SKIP_PREREQS" ] && [ "$command" != "cleanup" ]; then
   check_prereqs
 fi
 
