@@ -72,13 +72,14 @@ RUN mkdir /lockless && cd /lockless && curl -O https://locklessinc.com/downloads
       tar zxf lockless_allocator_linux.tgz && mv lockless_allocator_linux/64bit/libllalloc.so.1.4 /usr/lib &&\
       cd / && rm -rf /lockless
 
+ADD rb_thread_fd_close.patch /tmp/rb_thread_fd_close.patch
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && ruby-build 2.4.1 /usr/local
+    cd / && rm -rf /src/ruby-build && (ruby-build 2.3.4 /usr/local --patch << /tmp/rb_thread_fd_close.patch)
 
 RUN gem install bundler &&\
-    rm -rf /usr/local/share/ri/2.4.1/system &&\
+    rm -rf /usr/local/share/ri/2.3.4/system &&\
     cd / && git clone https://github.com/SamSaffron/pups.git
 
 ADD install-imagemagick /tmp/install-imagemagick
