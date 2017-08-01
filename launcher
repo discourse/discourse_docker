@@ -201,7 +201,8 @@ check_prereqs() {
   safe_folder=${folder:-/var/lib/docker}
   test=$(($(stat -f --format="%a*%S" $safe_folder)/1024**3 < 5))
   if [[ $test -ne 0 ]] ; then
-    echo "You have less than 5GB of free space on the disk. You will need more space to continue"
+    echo "You have less than 5GB of free space on the disk where $safe_folder is located. You will need more space to continue"
+    df -h $safe_folder
     echo
     read -p "Would you like to attempt to recover space by cleaning docker images and containers in the system?(y/N)" -n 1 -r
     echo
