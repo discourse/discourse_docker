@@ -252,8 +252,12 @@ RUBY
 
 
 set_volumes() {
+  local volopts=
+  if selinuxenabled; then
+      volopts=":Z"
+  fi
   volumes=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
-        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
+        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << '${volopts} '}.join"`
 }
 
 set_links() {
