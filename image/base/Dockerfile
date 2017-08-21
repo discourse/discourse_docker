@@ -23,7 +23,7 @@ RUN apt-get -y upgrade
 RUN curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
-RUN curl --silent --location https://deb.nodesource.com/setup_6.x | sudo bash -
+RUN curl --silent --location https://deb.nodesource.com/setup_8.x | sudo bash -
 RUN apt-get -y update
 RUN apt-get -y install build-essential git wget \
                        libxslt-dev libcurl4-openssl-dev \
