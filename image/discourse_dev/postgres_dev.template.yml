@@ -34,6 +34,13 @@ run:
   - exec: su postgres -c 'psql discourse_test -c "alter schema public owner to discourse;"'
   - exec: su postgres -c 'psql discourse_test -c "create extension if not exists hstore;"'
   - exec: su postgres -c 'psql discourse_test -c "create extension if not exists pg_trgm;"'
+
+  - exec: su postgres -c 'createdb discourse_test_multisite' || true
+  - exec: su postgres -c 'psql discourse_test_multisite -c "grant all privileges on database discourse_test_multisite to discourse;"' || true
+  - exec: su postgres -c 'psql discourse_test_multisite -c "alter schema public owner to discourse;"'
+  - exec: su postgres -c 'psql discourse_test_multisite -c "create extension if not exists hstore;"'
+  - exec: su postgres -c 'psql discourse_test_multisite -c "create extension if not exists pg_trgm;"'
+
   - exec: cd tmp && git clone https://github.com/discourse/discourse.git --depth=1 && cd /tmp/discourse && sudo -u discourse bundle install
   - exec: chown -R discourse /tmp/discourse
   - exec: cd /tmp/discourse && sudo -u discourse bundle exec rake db:migrate
