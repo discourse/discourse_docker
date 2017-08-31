@@ -78,6 +78,8 @@ RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     cd /src/ruby-build && ./install.sh &&\
     cd / && rm -rf /src/ruby-build && (ruby-build 2.3.4 /usr/local --patch << /tmp/rb_thread_fd_close.patch)
 
+RUN gem update --system
+
 RUN gem install bundler &&\
     rm -rf /usr/local/share/ri/2.3.4/system &&\
     cd / && git clone https://github.com/SamSaffron/pups.git
