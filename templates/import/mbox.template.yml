@@ -1,0 +1,48 @@
+# This template configures the container for importing emails and mbox files.
+
+params:
+  home: /var/www/discourse
+
+hooks:
+  after_web_config:
+    - exec:
+        cd: /etc/service
+        cmd:
+          - rm -R unicorn
+          - rm -R nginx
+          - rm -R cron
+
+    - exec:
+        cd: /etc/runit/3.d
+        cmd:
+          - rm 01-nginx
+          - rm 02-unicorn
+
+    - file:
+        path: /usr/local/bin/import_mbox.sh
+        chmod: "+x"
+        contents: |
+          #!/bin/bash
+          set -e
+
+          chown discourse /shared/import/settings.yml
+          chown discourse -R /shared/import/data
+
+          cd $home
+          echo "The mbox import is starting..."
+          echo
+          su discourse -c 'IMPORT=1 bundle exec ruby script/import_scripts/mbox-experimental.rb /shared/import/settings.yml'
+
+    - exec:
+        cd: $home
+        cmd:
+          - mkdir -p /shared/import/data
+          - chown discourse -R /shared/import
+          - cp -n script/import_scripts/mbox/settings.yml /shared/import/settings.yml
+
+  after_bundle_exec:
+    - exec:
+        cd: $home
+        cmd:
+          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libmysqlclient-dev libsqlite3-dev
+          - su discourse -c 'IMPORT=1 bundle install --no-deployment --without test --without development --path vendor/bundle'
