@@ -5,8 +5,8 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define :dockerhost do |config|
-    config.vm.box = "trusty64"
-    config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
+    config.vm.box = "ubuntu/xenial64"
+    config.disksize.size = '50GB'  # requires vagrant-disksize plugin
 
     if ENV["http_proxy"]
       config.vm.provision "shell", inline: <<-EOF
@@ -25,8 +25,7 @@ Vagrant.configure(2) do |config|
       echo "Apt::Install-Recommends 'false';" >/etc/apt/apt.conf.d/02no-recommends
       echo "Acquire::Languages { 'none' };" >/etc/apt/apt.conf.d/05no-languages
       apt-get update
-      apt-get -y remove --purge puppet juju
-      apt-get -y autoremove --purge
+      apt-get install -y ruby postgresql redis-server
       wget -qO- https://get.docker.com/ | sh
 
       ln -s /vagrant /var/discourse
