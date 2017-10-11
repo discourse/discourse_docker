@@ -27,8 +27,6 @@ Vagrant.configure(2) do |config|
       apt-get update
       apt-get install -y ruby postgresql redis-server
       wget -qO- https://get.docker.com/ | sh
-
-      ln -s /vagrant /var/discourse
     EOF
   end
 end
