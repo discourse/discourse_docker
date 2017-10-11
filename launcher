@@ -90,25 +90,27 @@ else
                   awk -F: '{ print $3 }';`
 fi
 
+# From https://stackoverflow.com/a/44660519/702738
 compare_version() {
-    declare -a ver_a
-    declare -a ver_b
-    IFS=. read -a ver_a <<< "$1"
-    IFS=. read -a ver_b <<< "$2"
-
-    while [[ -n $ver_a ]]; do
-        if (( ver_a > ver_b )); then
-            return 0
-        elif (( ver_b > ver_a )); then
+    if [[ $1 == $2 ]]; then
+        return 1
+    fi
+    local IFS=.
+    local i a=(${1%%[^0-9.]*}) b=(${2%%[^0-9.]*})
+    local arem=${1#${1%%[^0-9.]*}} brem=${2#${2%%[^0-9.]*}}
+    for ((i=0; i<${#a[@]} || i<${#b[@]}; i++)); do
+        if ((10#${a[i]:-0} < 10#${b[i]:-0})); then
             return 1
-        else
-            unset ver_a[0]
-            ver_a=("${ver_a[@]}")
-            unset ver_b[0]
-            ver_b=("${ver_b[@]}")
+        elif ((10#${a[i]:-0} > 10#${b[i]:-0})); then
+            return 0
         fi
     done
-    return 1  # They are equal
+    if [ "$arem" '<' "$brem" ]; then
+        return 1
+    elif [ "$arem" '>' "$brem" ]; then
+        return 0
+    fi
+    return 1
 }
 
 
