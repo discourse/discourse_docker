@@ -6,6 +6,7 @@ Vagrant.configure(2) do |config|
 
   config.vm.define :dockerhost do |config|
     config.vm.box = "ubuntu/xenial64"
+    config.vm.network "private_network", ip: ENV["DISCOURSE_DOCKER_HOST_IP"] || "192.168.33.11"
     config.disksize.size = '50GB'  # requires vagrant-disksize plugin
 
     if ENV["http_proxy"]
