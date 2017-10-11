@@ -569,6 +569,7 @@ run_bootstrap() {
 
   set_volumes
   set_links
+  set_run_image
 
   rm -f $cidbootstrap
 
@@ -596,8 +597,9 @@ run_bootstrap() {
 
   if [[ $FAILED = "TRUE" ]]; then
     if [[ ! -z "$DEBUG" ]]; then
-      $docker_path commit `cat $cidbootstrap` $local_discourse/$config-debug || echo 'FAILED TO COMMIT'
-      echo "** DEBUG ** Maintaining image for diagnostics $local_discourse/$config-debug"
+      debug_run_image="$run_image-debug"
+      $docker_path commit `cat $cidbootstrap` "$debug_run_image" || echo 'FAILED TO COMMIT'
+      echo "** DEBUG ** Maintaining image for diagnostics '$debug_run_image'"
     fi
 
     $docker_path rm `cat $cidbootstrap`
@@ -608,7 +610,7 @@ run_bootstrap() {
 
   sleep 5
 
-  $docker_path commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
+  $docker_path commit `cat $cidbootstrap` "$run_image" || echo 'FAILED TO COMMIT'
   $docker_path rm `cat $cidbootstrap` && rm $cidbootstrap
 }
 
