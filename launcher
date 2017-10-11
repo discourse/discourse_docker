@@ -56,8 +56,8 @@ fi
 
 cd "$(dirname "$0")"
 
-docker_min_version='1.8.0'
-docker_rec_version='1.8.0'
+docker_min_version='17.06.2'
+docker_rec_version='17.06.2'
 git_min_version='1.8.0'
 git_rec_version='1.8.0'
 
