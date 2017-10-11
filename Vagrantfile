@@ -7,7 +7,13 @@ Vagrant.configure(2) do |config|
   config.vm.define :dockerhost do |config|
     config.vm.box = "ubuntu/xenial64"
     config.vm.network "private_network", ip: ENV["DISCOURSE_DOCKER_HOST_IP"] || "192.168.33.11"
-    config.disksize.size = '50GB'  # requires vagrant-disksize plugin
+
+    if Vagrant.has_plugin?("vagrant-disksize")
+      config.disksize.size = ENV["DISCOURSE_DOCKER_HOST_DISKSIZE"] || "50GB"
+    else
+      raise "The vagrant-disksize plugin required to expand the vm disk size. " +
+            "Run 'vagrant plugin install vagrant-disksize'."
+    end
 
     if ENV["http_proxy"]
       config.vm.provision "shell", inline: <<-EOF
