@@ -455,6 +455,15 @@ set_run_image() {
   fi
 }
 
+set_build_image() {
+  build_image=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
+    "require 'yaml'; puts YAML.load(STDIN.readlines.join)['build_image']"`
+
+  if [ -z "$build_image" ]; then
+    build_image="$local_discourse/$config"
+  fi
+}
+
 set_boot_command() {
   boot_command=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['boot_command']"`
@@ -569,6 +578,7 @@ run_bootstrap() {
 
   set_volumes
   set_links
+  set_build_image
 
   rm -f $cidbootstrap
 
@@ -596,8 +606,9 @@ run_bootstrap() {
 
   if [[ $FAILED = "TRUE" ]]; then
     if [[ ! -z "$DEBUG" ]]; then
-      $docker_path commit `cat $cidbootstrap` $local_discourse/$config-debug || echo 'FAILED TO COMMIT'
-      echo "** DEBUG ** Maintaining image for diagnostics $local_discourse/$config-debug"
+      debug_image="${build_image}-debug"
+      $docker_path commit `cat $cidbootstrap` "$debug_image" || echo 'FAILED TO COMMIT'
+      echo "** DEBUG ** Maintaining image for diagnostics $debug_image"
     fi
 
     $docker_path rm `cat $cidbootstrap`
@@ -608,7 +619,7 @@ run_bootstrap() {
 
   sleep 5
 
-  $docker_path commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
+  $docker_path commit `cat $cidbootstrap` "$build_image" || echo 'FAILED TO COMMIT'
   $docker_path rm `cat $cidbootstrap` && rm $cidbootstrap
 }
 
