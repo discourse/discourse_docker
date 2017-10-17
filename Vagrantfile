@@ -32,7 +32,6 @@ Vagrant.configure(2) do |config|
       echo "Apt::Install-Recommends 'false';" >/etc/apt/apt.conf.d/02no-recommends
       echo "Acquire::Languages { 'none' };" >/etc/apt/apt.conf.d/05no-languages
       apt-get update
-      apt-get install -y ruby postgresql redis-server
       wget -qO- https://get.docker.com/ | sh
     EOF
   end
