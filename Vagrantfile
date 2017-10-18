@@ -5,8 +5,15 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define :dockerhost do |config|
-    config.vm.box = "trusty64"
-    config.vm.box_url = "http://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
+    config.vm.box = "ubuntu/xenial64"
+    config.vm.network "private_network", ip: ENV["DISCOURSE_DOCKER_HOST_IP"] || "192.168.33.11"
+
+    if Vagrant.has_plugin?("vagrant-disksize")
+      config.disksize.size = ENV["DISCOURSE_DOCKER_HOST_DISKSIZE"] || "50GB"
+    else
+      raise "The vagrant-disksize plugin required to expand the vm disk size. " +
+            "Run 'vagrant plugin install vagrant-disksize'."
+    end
 
     if ENV["http_proxy"]
       config.vm.provision "shell", inline: <<-EOF
@@ -25,11 +32,7 @@ Vagrant.configure(2) do |config|
       echo "Apt::Install-Recommends 'false';" >/etc/apt/apt.conf.d/02no-recommends
       echo "Acquire::Languages { 'none' };" >/etc/apt/apt.conf.d/05no-languages
       apt-get update
-      apt-get -y remove --purge puppet juju
-      apt-get -y autoremove --purge
       wget -qO- https://get.docker.com/ | sh
-
-      ln -s /vagrant /var/discourse
     EOF
   end
 end

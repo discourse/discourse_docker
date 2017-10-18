@@ -184,7 +184,7 @@ then run:
 This will spawn a new Ubuntu VM, install Docker, and then await your
 instructions.  You can then SSH into the VM with `vagrant ssh`, become
 `root` with `sudo -i`, and then you're right to go.  Your live git repo is
-already available at `/var/discourse`, so you can just `cd /var/discourse`
+already available at `/vagrant`, so you can just `cd /vagrant`
 and then start running `launcher`.
 
 
