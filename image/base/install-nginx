@@ -10,6 +10,8 @@ git clone https://github.com/bagder/libbrotli
 cd libbrotli
 ./autogen.sh
 ./configure
+# workaround for https://github.com/bagder/libbrotli/issues/45
+mkdir brotli/c/tools/.deps && touch brotli/c/tools/.deps/brotli-brotli.Po
 make install
 
 cd /tmp
