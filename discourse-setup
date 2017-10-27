@@ -10,50 +10,55 @@ check_root() {
   fi
 }
 
+##
+## Check whether a connection to HOSTNAME ($1) on PORT ($2) is possible
+##
+connect_to_port () {
+  HOST="$1"
+  PORT="$2"
+  VERIFY=`date +%s | sha256sum | base64 | head -c 20`
+  echo -e "HTTP/1.1 200 OK\n\n $VERIFY" | nc -w 4 -l -p $PORT >/dev/null 2>&1 &
+  if curl --proto =http -s $HOST:$PORT --connect-timeout 3 | grep $VERIFY >/dev/null 2>&1
+  then
+      return 0
+  else
+    curl --proto =http -s localhost:$PORT >/dev/null 2>&1
+    return 1
+  fi
+}
 
-##
-## Does the current IP match the domain name?
-##
 check_IP_match () {
+  HOST="$1"
   echo
   echo Checking your domain name . . .
-  sleep 1
-  local IFACE=none
-  local IFCONFIG=`which ifconfig`
-  /sbin/route |grep default > /tmp/route$PPID
-
-  if grep default /tmp/route$PPID > /dev/null
+  if connect_to_port $HOST 443
   then
-      local IFACE=`cut -c 73-100 /tmp/route$PPID |head -1`
-  else
-    echo WARNING: Cannot check your IP number.
-  fi
-  local IP=`$IFCONFIG $IFACE|grep  "inet addr:" |cut -d":" -f 2|cut -d" " -f1|head -1`
-  local RESOLVED_IP=`dig +short $1`
-
-  IP_LOOKS_GOOD=0
-  if [[ ! -z $RESOLVED_IP ]]
-  then
-      if [ "$IP" == "$RESOLVED_IP" ]
-      then
-	  echo $1 resolves to $IP. Looks good!
-	  echo
-	  local IP_LOOKS_GOOD=1
-      fi
-  fi
-  if [ $IP_LOOKS_GOOD == 0 ]
-  then
-      echo "-----------------------------------------"
-      echo WARNING:: $1 does not appear to resolve to $IP.
-      echo ""
-      echo LET\'S ENCRYPT cannot work if their servers cannot access your host by name.
-      echo Unless you think you know why this naive check failed, DO NOT USE Let\'s Encrypt.
-      echo "(A typical reason for failure is an AWS server with an elastic IP.)"
       echo
-      echo You should probably answer \"n\" at the next prompt and disable Let\'s Encrypt.
-      echo "-----------------------------------------"
+      echo "Connection to $HOST succeeded."
+  else
+    echo WARNING:: This server does not appear to be accessible at $HOST:443.
+    echo
+    if connect_to_port $HOST 80
+    then
+	echo A connection to port 80 succeeds, however.
+	echo This suggests that your DNS settings are correct,
+	echo but something is keeping traffic to port 443 from getting to your server.
+	echo Check your networking configuration to see that connections to port 443 are allowed.
+    else
+      echo "A connection to http://$HOST (port 80) also fails."
+      echo
+      echo This suggests that $HOST resolves to the wrong IP address
+      echo or that traffic is not being routed to your server.
+    fi
+    echo
+    echo Google: \"open ports YOUR CLOUD SERVICE\" for information for resolving this problem.
+    echo
+    echo You should probably answer \"n\" at the next prompt and disable Let\'s Encrypt.
+    echo
+    echo This test might not work for all situations,
+    echo so if you can access Discourse at http://$HOST, you might try anyway.
+    sleep 3
   fi
-  sleep 1
 }
 
 ##
@@ -117,6 +122,7 @@ check_disk_and_memory() {
 
   if [ "$avail_mem" -le 2 ]; then
     total_swap=`free -g --si | awk ' /Swap:/  {print $2} '`
+
     if [ "$total_swap" -lt 2 ]; then
       echo "WARNING: Discourse requires at least 2GB of swap when running with 2GB of RAM"
       echo "or less. This system does not appear to have sufficient swap space."
@@ -124,7 +130,8 @@ check_disk_and_memory() {
       echo "Without sufficient swap space, your site may not work properly, and future"
       echo "upgrades of Discourse may not complete successfully."
       echo
-      read -p "ENTER to create a 2GB swapfile now, or Ctrl+C to exit"
+      echo "Ctrl+C to exit or wait 5 seconds to have a 2GB swapfile created."
+      sleep 5
 
       ##
       ## derived from https://meta.discourse.org/t/13880
@@ -221,6 +228,7 @@ scale_ram_and_cpu() {
       rm $changelog
   fi
 
+  echo $config_file memory parameters updated.
 }
 
 
@@ -533,6 +541,7 @@ ask_user_for_config() {
     echo -e "\nConfiguration file at $config_file updated successfully!\n"
   else
     echo -e "\nUnfortunately, there was an error changing $config_file\n"
+    echo -d "This may happen if you have made unexpected changes."
     exit 1
   fi
 }
@@ -593,23 +602,27 @@ changelog=/tmp/changelog
 check_root
 check_and_install_docker
 check_disk_and_memory
-check_ports
 
 ##
 ## make a copy of the simple standalone config file
 ##
 if [ -a $config_file ]
 then
-  echo "The configuration file $config_file already exists!"
+  echo "The configuration file $config_file already exists."
   echo
   echo ". . . reconfiguring . . ."
+  echo
   echo
   DATE=`date +"%Y-%m-%d-%H%M%S"`
   BACKUP=$app_name.yml.$DATE.bak
   echo Saving old file as $BACKUP
   cp $config_file containers/$BACKUP
+  echo "Stopping existing container in 5 seconds or Control-C to cancel."
+  sleep 5
+  ./launcher stop app
   echo
 else
+  check_ports # don't need to check ports if Discourse was already installed
   cp $template_path $config_file
 fi
 
@@ -621,5 +634,6 @@ validate_config
 ## if we reach this point without exiting, OK to proceed
 ## rebuild won't fail if there's nothing to rebuild and does the restart
 ##
+echo "Updates successful. Rebuilding in 5 seconds."
 sleep 5 # Just a chance to ^C in case they were too fast on the draw
 time ./launcher rebuild $app_name
