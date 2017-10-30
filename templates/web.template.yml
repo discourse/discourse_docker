@@ -62,7 +62,7 @@ run:
 
         # find DISCOURSE_ env vars, strip the leader, lowercase the key
         /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = #{v}" if k =~ /^DISCOURSE_(.*)/}' > $conf
-        
+
   - file:
      path: /etc/runit/1.d/enable-brotli
      chmod: "+x"
@@ -264,6 +264,7 @@ run:
         fi
         if [[ ! -d /shared/log/rails ]]; then
           mkdir -p /shared/log/rails
+          touch -a /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log
           chown -R discourse:www-data /shared/log/rails
         fi
         if [[ ! -d /shared/uploads ]]; then
