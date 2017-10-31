@@ -6,7 +6,7 @@ ENV PG_MAJOR 9.5
 ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
 ENV COMPRESS_BROTLI 1
 
-MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
+#LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
 RUN echo 2.0.`date +%Y%m%d` > /VERSION
 

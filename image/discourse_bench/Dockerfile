@@ -2,7 +2,7 @@
 # VERSION:  1.4.0
 FROM discourse/discourse_test:1.4.0
 
-MAINTAINER Gerhard Schlager <mail@gerhard-schlager.at>
+#LABEL maintainer="Gerhard Schlager <mail@gerhard-schlager.at>"
 
 # Install ApacheBench
 RUN apt-get install -y apache2-utils libsqlite3-dev
