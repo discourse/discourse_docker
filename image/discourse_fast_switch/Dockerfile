@@ -4,7 +4,7 @@
 # Allow to easily switch Ruby version in images that derive off this
 FROM discourse/base:1.4.0
 
-LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
+#LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
 RUN apt-get -y install ruby bison autoconf &&\
     echo install_package "openssl-1.0.1l" "https://www.openssl.org/source/openssl-1.0.1l.tar.gz#b2cf4d48fe5d49f240c61c9e624193a6f232b5ed0baf010681e725963c40d1d4" mac_openssl --if has_broken_mac_openssl > /src/2.2.3-github &&\
