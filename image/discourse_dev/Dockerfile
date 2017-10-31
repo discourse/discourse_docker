@@ -2,7 +2,7 @@
 # VERSION:  release
 FROM discourse/base:release
 
-MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
+LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
 # Install for mailcatcher gem
 RUN apt-get update && apt-get install -y libsqlite3-dev \
