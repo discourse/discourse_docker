@@ -307,7 +307,7 @@ set_template_info() {
     require 'yaml'
 
     input=STDIN.readlines.join
-    # default to UTF-8 for the dbs sake
+    # default to UTF-8 for the dbs sakeb
     env = {'LANG' => 'en_US.UTF-8'}
     input.split('_FILE_SEPERATOR_').each do |yml|
        yml.strip!
@@ -371,7 +371,7 @@ RUBY
       if [ "$i" == "*ERROR." ]; then
         ok=0
       elif [ -n "$i" ]; then
-        labels[${#labels[@]}]=$i
+        labels[${#labels[@]}]=$(echo $i | sed s/{{config}}/${config}/)
       fi
     done <<< "$raw"
 
