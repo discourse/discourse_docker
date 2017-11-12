@@ -25,6 +25,6 @@ RUBY
 )
 
   system("chmod +x #{bin}")
-  system("use_#{v} && gem update --system && gem install bundler")
+  system("use_#{v} && gem update --system && gem install bundler --force")
   system("use_#{v} && cd /var/www/discourse && sudo -u discourse bundle install --deployment --without test --without development")
 end

@@ -80,7 +80,7 @@ RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
 
 RUN gem update --system
 
-RUN gem install bundler &&\
+RUN gem install bundler --force &&\
     rm -rf /usr/local/share/ri/2.4.2/system &&\
     cd / && git clone https://github.com/SamSaffron/pups.git
 

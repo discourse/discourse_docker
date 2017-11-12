@@ -5,7 +5,7 @@ FROM discourse/base:$tag
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
-RUN gem update bundler &&\
+RUN gem update bundler --force &&\
       cd /var/www/discourse &&\
       chown -R discourse . &&\
       rm -fr .bundle &&\
