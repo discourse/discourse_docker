@@ -4,10 +4,16 @@
 templates:
   - "templates/web.template.yml"
   - "templates/web.ratelimited.template.yml"
+## Uncomment these two lines if you wish to add Lets Encrypt (https)
+  #- "templates/web.ssl.template.yml"
+  #- "templates/web.letsencrypt.ssl.template.yml"
 
+## which TCP/IP ports should this container expose?
+## If you want Discourse to share a port with another webserver like Apache or nginx,
+## see https://meta.discourse.org/t/17247 for details
 expose:
-  - "80:80"
-  - "2222:22"
+  - "80:80"   # http
+  - "443:443" # https
 
 # Use 'links' key to link containers together, aka use Docker --link flag.
 links:
@@ -24,10 +30,32 @@ params:
 
 env:
   LANG: en_US.UTF-8
-  ## TODO: How many concurrent web requests are supported?
-  ## With 2GB we recommend 3-4 workers, with 1GB only 2
-  ## If you have lots of memory, use one or two workers per logical CPU core
+  # DISCOURSE_DEFAULT_LOCALE: en
+
+  ## How many concurrent web requests are supported? Depends on memory and CPU cores.
+  ## will be set automatically by bootstrap based on detected CPUs, or you can override
   #UNICORN_WORKERS: 3
+
+  ## TODO: The domain name this Discourse instance will respond to
+  DISCOURSE_HOSTNAME: 'discourse.example.com'
+
+  ## Uncomment if you want the container to be started with the same
+  ## hostname (-h option) as specified above (default "$hostname-$config")
+  #DOCKER_USE_HOSTNAME: true
+
+  ## TODO: List of comma delimited emails that will be made admin and developer
+  ## on initial signup example 'user1@example.com,user2@example.com'
+  DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'
+
+  ## TODO: The SMTP mail server used to validate new accounts and send notifications
+  DISCOURSE_SMTP_ADDRESS: smtp.example.com         # required
+  #DISCOURSE_SMTP_PORT: 587                        # (optional, default 587)
+  #DISCOURSE_SMTP_USER_NAME: user@example.com      # required
+  #DISCOURSE_SMTP_PASSWORD: pa$$word               # required, WARNING the char '#' in pw can cause problems!
+  #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
+
+  ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
+  #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
 
   ## TODO: configure connectivity to the databases
   DISCOURSE_DB_SOCKET: ''
@@ -35,24 +63,7 @@ env:
   DISCOURSE_DB_PASSWORD: SOME_SECRET
   DISCOURSE_DB_HOST: data
   DISCOURSE_REDIS_HOST: data
-  ##
-  ## TODO: List of comma delimited emails that will be made admin and developer
-  ## on initial signup example 'user1@example.com,user2@example.com'
-  DISCOURSE_DEVELOPER_EMAILS: 'me@example.com'
-  ##
-  ## TODO: The domain name this Discourse instance will respond to
-  DISCOURSE_HOSTNAME: 'discourse.example.com'
-  ##
-  ## Uncomment if you want the container to be started with the same
-  ## hostname (-h option) as specified above (default "$hostname-$config")
-  #DOCKER_USE_HOSTNAME: true
-  ##
-  ## TODO: The mailserver this Discourse instance will use
-  DISCOURSE_SMTP_ADDRESS: smtp.example.com         # (mandatory)
-  #DISCOURSE_SMTP_PORT: 587                        # (optional)
-  #DISCOURSE_SMTP_USER_NAME: user@example.com      # (optional)
-  #DISCOURSE_SMTP_PASSWORD: pa$$word               # (optional)
-  ##
+
   ## The CDN address for this Discourse instance (configured to pull)
   #DISCOURSE_CDN_URL: //discourse-cdn.example.com
 
@@ -64,8 +75,8 @@ volumes:
       host: /var/discourse/shared/web-only/log/var-log
       guest: /var/log
 
-## The docker manager plugin allows you to one-click upgrade Discouse
-## http://discourse.example.com/admin/docker
+## Plugins go here
+## see https://meta.discourse.org/t/19157 for details
 hooks:
   after_code:
     - exec:
