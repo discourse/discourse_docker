@@ -108,6 +108,18 @@ links:
 Links another container to the current container. This will add `--link postgres:postgres`
 to the options when running the container.
 
+#### labels:
+```
+# app.yml
+
+labels:
+  monitor: 'true'
+  app_name: {{config}}_discourse
+```
+
+Add labels to the current container. The above will add `--l monitor=true -l app_name=dev_discourse` to the options
+when running the container
+
 ### Upgrading Discourse
 
 The Docker setup gives you multiple upgrade options:

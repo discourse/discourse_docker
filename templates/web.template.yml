@@ -62,7 +62,7 @@ run:
 
         # find DISCOURSE_ env vars, strip the leader, lowercase the key
         /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = #{v}" if k =~ /^DISCOURSE_(.*)/}' > $conf
-        
+
   - file:
      path: /etc/runit/1.d/enable-brotli
      chmod: "+x"
@@ -168,7 +168,7 @@ run:
       cd: $home
       hook: bundle_exec
       cmd:
-        - su discourse -c 'bundle install --deployment --verbose --without test --without development'
+        - su discourse -c 'bundle install --deployment --verbose --without test --without development --retry 3 --jobs 4'
         - su discourse -c 'bundle exec rake db:migrate'
         - su discourse -c 'bundle exec rake assets:precompile'
 
@@ -235,7 +235,7 @@ run:
           compress
           delaycompress
           notifempty
-          create 0640 www-data www-data
+          create 0644 www-data www-data
           sharedscripts
           postrotate
             sv 1 nginx
