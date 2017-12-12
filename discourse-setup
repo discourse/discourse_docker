@@ -380,9 +380,9 @@ ask_user_for_config() {
     if [ ! -z $smtp_user_name ]
     then
       read -p "SMTP user name? [$smtp_user_name]: " new_value
-      if [ ! -z $new_value ]
+      if [ ! -z "$new_value" ]
       then
-          smtp_user_name=$new_value
+          smtp_user_name="$new_value"
       fi
     fi
 
