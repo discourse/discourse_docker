@@ -1,0 +1,42 @@
+Stye/GlobalVars:
+    Enabled: false
+
+Style/Documentation:
+    Enabled: false
+
+# image/build.rb:8
+# image/build.rb:30
+# Methods have too many length
+Metrics/MethodLength:
+    Enabled: false
+
+# image/build.rb:16
+# Unhandled exception
+Lint/HandleExceptions:
+    Enabled: false
+
+# image/build.rb:30
+# Assignment Branch Condition size for build is too high. [22.29/15]
+Metrics/AbcSize:
+    Enabled: false
+
+# image/build.rb:32
+# Do not compute the size of statically sized objects.
+Performance/FixedSize:
+    Enabled: false
+
+# Many line is tricky or became less readable when splited
+# especially line of executing shell command via run(...).
+Metrics/LineLength:
+    Enabled: false
+
+# image/monitor/src/monitor.rb:24
+# Avoid using `rescue` in its modifier form.
+Style/RescueModifier:
+    Enabled: false
+
+# image/monitor/src/monitor.rb:82
+# Favor modifier `if` usage when having a single-line body.
+# ps: maybe a false positive
+Style/IfUnlessModifier:
+    Enabled: false

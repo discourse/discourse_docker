@@ -7,7 +7,7 @@ module Docker
   class CloseConnectionError < StandardError; end
   class Container
     def name
-      info["Names"].first[1..-1]
+      info['Names'].first[1..-1]
     end
 
     def stats
@@ -15,7 +15,7 @@ module Docker
 
       result = nil
 
-      streamer = lambda do |chunk, remaining, total|
+      streamer = lambda do |chunk, _remaining, _total|
         result ||= chunk
         raise CloseConnectionError if result
       end
@@ -31,57 +31,52 @@ end
 def median(array)
   sorted = array.sort
   len = sorted.length
-  return ((sorted[(len - 1) / 2] + sorted[len / 2]) / 2.0).to_i
+  ((sorted[(len - 1) / 2] + sorted[len / 2]) / 2.0).to_i
 end
 
-
 def analyze_container(container)
-
-  data = container.exec(["ps", "-eo", "rss,args"])[0].join("\n").split("\n")
+  data = container.exec(['ps', '-eo', 'rss,args'])[0].join("\n").split("\n")
   unicorns = data.grep(/unicorn/).map(&:to_i)
   sidekiqs = data.grep(/sidekiq/).map(&:to_i)
 
   result = {}
 
-  if unicorns.length > 0
-    result["unicorn.max_rss"] = unicorns.max
-    result["unicorn.median_rss"] = median(unicorns)
+  unless unicorns.empty?
+    result['unicorn.max_rss'] = unicorns.max
+    result['unicorn.median_rss'] = median(unicorns)
   end
 
-  if sidekiqs.length > 0
-     result["sidekiq.max_rss"] = sidekiqs.max
-     result["sidekiq.median_rss"] = median(sidekiqs)
+  unless sidekiqs.empty?
+    result['sidekiq.max_rss'] = sidekiqs.max
+    result['sidekiq.median_rss'] = median(sidekiqs)
   end
-  result["total_mem_usage"] = container.stats["memory_stats"]["usage"]
+  result['total_mem_usage'] = container.stats['memory_stats']['usage']
 
   @prev_stats ||= {}
   prev_stats = @prev_stats[container.name]
   @prev_stats[container.name] = stats = container.stats
 
   if prev_stats
-    cpu_delta = stats["cpu_stats"]["system_cpu_usage"] - prev_stats["cpu_stats"]["system_cpu_usage"]
-    app_cpu_delta = stats["cpu_stats"]["cpu_usage"]["total_usage"] - prev_stats["cpu_stats"]["cpu_usage"]["total_usage"]
+    cpu_delta = stats['cpu_stats']['system_cpu_usage'] - prev_stats['cpu_stats']['system_cpu_usage']
+    app_cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - prev_stats['cpu_stats']['cpu_usage']['total_usage']
 
-    result["cpu_usage"] = (app_cpu_delta.to_f / cpu_delta.to_f) * stats["cpu_stats"]["cpu_usage"]["percpu_usage"].length * 100.0
+    result['cpu_usage'] = (app_cpu_delta.to_f / cpu_delta.to_f) * stats['cpu_stats']['cpu_usage']['percpu_usage'].length * 100.0
   end
 
   result
-
 end
 
 def containers
   Docker::Container.all
 end
 
-hostname = Docker.info["Name"]
+hostname = Docker.info['Name']
 
 STDERR.puts "#{Time.now} Starting Monitor"
 
-while true
-
+loop do
   begin
     containers.each do |c|
-
       analyze_container(c).each do |k, v|
         if v && v > 0
           $statsd.gauge "#{hostname}.#{c.name}.#{k}", v
@@ -95,4 +90,3 @@ while true
 
   sleep 60
 end
-
