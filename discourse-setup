@@ -325,41 +325,58 @@ ask_user_for_config() {
 
   while [[ "$config_ok" == "n" ]]
   do
-    if [ ! -z $hostname ]
-    then
-      read -p "Hostname for your Discourse? [$hostname]: " new_value
-      if [ ! -z $new_value ]
+    if [ "X${HOSTNAME}" = "X" ]; then
+      if [ ! -z $hostname ]
       then
-          hostname=$new_value
+        read -p "Hostname for your Discourse? [$hostname]: " new_value
+        if [ ! -z $new_value ]
+        then
+            hostname=$new_value
+        fi
       fi
+    else
+      hostname=${HOSTNAME}
     fi
 
-    if [ ! -z $developer_emails ]
-    then
-      read -p "Email address for admin account(s)? [$developer_emails]: " new_value
-      if [ ! -z $new_value ]
+    if [ "X${DEVELOPER_EMAILS}" = "X" ]; then
+      if [ ! -z $developer_emails ]
       then
-          developer_emails=$new_value
+        read -p "Email address for admin account(s)? [$developer_emails]: " new_value
+        if [ ! -z $new_value ]
+        then
+            developer_emails=$new_value
+        fi
       fi
+    else
+      developer_emails=${DEVELOPER_EMAILS}
     fi
 
-    if [ ! -z $smtp_address ]
-    then
-      read -p "SMTP server address? [$smtp_address]: " new_value
-      if [ ! -z $new_value ]
+    if [ "X${SMTP_ADDRESS}" = "X" ]; then
+      if [ ! -z $smtp_address ]
       then
-        smtp_address=$new_value
+        read -p "SMTP server address? [$smtp_address]: " new_value
+        if [ ! -z $new_value ]
+        then
+          smtp_address=$new_value
+        fi
       fi
+    else
+      smtp_address=${SMTP_ADDRESS}
     fi
 
-    if [ ! -z $smtp_port ]
-    then
-      read -p "SMTP port? [$smtp_port]: " new_value
-      if [ ! -z $new_value ]
+    if [ "X${SMTP_PORT}" = "X" ]; then
+      if [ ! -z $smtp_port ]
       then
-        smtp_port=$new_value
+        read -p "SMTP port? [$smtp_port]: " new_value
+        if [ ! -z $new_value ]
+        then
+          smtp_port=$new_value
+        fi
       fi
+    else
+      smtp_port=${SMTP_PORT}
     fi
+
 
     ##
     ## automatically set correct user name based on common mail providers
@@ -377,34 +394,48 @@ ask_user_for_config() {
 	    smtp_user_name="postmaster@$hostname"
     fi
 
-    if [ ! -z $smtp_user_name ]
-    then
-      read -p "SMTP user name? [$smtp_user_name]: " new_value
-      if [ ! -z "$new_value" ]
+    if [ "X${SMTP_USER_NAME}" = "X" ]; then
+      if [ ! -z $smtp_user_name ]
       then
-          smtp_user_name="$new_value"
+        read -p "SMTP user name? [$smtp_user_name]: " new_value
+        if [ ! -z "$new_value" ]
+        then
+            smtp_user_name="$new_value"
+        fi
       fi
+    else
+      smtp_user_name=${SMTP_USER_NAME}
     fi
 
-    read -p "SMTP password? [$smtp_password]: " new_value
-    if [ ! -z $new_value ]
-    then
-        smtp_password=$new_value
-    fi
-
-    if [ ! -z $letsencrypt_account_email ]
-    then
-      read -p "Let's Encrypt account email? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
+    if [ "X${SMTP_PASSWORD}" = "X" ]; then
+      read -p "SMTP password? [$smtp_password]: " new_value
       if [ ! -z $new_value ]
       then
-          letsencrypt_account_email=$new_value
-          if [ "${new_value,,}" = "off" ]
-          then
-            letsencrypt_status="ENTER to skip"
-          else
-            letsencrypt_status="Enter 'OFF' to disable."
-          fi
+          smtp_password=$new_value
       fi
+    else
+      smtp_password=${SMTP_PASSWORD}
+    fi
+
+
+    if [ "X${LETSENCRYPT_ACCOUNT_EMAIL}" = "X" ]; then
+      if [ ! -z $letsencrypt_account_email ]
+      then
+        read -p "Let's Encrypt account email? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
+        if [ ! -z $new_value ]
+        then
+            letsencrypt_account_email=$new_value
+            if [ "${new_value,,}" = "off" ]
+            then
+              letsencrypt_status="ENTER to skip"
+            else
+              letsencrypt_status="Enter 'OFF' to disable."
+            fi
+        fi
+      fi
+    else
+      letsencrypt_account_email=${LETSENCRYPT_ACCOUNT_EMAIL}
+      letsencrypt_status="ENTER to skip"
     fi
 
     if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
@@ -427,7 +458,12 @@ ask_user_for_config() {
 
 
     echo ""
-    read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
+    if [ "X${AUTO_START}" = "X" ]; then
+      read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
+    else
+      config_ok="y"
+    fi
+
   done
 
   sed -i -e "s/^  DISCOURSE_HOSTNAME:.*/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $config_file
