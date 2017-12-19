@@ -1,6 +1,6 @@
 # NAME:     discourse/discourse_dev
 # VERSION:  release
-FROM discourse/discourse_test:release
+FROM discourse/base:release
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
@@ -37,3 +37,8 @@ RUN mv /shared/postgres_data /shared/postgres_data_orig
 # re-instantiate data on boot if needed (this will allow it to persist across
 # invocations when used with a mounted volume)
 ADD ensure-database /etc/runit/1.d/ensure-database
+
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - &&\
+    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
+    apt-get update &&\
+    apt-get install -y google-chrome-stable
