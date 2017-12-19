@@ -1,6 +1,6 @@
 # NAME:     discourse/discourse_dev
 # VERSION:  release
-FROM discourse/test:release
+FROM discourse/discourse_test:release
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
