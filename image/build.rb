@@ -95,7 +95,6 @@ todo.each do |image|
   bump(images[image][:name], options[:version]) if options[:version]
 
   dev_deps() if image == :discourse_dev
-  run "(cd base && ./download_phantomjs)" if image == :base
 
   build(images[image])
 end

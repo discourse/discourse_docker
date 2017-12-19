@@ -53,7 +53,6 @@ RUN /tmp/install-nginx
 
 RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
-
 RUN mkdir /jemalloc-stable && cd /jemalloc-stable &&\
       wget https://github.com/jemalloc/jemalloc/releases/download/3.6.0/jemalloc-3.6.0.tar.bz2 &&\
       tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure --prefix=/usr && make && make install &&\
@@ -97,12 +96,6 @@ RUN /tmp/install-gifsicle
 
 ADD install-pngquant /tmp/install-pngquant
 RUN /tmp/install-pngquant
-
-ADD phantomjs /usr/local/bin/phantomjs
-
-# Not using the official repo until they compile against a recent openssl
-# RUN cd tmp && wget https://bitbucket.org/ariya/phantomjs/downloads/phantomjs-2.1.1-linux-x86_64.tar.bz2
-# RUN cd tmp && tar jxf phantomjs-2.1.1-linux-x86_64.tar.bz2 && mv /tmp/phantomjs-2.1.1-linux-x86_64/bin/phantomjs /usr/local/bin
 
 # clean up for docker squash
 RUN   rm -fr /usr/share/man &&\

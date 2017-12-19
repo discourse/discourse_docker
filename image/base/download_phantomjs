@@ -1,3 +1,0 @@
-#!/bin/bash
-
-docker run --rm -it -v `pwd`:/tmp samsaffron/phantomjs cp /usr/bin/phantomjs /tmp

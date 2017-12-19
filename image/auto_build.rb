@@ -41,6 +41,5 @@ raise 'Image not found' unless images.include?(image)
 
 puts "Building #{images[image]}"
 dev_deps() if image == :discourse_dev
-run "(cd base && ./download_phantomjs)" if image == :base
 
 build(images[image])
