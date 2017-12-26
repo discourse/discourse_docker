@@ -2,7 +2,7 @@
 mkdir -p /var/log/nginx
 chown -R www-data:www-data /var/log/nginx
 chmod -R 644 /var/log/nginx
-chmod 655 /var/log/nginx
+chmod 755 /var/log/nginx
 touch /var/log/syslog   && chown -f syslog:adm /var/log/syslog*
 touch /var/log/auth.log && chown -f syslog:adm /var/log/auth.log*
 touch /var/log/kern.log && chown -f syslog:adm /var/log/kern.log*
