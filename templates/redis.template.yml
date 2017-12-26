@@ -6,7 +6,13 @@ run:
         #!/bin/sh
         exec 2>&1
         exec chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
-
+  - file:
+     path: /etc/service/redis/log/run
+     chmod: "+x"
+     contents: |
+       #!/bin/sh
+       mkdir -p /var/log/redis
+       exec svlogd /var/log/redis
   - file:
      path: /etc/runit/3.d/10-redis
      chmod: "+x"
