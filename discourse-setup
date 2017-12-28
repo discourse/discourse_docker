@@ -594,7 +594,7 @@ validate_config() {
 ## template file names
 ##
 
-if [ "$1" == "multi" ]
+if [ "$1" == "2container" ]
 then
     app_name=web_only
     data_name=data
