@@ -674,19 +674,13 @@ validate_config
 ##
 echo "Updates successful. Rebuilding in 5 seconds."
 sleep 5 # Just a chance to ^C in case they were too fast on the draw
-./launcher bootstrap $data_name
-if [ $? -eq 0 ]
+if [ "$data_name" == "$app_name" ]
 then
-    echo Starting $data_name now . . .
-    ./launcher start $data_name
-    ./launcher bootstrap $app_name
-    if [ $? -eq 0 ]
-    then
-	echo Starting $app_name now . . .
-	./launcher start $app_name
-    else
-      echo Building $app_name failed
-    fi
+    echo Building $app_name
+    ./launcher rebuild $app_name
 else
-  echo Building $data_name failed
+    echo Building $data_name now . . .
+    ./launcher rebuild $data_name
+    echo Building $app_name now . . .
+    ./launcher rebuild $app_name
 fi
