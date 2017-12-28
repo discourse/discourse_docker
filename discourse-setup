@@ -205,7 +205,7 @@ scale_ram_and_cpu() {
   fi
   db_shared_buffers=$(( db_shared_buffers < 4096 ? db_shared_buffers : 4096 ))
 
-  sed -i -e "s/^  #\?db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $config_file
+  sed -i -e "s/^  #\?db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $data_file
   if [ -s $changelog ]
   then
     echo "setting db_shared_buffers = ${db_shared_buffers}MB"
@@ -221,14 +221,14 @@ scale_ram_and_cpu() {
   fi
   unicorn_workers=$(( unicorn_workers < 8 ? unicorn_workers : 8 ))
 
-  sed -i -e "s/^  #\?UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $config_file
+  sed -i -e "s/^  #\?UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $web_file
   if [ -s $changelog ]
   then
       echo "setting UNICORN_WORKERS = ${unicorn_workers}"
       rm $changelog
   fi
 
-  echo $config_file memory parameters updated.
+  echo $data_file memory parameters updated.
 }
 
 
@@ -252,6 +252,9 @@ check_port() {
   if [ -n "$valid" ]; then
     echo "Port ${1} appears to already be in use."
     echo
+    echo "This will show you what command is using port ${1}"
+    lsof -i tcp:${1} -s tcp:listen
+    echo
     echo "If you are trying to run Discourse simultaneously with another web"
     echo "server like Apache or nginx, you will need to bind to a different port"
     echo
@@ -270,8 +273,7 @@ check_port() {
 ## read a variable from the config file
 ##
 read_config() {
-
-  config_line=`egrep "^  #?$1:" $config_file`
+  config_line=`egrep "^  #?$1:" $web_file`
   read_config_result=`echo $config_line | awk '{print $2}'`
   read_config_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
 }
@@ -430,7 +432,7 @@ ask_user_for_config() {
     read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
   done
 
-  sed -i -e "s/^  DISCOURSE_HOSTNAME:.*/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $config_file
+  sed -i -e "s/^  DISCOURSE_HOSTNAME:.*/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $web_file
   if [ -s $changelog ]
   then
     rm $changelog
@@ -439,7 +441,7 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  DISCOURSE_DEVELOPER_EMAILS:.*/  DISCOURSE_DEVELOPER_EMAILS: \'$developer_emails\'/w $changelog" $config_file
+  sed -i -e "s/^  DISCOURSE_DEVELOPER_EMAILS:.*/  DISCOURSE_DEVELOPER_EMAILS: \'$developer_emails\'/w $changelog" $web_file
   if [ -s $changelog ]
   then
     rm $changelog
@@ -448,7 +450,7 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS:.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $config_file
+  sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS:.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $web_file
   if [ -s $changelog ]
   then
     rm $changelog
@@ -457,7 +459,7 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  #\?DISCOURSE_SMTP_PORT:.*/  DISCOURSE_SMTP_PORT: $smtp_port/w $changelog" $config_file
+  sed -i -e "s/^  #\?DISCOURSE_SMTP_PORT:.*/  DISCOURSE_SMTP_PORT: $smtp_port/w $changelog" $web_file
   if [ -s $changelog ]
   then
     rm $changelog
@@ -466,7 +468,7 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  #\?DISCOURSE_SMTP_USER_NAME:.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $config_file
+  sed -i -e "s/^  #\?DISCOURSE_SMTP_USER_NAME:.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $web_file
   if [ -s $changelog ]
   then
     rm $changelog
@@ -475,7 +477,7 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  #\?DISCOURSE_SMTP_PASSWORD:.*/  DISCOURSE_SMTP_PASSWORD: \"${smtp_password/\//\\/}\"/w $changelog" $config_file
+  sed -i -e "s/^  #\?DISCOURSE_SMTP_PASSWORD:.*/  DISCOURSE_SMTP_PASSWORD: \"${smtp_password/\//\\/}\"/w $changelog" $web_file
   if [ -s $changelog ]
   then
       rm $changelog
@@ -488,7 +490,7 @@ ask_user_for_config() {
   then
       local src='^  #\?- "templates\/web.ssl.template.yml"'
       local dst='  #\- "templates\/web.ssl.template.yml"'
-      sed -i -e "s/$src/$dst/w $changelog" $config_file
+      sed -i -e "s/$src/$dst/w $changelog" $web_file
       if [ ! -s $changelog ]
       then
         update_ok="n"
@@ -497,7 +499,7 @@ ask_user_for_config() {
       local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
       local dst='  #- "templates\/web.letsencrypt.ssl.template.yml"'
 
-      sed -i -e "s/$src/$dst/w $changelog" $config_file
+      sed -i -e "s/$src/$dst/w $changelog" $web_file
       if [ ! -s $changelog ]
       then
         update_ok="n"
@@ -505,7 +507,7 @@ ask_user_for_config() {
       fi
   else # enable let's encrypt
     echo "Let's Encrypt will be enabled for $letsencrypt_account_email"
-      sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $config_file
+      sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $web_file
       if [ -s $changelog ]
       then
         rm $changelog
@@ -515,7 +517,7 @@ ask_user_for_config() {
       fi
       local src='^  #\?- "templates\/web.ssl.template.yml"'
       local dst='  \- "templates\/web.ssl.template.yml"'
-      sed -i -e "s/$src/$dst/w $changelog" $config_file
+      sed -i -e "s/$src/$dst/w $changelog" $web_file
       if [ -s $changelog ]
       then
 	  echo "web.ssl.template.yml enabled"
@@ -526,7 +528,7 @@ ask_user_for_config() {
       local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
       local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
 
-      sed -i -e "s/$src/$dst/w $changelog" $config_file
+      sed -i -e "s/$src/$dst/w $changelog" $web_file
       if [ -s $changelog ]
       then
 	      echo "letsencrypt.ssl.template.yml enabled"
@@ -556,7 +558,7 @@ validate_config() {
   for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
            DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
   do
-    config_line=`grep "^  $x:" $config_file`
+    config_line=`grep "^  $x:" $web_file`
     local result=$?
     local default="example.com"
 
@@ -580,8 +582,8 @@ validate_config() {
   done
 
   if [ "$valid_config" != "y" ]; then
-    echo -e "\nSorry, these $config_file settings aren't valid -- can't continue!"
-    echo "If you have unusual requirements, edit $config_file and then: "
+    echo -e "\nSorry, these $web_file settings aren't valid -- can't continue!"
+    echo "If you have unusual requirements, edit $web_file and then: "
     echo "./launcher bootstrap $app_name"
     exit 1
   fi
@@ -591,10 +593,24 @@ validate_config() {
 ##
 ## template file names
 ##
-app_name=app
-template_path=samples/standalone.yml
-config_file=containers/$app_name.yml
-changelog=/tmp/changelog
+
+if [ "$1" == "2container" ]
+then
+    app_name=web_only
+    data_name=data
+    web_template=samples/web_only.yml
+    data_template=samples/data.yml
+    web_file=containers/$app_name.yml
+    data_file=containers/$data_name.yml
+else
+  app_name=app
+  data_name=app
+  web_template=samples/standalone.yml
+  data_template=""
+  web_file=containers/$app_name.yml
+  data_file=containers/$app_name.yml
+fi
+    changelog=/tmp/changelog
 
 ##
 ## Check requirements before creating a copy of a config file we won't edit
@@ -603,12 +619,9 @@ check_root
 check_and_install_docker
 check_disk_and_memory
 
-##
-## make a copy of the simple standalone config file
-##
-if [ -a $config_file ]
+if [ -a "$web_file" ]
 then
-  echo "The configuration file $config_file already exists."
+  echo "The configuration file $web_file already exists!"
   echo
   echo ". . . reconfiguring . . ."
   echo
@@ -622,8 +635,33 @@ then
   ./launcher stop app
   echo
 else
-  check_ports # don't need to check ports if Discourse was already installed
-  cp $template_path $config_file
+  check_ports
+  cp -v $web_template $web_file
+  if [ "$data_name" == "data" ]
+  then
+      echo "--------------------------------------------------"
+      echo "This multisite setup is currently unsupported. Use at your own risk!"
+      echo "--------------------------------------------------"
+      DISCOURSE_DB_PASSWORD=`date +%s | sha256sum | base64 | head -c 20`
+
+     sed -i -e "s/DISCOURSE_DB_PASSWORD: SOME_SECRET/DISCOURSE_DB_PASSWORD: $DISCOURSE_DB_PASSWORD/w $changelog" $web_file
+     if  [ -s $changelog ]
+     then
+	 rm $changelog
+     else
+       echo "Problem changing DISCOURSE_DB_PASSWORD" in $web_file
+     fi
+
+     cp -v $data_template $data_file
+     quote=\'
+     sed -i -e "s/password ${quote}SOME_SECRET${quote}/password '$DISCOURSE_DB_PASSWORD'/w $changelog" $data_file
+     if  [ -s $changelog ]
+     then
+	 rm $changelog
+     else
+       echo "Problem changing DISCOURSE_DB_PASSWORD" in $data_file
+     fi
+  fi
 fi
 
 scale_ram_and_cpu
@@ -636,4 +674,13 @@ validate_config
 ##
 echo "Updates successful. Rebuilding in 5 seconds."
 sleep 5 # Just a chance to ^C in case they were too fast on the draw
-time ./launcher rebuild $app_name
+if [ "$data_name" == "$app_name" ]
+then
+    echo Building $app_name
+    ./launcher rebuild $app_name
+else
+    echo Building $data_name now . . .
+    ./launcher rebuild $data_name
+    echo Building $app_name now . . .
+    ./launcher rebuild $app_name
+fi
