@@ -146,7 +146,7 @@ check_disk_and_memory() {
 
       total_swap=`free -g --si | awk ' /Swap:/ {print $2} '`
       if [ "$total_swap" -lt 2 ]; then
-        echo "Failed to create swap, sorry!"
+        echo "Failed to create swap: are you root? Are you running on real hardware, or a fully virtualized server?"
         exit 1
       fi
 
