@@ -629,7 +629,7 @@ then
   DATE=`date +"%Y-%m-%d-%H%M%S"`
   BACKUP=$app_name.yml.$DATE.bak
   echo Saving old file as $BACKUP
-  cp $config_file containers/$BACKUP
+  cp $web_file containers/$BACKUP
   echo "Stopping existing container in 5 seconds or Control-C to cancel."
   sleep 5
   ./launcher stop app
