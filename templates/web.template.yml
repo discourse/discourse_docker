@@ -200,6 +200,20 @@ run:
        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec bin/rake "$@")
 
   - file:
+     path: /usr/local/bin/rbtrace
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle rbtrace "$@")
+
+  - file:
+     path: /usr/local/bin/stackprof
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle stackprof "$@")
+
+  - file:
      path: /etc/update-motd.d/10-web
      chmod: +x
      contents: |
