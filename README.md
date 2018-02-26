@@ -38,7 +38,7 @@ Placeholder spot for shared volumes with various Discourse containers. You may e
 
 Dockerfiles for Discourse; see [the README](image/README.md) for further details.
 
-The Docker repository will always contain the latest built version at: https://hub.docker.com/r/discourse/discourse/, you should not need to build the base image.
+The Docker repository will always contain the latest built version at: https://hub.docker.com/r/discourse/base/, you should not need to build the base image.
 
 ### Launcher
 
