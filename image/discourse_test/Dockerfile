@@ -19,7 +19,7 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo ap
     echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list &&\
     curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash - &&\
     apt-get update &&\
-    apt-get install -y google-chrome-stable yarn nodejs &&\
+    apt-get install -y libgconf-2-4 google-chrome-stable yarn nodejs &&\
     npm install -g eslint babel-eslint &&\
     cd /var/www/discourse && sudo -E -u discourse -H yarn install
 
