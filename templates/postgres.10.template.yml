@@ -46,6 +46,82 @@ run:
        #!/bin/bash
        sv stop postgres
 
+  - file:
+     path: /root/upgrade_postgres
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       PG_MAJOR_OLD=`cat /shared/postgres_data/PG_VERSION`
+
+       if [ ! "10" = "$PG_MAJOR_OLD" ]; then
+         echo Upgrading PostgreSQL to from version ${PG_MAJOR_OLD} to 10
+         rm -fr /shared/postgres_data_new
+         install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/10/bin/initdb -D /shared/postgres_data_new || exit 0
+         apt-get update
+         apt-get install -y postgresql-${PG_MAJOR_OLD}
+         /etc/init.d/postgresql stop
+         rm -fr /shared/postgres_data/postmaster.pid
+         cd ~postgres
+         cp /etc/postgresql/${PG_MAJOR_OLD}/main/*.conf /shared/postgres_data
+         echo  >> /shared/postgres_data/postgresql.conf
+         echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
+         SUCCESS=true
+         sudo -u postgres /usr/lib/postgresql/10/bin/pg_upgrade -d /shared/postgres_data -D /shared/postgres_data_new -b /usr/lib/postgresql/${PG_MAJOR_OLD}/bin -B /usr/lib/postgresql/10/bin || SUCCESS=false
+
+         if [[ "$SUCCESS" == 'false' ]]; then
+           echo -------------------------------------------------------------------------------------
+           echo UPGRADE OF POSTGRES FAILED
+           echo
+           echo You are going to need to export your data and import into a clean instance:
+           echo
+
+           if [ "$PG_MAJOR_OLD" = "9.5" ]; then
+             echo 'In containers/app.yml: Change "templates/postgres.template.yml" TO "templates/postgres.9.5.template.yml"'
+             echo
+           fi
+
+           echo Run "./launcher rebuild app" again
+           echo
+           echo When your instance is running:
+           echo Run "./launcher enter app"
+           echo Run "cd /shared/postgres_backup && sudo -u postgres pg_dump discourse > backup.db"
+           echo
+
+           if [ "$PG_MAJOR_OLD" = "9.5" ]; then
+             echo Undo the base_image in your container config
+           fi
+
+           echo Run: "./launcher stop app"
+           echo Run: "sudo mv /var/discourse/shared/standalone/postgres_data /var/discourse/shared/standalone/postgres_data_old"
+           echo Run: "./launcher rebuild app"
+           echo
+           echo Run: "./launcher enter app"
+           echo Run: "cd /shared/postgres_backup"
+           echo Run: "sv stop unicorn"
+           echo Run: "sudo -iu postgres dropdb discourse"
+           echo Run: "sudo -iu postgres createdb discourse"
+           echo Run: "sudo -iu postgres psql discourse < backup.db"
+           echo Run: "exit"
+           echo Run: "./launcher rebuild app"
+           exit 1
+         fi
+
+         mv /shared/postgres_data /shared/postgres_data_old
+         mv /shared/postgres_data_new /shared/postgres_data
+
+         echo -------------------------------------------------------------------------------------
+         echo UPGRADE OF POSTGRES COMPLETE
+         echo
+         echo Old ${PG_MAJOR_OLD} database is stored at /shared/postgres_data_old
+         echo
+         echo To complete the upgrade, rebuild again using:
+         echo
+         echo     ./launcher rebuild app
+         echo -------------------------------------------------------------------------------------
+         # Magic exit status to denote no failure
+         exit 77
+       fi
+
   - exec:
       cmd:
         - chown -R root /var/lib/postgresql/10/main
