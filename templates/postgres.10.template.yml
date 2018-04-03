@@ -62,7 +62,7 @@ run:
          /etc/init.d/postgresql stop
          rm -fr /shared/postgres_data/postmaster.pid
          cd ~postgres
-         cp /etc/postgresql/${PG_MAJOR_OLD}/main/*.conf /shared/postgres_data
+         cp -p /etc/postgresql/${PG_MAJOR_OLD}/main/*.conf /shared/postgres_data
          echo  >> /shared/postgres_data/postgresql.conf
          echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
          SUCCESS=true
