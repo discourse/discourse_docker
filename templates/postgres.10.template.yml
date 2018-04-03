@@ -59,10 +59,11 @@ run:
          install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/10/bin/initdb -D /shared/postgres_data_new || exit 0
          apt-get update
          apt-get install -y postgresql-${PG_MAJOR_OLD}
+         chown -R postgres:postgres /var/lib/postgresql/10
          /etc/init.d/postgresql stop
          rm -fr /shared/postgres_data/postmaster.pid
          cd ~postgres
-         cp -p /etc/postgresql/${PG_MAJOR_OLD}/main/*.conf /shared/postgres_data
+         cp -p /etc/postgresql/${PG_MAJOR_OLD}/main/* /shared/postgres_data
          echo  >> /shared/postgres_data/postgresql.conf
          echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
          SUCCESS=true
