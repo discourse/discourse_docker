@@ -129,6 +129,9 @@ run:
         - chown -R postgres:postgres /shared/postgres_data
         - chown -R postgres:postgres /var/run/postgresql
 
+  - exec: /root/upgrade_postgres
+  - exec: rm /root/upgrade_postgres
+
   - replace:
       filename: "/etc/postgresql/10/main/postgresql.conf"
       from: "data_directory = '/var/lib/postgresql/10/main'"
