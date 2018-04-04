@@ -63,14 +63,6 @@ RUN mkdir /jemalloc-new && cd /jemalloc-new &&\
       tar -xjf jemalloc-5.0.1.tar.bz2 && cd jemalloc-5.0.1 && ./configure --prefix=/usr --with-install-suffix=5.0.1 && make build_lib && make install_lib &&\
       cd / && rm -rf /jemalloc-new
 
-RUN mkdir /gperftools && git clone https://github.com/gperftools/gperftools.git /gperftools &&\
-      cd /gperftools && git checkout gperftools-2.5 && ./autogen.sh && ./configure --prefix=$PWD/lib &&\
-      make install && mv lib/lib/libtcmalloc_minimal.so.4.3.0 /usr/lib && cd / && rm -rf /gperftools
-
-RUN mkdir /lockless && cd /lockless && curl -O https://locklessinc.com/downloads/lockless_allocator_linux.tgz &&\
-      tar zxf lockless_allocator_linux.tgz && mv lockless_allocator_linux/64bit/libllalloc.so.1.4 /usr/lib &&\
-      cd / && rm -rf /lockless
-
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
