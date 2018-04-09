@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd $DIR
 
 ##
 ## Make sure only root can run our script
@@ -88,7 +90,7 @@ check_OS() {
 ## OS X available memory
 ##
 check_osx_memory() {
-  echo `top -l 1 | awk '/PhysMem:/ {print $2}' | sed s/G//`
+  echo `free -m | awk '/Mem:/ {print $2}'`
 }
 
 ##
@@ -274,7 +276,7 @@ check_port() {
 ##
 read_config() {
   config_line=`egrep "^  #?$1:" $web_file`
-  read_config_result=`echo $config_line | awk '{print $2}'`
+  read_config_result=`echo $config_line | awk  --field-separator=":" '{print $2}'`
   read_config_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
 }
 
@@ -330,56 +332,66 @@ ask_user_for_config() {
     if [ ! -z $hostname ]
     then
       read -p "Hostname for your Discourse? [$hostname]: " new_value
-      if [ ! -z $new_value ]
+      if [ ! -z "$new_value" ]
       then
-          hostname=$new_value
+          hostname="$new_value"
+      fi
+      if [[ $hostname =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]
+      then
+        echo
+        echo "Discourse requires a DNS hostname. IP addresses are unsupported and will not work."
+        echo
+        hostname="discourse.example.com"
       fi
     fi
 
     if [ ! -z $developer_emails ]
     then
       read -p "Email address for admin account(s)? [$developer_emails]: " new_value
-      if [ ! -z $new_value ]
+      if [ ! -z "$new_value" ]
       then
-          developer_emails=$new_value
+          developer_emails="$new_value"
       fi
     fi
 
     if [ ! -z $smtp_address ]
     then
       read -p "SMTP server address? [$smtp_address]: " new_value
-      if [ ! -z $new_value ]
+      if [ ! -z "$new_value" ]
       then
-        smtp_address=$new_value
+        smtp_address="$new_value"
       fi
     fi
 
     if [ ! -z $smtp_port ]
     then
       read -p "SMTP port? [$smtp_port]: " new_value
-      if [ ! -z $new_value ]
+      if [ ! -z "$new_value" ]
       then
-        smtp_port=$new_value
+        smtp_port="$new_value"
       fi
     fi
 
     ##
-    ## automatically set correct user name based on common mail providers
+    ## automatically set correct user name based on common mail providers unless it's been set
     ##
-    if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
+    if [ "$smtp_user_name" == "user@example.com" ]
     then
-    	smtp_user_name="SMTP_Injection"
-    fi
-    if [ "$smtp_address" == "smtp.sendgrid.net" ]
-    then
-	    smtp_user_name="apikey"
-    fi
-    if [ "$smtp_address" == "smtp.mailgun.org" ]
-    then
-	    smtp_user_name="postmaster@$hostname"
+      if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
+      then
+      	smtp_user_name="SMTP_Injection"
+      fi
+      if [ "$smtp_address" == "smtp.sendgrid.net" ]
+      then
+  	    smtp_user_name="apikey"
+      fi
+      if [ "$smtp_address" == "smtp.mailgun.org" ]
+      then
+  	    smtp_user_name="postmaster@$hostname"
+      fi
     fi
 
-    if [ ! -z $smtp_user_name ]
+    if [ ! -z "$smtp_user_name" ]
     then
       read -p "SMTP user name? [$smtp_user_name]: " new_value
       if [ ! -z "$new_value" ]
@@ -389,17 +401,17 @@ ask_user_for_config() {
     fi
 
     read -p "SMTP password? [$smtp_password]: " new_value
-    if [ ! -z $new_value ]
+    if [ ! -z "$new_value" ]
     then
-        smtp_password=$new_value
+        smtp_password="$new_value"
     fi
 
     if [ ! -z $letsencrypt_account_email ]
     then
       read -p "Let's Encrypt account email? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
-      if [ ! -z $new_value ]
+      if [ ! -z "$new_value" ]
       then
-          letsencrypt_account_email=$new_value
+          letsencrypt_account_email="$new_value"
           if [ "${new_value,,}" = "off" ]
           then
             letsencrypt_status="ENTER to skip"
@@ -477,15 +489,47 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  #\?DISCOURSE_SMTP_PASSWORD:.*/  DISCOURSE_SMTP_PASSWORD: \"${smtp_password/\//\\/}\"/w $changelog" $web_file
-  if [ -s $changelog ]
+  if [[ "$smtp_password" == *"\""* ]]
   then
-      rm $changelog
-  else
-    echo "DISCOURSE_SMTP_PASSWORD change failed."
+    SLASH="BROKEN"
+    echo "========================================"
+    echo "WARNING!!!"
+    echo "Your password contains a quote (\")"
+    echo "Your SMTP Password will not be set. You will need to edit app.yml to enter it."
+    echo "========================================"
     update_ok="n"
+  else
+    SLASH="|"
+    if [[ "$smtp_password" == *"$SLASH"* ]]
+    then SLASH="+"
+      if [[ "$smtp_password" == *"$SLASH"* ]]
+      then
+        SLASH="Q"
+        if [[ "$smtp_password" == *"$SLASH"* ]]
+	then
+	  SLASH="BROKEN"
+          echo "========================================"
+          echo "WARNING!!!"
+          echo "Your password contains all available delimiters (+, |, and Q). "
+          echo "Your SMTP Password will not be set. You will need to edit app.yml to enter it."
+          echo "========================================"
+          update_ok="n"
+         fi
+       fi
+    fi
   fi
+  if [[ "$SLASH" != "BROKEN" ]]
+  then
+    sed -i -e "s${SLASH}^  #\?DISCOURSE_SMTP_PASSWORD:.*${SLASH}  DISCOURSE_SMTP_PASSWORD: \"${smtp_password}\"${SLASH}w $changelog" $web_file
 
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "DISCOURSE_SMTP_PASSWORD change failed."
+      update_ok="n"
+    fi
+  fi
   if [ "$letsencrypt_status" = "ENTER to skip" ]
   then
       local src='^  #\?- "templates\/web.ssl.template.yml"'
@@ -629,7 +673,7 @@ then
   DATE=`date +"%Y-%m-%d-%H%M%S"`
   BACKUP=$app_name.yml.$DATE.bak
   echo Saving old file as $BACKUP
-  cp $config_file containers/$BACKUP
+  cp $web_file containers/$BACKUP
   echo "Stopping existing container in 5 seconds or Control-C to cancel."
   sleep 5
   ./launcher stop app
@@ -640,7 +684,7 @@ else
   if [ "$data_name" == "data" ]
   then
       echo "--------------------------------------------------"
-      echo "This multisite setup is currently unsupported. Use at your own risk!"
+      echo "This two container setup is currently unsupported. Use at your own risk!"
       echo "--------------------------------------------------"
       DISCOURSE_DB_PASSWORD=`date +%s | sha256sum | base64 | head -c 20`
 
