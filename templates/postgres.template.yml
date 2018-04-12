@@ -45,7 +45,6 @@ run:
        mkdir -p /var/log/postgres
        exec svlogd /var/log/postgres
 
-
   - file:
      path: /etc/runit/3.d/99-postgres
      chmod: "+x"
@@ -61,7 +60,16 @@ run:
        PG_MAJOR_OLD=`cat /shared/postgres_data/PG_VERSION`
 
        if [ ! "10" = "$PG_MAJOR_OLD" ]; then
-         echo Upgrading PostgreSQL to from version ${PG_MAJOR_OLD} to 10
+         echo Upgrading PostgreSQL from version ${PG_MAJOR_OLD} to 10
+         free_disk=$(df /var | tail -n 1 | awk '{print $4}')
+         required=$(($(du -s /shared/postgres_data | awk '{print $1}') * 2))
+
+         if [ "$free_disk" -lt "$required" ]; then
+          echo "WARNING: Upgrading PostgresSQL would require an addtional $(du -sh /shared/postgres_data | awk '{print $1}') of disk space"
+          echo "Please free up some space, or expand your disk, before continuing."
+          exit 1
+         fi
+
          rm -fr /shared/postgres_data_new
          install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/10/bin/initdb -D /shared/postgres_data_new || exit 0
          apt-get update
