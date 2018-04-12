@@ -65,7 +65,7 @@ run:
          required=$(($(du -s /shared/postgres_data | awk '{print $1}') * 2))
 
          if [ "$free_disk" -lt "$required" ]; then
-          echo "WARNING: Upgrading PostgresSQL would require an addtional $(du -sh /shared/postgres_data | awk '{print $1}') of disk space"
+          echo "WARNING: Upgrading PostgresSQL would require an addtional $(numfmt --to=si $(($required - $free_disk))) of disk space"
           echo "Please free up some space, or expand your disk, before continuing."
           exit 1
          fi
