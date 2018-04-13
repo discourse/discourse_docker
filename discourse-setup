@@ -276,11 +276,15 @@ check_port() {
 ##
 read_config() {
   config_line=`egrep "^  #?$1:" $web_file`
-  read_config_result=`echo $config_line | awk  --field-separator=":" '{print $2}'`
+  read_config_result=`echo $config_line | awk  -F":" '{print $2}'`
   read_config_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
 }
 
-
+read_default() {
+  config_line=`egrep "^  #?$1:" samples/standalone.yml`
+  read_default_result=`echo $config_line | awk  -F":" '{print $2}'`
+  read_default_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
+}
 
 ##
 ## prompt user for typical Discourse config file values
@@ -329,7 +333,7 @@ ask_user_for_config() {
 
   while [[ "$config_ok" == "n" ]]
   do
-    if [ ! -z $hostname ]
+    if [ ! -z "$hostname" ]
     then
       read -p "Hostname for your Discourse? [$hostname]: " new_value
       if [ ! -z "$new_value" ]
@@ -345,7 +349,7 @@ ask_user_for_config() {
       fi
     fi
 
-    if [ ! -z $developer_emails ]
+    if [ ! -z "$developer_emails" ]
     then
       read -p "Email address for admin account(s)? [$developer_emails]: " new_value
       if [ ! -z "$new_value" ]
@@ -354,7 +358,7 @@ ask_user_for_config() {
       fi
     fi
 
-    if [ ! -z $smtp_address ]
+    if [ ! -z "$smtp_address" ]
     then
       read -p "SMTP server address? [$smtp_address]: " new_value
       if [ ! -z "$new_value" ]
@@ -363,7 +367,7 @@ ask_user_for_config() {
       fi
     fi
 
-    if [ ! -z $smtp_port ]
+    if [ ! -z "$smtp_port" ]
     then
       read -p "SMTP port? [$smtp_port]: " new_value
       if [ ! -z "$new_value" ]
@@ -602,21 +606,22 @@ validate_config() {
   for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
            DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
   do
-    config_line=`grep "^  $x:" $web_file`
-    local result=$?
-    local default="example.com"
+    read_config $x
+    local result=$read_config_result
+    read_default $x
+    local default=$read_default_result
 
-    if (( result == 0 ))
+    if [ ! -z "$result" ]
     then
       if [[ "$config_line" = *"$default"* ]]
       then
-        echo "$x left at incorrect default of example.com"
+        echo "$x left at incorrect default of $default"
         valid_config="n"
       fi
       config_val=`echo $config_line | awk '{print $2}'`
       if [ -z $config_val ]
       then
-        echo "$x was left blank"
+        echo "$x was not configured"
         valid_config="n"
       fi
     else
