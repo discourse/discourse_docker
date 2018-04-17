@@ -406,6 +406,20 @@ fi
     else
       exit 1
   fi
+
+  if [ -d /var/discourse/shared/standalone/postgres_data_old ]; then
+    echo
+    echo "Old PostgreSQL backup data cluster detected taking up $(du -hs /var/discourse/shared/standalone/postgres_data_old | awk '{print $1}') detected"
+    read -p "Would you like to remove it? (Y/n): " -n 1 -r && echo
+
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      echo "removing old PostgreSQL data cluster at /var/discourse/shared/standalone/postgres_data_old..."
+      rm -rf /var/discourse/shared/standalone/postgres_data_old
+    else
+      exit 1
+    fi
+  fi
+
   exit 0
 }
 
