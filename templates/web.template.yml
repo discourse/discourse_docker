@@ -227,11 +227,10 @@ run:
      contents: |
         /shared/log/rails/*.log
         {
-                rotate 14
+                rotate 7
                 dateext
                 daily
                 missingok
-                notifempty
                 delaycompress
                 compress
                 postrotate
@@ -245,10 +244,9 @@ run:
         /var/log/nginx/*.log {
           daily
           missingok
-          rotate 14
+          rotate 7
           compress
           delaycompress
-          notifempty
           create 0644 www-data www-data
           sharedscripts
           postrotate
