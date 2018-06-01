@@ -72,7 +72,7 @@ RUN gem update --system
 
 RUN gem install bundler --force &&\
     rm -rf /usr/local/share/ri/2.4.4/system &&\
-    cd / && git clone https://github.com/SamSaffron/pups.git
+    cd / && git clone https://github.com/discourse/pups.git
 
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
