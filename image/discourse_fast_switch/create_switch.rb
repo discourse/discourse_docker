@@ -2,19 +2,13 @@ require 'fileutils'
 
 puts "-"*100,"creating switch","-"*100
 
-Dir.glob('/usr/ruby_20/*/**').each do |file|
-  file = file.gsub('/usr/ruby_20/', '/usr/local/')
-  FileUtils.rm(file) if File.exists?(file) && !File.directory?(file)
-end
-
 system("cd /var/www/discourse && git pull")
 
-['22', '23'].each do |v|
-
+['24', '25'].each do |v|
   bin = "/usr/local/bin/use_#{v}"
 
 File.write(bin, <<RUBY
-#!/usr/ruby_22/bin/ruby
+#!/usr/ruby_24/bin/ruby
 
 Dir.glob('/usr/ruby_#{v}/bin/*').each do |file|
   `rm -f /usr/local/bin/\#{File.basename(file)}`

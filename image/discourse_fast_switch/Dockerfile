@@ -1,18 +1,23 @@
 # NAME:     discourse/discourse_fast_switch
-# VERSION:  1.4.0
+# VERSION:  1.5.0
 
 # Allow to easily switch Ruby version in images that derive off this
-FROM discourse/base:1.4.0
+FROM discourse/base:2.0.20180605
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
 RUN apt-get -y install ruby bison autoconf &&\
-    echo install_package "openssl-1.0.1l" "https://www.openssl.org/source/openssl-1.0.1l.tar.gz#b2cf4d48fe5d49f240c61c9e624193a6f232b5ed0baf010681e725963c40d1d4" mac_openssl --if has_broken_mac_openssl > /src/2.2.3-github &&\
-    echo install_package "ruby-2.2.3-github" "https://github.com/SamSaffron/ruby/archive/2.2.3-github.tar.gz#fdc330e92f36bc4bd9bcc00915dde7d5" autoconf ldflags_dirs standard verify_openssl >> /src/2.2.3-github &&\
-    ruby-build /src/2.2.3-github /usr/ruby_22 &&\
+    cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
+    /src/ruby-build/install.sh &&\
+    sudo ruby-build 2.4.4 /usr/ruby_24 &&\
+    cp -R /usr/ruby_24/bin/* /usr/local/bin/ &&\
+    cp -R /usr/ruby_24/lib/* /usr/local/lib/ &&\
+    cp -R /usr/ruby_24/share/* /usr/local/share/ &&\
+    cp -R /usr/ruby_24/include/* /usr/local/include/ &&\
     apt-get -y remove ruby
 
-RUN cd / && rm -rf /src/ruby-build && ruby-build 2.3.1 /usr/ruby_23
+RUN cd / && ruby-build 2.5.1 /usr/ruby_25
 
 ADD create_switch.rb /src/create_switch.rb
+
 RUN ruby /src/create_switch.rb
