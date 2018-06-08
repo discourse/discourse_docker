@@ -46,7 +46,8 @@ RUN cd / &&\
     locale-gen en_US &&\
     apt-get install -y nodejs &&\
     npm install -g uglify-js@"<3" &&\
-    npm install svgo -g
+    npm install -g svgo &&\
+    npm install -g prettier
 
 ADD install-nginx /tmp/install-nginx
 RUN /tmp/install-nginx
