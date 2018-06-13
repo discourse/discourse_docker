@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-VERSION=1.88
+VERSION=1.91
 cd /tmp
 curl -O http://www.lcdf.org/gifsicle/gifsicle-$VERSION.tar.gz
 tar zxf gifsicle-$VERSION.tar.gz

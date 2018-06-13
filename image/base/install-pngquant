@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=2.8.0
+VERSION=2.12.1
 cd /tmp
 git clone -b $VERSION --single-branch https://github.com/pornel/pngquant
 cd pngquant
