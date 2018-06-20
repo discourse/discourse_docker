@@ -45,11 +45,11 @@ while [ ${#} -gt 0 ]; do
 done
 
 # Docker doesn't like uppercase characters, spaces or special characters, catch it now before we build everything out and then find out
-re='[A-Z/ !@#$%^&*()+~`=]'
+re='[[:upper:]/ !@#$%^&*()+~`=]'
 if [[ $config =~ $re ]];
   then
     echo
-    echo "ERROR: Config name must not contain upper case characters, spaces or special characters. Correct config name and rerun $0."
+    echo "ERROR: Config name '$config' must not contain upper case characters, spaces or special characters. Correct config name and rerun $0."
     echo
     exit 1
 fi
