@@ -62,7 +62,7 @@ run:
 
        if [ ! "10" = "$PG_MAJOR_OLD" ]; then
          echo Upgrading PostgreSQL from version ${PG_MAJOR_OLD} to 10
-         free_disk=$(df /var | tail -n 1 | awk '{print $4}')
+         free_disk=$(df /shared | tail -n 1 | awk '{print $4}')
          required=$(($(du -s /shared/postgres_data | awk '{print $1}') * 2))
 
          if [ "$free_disk" -lt "$required" ]; then
