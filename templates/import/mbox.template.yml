@@ -31,7 +31,7 @@ hooks:
           cd $home
           echo "The mbox import is starting..."
           echo
-          su discourse -c 'IMPORT=1 bundle exec ruby script/import_scripts/mbox-experimental.rb /shared/import/settings.yml'
+          su discourse -c 'bundle exec ruby script/import_scripts/mbox-experimental.rb /shared/import/settings.yml'
 
     - exec:
         cd: $home
@@ -44,5 +44,6 @@ hooks:
     - exec:
         cd: $home
         cmd:
-          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libmysqlclient-dev libsqlite3-dev
-          - su discourse -c 'IMPORT=1 bundle install --no-deployment --without test --without development --path vendor/bundle'
+          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libsqlite3-dev
+          - echo "gem 'sqlite3'" >> Gemfile
+          - su discourse -c 'bundle install --no-deployment --without test --without development --path vendor/bundle'
