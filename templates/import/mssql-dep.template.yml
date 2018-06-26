@@ -1,0 +1,24 @@
+# This template adds the 'tiny_tds' gem for import scripts depending on it
+
+params:
+  home: /var/www/discourse
+
+hooks:
+  after_web_config:
+    - exec:
+        cd: /tmp
+        cmd:
+          - wget -O freetds.tar.gz http://www.freetds.org/files/stable/freetds-1.00.91.tar.gz
+          - tar -xzf freetds.tar.gz
+    - exec:
+        cd: /tmp/freetds-*
+        cmd:
+          - ./configure --prefix=/usr/local --with-tdsver=7.3
+          - make && make install
+
+  after_bundle_exec:
+    - exec:
+        cd: $home
+        cmd:
+          - echo "gem 'tiny_tds'" >> Gemfile
+          - su discourse -c 'bundle install --no-deployment --without test --without development --path vendor/bundle'
