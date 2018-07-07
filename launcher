@@ -400,6 +400,8 @@ fi
 
       STATE_DIR=./.gc-state scripts/docker-gc
 
+      rm -f /var/discourse/shared/standalone/log/var-log/*.txt
+
       space=$(df /var/lib/docker | awk '{ print $4 }' | grep -v Available)
       echo "Finished Cleanup (bytes free $space)"
 
