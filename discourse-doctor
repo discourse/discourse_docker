@@ -2,7 +2,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-LOG_FILE="$DIR/discourse-debug.txt"
+LOG_FILE="/tmp/discourse-debug.txt"
 rm -f $LOG_FILE
 echo DISCOURSE DOCTOR `date` | tee -a $LOG_FILE
 
@@ -24,45 +24,44 @@ connect_to_port () {
   PORT="$2"
   VERIFY=`date +%s | sha256sum | base64 | head -c 20`
   echo -e "HTTP/1.1 200 OK\n\n $VERIFY" | nc -w 4 -l -p $PORT >/dev/null 2>&1 &
-  if curl --proto =http -s $HOST:$PORT --connect-timeout 3 | grep $VERIFY >/dev/null 2>&1
+  if curl --proto =http -s $HOST:$PORT --connect-timeout 3 | grep $VERIFY
   then
-      return 0
+    echo "OK"
+    return 0
   else
-    curl --proto =http -s localhost:$PORT >/dev/null 2>&1
+    echo "NO K"
     return 1
   fi
 }
 
-check_IP_match () {
+check_ip_match () {
   HOST="$1"
   echo
-  echo Checking your domain name . . .
+  echo Checking your domain name . . . | tee -a $LOG_FILE
   if connect_to_port $HOST 443
   then
-      echo
-      echo "Connection to $HOST succeeded."
+      echo | tee -a $LOG_FILE
+      echo "Connection to $HOST succeeded." | tee -a $LOG_FILE
   else
-    echo WARNING:: This server does not appear to be accessible at $HOST:443.
-    echo
+    echo WARNING:: This server does not appear to be accessible at $HOST:443. | tee -a $LOG_FILE
+    echo | tee -a $LOG_FILE
     if connect_to_port $HOST 80
     then
-	echo A connection to port 80 succeeds, however.
-	echo This suggests that your DNS settings are correct,
-	echo but something is keeping traffic to port 443 from getting to your server.
-	echo Check your networking configuration to see that connections to port 443 are allowed.
+	echo A connection to port 80 succeeds, however. | tee -a $LOG_FILE
+	echo This suggests that your DNS settings are correct, | tee -a $LOG_FILE
+	echo but something is keeping traffic to port 443 from getting to your server. | tee -a $LOG_FILE
+	echo Check your networking configuration to see that connections to port 443 are allowed. | tee -a $LOG_FILE
     else
-      echo "A connection to http://$HOST (port 80) also fails."
-      echo
-      echo This suggests that $HOST resolves to the wrong IP address
-      echo or that traffic is not being routed to your server.
+      echo "A connection to http://$HOST (port 80) also fails." | tee -a $LOG_FILE
+      echo | tee -a $LOG_FILE
+      echo This suggests that $HOST resolves to the wrong IP address | tee -a $LOG_FILE
+      echo or that traffic is not being routed to your server. | tee -a $LOG_FILE
     fi
-    echo
-    echo Google: \"open ports YOUR CLOUD SERVICE\" for information for resolving this problem.
-    echo
-    echo You should probably answer \"n\" at the next prompt and disable Let\'s Encrypt.
-    echo
-    echo This test might not work for all situations,
-    echo so if you can access Discourse at http://$HOST, you might try anyway.
+    echo | tee -a $LOG_FILE
+    echo Google: \"open ports YOUR CLOUD SERVICE\" for information for resolving this problem. | tee -a $LOG_FILE
+    echo | tee -a $LOG_FILE
+    echo This test might not work for all situations, | tee -a $LOG_FILE
+    echo so if you can access Discourse at http://$HOST, this might not indicate a problem. | tee -a $LOG_FILE
     sleep 3
   fi
 }
@@ -86,18 +85,12 @@ check_docker_version () {
   fi
 }
 
-##
-## What are we running on
-##
 check_OS() {
   echo "----------------------------------------"
   echo -n "OS:"  |tee -a $LOG_FILE
   echo `uname -s` |tee -a  $LOG_FILE
 }
 
-##
-## OS X available memory
-##
 check_osx_memory() {
   echo "----------------------------------------"
   echo -n "OSX RAM:" | tee -a $LOG_FILE
@@ -105,9 +98,6 @@ check_osx_memory() {
   free -m | tee -a $LOG_FILE
 }
 
-##
-## Linux available memory
-##
 check_linux_memory() {
   echo "----------------------------------------"
   echo -n "RAM (MB):" |tee -a $LOG_FILE
@@ -115,17 +105,13 @@ check_linux_memory() {
   free -m | tee -a $LOG_FILE
 }
 
-##
-## Do we have enough memory and disk space for Discourse?
-##
 check_disk_and_memory() {
 
   os_type=$(check_OS)
-  avail_mem=0
   if [ "$os_type" == "Darwin" ]; then
-    avail_mem=$(check_osx_memory)
+    check_osx_memory
   else
-    avail_mem=$(check_linux_memory)
+    check_linux_memory
   fi
 
   echo -e "\n\n==================== DISK SPACE CHECK ====================" | tee -a $LOG_FILE
@@ -147,12 +133,8 @@ check_disk_and_memory() {
   free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
   if [ "$free_disk" -lt 5000 ]; then
   echo "\n\n==================== DISK SPACE PROBLEM ====================" | tee -a $LOG_FILE
-    echo "WARNING: Discourse requires at least 5GB free disk space. This system"
-    echo "does not appear to have sufficient disk space."
-    echo
-    echo "Insufficient disk space may result in problems running your site, and"
-    echo "may not even allow Discourse installation to complete successfully."
-    echo
+    echo  "WARNING: you appear to have very low disk space."
+    echo "This could be the cause of problems running your site."
     echo "Please free up some space, or expand your disk, before continuing."
     echo
     echo "Run \`apt-get autoremove && apt-get autoclean\` to clean up unused"
@@ -161,22 +143,35 @@ check_disk_and_memory() {
   fi
 }
 
-##
-## get discourse version
-##
-
-discourse_version() {
+get_discourse_version() {
   version=""
-  version=`wget -q --timeout=3 https://$VERSION_HOSTNAME/privacy  -O -|grep generator|head -1 |cut -d "=" -f 3|cut -d '-' -f 1 |cut -d '"' -f 2`
+  version=`wget -q --timeout=3 https://$VERSION_HOSTNAME/privacy  -O -|grep generator|head -1 |cut -d "=" -f 3|cut -d '-' -f 1 |cut -d '"' -f 2`  &> /dev/null
   if ! echo $version | grep Discourse
   then
-    version=`wget -q --timeout=3 http://$VERSION_HOSTNAME/privacy  -O -|grep generator|head -1 |cut -d "=" -f 3|cut -d '-' -f 1 |cut -d '"' -f 2`
+    version=`wget -q --timeout=3 http://$VERSION_HOSTNAME/privacy  -O -|grep generator|head -1 |cut -d "=" -f 3|cut -d '-' -f 1 |cut -d '"' -f 2` &> /dev/null
   fi
   if [ -z "$version" ]
   then
      version="NOT FOUND"
   fi
   echo "Discourse version at $VERSION_HOSTNAME: $version" | tee -a  $LOG_FILE
+}
+
+compare_discourse_versions () {
+  echo "========================================" | tee -a $LOG_FILE
+  VERSION_HOSTNAME=$DISCOURSE_HOSTNAME
+  get_discourse_version
+  DISCOURSE_VERSION="$version"
+  VERSION_HOSTNAME=localhost
+  get_discourse_version
+  LOCALHOST_VERSION="$version"
+  if [ "$DISCOURSE_VERSION" != "$LOCALHOST_VERSION" ]
+  then
+    echo "==================== DNS PROBLEM ===================="
+    echo "This server reports $LOCALHOST_VERSION, but $DISCOURSE_HOSTNAME reports $DISCOURSE_VERSION."
+    echo "This suggests that you have a DNS problem or that an intermediate proxy is to blame."
+    echo "If you are using Cloudflare, or a CDN, it may be improperly configured."
+  fi
 }
 
 ##
@@ -198,8 +193,7 @@ get_discourse_config() {
   echo   DEVELOPER_EMAILS=$DEVELOPER_EMAILS| tee -a  $LOG_FILE
   read_config "DISCOURSE_SMTP_PASSWORD"
   SMTP_PASSWORD=$read_config_result
-  echo   SMTP_PASSWORD=$read_config_result
-  echo   SMTP_PASSWORD="(REDACTED)" >> $LOG_FILE
+  echo   SMTP_PASSWORD=$read_config_result| tee -a  $LOG_FILE
   read_config "DISCOURSE_SMTP_PORT"
   SMTP_PORT=$read_config_result
   echo   SMTP_PORT=$read_config_result| tee -a  $LOG_FILE
@@ -215,12 +209,8 @@ get_discourse_config() {
   else
     echo "LETSENCRYPT_ACCOUNT_EMAIL is set" | tee -a $LOG_FILE
   fi
-
 }
 
-##
-## get plugins
-##
 get_plugins() {
   echo -e "\n\n==================== PLUGINS ====================" | tee -a $LOG_FILE
   grep git containers/$app_name.yml | tee -a $LOG_FILE
@@ -236,18 +226,14 @@ get_plugins() {
 
 }
 
-##
-## output YML file
-##
 dump_yaml() {
   echo -e "\n\n==================== YML DUMP ====================" | tee -a $LOG_FILE
   echo Dumping $app_name.yml | tee -a $LOG_FILE
-  sed -e '/\s*#.*$/d' -e '/^\s*$/d' -e 's/  DISCOURSE_SMTP_PASSWORD:\(.*\)/  DISCOURSE_SMTP_PASSWORD: REDACTED/g' containers/$app_name.yml  | tee -a $LOG_FILE
   echo -e "\n\n" | tee -a $LOG_FILE
 }
 
 ##
-## read a variable from the config file
+## read a variable from the config file and stick it in read_config_result
 ##
 read_config() {
   config_line=`egrep "^  #?$1:" $web_file`
@@ -256,11 +242,11 @@ read_config() {
 }
 
 ##
-## send a test message
+## call rake emails:test inside the container
 ##
 email_test() {
   echo -e "\n\n==================== MAIL TEST ===================="
-  echo "I recommend that you get a test address from http://www.mail-tester.com/ , but you "
+  echo "For a robust test, get an address from http://www.mail-tester.com/ , but you "
   echo "can just send a test message to yourself."
   EMAIL=`echo $DEVELOPER_EMAILS |cut -d , -f 1`
   read -p "Email address for mail test? ('n' to skip) [$EMAIL]: " new_value
@@ -320,9 +306,15 @@ docker_check() {
     docker ps| tail -n +2 > /tmp/$UUID-docker.txt
     if grep $app_name /tmp/$UUID-docker.txt
     then
-      echo "Discourse container $app_name is running!"
+      echo -e "\n\n==================== REBUILD SUCCEEDED! ====================\n\n" | tee -a $LOG_FILE
+      echo "Discourse container $app_name is running!" | tee -a $LOG_FILE
+      echo "Waiting 30 seconds for container to crank up. . . "
+      sleep 30
     else
-      echo "$app_name still not running!"
+      echo "$app_name still not running!" | tee -a $LOG_FILE
+      # check_ip_match checks if curl to $DISCOURSE_HOSTNAME gets to this server
+      # It works only if ports 80 and 443 are free
+      check_ip_match $DISCOURSE_HOSTNAME
       echo "You should probably remove any non-standard plugins and rebuild."
       NO_CONTAINER='y'
     fi
@@ -330,37 +322,17 @@ docker_check() {
 }
 
 ##
-## Discourse version
-##
-get_discourse_version () {
-  echo "========================================" | tee -a $LOG_FILE
-  VERSION_HOSTNAME=$DISCOURSE_HOSTNAME
-  discourse_version
-  DISCOURSE_VERSION="$version"
-  VERSION_HOSTNAME=localhost
-  discourse_version
-  LOCALHOST_VERSION="$version"
-  if [ "$DISCOURSE_VERSION" != "$LOCALHOST_VERSION" ]
-  then
-    echo "==================== DNS PROBLEM ===================="
-    echo "This server reports $LOCALHOST_VERSION, but $DISCOURSE_HOSTNAME reports $DISCOURSE_VERSION."
-    echo "This suggests that you have a DNS problem or that an intermediate proxy is to blame."
-    echo "If you are using Cloudflare, or a CDN, it may be improperly configured."
-  fi
-}
-
-##
 ## redact log file
 ##
 clean_up_log_file() {
-  VAR=DISCOURSE_SMTP_PASSWORD
-  sed -i -e '/\s*#.*$/d' -e '/^\s*$/d' -e 's/$VAR[=:]\(.*\)/$VAR=REDACTED/g' $LOG_FILE
+  VAR=SMTP_PASSWORD
+  sed -i -e 's/'"$VAR"'[=:]\(\S*\)/'"$VAR"'=REDACTED /g' $LOG_FILE
   VAR=LETSENCRYPT_ACCOUNT_EMAIL
-  sed -i -e '/\s*#.*$/d' -e '/^\s*$/d' -e 's/$VAR[=:]\(.*\)/$VAR=REDACTED/g' $LOG_FILE
-  VAR=DISCOURSE_DEVELOPER_EMAILS
-  sed -i -e '/\s*#.*$/d' -e '/^\s*$/d' -e 's/$VAR[=:]\(.*\)/$VAR=REDACTED/g' $LOG_FILE
+  sed -i -e 's/'"$VAR"'[=:]\(\S*\)/'"$VAR"'=REDACTED /g' $LOG_FILE
+  VAR=DEVELOPER_EMAILS
+  sed -i -e 's/'"$VAR"'[=:]\(\S*\)/'"$VAR"'=REDACTED /g' $LOG_FILE
   VAR=DISCOURSE_DB_PASSWORD
-  sed -i -e '/\s*#.*$/d' -e '/^\s*$/d' -e 's/$VAR[=:]\(.*\)/$VAR=REDACTED/g' $LOG_FILE
+  sed -i -e 's/'"$VAR"'[=:]\(\S*\)/'"$VAR"'=REDACTED /g' $LOG_FILE
 }
 
 ##
@@ -369,7 +341,7 @@ clean_up_log_file() {
 
 docker_check
 get_discourse_config
-get_discourse_version
+compare_discourse_versions
 get_plugins
 check_docker_version
 check_root
@@ -380,7 +352,6 @@ clean_up_log_file
 echo
 echo "==================== DONE! ===================="
 DOCTOR_FILE=`date +%s | sha256sum | base64 | head -c 20`.txt
-
 
 if [ $app_name == 'app' ] && [ "$NO_CONTAINER" != 'y' ]
 then
@@ -395,8 +366,8 @@ echo "LESS=-Ri less shared/standalone/log/var-log/$DOCTOR_FILE "
 echo
 echo "BUT FIRST, make sure that you know the first three commands below!!!"
 echo
-echo "Commands to know when viewing the file with the above command: "
-echo "q              -- quit less"
+echo "Commands to know when viewing the file with the above command (called 'less'): "
+echo "q              -- quit"
 echo "/error<ENTER>  -- search for the word 'error'"
 echo "n              -- search for the next occurrence"
 echo "g              -- go to the beginning of the file"
