@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+LOG_FILE="/tmp/discourse-debug.txt"
+WORKING_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 log() {
   if [ "$1" == "-e" ]
   then
@@ -14,14 +17,12 @@ check_root() {
     log "This script must be run as root. Please sudo or log in as root first." 1>&2
     exit 1
   fi
-  DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-  cd $DIR || exit
 }
 
 ##
 ## Check whether a connection to HOSTNAME ($1) on PORT ($2) is possible
 ##
-connect_to_port () {
+connect_to_port() {
   HOST="$1"
   PORT="$2"
   VERIFY=$(date +%s | sha256sum | base64 | head -c 20)
@@ -34,14 +35,14 @@ connect_to_port () {
   fi
 }
 
-check_ip_match () {
+check_ip_match() {
   HOST="$1"
   log
   log Checking your domain name . . .
   if connect_to_port $HOST 443
   then
-      log
-      log "Connection to $HOST succeeded."
+    log
+    log "Connection to $HOST succeeded."
   else
     log WARNING:: This server does not appear to be accessible at $HOST:443.
     log
@@ -66,11 +67,8 @@ check_ip_match () {
   fi
 }
 
-##
-## Do we have docker?
-##
-check_docker_version () {
-  log  -e "\n\n==================== DOCKER INFO ===================="
+check_docker_is_installed() {
+  log -e "\n\n==================== DOCKER INFO ===================="
   docker_path="$(which docker.io || which docker)"
   if [ -z $docker_path ]; then
     log "Docker is not installed. Have you installed Discourse at all?"
@@ -83,31 +81,19 @@ check_docker_version () {
   fi
 }
 
-check_OS() {
+get_OS() {
   "OS: $(uname -s)\n"
 }
 
-check_osx_memory() {
-  log "----------------------------------------"
-  log -e "OSX RAM: $( free -m | awk '/Mem:/ {print $2}' ) \n"
-  log "$(free -m)"
-}
-
-check_linux_memory() {
-  log "----------------------------------------"
-  log -e "RAM (MB): $( free -m --si | awk ' /Mem:/  {print $2} ')\n"
-  log "$(free -m)"
-
-}
-
 check_disk_and_memory() {
-
-  os_type=$(check_OS)
+  log -e "\n\n==================== MEMORY INFORMATION ===================="
+  os_type=$(get_OS)
   if [ "$os_type" == "Darwin" ]; then
-    check_osx_memory
+    log -e "RAM: $( free -m | awk '/Mem:/ {print $2}' ) \n"
   else
-    check_linux_memory
+    log -e "RAM (MB): $( free -m --si | awk ' /Mem:/  {print $2} ')\n"
   fi
+  log "$(free -m)"
 
   log -e "\n\n==================== DISK SPACE CHECK ===================="
   log System Disk Space
@@ -119,7 +105,6 @@ check_disk_and_memory() {
     log Container Disk Space
     log "$(sudo docker exec -w /var/www/discourse -i $app_name df -h / /shared/ /shared/postgres_data /shared/redis_data /shared/backups /var/log | uniq)"
   fi
-
 
   log -e "\n\n==================== DISK INFORMATION ===================="
   log "$( fdisk -l )"
@@ -148,12 +133,12 @@ get_discourse_version() {
   fi
   if [ -z "$version" ]
   then
-     version="NOT FOUND"
+    version="NOT FOUND"
   fi
   log "Discourse version at $VERSION_HOSTNAME: $version"
 }
 
-check_if_hostname_resolves_here () {
+check_if_hostname_resolves_here() {
   log "========================================"
   VERSION_HOSTNAME=$DISCOURSE_HOSTNAME
   get_discourse_version
@@ -173,34 +158,32 @@ check_if_hostname_resolves_here () {
 ##
 ## get discourse configuration values from YML file
 ##
-
 get_discourse_config() {
-
   log -e "\n\n==================== YML SETTINGS ===================="
   read_config "DISCOURSE_HOSTNAME"
   DISCOURSE_HOSTNAME=$read_config_result
   log DISCOURSE_HOSTNAME=$DISCOURSE_HOSTNAME
   read_config "DISCOURSE_SMTP_ADDRESS"
   SMTP_ADDRESS=$read_config_result
-  log   SMTP_ADDRESS=$SMTP_ADDRESS
+  log SMTP_ADDRESS=$SMTP_ADDRESS
   read_config "DISCOURSE_DEVELOPER_EMAILS"
   DEVELOPER_EMAILS=$read_config_result
-  log   DEVELOPER_EMAILS=$DEVELOPER_EMAILS
+  log DEVELOPER_EMAILS=$DEVELOPER_EMAILS
   read_config "DISCOURSE_SMTP_PASSWORD"
   SMTP_PASSWORD=$read_config_result
-  log   SMTP_PASSWORD=$read_config_result
+  log SMTP_PASSWORD=$read_config_result
   read_config "DISCOURSE_SMTP_PORT"
   SMTP_PORT=$read_config_result
-  log   SMTP_PORT=$read_config_result
+  log SMTP_PORT=$read_config_result
   read_config "DISCOURSE_SMTP_USER_NAME"
   SMTP_USER_NAME=$read_config_result
-  log   SMTP_USER_NAME=$read_config_result
+  log SMTP_USER_NAME=$read_config_result
   read_config "LETSENCRYPT_ACCOUNT_EMAIL"
   letsencrypt_account_email=$read_config_result
   log "LETSENCRYPT_ACCOUNT_EMAIL=$letsencrypt_account_email"
 }
 
-get_plugins() {
+check_plugins() {
   log -e "\n\n==================== PLUGINS ===================="
   log -e $(grep git containers/$app_name.yml)
   grep git containers/$app_name.yml > /tmp/$PPID.grep
@@ -234,7 +217,7 @@ read_config() {
 ##
 ## call rake emails:test inside the container
 ##
-email_test() {
+check_email() {
   log -e "\n\n==================== MAIL TEST ===================="
   log "For a robust test, get an address from http://www.mail-tester.com/"
   log "Or just send a test message to yourself."
@@ -252,7 +235,6 @@ email_test() {
     log "Mail test skipped."
   fi
 }
-
 
 get_yml_file() {
   app_name=""
@@ -274,8 +256,9 @@ get_yml_file() {
   fi
 }
 
-docker_check() {
-  docker ps| tail -n +2 > /tmp/$UUID-docker.txt
+check_docker() {
+  docker ps | tail -n +2 > /tmp/$UUID-docker.txt
+
   if grep $app_name /tmp/$UUID-docker.txt
   then
     log -e "\nDiscourse container $app_name is running"
@@ -342,26 +325,26 @@ print_done() {
 }
 
 initialize_log_file() {
-  LOG_FILE="/tmp/discourse-debug.txt"
   rm -f $LOG_FILE
   touch $LOG_FILE
   log DISCOURSE DOCTOR $(date)
   log -e "OS: $(uname -a)\n\n"
-  }
+}
 
 ##
 ## END FUNCTION DECLARATION
 ##
 
 check_root
+cd $WORKING_DIR || exit
 initialize_log_file
 get_yml_file
 get_discourse_config
-check_docker_version
-docker_check
-get_plugins
+check_docker_is_installed
+check_docker
+check_plugins
 check_if_hostname_resolves_here
 check_disk_and_memory
-email_test
+check_email
 clean_up_log_file
 print_done
