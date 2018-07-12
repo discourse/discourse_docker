@@ -68,7 +68,7 @@ check_ip_match() {
 }
 
 check_docker_is_installed() {
-  log -e "\n\n==================== DOCKER INFO ===================="
+  log -e "\n==================== DOCKER INFO ===================="
   docker_path="$(which docker.io || which docker)"
   if [ -z $docker_path ]; then
     log "Docker is not installed. Have you installed Discourse at all?"
@@ -77,12 +77,12 @@ check_docker_is_installed() {
     exit
   else
     log -e "DOCKER VERSION: $(docker --version)"
-    log -e "DOCKER PROCESSES\n\n $(sudo docker ps -a)\n"
+    log -e "\nDOCKER PROCESSES (docker ps -a)\n\n$(sudo docker ps -a)\n"
   fi
 }
 
 get_OS() {
-  "OS: $(uname -s)\n"
+  log -e "OS: $(uname -s)"
 }
 
 check_disk_and_memory() {
@@ -95,20 +95,20 @@ check_disk_and_memory() {
   fi
   log "$(free -m)"
 
-  log -e "\n\n==================== DISK SPACE CHECK ===================="
-  log System Disk Space
+  log -e "\n==================== DISK SPACE CHECK ===================="
+  log "---------- OS Disk Space ----------"
   log "$(df -h / /var/discourse /var/lib/docker /var/lib/docker/* | uniq)"
 
   if [ "$version" != "NOT FOUND" ]
   then
     log
-    log Container Disk Space
+    log "---------- Container Disk Space ----------"
     log "$(sudo docker exec -w /var/www/discourse -i $app_name df -h / /shared/ /shared/postgres_data /shared/redis_data /shared/backups /var/log | uniq)"
   fi
 
-  log -e "\n\n==================== DISK INFORMATION ===================="
+  log -e "\n==================== DISK INFORMATION ===================="
   log "$( fdisk -l )"
-  log -e "\n\n==================== END DISK INFORMATION ====================\n\n"
+  log -e "\n==================== END DISK INFORMATION ===================="
 
   free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
   # Arguably ./launcher is doing this so discourse-doctor does not need to . . .
@@ -159,7 +159,7 @@ check_if_hostname_resolves_here() {
 ## get discourse configuration values from YML file
 ##
 get_discourse_config() {
-  log -e "\n\n==================== YML SETTINGS ===================="
+  log -e "\n==================== YML SETTINGS ===================="
   read_config "DISCOURSE_HOSTNAME"
   DISCOURSE_HOSTNAME=$read_config_result
   log DISCOURSE_HOSTNAME=$DISCOURSE_HOSTNAME
@@ -185,7 +185,7 @@ get_discourse_config() {
 
 check_plugins() {
   log -e "\n\n==================== PLUGINS ===================="
-  log -e $(grep git containers/$app_name.yml)
+  log -e "$(grep git containers/$app_name.yml)"
   grep git containers/$app_name.yml > /tmp/$PPID.grep
 
   if grep -cv "github.com/discourse" /tmp/$PPID.grep > /dev/null
@@ -194,9 +194,9 @@ check_plugins() {
     log You have what appear to be non-official plugins.
     log "If you are having trouble, you should disable them and try rebuilding again."
   else
-    log "No non-official plugins detected"
+    log -e "\nNo non-official plugins detected."
   fi
-  log
+  log -e "\nSee https://github.com/discourse/discourse/blob/master/lib/plugin/metadata.rb for the official list.\n"
 }
 
 dump_yaml() {
@@ -218,9 +218,9 @@ read_config() {
 ## call rake emails:test inside the container
 ##
 check_email() {
-  log -e "\n\n==================== MAIL TEST ===================="
+  log -e "\n==================== MAIL TEST ===================="
   log "For a robust test, get an address from http://www.mail-tester.com/"
-  log "Or just send a test message to yourself."
+  echo "Or just send a test message to yourself."
   EMAIL=$(echo $DEVELOPER_EMAILS |cut -d , -f 1)
   read -p "Email address for mail test? ('n' to skip) [$EMAIL]: " new_value
   if [ ! -z "$new_value" ]
@@ -267,14 +267,14 @@ check_docker() {
     log "$app_name not running!"
     log "Attempting to rebuild"
     log "==================== REBUILD LOG ===================="
-    log "$(./launcher rebuild $app_name)"
+    # too hard to pass STDERR of ./launcher to log()
+    ./launcher rebuild $app_name 2>&1 | tee -a $LOG_FILE
     log "==================== END REBUILD LOG ===================="
     docker ps| tail -n +2 > /tmp/$UUID-docker.txt
     if grep $app_name /tmp/$UUID-docker.txt
     then
-      log -e "\n\n==================== REBUILD SUCCEEDED! ====================\n\n"
-      log "Discourse container $app_name is running!"
-      log "Waiting 30 seconds for container to crank up. . . "
+      log -e "\nDiscourse container $app_name is now running."
+      log ". . . waiting 30 seconds for container to crank up. . . "
       sleep 30
     else
       log "$app_name still not running!"
@@ -292,9 +292,10 @@ check_docker() {
 ##
 clean_up_log_file() {
   for VAR
-  in SMTP_PASSWORD LETSENCRYPT_ACCOUNT_EMAIL DEVELOPER_EMAILS DISCOURSE_DB_PASSWORD
+  in SMTP_PASSWORD LETSENCRYPT_ACCOUNT_EMAIL DEVELOPER_EMAILS DISCOURSE_DB_PASSWORD 'Sending mail to'
   do
-    sed -i -e 's/'"$VAR"'[=:]\(\S*\)/'"$VAR"'=REDACTED /g' $LOG_FILE
+    echo "Replacing: $VAR"
+    sed -i -e 's/'"$VAR"'\([=: ]\)\S*/'"$VAR"'\1REDACTED /g' $LOG_FILE
   done
 }
 
@@ -310,9 +311,10 @@ print_done() {
     log "The output of this program may be available at http://$DISCOURSE_HOSTNAME/$DOCTOR_FILE"
     log "You should inspect that file carefully before sharing the URL."
   fi
+  # The following is not in the web log file since it was copied above, which seems corect
   log
   log "You can examine the output of this script with "
-  log "LESS=-Ri less shared/standalone/log/var-log/$DOCTOR_FILE "
+  log "LESS=-Ri less $LOG_FILE"
   log
   log "BUT FIRST, make sure that you know the first three commands below!!!"
   log
@@ -321,6 +323,8 @@ print_done() {
   log "/error<ENTER>  -- search for the word 'error'"
   log "n              -- search for the next occurrence"
   log "g              -- go to the beginning of the file"
+  log "f              -- go forward a page"
+  log "b              -- go back a page"
   log "G              -- go to the end of the file"
 }
 
