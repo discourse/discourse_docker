@@ -1,0 +1,354 @@
+#!/usr/bin/env bash
+LOG_FILE="/tmp/discourse-debug.txt"
+WORKING_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+log() {
+  if [ "$1" == "-e" ]
+  then
+    shift
+    echo -e "$*" | tee -a "$LOG_FILE"
+  else
+    echo "$*" | tee -a "$LOG_FILE"
+  fi
+}
+
+check_root() {
+  if [[ $EUID -ne 0 ]]; then
+    log "This script must be run as root. Please sudo or log in as root first." 1>&2
+    exit 1
+  fi
+}
+
+##
+## Check whether a connection to HOSTNAME ($1) on PORT ($2) is possible
+##
+connect_to_port() {
+  HOST="$1"
+  PORT="$2"
+  VERIFY=$(date +%s | sha256sum | base64 | head -c 20)
+  echo -e "HTTP/1.1 200 OK\n\n $VERIFY" | nc -w 4 -l -p $PORT >/dev/null 2>&1 &
+  if curl --proto =http -s $HOST:$PORT --connect-timeout 3 | grep $VERIFY >/dev/null 2>&1 &
+  then
+    return 0
+  else
+    return 1
+  fi
+}
+
+check_ip_match() {
+  HOST="$1"
+  log
+  log Checking your domain name . . .
+  if connect_to_port $HOST 443
+  then
+    log
+    log "Connection to $HOST succeeded."
+  else
+    log WARNING:: This server does not appear to be accessible at $HOST:443.
+    log
+    if connect_to_port $HOST 80
+    then
+	log A connection to port 80 succeeds, however.
+	log This suggests that your DNS settings are correct,
+	log but something is keeping traffic to port 443 from getting to your server.
+	log Check your networking configuration to see that connections to port 443 are allowed.
+    else
+      log "A connection to http://$HOST (port 80) also fails."
+      log
+      log This suggests that $HOST resolves to the wrong IP address
+      log or that traffic is not being routed to your server.
+    fi
+    log
+    log Google: \"open ports YOUR CLOUD SERVICE\" for information for resolving this problem.
+    log
+    log This test might not work for all situations,
+    log so if you can access Discourse at http://$HOST, this might not indicate a problem.
+    sleep 3
+  fi
+}
+
+check_docker_is_installed() {
+  log -e "\n==================== DOCKER INFO ===================="
+  docker_path="$(which docker.io || which docker)"
+  if [ -z $docker_path ]; then
+    log "Docker is not installed. Have you installed Discourse at all?"
+    log "Perhaps you're looking for ./discourse-setup ."
+    log "There is no point in continuing."
+    exit
+  else
+    log -e "DOCKER VERSION: $(docker --version)"
+    log -e "\nDOCKER PROCESSES (docker ps -a)\n\n$(sudo docker ps -a)\n"
+  fi
+}
+
+get_OS() {
+  log -e "OS: $(uname -s)"
+}
+
+check_disk_and_memory() {
+  log -e "\n\n==================== MEMORY INFORMATION ===================="
+  os_type=$(get_OS)
+  if [ "$os_type" == "Darwin" ]; then
+    log -e "RAM: $( free -m | awk '/Mem:/ {print $2}' ) \n"
+  else
+    log -e "RAM (MB): $( free -m --si | awk ' /Mem:/  {print $2} ')\n"
+  fi
+  log "$(free -m)"
+
+  log -e "\n==================== DISK SPACE CHECK ===================="
+  log "---------- OS Disk Space ----------"
+  log "$(df -h / /var/discourse /var/lib/docker /var/lib/docker/* | uniq)"
+
+  if [ "$version" != "NOT FOUND" ]
+  then
+    log
+    log "---------- Container Disk Space ----------"
+    log "$(sudo docker exec -w /var/www/discourse -i $app_name df -h / /shared/ /shared/postgres_data /shared/redis_data /shared/backups /var/log | uniq)"
+  fi
+
+  log -e "\n==================== DISK INFORMATION ===================="
+  log "$( fdisk -l )"
+  log -e "\n==================== END DISK INFORMATION ===================="
+
+  free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
+  # Arguably ./launcher is doing this so discourse-doctor does not need to . . .
+  if [ "$free_disk" -lt 5000 ]; then
+  log "\n\n==================== DISK SPACE PROBLEM ===================="
+    log  "WARNING: you appear to have very low disk space."
+    log "This could be the cause of problems running your site."
+    log "Please free up some space, or expand your disk, before continuing."
+    log
+    log "Run \'apt-get autoremove && apt-get autoclean\' to clean up unused"
+    log "packages and \'./launcher cleanup\' to remove stale Docker containers."
+    exit 1
+  fi
+}
+
+get_discourse_version() {
+  version=""
+  version=$(wget -q --timeout=3 https://$VERSION_HOSTNAME/privacy  -O -|grep generator|head -1 |cut -d "=" -f 3|cut -d '-' -f 1 |cut -d '"' -f 2)  &> /dev/null
+  if ! echo $version | grep Discourse
+  then
+    version=$(wget -q --timeout=3 http://$VERSION_HOSTNAME/privacy  -O -|grep generator|head -1 |cut -d "=" -f 3|cut -d '-' -f 1 |cut -d '"' -f 2) &> /dev/null
+  fi
+  if [ -z "$version" ]
+  then
+    version="NOT FOUND"
+  fi
+  log "Discourse version at $VERSION_HOSTNAME: $version"
+}
+
+check_if_hostname_resolves_here() {
+  log "========================================"
+  VERSION_HOSTNAME=$DISCOURSE_HOSTNAME
+  get_discourse_version
+  DISCOURSE_VERSION="$version"
+  VERSION_HOSTNAME=localhost
+  get_discourse_version
+  LOCALHOST_VERSION="$version"
+  if [ "$DISCOURSE_VERSION" != "$LOCALHOST_VERSION" ]
+  then
+    log "==================== DNS PROBLEM ===================="
+    log "This server reports $LOCALHOST_VERSION, but $DISCOURSE_HOSTNAME reports $DISCOURSE_VERSION."
+    log "This suggests that you have a DNS problem or that an intermediate proxy is to blame."
+    log "If you are using Cloudflare, or a CDN, it may be improperly configured."
+  fi
+}
+
+##
+## get discourse configuration values from YML file
+##
+get_discourse_config() {
+  log -e "\n==================== YML SETTINGS ===================="
+  read_config "DISCOURSE_HOSTNAME"
+  DISCOURSE_HOSTNAME=$read_config_result
+  log DISCOURSE_HOSTNAME=$DISCOURSE_HOSTNAME
+  read_config "DISCOURSE_SMTP_ADDRESS"
+  SMTP_ADDRESS=$read_config_result
+  log SMTP_ADDRESS=$SMTP_ADDRESS
+  read_config "DISCOURSE_DEVELOPER_EMAILS"
+  DEVELOPER_EMAILS=$read_config_result
+  log DEVELOPER_EMAILS=$DEVELOPER_EMAILS
+  read_config "DISCOURSE_SMTP_PASSWORD"
+  SMTP_PASSWORD=$read_config_result
+  log SMTP_PASSWORD=$read_config_result
+  read_config "DISCOURSE_SMTP_PORT"
+  SMTP_PORT=$read_config_result
+  log SMTP_PORT=$read_config_result
+  read_config "DISCOURSE_SMTP_USER_NAME"
+  SMTP_USER_NAME=$read_config_result
+  log SMTP_USER_NAME=$read_config_result
+  read_config "LETSENCRYPT_ACCOUNT_EMAIL"
+  letsencrypt_account_email=$read_config_result
+  log "LETSENCRYPT_ACCOUNT_EMAIL=$letsencrypt_account_email"
+}
+
+check_plugins() {
+  log -e "\n\n==================== PLUGINS ===================="
+  log -e "$(grep git containers/$app_name.yml)"
+  grep git containers/$app_name.yml > /tmp/$PPID.grep
+
+  if grep -cv "github.com/discourse" /tmp/$PPID.grep > /dev/null
+  then
+    log -e "\nWARNING:"
+    log You have what appear to be non-official plugins.
+    log "If you are having trouble, you should disable them and try rebuilding again."
+  else
+    log -e "\nNo non-official plugins detected."
+  fi
+  log -e "\nSee https://github.com/discourse/discourse/blob/master/lib/plugin/metadata.rb for the official list.\n"
+}
+
+dump_yaml() {
+  log -e "\n\n==================== YML DUMP ===================="
+  log Dumping $app_name.yml
+  log -e "\n\n"
+}
+
+##
+## read a variable from the config file and stick it in read_config_result
+##
+read_config() {
+  config_line=$(egrep "^  #?$1:" $web_file)
+  read_config_result=$(echo $config_line | awk  --field-separator=":" '{print $2}')
+  read_config_result=$(echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g")
+}
+
+##
+## call rake emails:test inside the container
+##
+check_email() {
+  log -e "\n==================== MAIL TEST ===================="
+  log "For a robust test, get an address from http://www.mail-tester.com/"
+  echo "Or just send a test message to yourself."
+  EMAIL=$(echo $DEVELOPER_EMAILS |cut -d , -f 1)
+  read -p "Email address for mail test? ('n' to skip) [$EMAIL]: " new_value
+  if [ ! -z "$new_value" ]
+  then
+    EMAIL="$new_value"
+  fi
+  if [ "$new_value" != "n" ] && [ "$new_value" != "N" ]
+  then
+    log "Sending mail to $EMAIL. . . "
+    log "$(sudo docker exec -w /var/www/discourse -i $app_name rake emails:test[$EMAIL])"
+  else
+    log "Mail test skipped."
+  fi
+}
+
+get_yml_file() {
+  app_name=""
+  if [ -f containers/app.yml ]
+  then
+    app_name="app"
+    web_file=containers/$app_name.yml
+    log "Found $web_file"
+  elif [ -f containers/web_only.yml ]
+  then
+    log "YML=web_only.yml"
+    app_name="web_only"
+    web_file=containers/$app_name.yml
+    log "Found $web_file"
+  else
+    log "Can't find app.yml or web_ony.yml."
+    log "Giving up."
+    exit
+  fi
+}
+
+check_docker() {
+  docker ps | tail -n +2 > /tmp/$UUID-docker.txt
+
+  if grep $app_name /tmp/$UUID-docker.txt
+  then
+    log -e "\nDiscourse container $app_name is running"
+  else
+    log "==================== SERIOUS PROBLEM!!!! ===================="
+    log "$app_name not running!"
+    log "Attempting to rebuild"
+    log "==================== REBUILD LOG ===================="
+    # too hard to pass STDERR of ./launcher to log()
+    ./launcher rebuild $app_name 2>&1 | tee -a $LOG_FILE
+    log "==================== END REBUILD LOG ===================="
+    docker ps| tail -n +2 > /tmp/$UUID-docker.txt
+    if grep $app_name /tmp/$UUID-docker.txt
+    then
+      log -e "\nDiscourse container $app_name is now running."
+      log ". . . waiting 30 seconds for container to crank up. . . "
+      sleep 30
+    else
+      log "$app_name still not running!"
+      # check_ip_match checks if curl to $DISCOURSE_HOSTNAME gets to this server
+      # It works only if ports 80 and 443 are free
+      check_ip_match $DISCOURSE_HOSTNAME
+      log "You should probably remove any non-standard plugins and rebuild."
+      NO_CONTAINER='y'
+    fi
+  fi
+}
+
+##
+## redact passwords and email addresses from log file
+##
+clean_up_log_file() {
+  for VAR
+  in SMTP_PASSWORD LETSENCRYPT_ACCOUNT_EMAIL DEVELOPER_EMAILS DISCOURSE_DB_PASSWORD 'Sending mail to'
+  do
+    echo "Replacing: $VAR"
+    sed -i -e 's/'"$VAR"'\([=: ]\)\S*/'"$VAR"'\1REDACTED /g' $LOG_FILE
+  done
+}
+
+print_done() {
+  log
+  log "==================== DONE! ===================="
+  DOCTOR_FILE=$(date +%s | sha256sum | base64 | head -c 20).txt
+
+  if [ $app_name == 'app' ] && [ "$NO_CONTAINER" != 'y' ]
+  then
+    cp $LOG_FILE shared/standalone/log/var-log/$DOCTOR_FILE
+    sudo docker exec -w /var/www/discourse -i $app_name cp /var/log/$DOCTOR_FILE  public
+    log "The output of this program may be available at http://$DISCOURSE_HOSTNAME/$DOCTOR_FILE"
+    log "You should inspect that file carefully before sharing the URL."
+  fi
+  # The following is not in the web log file since it was copied above, which seems corect
+  log
+  log "You can examine the output of this script with "
+  log "LESS=-Ri less $LOG_FILE"
+  log
+  log "BUT FIRST, make sure that you know the first three commands below!!!"
+  log
+  log "Commands to know when viewing the file with the above command (called 'less'): "
+  log "q              -- quit"
+  log "/error<ENTER>  -- search for the word 'error'"
+  log "n              -- search for the next occurrence"
+  log "g              -- go to the beginning of the file"
+  log "f              -- go forward a page"
+  log "b              -- go back a page"
+  log "G              -- go to the end of the file"
+}
+
+initialize_log_file() {
+  rm -f $LOG_FILE
+  touch $LOG_FILE
+  log DISCOURSE DOCTOR $(date)
+  log -e "OS: $(uname -a)\n\n"
+}
+
+##
+## END FUNCTION DECLARATION
+##
+
+check_root
+cd $WORKING_DIR || exit
+initialize_log_file
+get_yml_file
+get_discourse_config
+check_docker_is_installed
+check_docker
+check_plugins
+check_if_hostname_resolves_here
+check_disk_and_memory
+check_email
+clean_up_log_file
+print_done
