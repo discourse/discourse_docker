@@ -16,11 +16,9 @@ cd $WDIR/libpng
 ./configure --prefix=$PREFIX
 make all && make install
 
-
-
 # Build and install ImageMagick
-wget -O $WDIR/ImageMagick.tar.gz "https://github.com/ImageMagick/ImageMagick6/archive/6.9.9-51.tar.gz"
-IMDIR=$WDIR/$(tar tzf $WDIR/ImageMagick.tar.gz --wildcards "ImageMagick6-*/configure" |cut -d/ -f1)
+wget -O $WDIR/ImageMagick.tar.gz "http://www.imagemagick.org/download/ImageMagick-7.0.8-6.tar.gz"
+IMDIR=$WDIR/$(tar tzf $WDIR/ImageMagick.tar.gz --wildcards "ImageMagick-*/configure" |cut -d/ -f1)
 tar zxf $WDIR/ImageMagick.tar.gz -C $WDIR
 cd $IMDIR
 PKG_CONF_LIBDIR=$PREFIX/lib LDFLAGS=-L$PREFIX/lib CFLAGS=-I$PREFIX/include ./configure \
@@ -44,7 +42,6 @@ PKG_CONF_LIBDIR=$PREFIX/lib LDFLAGS=-L$PREFIX/lib CFLAGS=-I$PREFIX/include ./con
           --with-tiff
 make all && make install
 
-
 cd $HOME
 rm -rf $WDIR
-ldconfig
+ldconfig /usr/local/lib
