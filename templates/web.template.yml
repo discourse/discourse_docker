@@ -24,22 +24,6 @@ params:
   upload_size: 10m
 
 run:
-  # see: https://www.imagemagick.org/discourse-server/viewtopic.php?f=4&t=29588
-  - replace:
-      filename: /usr/local/etc/ImageMagick-6/policy.xml
-      from: "<policymap>"
-      to: |
-        <policymap>
-          <policy domain="coder" rights="none" pattern="EPHEMERAL" />
-          <policy domain="coder" rights="none" pattern="URL" />
-          <policy domain="coder" rights="none" pattern="HTTPS" />
-          <policy domain="coder" rights="none" pattern="MVG" />
-          <policy domain="coder" rights="none" pattern="MSL" />
-          <policy domain="coder" rights="none" pattern="TEXT" />
-          <policy domain="coder" rights="none" pattern="SHOW" />
-          <policy domain="coder" rights="none" pattern="WIN" />
-          <policy domain="coder" rights="none" pattern="PLT" />
-
   - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
   - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
   - exec: chown -R discourse /home/discourse
