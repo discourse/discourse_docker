@@ -8,6 +8,7 @@ usage () {
   echo "    restart:    Restart a container"
   echo "    destroy:    Stop and remove a container"
   echo "    enter:      Open a shell to run commands inside the container"
+  echo "    exec:       Execute command line inside the container"
   echo "    logs:       View the Docker logs for a container"
   echo "    bootstrap:  Bootstrap a container for the config based on a template"
   echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
@@ -639,6 +640,14 @@ case "$command" in
 
   enter)
       exec $docker_path exec -it $config /bin/bash --login
+      ;;
+
+  exec)
+      for (( i=${#BASH_ARGV[@]}-1,j=0; i>=0,j<${#BASH_ARGV[@]}; i--,j++ ))
+      do
+        args[$j]=${BASH_ARGV[$i]}
+      done
+      exec $docker_path exec -it $config "${args[@]:2}"
       ;;
 
   stop)
