@@ -32,7 +32,7 @@ run:
 
        gzip on;
 
-       add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
+       add_header Strict-Transport-Security 'max-age=31536000; includeSubDomains; preload'; # remember the certificate for a year and automatically connect to HTTPS for this domain
 
        if ($http_host != $$ENV_DISCOURSE_HOSTNAME) {
           rewrite (.*) https://$$ENV_DISCOURSE_HOSTNAME$1 permanent;
@@ -42,4 +42,4 @@ run:
      from: /add_header Referrer-Policy 'no-referrer-when-downgrade';/m
      to: |
        add_header Referrer-Policy 'no-referrer-when-downgrade';
-       add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
+

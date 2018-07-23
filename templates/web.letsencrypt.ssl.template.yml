@@ -89,4 +89,4 @@ hooks:
        filename: "/etc/nginx/conf.d/discourse.conf"
        from: /add_header.+/
        to: |
-         add_header Strict-Transport-Security 'max-age=63072000';
+         add_header Strict-Transport-Security 'max-age=63072000; includeSubDomains; preload';
