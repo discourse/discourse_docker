@@ -412,7 +412,7 @@ ask_user_for_config() {
 
     if [ ! -z $letsencrypt_account_email ]
     then
-      read -p "Let's Encrypt account email? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
+      read -p "Optional email address for setting up Let's Encrypt? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
       if [ ! -z "$new_value" ]
       then
           letsencrypt_account_email="$new_value"
