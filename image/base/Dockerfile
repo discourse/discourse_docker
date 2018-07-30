@@ -47,7 +47,7 @@ RUN cd / &&\
     apt-get install -y nodejs &&\
     npm install -g uglify-js@"<3" &&\
     npm install -g svgo &&\
-    npm install -g prettier
+    npm install -g prettier@1.14.0
 
 ADD install-nginx /tmp/install-nginx
 RUN /tmp/install-nginx
