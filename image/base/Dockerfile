@@ -32,7 +32,7 @@ RUN apt-get -y install build-essential git wget \
                        postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
                        postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
                        language-pack-en cron anacron \
-                       psmisc rsyslog vim whois brotli libunwind-dev libicu-dev \
+                       psmisc rsyslog vim whois brotli libunwind-dev \
                        libtcmalloc-minimal4
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
