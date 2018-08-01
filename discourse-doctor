@@ -277,12 +277,22 @@ check_docker() {
       log ". . . waiting 30 seconds for container to crank up. . . "
       sleep 30
     else
-      log "$app_name still not running!"
+      log "Failed to rebuild $app_name."
       # check_ip_match checks if curl to $DISCOURSE_HOSTNAME gets to this server
       # It works only if ports 80 and 443 are free
       check_ip_match $DISCOURSE_HOSTNAME
       log "You should probably remove any non-standard plugins and rebuild."
       NO_CONTAINER='y'
+      log "Attempting to restart existing container. . . "
+      ./launcher start $app_name 2>&1 | tee -a $LOG_FILE
+      docker ps| tail -n +2 > /tmp/$UUID-docker.txt
+      if grep $app_name /tmp/$UUID-docker.txt
+      then
+        log "Restarted the container."
+        NO_CONTAINER='n'
+      else
+        log "Failed to restart the container."
+      fi
     fi
   fi
 }
