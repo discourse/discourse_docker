@@ -516,6 +516,7 @@ run_stop() {
        )
      else
        echo "$config was not started !"
+       echo "./discourse-doctor may help diagnose the problem."
        exit 1
   fi
 }
@@ -709,7 +710,8 @@ run_bootstrap() {
 
     $docker_path rm `cat $cidbootstrap`
     rm $cidbootstrap
-    echo "** FAILED TO BOOTSTRAP ** please scroll up and look for earlier error messages, there may be more than one"
+    echo "** FAILED TO BOOTSTRAP ** please scroll up and look for earlier error messages, there may be more than one."
+    echo "./discourse-doctor may help diagnose the problem."
     exit 1
   fi
 
