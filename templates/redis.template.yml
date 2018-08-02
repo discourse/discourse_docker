@@ -5,7 +5,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
-        exec chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
+        exec thpoff chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
   - file:
      path: /etc/service/redis/log/run
      chmod: "+x"

@@ -64,7 +64,7 @@ run:
         # postgres
         cd $home
         chown -R discourse:www-data /shared/log/rails
-        LD_PRELOAD=$RUBY_ALLOCATOR HOME=/home/discourse USER=discourse exec chpst -u discourse:www-data -U discourse:www-data bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
+        LD_PRELOAD=$RUBY_ALLOCATOR HOME=/home/discourse USER=discourse exec thpoff chpst -u discourse:www-data -U discourse:www-data bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
   - file:
      path: /etc/service/nginx/run
