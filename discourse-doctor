@@ -335,6 +335,26 @@ initialize_log_file() {
   log -e "OS: $(uname -a)\n\n"
 }
 
+check_transparent_hugepages_config() {
+  log -e "\n==================== TRANSPARENT HUGEPAGES (THP) SETTING TEST ===================="
+  CMD=$(cat /sys/kernel/mm/transparent_hugepage/enabled)
+  if echo $CMD | grep -q "\[never\]"; then
+    log "The Transparent Hugepages (THP) setting is already disabled on your server. Test skipped."
+  else
+    log "The Transparent Hugepages (THP) setting is enabled on your server."
+    log "This can cause memory to bloat."
+    read -p "Would you like me to disable it? (y/n) " var
+    
+    if [ $var = y ] || [ $var = Y ] ; then
+      echo never >/sys/kernel/mm/transparent_hugepage/enabled
+      log "The Transparent Hugepages (THP) setting is now disabled on your server."
+      log "You will see better memory usage and performance."
+    else
+      log "You entered $var. Test skipped."
+    fi
+  fi
+}
+
 ##
 ## END FUNCTION DECLARATION
 ##
@@ -351,4 +371,5 @@ check_if_hostname_resolves_here
 check_disk_and_memory
 check_email
 clean_up_log_file
+check_transparent_hugepages_config
 print_done
