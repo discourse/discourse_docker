@@ -91,6 +91,12 @@ RUN /tmp/install-gifsicle
 ADD install-pngquant /tmp/install-pngquant
 RUN /tmp/install-pngquant
 
+# This tool allows us to disable huge page support for our current process
+# since the flag is preserved through forks and execs it can be used on any
+# process
+ADD thpoff.c /src/thpoff.c
+RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
+
 # clean up for docker squash
 RUN   rm -fr /usr/share/man &&\
       rm -fr /usr/share/doc &&\
