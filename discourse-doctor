@@ -270,7 +270,7 @@ check_docker() {
     # too hard to pass STDERR of ./launcher to log()
     ./launcher rebuild $app_name 2>&1 | tee -a $LOG_FILE
     log "==================== END REBUILD LOG ===================="
-    docker ps| tail -n +2 > /tmp/$UUID-docker.txt
+    docker ps | tail -n +2 > /tmp/$UUID-docker.txt
     if grep $app_name /tmp/$UUID-docker.txt
     then
       log -e "\nDiscourse container $app_name is now running."
@@ -285,7 +285,7 @@ check_docker() {
       NO_CONTAINER='y'
       log "Attempting to restart existing container. . . "
       ./launcher start $app_name 2>&1 | tee -a $LOG_FILE
-      docker ps| tail -n +2 > /tmp/$UUID-docker.txt
+      docker ps | tail -n +2 > /tmp/$UUID-docker.txt
       if grep $app_name /tmp/$UUID-docker.txt
       then
         log "Restarted the container."
