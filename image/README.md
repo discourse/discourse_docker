@@ -2,31 +2,21 @@
 
 ## Building new images
 
-To build a new set of images, update the `Makefile` with the new version number, and then `make all`.  This will automatically update the header comments in the Dockerfiles and update any `FROM` statements to ensure that the image verions remain in lock-step with each other.  (The downside is that if you only wanted to tweak a "leaf" image, you'll still be touching/updating _all_ of the images.  But reasoning about the images is much easier if they all have the same version.)
+To build a new image, just run `ruby auto_build.rb image-name`. The build process will build a local image with a predefined tag.
 
-The build process will tag the images with the version number, but not with "latest", nor will it push the images up to Docker Hub.  Both of those steps must be performed manually.
+Images and tag names are defined [here](https://github.com/discourse/discourse_docker/blob/master/image/auto_build.rb#L6-L11).
 
-> _A note about docker-squash:_ Getting docker-squash configured correctly on OSX takes a bit of doing, so if you want to simply skip the squashing step entirely, just prefix the make command with `SQUASH=NO`, as follows:
->
-> ```sh
-> SQUASH=NO make all
-> ```
-
+> **A note about --squash**: By default we squash the images we serve on Docker Hub. You will need to [enable experimental features](https://github.com/docker/docker-ce/blob/master/components/cli/experimental/README.md) on your Docker daemon for that.
 
 
 ## More about the images
 
-See both `Makefile` and the respective `Dockerfile`s for details on _how_ all of this happens.
+See both `auto_build.rb` and the respective `Dockerfile`s for details on _how_ all of this happens.
 
 
 ### base ([discourse/base](https://hub.docker.com/r/discourse/base/))
 
 All of the dependencies for running Discourse.  This includes runit, postgres, nginx, ruby, imagemagick, etc.  It also includes the creation of the "discourse" user and `/var/www` directory.
-
-
-### discourse ([discourse/discourse](https://hub.docker.com/r/discourse/discourse/))
-
-Builds on the base image and adds the current (as of image build time) version of Discourse, cloned from GitHub, and also the bundled gems.
 
 
 ### discourse_dev ([discourse/discourse_dev](https://hub.docker.com/r/discourse/discourse_dev/))
