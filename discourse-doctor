@@ -250,7 +250,7 @@ get_yml_file() {
     web_file=containers/$app_name.yml
     log "Found $web_file"
   else
-    log "Can't find app.yml or web_ony.yml."
+    log "Can't find app.yml or web_only.yml."
     log "Giving up."
     exit
   fi
