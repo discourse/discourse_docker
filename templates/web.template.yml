@@ -147,7 +147,7 @@ run:
       cmd:
         # ensure we are on latest bundler
         - gem update bundler
-        - chown -R discourse $home
+        - find $home ! -user discourse -exec chown discourse {} \+
 
   - exec:
       cd: $home
