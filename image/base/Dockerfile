@@ -12,9 +12,9 @@ RUN echo 2.0.`date +%Y%m%d` > /VERSION
 
 RUN apt-get update && apt-get install -y lsb-release sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
-RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main restricted universe" > /etc/apt/sources.list
-RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-updates main restricted universe" >> /etc/apt/sources.list
-RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-security main restricted universe" >> /etc/apt/sources.list
+RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main universe" > /etc/apt/sources.list
+RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-updates main universe" >> /etc/apt/sources.list
+RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-security main universe" >> /etc/apt/sources.list
 RUN apt-get update && apt-get -y install fping
 RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt-get update || true"
 RUN apt-get -y install software-properties-common
