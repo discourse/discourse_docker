@@ -1,5 +1,7 @@
 shared/*
 *.swp
+*~
+\#*\#
 containers/*
 cids/*
 bin/*
