@@ -10,7 +10,7 @@ usage () {
   echo "    enter:       Open a shell to run commands inside the container"
   echo "    logs:        View the Docker logs for a container"
   echo "    bootstrap:   Bootstrap a container for the config based on a template"
-  echo "    run:         Run the given command with the config for the given template."
+  echo "    run:         Run the given command with the config in the context of the last bootstrapped image"
   echo "    rebuild:     Rebuild a container (destroy old, bootstrap, start new)"
   echo "    cleanup:     Remove all containers that have stopped for > 24 hours"
   echo
@@ -566,7 +566,22 @@ run_start() {
 
 }
 
-setup_bootstrap() {
+run_run() {
+  set_template_info
+  set_volumes
+  set_links
+  set_run_image
+
+  unset ERR
+  (exec $docker_path run --rm --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" -i -a stdin -a stdout -a stderr $volumes $run_image \
+    /bin/bash -c "$run_command") || ERR=$?
+
+  if [[ $ERR > 0 ]]; then
+    exit 1
+  fi
+}
+
+run_bootstrap() {
   host_run
 
   # Is the image available?
@@ -587,22 +602,7 @@ setup_bootstrap() {
 
   set_volumes
   set_links
-}
 
-run_run() {
-  setup_bootstrap
-
-  unset ERR
-  (exec $docker_path run --rm --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" -i -a stdin -a stdout -a stderr $volumes $image \
-    /bin/bash -c "$run_command") || ERR=$?
-
-  if [[ $ERR > 0 ]]; then
-    exit 1
-  fi
-}
-
-run_bootstrap() {
-  setup_bootstrap
   rm -f $cidbootstrap
 
   run_command="cd /pups &&"
