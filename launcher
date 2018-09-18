@@ -592,8 +592,13 @@ setup_bootstrap() {
 run_run() {
   setup_bootstrap
 
-  $docker_path run --rm --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" -i -a stdin -a stdout -a stderr $volumes $image \
-    /bin/bash -c "$run_command"
+  unset ERR
+  (exec $docker_path run --rm --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" -i -a stdin -a stdout -a stderr $volumes $image \
+    /bin/bash -c "$run_command") || ERR=$?
+
+  if [[ $ERR > 0 ]]; then
+    exit 1
+  fi
 }
 
 run_bootstrap() {
