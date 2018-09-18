@@ -3,15 +3,16 @@
 usage () {
   echo "Usage: launcher COMMAND CONFIG [--skip-prereqs] [--docker-args STRING]"
   echo "Commands:"
-  echo "    start:      Start/initialize a container"
-  echo "    stop:       Stop a running container"
-  echo "    restart:    Restart a container"
-  echo "    destroy:    Stop and remove a container"
-  echo "    enter:      Open a shell to run commands inside the container"
-  echo "    logs:       View the Docker logs for a container"
-  echo "    bootstrap:  Bootstrap a container for the config based on a template"
-  echo "    rebuild:    Rebuild a container (destroy old, bootstrap, start new)"
-  echo "    cleanup:    Remove all containers that have stopped for > 24 hours"
+  echo "    start:       Start/initialize a container"
+  echo "    stop:        Stop a running container"
+  echo "    restart:     Restart a container"
+  echo "    destroy:     Stop and remove a container"
+  echo "    enter:       Open a shell to run commands inside the container"
+  echo "    logs:        View the Docker logs for a container"
+  echo "    bootstrap:   Bootstrap a container for the config based on a template"
+  echo "    run:         Run the given command with the config for the given template."
+  echo "    rebuild:     Rebuild a container (destroy old, bootstrap, start new)"
+  echo "    cleanup:     Remove all containers that have stopped for > 24 hours"
   echo
   echo "Options:"
   echo "    --skip-prereqs             Don't check launcher prerequisites"
@@ -23,6 +24,10 @@ usage () {
 command=$1
 config=$2
 user_args=""
+
+if [[ $command == "run" ]]; then
+  run_command=$3
+fi
 
 while [ ${#} -gt 0 ]; do
   case "${1}" in
@@ -561,10 +566,7 @@ run_start() {
 
 }
 
-
-run_bootstrap() {
-
-  # I got no frigging clue what this does, ask Sam Saffron. It RUNS STUFF ON THE HOST I GUESS?
+setup_bootstrap() {
   host_run
 
   # Is the image available?
@@ -585,7 +587,17 @@ run_bootstrap() {
 
   set_volumes
   set_links
+}
 
+run_run() {
+  setup_bootstrap
+
+  $docker_path run --rm --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" -i -a stdin -a stdout -a stderr $volumes $image \
+    /bin/bash -c "$run_command"
+}
+
+run_bootstrap() {
+  setup_bootstrap
   rm -f $cidbootstrap
 
   run_command="cd /pups &&"
@@ -634,6 +646,11 @@ case "$command" in
   bootstrap)
       run_bootstrap
       echo "Successfully bootstrapped, to startup use ./launcher start $config"
+      exit 0
+      ;;
+
+  run)
+      run_run
       exit 0
       ;;
 
