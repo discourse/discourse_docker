@@ -1,0 +1,16 @@
+templates:
+  - "templates/redis.template.yml"
+
+env:
+  LANG: en_US.UTF-8
+
+# any extra arguments for Docker?
+# docker_args:
+
+volumes:
+  - volume:
+        host: /var/discourse/shared/redis
+        guest: /shared
+  - volume:
+        host: /var/discourse/shared/redis/log/var-log
+        guest: /var/log

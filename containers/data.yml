@@ -1,0 +1,42 @@
+# A container for all things Data, be sure to set a secret password for
+# discourse account, SOME_SECRET is just an example
+#
+
+templates:
+  - "templates/postgres.template.yml"
+  - "templates/redis.template.yml"
+
+# any extra arguments for Docker?
+# docker_args:
+
+params:
+  db_default_text_search_config: "pg_catalog.english"
+
+  ## Set db_shared_buffers to a max of 25% of the total memory.
+  ## will be set automatically by bootstrap based on detected RAM, or you can override
+  #db_shared_buffers: "256MB"
+
+  ## can improve sorting performance, but adds memory usage per-connection
+  #db_work_mem: "40MB"
+
+env:
+  # ensure locale exists in container, you may need to install it
+  LANG: en_US.UTF-8
+
+volumes:
+  - volume:
+        host: /var/discourse/shared/data
+        guest: /shared
+  - volume:
+        host: /var/discourse/shared/data/log/var-log
+        guest: /var/log
+
+# TODO: SOME_SECRET to a password for the discourse user
+hooks:
+  after_postgres:
+    - exec:
+        stdin: |
+          alter user discourse with password 'SOME_SECRET';
+        cmd: su - postgres -c 'psql discourse'
+
+        raise_on_fail: false
