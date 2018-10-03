@@ -139,4 +139,5 @@ RUN useradd discourse -s /bin/bash -m -U &&\
     cd /var/www/discourse &&\
     sudo -u discourse bundle install --deployment \
          --without test --without development &&\
+    bundle exec rake maxminddb:get &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
