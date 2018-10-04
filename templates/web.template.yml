@@ -107,7 +107,9 @@ run:
         - bash -c "ln    -s           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr}.log $home/log"
         - bash -c "mkdir -p           /shared/{uploads,backups}"
         - bash -c "ln    -s           /shared/{uploads,backups} $home/public"
-        - chown -R discourse:www-data /shared/log/rails /shared/uploads /shared/backups
+        - bash -c "mkdir -p           /shared/tmp/{backups,restores}"
+        - bash -c "ln    -s           /shared/tmp/{backups,restores} $home/tmp"
+        - chown -R discourse:www-data /shared/log/rails /shared/uploads /shared/backups /shared/tmp
 
   - exec:
       cmd:
@@ -271,6 +273,10 @@ run:
           mkdir -p /shared/backups
           chown -R discourse:www-data /shared/backups
         fi
+
+        rm -rf /shared/tmp/{backups,restores}
+        mkdir -p /shared/tmp/{backups,restores}
+        chown -R discourse:www-data /shared/tmp/{backups,restores}
 
   # change login directory to Discourse home
   - file:
