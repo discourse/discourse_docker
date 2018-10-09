@@ -138,4 +138,8 @@ RUN useradd discourse -s /bin/bash -m -U &&\
     chown -R discourse:discourse /var/www/discourse &&\
     cd /var/www/discourse &&\
     sudo -u discourse bundle install --deployment --without test --without development &&\
+    wget -q https://geolite.maxmind.com/download/geoip/database/GeoLite2-City.tar.gz &&\
+    tar -xzf GeoLite2-City.tar.gz --wildcards GeoLite2-City_*/GeoLite2-City.mmdb &&\
+    mv GeoLite2-City_*/GeoLite2-City.mmdb /var/www/discourse/vendor/data/GeoLite2-City.mmdb &&\
+    rm -rf GeoLite2-City* &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
