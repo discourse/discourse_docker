@@ -64,10 +64,12 @@ RUN mkdir /jemalloc-new && cd /jemalloc-new &&\
       tar -xjf jemalloc-5.1.0.tar.bz2 && cd jemalloc-5.1.0 && ./configure --prefix=/usr --with-install-suffix=5.1.0 && make build_lib && make install_lib &&\
       cd / && rm -rf /jemalloc-new
 
-RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
+RUN apt-get -y install ruby &&\
+    echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && (ruby-build 2.5.2 /usr/local)
+    cd / && rm -rf /src/ruby-build && (ruby-build 2.5.2 /usr/local) &&\
+    apt-get -y remove ruby
 
 RUN gem update --system
 
