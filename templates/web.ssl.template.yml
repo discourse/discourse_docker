@@ -39,7 +39,7 @@ run:
        }
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
-     from: /add_header Referrer-Policy 'no-referrer-when-downgrade';/m
+     from: "location @discourse {"
      to: |
-       add_header Referrer-Policy 'no-referrer-when-downgrade';
+       location @discourse {
        add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
