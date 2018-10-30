@@ -5,19 +5,6 @@ params:
 
 hooks:
   after_web_config:
-    - exec:
-        cd: /etc/service
-        cmd:
-          - rm -R unicorn
-          - rm -R nginx
-          - rm -R cron
-
-    - exec:
-        cd: /etc/runit/3.d
-        cmd:
-          - rm 01-nginx
-          - rm 02-unicorn
-
     - file:
         path: /usr/local/bin/import_mbox.sh
         chmod: "+x"
@@ -31,7 +18,7 @@ hooks:
           cd $home
           echo "The mbox import is starting..."
           echo
-          su discourse -c 'bundle exec ruby script/import_scripts/mbox-experimental.rb /shared/import/settings.yml'
+          su discourse -c 'bundle exec ruby script/import_scripts/mbox.rb /shared/import/settings.yml'
 
     - exec:
         cd: $home
