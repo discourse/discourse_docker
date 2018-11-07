@@ -56,6 +56,15 @@ run:
         [ ! -z "$COMPRESS_BROTLI" ] && sed -i "s/. brotli/  brotli/" /etc/nginx/conf.d/discourse.conf || sed -i "s/. brotli/# brotli/" /etc/nginx/conf.d/discourse.conf
 
   - file:
+     path: /etc/runit/1.d/configure-nginx-resolver
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        nameservers=`egrep '^\s*nameserver\s+' /etc/resolv.conf | sed -e 's/^\s*nameserver\s*//g'`
+        nameservers_one_line=`echo $nameservers`
+        echo "resolver $nameservers_one_line;" > /etc/nginx/conf.d/000-resolver.conf
+
+  - file:
      path: /etc/service/unicorn/run
      chmod: "+x"
      contents: |
