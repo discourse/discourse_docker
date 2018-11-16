@@ -92,20 +92,6 @@ else
   attach_on_run="-d"
 fi
 
-if [ -n "$DOCKER_HOST" ]; then
-  docker_ip=`sed -e 's/^tcp:\/\/\(.*\):.*$/\1/' <<< "$DOCKER_HOST"`
-elif [ -x "$(which ip 2>/dev/null)" ]; then
-  docker_ip=`ip addr show docker0 | \
-                  grep 'inet ' | \
-                  awk '{ split($2,a,"/"); print a[1] }';`
-else
-  docker_ip=`ifconfig | \
-                  grep -B1 "inet addr" | \
-                  awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' | \
-                  grep docker0 | \
-                  awk -F: '{ print $3 }';`
-fi
-
 # From https://stackoverflow.com/a/44660519/702738
 compare_version() {
     if [[ $1 == $2 ]]; then
@@ -608,7 +594,7 @@ run_start() {
 
      set -x
      $docker_path run --shm-size=512m $links $attach_on_run $restart_policy "${env[@]}" "${labels[@]}" -h "$hostname" \
-        -e DOCKER_HOST_IP="$docker_ip" --name $config -t "${ports[@]}" $volumes $mac_address $user_args \
+        --name $config -t $ports $volumes $mac_address $docker_args $user_args \
         $run_image $boot_command
 
    )
@@ -623,7 +609,7 @@ run_run() {
   set_run_image
 
   unset ERR
-  (exec $docker_path run --rm --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" -i -a stdin -a stdout -a stderr $volumes $run_image \
+  (exec $docker_path run --rm --shm-size=512m $user_args $links "${env[@]}" -i -a stdin -a stdout -a stderr $volumes $run_image \
     /bin/bash -c "$run_command") || ERR=$?
 
   if [[ $ERR > 0 ]]; then
@@ -664,11 +650,7 @@ run_bootstrap() {
   echo $run_command
 
   unset ERR
-
-  tmp_input_file=$(mktemp)
-
-  echo "$input" > "$tmp_input_file"
-  (exec cat "$tmp_input_file" | $docker_path run --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
+  (exec echo "$input" | $docker_path run --shm-size=512m $user_args $links "${env[@]}" --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
     /bin/bash -c "$run_command") || ERR=$?
 
   rm -f "$tmp_input_file"
