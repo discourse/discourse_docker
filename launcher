@@ -18,12 +18,14 @@ usage () {
   echo "    --skip-prereqs             Don't check launcher prerequisites"
   echo "    --docker-args              Extra arguments to pass when running docker"
   echo "    --skip-mac-address         Don't assign a mac address"
+  echo "    --run-image                Override the image used for running the container"
   exit 1
 }
 
 command=$1
 config=$2
 user_args=""
+user_run_image=""
 
 if [[ $command == "run" ]]; then
   run_command=$3
@@ -42,6 +44,10 @@ while [ ${#} -gt 0 ]; do
     ;;
   --docker-args)
     user_args="$2"
+    shift
+    ;;
+  --run-image)
+    user_run_image="$2"
     shift
     ;;
   esac
@@ -471,7 +477,9 @@ set_run_image() {
   run_image=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['run_image']"`
 
-  if [ -z "$run_image" ]; then
+  if [ -n "$user_run_image" ]; then
+    run_image=$user_run_image
+  elif [ -z "$run_image" ]; then
     run_image="$local_discourse/$config"
   fi
 }
