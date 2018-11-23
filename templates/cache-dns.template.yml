@@ -1,0 +1,19 @@
+# You can use this template to cache DNS lookups for
+#
+# DISCOURSE_DB_HOST
+# DISCOURSE_DB_BACKUP_HOST
+# DISCOURSE_REDIS_HOST
+# DISCOURSE_REDIS_SLAVE_HOST
+#
+# If you are using a hostname vs IP for these entries and have
+# an internal DNS outage Discourse will stop working
+#
+# This template allows you to cache entry in the hosts file
+#
+# Note, for this to work correctly you must also install the
+# discourse-prometheus plugin to collect stats
+
+hooks:
+  after_bundle_exec:
+    - exec: "mkdir -p /etc/service/cache_critical_dns/"
+    - exec: "cp /var/www/discourse/script/cache_critical_dns /etc/service/cache_critical_dns/run"
