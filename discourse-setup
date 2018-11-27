@@ -144,7 +144,7 @@ check_disk_and_memory() {
       swapon /swapfile
       echo "/swapfile       swap    swap    auto      0       0" | tee -a /etc/fstab
       sysctl -w vm.swappiness=10
-      echo vm.swappiness = 10 | tee -a /etc/sysctl.conf
+      echo 'vm.swappiness = 10' > /etc/sysctl.d/30-discourse-swap.conf
 
       total_swap=`free -g --si | awk ' /Swap:/ {print $2} '`
       if [ "$total_swap" -lt 2 ]; then
