@@ -155,7 +155,10 @@ run:
       cd: $home
       hook: bundle_exec
       cmd:
-        - su discourse -c 'bundle install --deployment --verbose --without test --without development --retry 3 --jobs 4'
+        - 'sed -i "s/libv8 (6\.7\.288\.46\.1)/libv8 (6.3.292.48.1)/" Gemfile.lock'
+        - apt-get install -y libidn2-0 libunistring0
+        - su discourse -c 'bundle install --deployment --verbose --without test --without development'
+        - su discourse -c 'curl -o vendor/bundle/ruby/2.5.0/gems/mini_suffix-0.3.0/vendor/libpsl.so -sSL https://github.com/luqasn/mini_suffix/raw/aarch64/vendor/libpsl_aarch64.so'
         - su discourse -c 'bundle exec rake db:migrate'
         - su discourse -c 'bundle exec rake assets:precompile'
 
