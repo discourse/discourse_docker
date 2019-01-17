@@ -55,6 +55,11 @@ while [ ${#} -gt 0 ]; do
   shift 1
 done
 
+if [[ -z $config ]]; then
+  usage
+  exit 1
+fi
+
 # Docker doesn't like uppercase characters, spaces or special characters, catch it now before we build everything out and then find out
 re='[[:upper:]/ !@#$%^&*()+~`=]'
 if [[ $config =~ $re ]];
