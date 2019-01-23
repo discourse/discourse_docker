@@ -337,7 +337,7 @@ set_template_info() {
         p e
        end
     end
-    puts env.map{|k,v| "-e #{k}=#{v}" }.join("\n")
+    puts env.map{|k,v| "-e\n#{k}=#{v}" }.join("\n")
 RUBY
 
     tmp_input_file=$(mktemp)
@@ -353,7 +353,7 @@ RUBY
       if [ "$i" == "*ERROR." ]; then
         ok=0
       elif [ -n "$i" ]; then
-        env[${#env[@]}]=$(echo "$i" | sed s/{{config}}/${config}/g)
+        env[${#env[@]}]="${i//\{\{config\}\}/${config}}"
       fi
     done <<< "$raw"
 
