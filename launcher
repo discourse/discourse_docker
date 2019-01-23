@@ -353,7 +353,7 @@ RUBY
       if [ "$i" == "*ERROR." ]; then
         ok=0
       elif [ -n "$i" ]; then
-        env[${#env[@]}]=$i
+        env[${#env[@]}]=$(echo $i | sed s/{{config}}/${config}/g)
       fi
     done <<< "$raw"
 

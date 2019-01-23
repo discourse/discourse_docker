@@ -108,6 +108,20 @@ links:
 Links another container to the current container. This will add `--link postgres:postgres`
 to the options when running the container.
 
+#### environment variables:
+
+Setting environment variables to the current container.
+
+```
+# app.yml
+
+env:
+  DISCOURSE_DB_HOST: some-host
+  DISCOURSE_DB_NAME: {{config}}_discourse
+```
+
+The above will add `-e DISCOURSE_DB_HOST=some-host -e DISCOURSE_DB_NAME=app_discourse` to the options when running the container.
+
 #### labels:
 ```
 # app.yml
