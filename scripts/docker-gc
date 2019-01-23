@@ -1,4 +1,4 @@
 #!/bin/bash
 
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v /var/lib/docker-gc:/var/lib/docker-gc -v /etc:/etc samsaffron/docker-gc
+docker run --rm --privileged -v /var/run/docker.sock:/var/run/docker.sock -v /etc:/etc:ro spotify/docker-gc
 
