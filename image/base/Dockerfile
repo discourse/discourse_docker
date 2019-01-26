@@ -38,7 +38,7 @@ RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
 RUN dpkg-divert --local --rename --add /sbin/initctl
 RUN sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"
-RUN apt-get -y install redis-server haproxy openssh-server
+RUN apt-get -y install haproxy openssh-server
 RUN cd / &&\
     apt-get -y install runit monit socat &&\
     mkdir -p /etc/runit/1.d &&\
@@ -76,6 +76,9 @@ RUN gem update --system
 RUN gem install bundler --force &&\
     rm -rf /usr/local/share/ri/2.5.2/system &&\
     cd / && git clone https://github.com/discourse/pups.git
+
+ADD install-redis /tmp/install-redis
+RUN /tmp/install-redis
 
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
@@ -128,7 +131,7 @@ ADD boot /sbin/boot
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
 ADD cron.d_anacron /etc/cron.d/anacron
-
+ADD redis /etc/service/redis/run
 
 # Discourse specific bits
 RUN useradd discourse -s /bin/bash -m -U &&\
