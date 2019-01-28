@@ -7,10 +7,6 @@ FROM discourse/discourse_test:1.4.0
 # Install ApacheBench
 RUN apt-get install -y apache2-utils libsqlite3-dev
 
-# configure Git to suppress warnings
-RUN git config --global user.email "you@example.com" &&\
-    git config --global user.name "Your Name"
-
 RUN git pull &&\
     sudo -u discourse bundle install --standalone
 
