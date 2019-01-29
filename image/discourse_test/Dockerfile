@@ -6,8 +6,8 @@ FROM discourse/base:$tag
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
 # configure Git to suppress warnings
-RUN git config --global user.email "you@example.com" &&\
-    git config --global user.name "Your Name"
+RUN sudo -E -u discourse -H git config --global user.email "you@example.com" &&\
+    sudo -E -u discourse -H git config --global user.name "Your Name"
 
 RUN gem update bundler --force &&\
       cd /var/www/discourse &&\
