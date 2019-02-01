@@ -1,0 +1,33 @@
+#!/bin/bash
+set -e
+REDIS_VERSION=5.0.3
+REDIS_DOWNLOAD_SHA=e290b4ddf817b26254a74d5d564095b11f9cd20d8f165459efa53eb63cd93e02
+
+cd /tmp
+
+# Prepare Redis source.
+wget http://download.redis.io/releases/redis-$REDIS_VERSION.tar.gz
+echo "$REDIS_DOWNLOAD_SHA redis-$REDIS_VERSION.tar.gz" | sha256sum -c -
+tar zxf redis-$REDIS_VERSION.tar.gz
+cd redis-$REDIS_VERSION
+
+# Building and installing binaries.
+make && make install PREFIX=/usr
+
+# Add `redis` user and group.
+adduser --system --home /var/lib/redis --quiet --group redis || true
+
+# Configure Redis.
+mkdir -p /etc/redis
+mkdir -p /var/lib/redis
+mkdir -p /var/log/redis
+cp /tmp/redis-$REDIS_VERSION/redis.conf /etc/redis
+
+chown -R redis:redis /var/lib/redis
+chmod 750 /var/lib/redis
+
+chown -R redis:redis /var/log/redis
+chmod 750 /var/log/redis
+
+# Clean up.
+cd / && rm -rf /tmp/redis*
