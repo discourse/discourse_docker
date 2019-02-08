@@ -363,11 +363,11 @@ RUBY
       exit 1
     fi
 
+    # labels
     read -r -d '' labels_ruby << 'RUBY'
     require 'yaml'
 
     input=STDIN.readlines.join
-    # default to UTF-8 for the dbs sake
     labels = {}
     input.split('_FILE_SEPERATOR_').each do |yml|
        yml.strip!
@@ -403,6 +403,50 @@ RUBY
 
     if [ "$ok" -ne 1 ]; then
       echo "${labels[@]}"
+      echo "YAML syntax error. Please check your containers/*.yml config files."
+      exit 1
+    fi
+
+    # expose
+    read -r -d '' ports_ruby << 'RUBY'
+    require 'yaml'
+
+    input=STDIN.readlines.join
+    ports = []
+    input.split('_FILE_SEPERATOR_').each do |yml|
+       yml.strip!
+       begin
+         ports += (YAML.load(yml)['expose'] || [])
+       rescue Psych::SyntaxError => e
+        puts e
+        puts "*ERROR."
+       rescue => e
+        puts yml
+        p e
+       end
+    end
+    puts ports.map {|p| "-p\n#{p}"}.join("\n")
+RUBY
+
+    tmp_input_file=$(mktemp)
+
+    echo "$input" > "$tmp_input_file"
+    raw=`exec cat "$tmp_input_file" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$ports_ruby"`
+
+    rm -f "$tmp_input_file"
+
+    ports=()
+    ok=1
+    while read i; do
+      if [ "$i" == "*ERROR." ]; then
+        ok=0
+      elif [ -n "$i" ]; then
+        ports[${#ports[@]}]=$i
+      fi
+    done <<< "$raw"
+
+    if [ "$ok" -ne 1 ]; then
+      echo "${ports[@]}"
       echo "YAML syntax error. Please check your containers/*.yml config files."
       exit 1
     fi
@@ -533,9 +577,6 @@ run_start() {
 
    host_run
 
-   ports=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
-         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['expose'].map{|p| \"-p #{p}\"}.join(' ')"`
-
    docker_args=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
           "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
 
@@ -577,7 +618,7 @@ run_start() {
 
      set -x
      $docker_path run --shm-size=512m $links $attach_on_run $restart_policy "${env[@]}" "${labels[@]}" -h "$hostname" \
-        -e DOCKER_HOST_IP="$docker_ip" --name $config -t $ports $volumes $mac_address $docker_args $user_args \
+        -e DOCKER_HOST_IP="$docker_ip" --name $config -t "${ports[@]}" $volumes $mac_address $docker_args $user_args \
         $run_image $boot_command
 
    )
