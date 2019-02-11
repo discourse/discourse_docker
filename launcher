@@ -626,7 +626,7 @@ run_start() {
 
      set -x
      $docker_path run --shm-size=512m $links $attach_on_run $restart_policy "${env[@]}" "${labels[@]}" -h "$hostname" \
-        -e DOCKER_HOST_IP="$docker_ip" --name $config -t $ports $volumes $mac_address $user_args \
+        -e DOCKER_HOST_IP="$docker_ip" --name $config -t "${ports[@]}" $volumes $mac_address $user_args \
         $run_image $boot_command
 
    )
