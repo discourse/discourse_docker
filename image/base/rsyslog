@@ -3,4 +3,5 @@ exec 2>&1
 cd /
 chgrp syslog /var/log
 chmod g+w /var/log
+rm -f /var/run/rsyslogd.pid
 exec rsyslogd -n
