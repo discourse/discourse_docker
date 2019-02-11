@@ -450,6 +450,8 @@ RUBY
       echo "YAML syntax error. Please check your containers/*.yml config files."
       exit 1
     fi
+
+   merge_user_args
 }
 
 if [ -z $docker_path ]; then
@@ -534,6 +536,17 @@ set_boot_command() {
   fi
 }
 
+merge_user_args() {
+  local docker_args
+
+  docker_args=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+          "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
+
+  if [[ -n "$docker_args" ]]; then
+    user_args="$user_args $docker_args"
+  fi
+}
+
 run_start() {
 
    existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
@@ -556,9 +569,6 @@ run_start() {
    fi
 
    host_run
-
-   docker_args=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
-          "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
 
    set_template_info
    set_volumes
@@ -598,7 +608,7 @@ run_start() {
 
      set -x
      $docker_path run --shm-size=512m $links $attach_on_run $restart_policy "${env[@]}" "${labels[@]}" -h "$hostname" \
-        -e DOCKER_HOST_IP="$docker_ip" --name $config -t "${ports[@]}" $volumes $mac_address $docker_args $user_args \
+        -e DOCKER_HOST_IP="$docker_ip" --name $config -t "${ports[@]}" $volumes $mac_address $user_args \
         $run_image $boot_command
 
    )
