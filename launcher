@@ -457,27 +457,7 @@ if [ -z $docker_path ]; then
 fi
 
 [ "$command" == "cleanup" ] && {
-  echo
-  echo "The following command will"
-  echo "- Delete all docker images for old containers"
-  echo "- Delete all stopped and orphan containers"
-  echo
-  read -p "Are you sure (Y/n): " -n 1 -r && echo
-  if [[ $REPLY =~ ^[Yy]$ || ! $REPLY ]]
-    then
-      space=$(df /var/lib/docker | awk '{ print $4 }' | grep -v Available)
-      echo "Starting Cleanup (bytes free $space)"
-
-      STATE_DIR=./.gc-state scripts/docker-gc
-
-      rm -f shared/standalone/log/var-log/*.txt
-
-      space=$(df /var/lib/docker | awk '{ print $4 }' | grep -v Available)
-      echo "Finished Cleanup (bytes free $space)"
-
-    else
-      exit 1
-  fi
+  $docker_path system prune -a
 
   if [ -d /var/discourse/shared/standalone/postgres_data_old ]; then
     echo
