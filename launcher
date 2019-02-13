@@ -226,7 +226,7 @@ check_prereqs() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
-      docker system prune
+      $docker_path system prune -af
       echo "If the cleanup was successful, you may try again now"
     fi
     exit 1
