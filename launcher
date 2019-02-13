@@ -226,7 +226,7 @@ check_prereqs() {
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]
     then
-      docker system prune
+      docker system prune -f
       echo "If the cleanup was successful, you may try again now"
     fi
     exit 1
@@ -468,7 +468,7 @@ fi
       space=$(df /var/lib/docker | awk '{ print $4 }' | grep -v Available)
       echo "Starting Cleanup (bytes free $space)"
 
-      STATE_DIR=./.gc-state scripts/docker-gc
+      docker system prune -f
 
       rm -f shared/standalone/log/var-log/*.txt
 
