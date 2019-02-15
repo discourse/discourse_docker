@@ -5,15 +5,6 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
-
-        RUNDIR=/var/run/redis
-        PIDFILE=/var/run/redis/redis-server.pid
-
-        mkdir -p $RUNDIR
-        touch $PIDFILE
-        chown -R redis:redis $RUNDIR
-        chmod 755 $RUNDIR
-
         exec thpoff chpst -u redis -U redis /usr/bin/redis-server /etc/redis/redis.conf
   - file:
      path: /etc/service/redis/log/run
