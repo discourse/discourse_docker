@@ -131,7 +131,6 @@ ADD boot /sbin/boot
 ADD cron /etc/service/cron/run
 ADD rsyslog /etc/service/rsyslog/run
 ADD cron.d_anacron /etc/cron.d/anacron
-ADD redis /etc/service/redis/run
 
 # Discourse specific bits
 RUN useradd discourse -s /bin/bash -m -U &&\
