@@ -17,7 +17,7 @@ shutdown() {
   exit
 }
 
-/etc/runit/1
+/etc/runit/1 || exit $?
 /etc/runit/2&
 RUNSVDIR=$!
 echo "Started runsvdir, PID is $RUNSVDIR"
