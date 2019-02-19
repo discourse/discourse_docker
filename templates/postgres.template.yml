@@ -103,7 +103,7 @@ run:
            echo
            echo When your instance is running:
            echo Run "./launcher enter app"
-           echo Run apt-get remove postgresql-client-9.5 && apt-get instatll postgresql-client-10
+           echo "Run apt-get remove postgresql-client-9.5 && apt-get install postgresql-client-10"
            echo Run "cd /shared/postgres_backup && sudo -u postgres pg_dump discourse > backup.db"
            echo
 
