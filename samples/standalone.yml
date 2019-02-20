@@ -68,9 +68,9 @@ env:
   ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
   #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
 
-  ## The CDN address for this Discourse instance (configured to pull)
+  ## The http or https CDN address for this Discourse instance (configured to pull)
   ## see https://meta.discourse.org/t/14857 for details
-  #DISCOURSE_CDN_URL: //discourse-cdn.example.com
+  #DISCOURSE_CDN_URL: https://discourse-cdn.example.com
 
 ## The Docker container is stateless; all data is stored in /shared
 volumes:

@@ -66,8 +66,9 @@ env:
   DISCOURSE_DB_HOST: data
   DISCOURSE_REDIS_HOST: data
 
-  ## The CDN address for this Discourse instance (configured to pull)
-  #DISCOURSE_CDN_URL: //discourse-cdn.example.com
+  ## The http or https CDN address for this Discourse instance (configured to pull)
+  ## see https://meta.discourse.org/t/14857 for details
+  #DISCOURSE_CDN_URL: https://discourse-cdn.example.com
 
 volumes:
   - volume:
