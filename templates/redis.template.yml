@@ -48,6 +48,11 @@ run:
       from: /^dir .*$/
       to: "dir /shared/redis_data"
 
+  - replace:
+      filename: "/etc/redis/redis.conf"
+      from: /^protected-mode yes/
+      to: "protected-mode no"
+
   - exec:
       cmd: echo redis installed
       hook: redis
