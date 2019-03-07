@@ -425,7 +425,7 @@ RUBY
         p e
        end
     end
-    puts ports.map {|p| "-p\n#{p}"}.join("\n")
+    puts ports.map { |p| p.to_s.include?(':') ? "-p\n#{p}" : "--expose\n#{p}" }.join("\n")
 RUBY
 
     tmp_input_file=$(mktemp)
