@@ -13,6 +13,7 @@ usage () {
   echo "    run:         Run the given command with the config in the context of the last bootstrapped image"
   echo "    rebuild:     Rebuild a container (destroy old, bootstrap, start new)"
   echo "    cleanup:     Remove all containers that have stopped for > 24 hours"
+  echo "    start-cmd:   Generate docker command used to start container"
   echo
   echo "Options:"
   echo "    --skip-prereqs             Don't check launcher prerequisites"
@@ -549,23 +550,26 @@ merge_user_args() {
 
 run_start() {
 
-   existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
-   echo $existing
-   if [ ! -z $existing ]
+   if [ -z "$START_CMD_ONLY" ]
    then
-     echo "Nothing to do, your container has already started!"
-     exit 0
-   fi
+     existing=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
+     echo $existing
+     if [ ! -z $existing ]
+     then
+       echo "Nothing to do, your container has already started!"
+       exit 0
+     fi
 
-   existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
-   if [ ! -z $existing ]
-   then
-     echo "starting up existing container"
-     (
-       set -x
-       $docker_path start $config
-     )
-     exit 0
+     existing=`$docker_path ps -a | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
+     if [ ! -z $existing ]
+     then
+       echo "starting up existing container"
+       (
+         set -x
+         $docker_path start $config
+       )
+       exit 0
+     fi
    fi
 
    host_run
@@ -606,7 +610,12 @@ run_start() {
       mac_address="--mac-address $($docker_path run $user_args -i --rm -a stdout -a stderr $image /bin/sh -c "echo $hostname | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/'")"
      fi
 
+     if [ ! -z "$START_CMD_ONLY" ] ; then
+       docker_path="true"
+     fi
+
      set -x
+
      $docker_path run --shm-size=512m $links $attach_on_run $restart_policy "${env[@]}" "${labels[@]}" -h "$hostname" \
         -e DOCKER_HOST_IP="$docker_ip" --name $config -t "${ports[@]}" $volumes $mac_address $user_args \
         $run_image $boot_command
@@ -733,6 +742,12 @@ case "$command" in
       run_start
       exit 0
       ;;
+
+  start-cmd)
+    START_CMD_ONLY="1"
+    run_start
+    exit 0;
+    ;;
 
   start)
       run_start
