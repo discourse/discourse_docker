@@ -156,9 +156,16 @@ run:
       hook: bundle_exec
       cmd:
         - su discourse -c 'bundle install --deployment --verbose --without test --without development --retry 3 --jobs 4'
+  - exec:
+      cd: $home
+      hook: db_migrate
+      cmd:
         - su discourse -c 'bundle exec rake db:migrate'
+  - exec:
+      cd: $home
+      hook: assets_precompile
+      cmd:
         - su discourse -c 'bundle exec rake assets:precompile'
-
   - file:
      path: /usr/local/bin/discourse
      chmod: +x
