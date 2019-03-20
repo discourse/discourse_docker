@@ -10,14 +10,14 @@ WDIR=/tmp/imagemagick
 mkdir -p $WDIR
 
 # Build and install libpng
-git clone -b v1.6.34 https://github.com/glennrp/libpng.git $WDIR/libpng
+git clone -b v1.6.37 https://github.com/glennrp/libpng.git $WDIR/libpng
 cd $WDIR/libpng
 ./autogen.sh
 ./configure --prefix=$PREFIX
 make all && make install
 
 # Build and install ImageMagick
-wget -O $WDIR/ImageMagick.tar.gz "https://github.com/ImageMagick/ImageMagick/archive/7.0.8-23.tar.gz"
+wget -O $WDIR/ImageMagick.tar.gz "https://github.com/ImageMagick/ImageMagick/archive/7.0.8-34.tar.gz"
 IMDIR=$WDIR/$(tar tzf $WDIR/ImageMagick.tar.gz --wildcards "ImageMagick-*/configure" |cut -d/ -f1)
 tar zxf $WDIR/ImageMagick.tar.gz -C $WDIR
 cd $IMDIR
