@@ -1,23 +1,31 @@
 #!/bin/bash
 set -o errexit
 
+IMAGE_MAGICK_VERSION="7.0.8-34"
+LIBPNG_VERSION="1.6.36"
+
+PREFIX=/usr/local
+WDIR=/tmp/imagemagick
+
 # Install build deps
 apt-get -y -q remove imagemagick
 apt-get -y -q install ghostscript gsfonts pkg-config autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev
 
-PREFIX=/usr/local
-WDIR=/tmp/imagemagick
+
 mkdir -p $WDIR
+cd $WDIR
 
 # Build and install libpng
-git clone -b v1.6.36 https://github.com/glennrp/libpng.git $WDIR/libpng
-cd $WDIR/libpng
-./autogen.sh
+wget -O $WDIR/libpng.tar.gz http://prdownloads.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.gz?downlolad
+
+tar -xzvf $WDIR/libpng.tar.gz
+cd $WDIR/libpng-$LIBPNG_VERSION
+
 ./configure --prefix=$PREFIX
 make all && make install
 
 # Build and install ImageMagick
-wget -O $WDIR/ImageMagick.tar.gz "https://github.com/ImageMagick/ImageMagick/archive/7.0.8-34.tar.gz"
+wget -O $WDIR/ImageMagick.tar.gz "https://imagemagick.org/download/ImageMagick-$IMAGE_MAGICK_VERSION.tar.gz"
 IMDIR=$WDIR/$(tar tzf $WDIR/ImageMagick.tar.gz --wildcards "ImageMagick-*/configure" |cut -d/ -f1)
 tar zxf $WDIR/ImageMagick.tar.gz -C $WDIR
 cd $IMDIR
