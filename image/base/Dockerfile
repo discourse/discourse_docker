@@ -4,7 +4,6 @@ FROM ubuntu:16.04
 
 ENV PG_MAJOR 10
 ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
-ENV COMPRESS_BROTLI 1
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
