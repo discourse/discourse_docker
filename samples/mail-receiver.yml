@@ -19,6 +19,11 @@ env:
   ## Where e-mail to your forum should be sent.  In general, it's perfectly fine
   ## to use the same domain as the forum itself here.
   MAIL_DOMAIN: discourse.example.com
+# uncomment these (and the volume below!) to support TLS 
+#  POSTCONF_smtpd_tls_key_file:  /letsencrypt/discourse.example.com/prop.ltcmp.net.key
+#  POSTCONF_smtpd_tls_cert_file:  /letsencrypt/discourse.example.com/fullchain.cer
+#  POSTCONF_smtpd_tls_security_level: may
+
 
   ## The URL of the mail processing endpoint of your Discourse forum.
   ## This is simply your forum's base URL, with `/admin/email/handle_mail`
@@ -38,3 +43,9 @@ volumes:
   - volume:
       host: /var/discourse/shared/mail-receiver/postfix-spool
       guest: /var/spool/postfix
+# uncomment to support TLS
+#  - volume:
+#      host: /var/discourse/shared/standalone/letsencrypt
+#      guest: /letsencrypt
+
+ 
