@@ -14,7 +14,7 @@ RUN gem update bundler --force &&\
       chown -R discourse . &&\
       rm -fr .bundle &&\
       sudo -u discourse git pull &&\
-      sudo -u discourse bundle install --standalone &&\
+      sudo -u discourse bundle install --standalone --jobs=4 &&\
       chown -R discourse /var/run/postgresql
 
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - &&\
