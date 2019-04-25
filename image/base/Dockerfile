@@ -22,7 +22,7 @@ RUN apt-get -y upgrade
 RUN curl http://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
-RUN curl --silent --location https://deb.nodesource.com/setup_8.x | sudo bash -
+RUN curl --silent --location https://deb.nodesource.com/setup_10.x | sudo bash -
 RUN apt-get -y update
 RUN apt-get -y install build-essential git wget \
                        libxslt-dev libcurl4-openssl-dev \
@@ -66,12 +66,12 @@ RUN mkdir /jemalloc-new && cd /jemalloc-new &&\
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && (ruby-build 2.6.2 /usr/local)
+    cd / && rm -rf /src/ruby-build && (ruby-build 2.6.3 /usr/local)
 
 RUN gem update --system
 
 RUN gem install bundler --force &&\
-    rm -rf /usr/local/share/ri/2.6.2/system &&\
+    rm -rf /usr/local/share/ri/2.6.3/system &&\
     cd / && git clone https://github.com/discourse/pups.git
 
 ADD install-redis /tmp/install-redis
