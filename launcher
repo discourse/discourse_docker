@@ -760,9 +760,9 @@ case "$command" in
 
         git remote update
 
-        LOCAL=$(git rev-parse @)
+        LOCAL=$(git rev-parse HEAD)
         REMOTE=$(git rev-parse @{u})
-        BASE=$(git merge-base @ @{u})
+        BASE=$(git merge-base HEAD @{u})
 
         if [ $LOCAL = $REMOTE ]; then
           echo "Launcher is up-to-date"
