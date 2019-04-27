@@ -1,8 +1,8 @@
 #!/bin/bash
 set -o errexit
 
-IMAGE_MAGICK_VERSION="7.0.8-41"
-LIBPNG_VERSION="1.6.36"
+IMAGE_MAGICK_VERSION="7.0.8-42"
+LIBPNG_VERSION="1.6.37"
 
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
@@ -25,7 +25,7 @@ cd $WDIR/libpng-$LIBPNG_VERSION
 make all && make install
 
 # Build and install ImageMagick
-wget -O $WDIR/ImageMagick.tar.gz "https://imagemagick.org/download/ImageMagick-$IMAGE_MAGICK_VERSION.tar.gz"
+wget -O $WDIR/ImageMagick.tar.gz "https://github.com/ImageMagick/ImageMagick/archive/$IMAGE_MAGICK_VERSION.tar.gz"
 IMDIR=$WDIR/$(tar tzf $WDIR/ImageMagick.tar.gz --wildcards "ImageMagick-*/configure" |cut -d/ -f1)
 tar zxf $WDIR/ImageMagick.tar.gz -C $WDIR
 cd $IMDIR
