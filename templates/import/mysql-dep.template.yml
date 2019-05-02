@@ -10,4 +10,4 @@ hooks:
         cmd:
           - echo "gem 'mysql2'" >> Gemfile
           - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libmysqlclient-dev
-          - su discourse -c 'bundle install --no-deployment --without test --without development --path vendor/bundle'
+          - su discourse -c 'bundle install --no-deployment --path vendor/bundle --jobs 4 --without test development'

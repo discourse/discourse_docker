@@ -21,4 +21,4 @@ hooks:
         cd: $home
         cmd:
           - echo "gem 'tiny_tds'" >> Gemfile
-          - su discourse -c 'bundle install --no-deployment --without test --without development --path vendor/bundle'
+          - su discourse -c 'bundle install --no-deployment --path vendor/bundle --jobs 4 --without test development'
