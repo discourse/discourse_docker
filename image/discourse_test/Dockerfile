@@ -2,6 +2,7 @@
 # VERSION:  release
 ARG tag=build
 FROM discourse/base:$tag
+ENV RAILS_ENV test
 
 MAINTAINER Sam Saffron "https://twitter.com/samsaffron"
 
