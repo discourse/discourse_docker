@@ -4,6 +4,7 @@ FROM ubuntu:16.04
 
 ENV PG_MAJOR 10
 ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
+ENV RAILS_ENV production
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
