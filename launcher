@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 usage () {
   echo "Usage: launcher COMMAND CONFIG [--skip-prereqs] [--docker-args STRING]"
