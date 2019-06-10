@@ -223,12 +223,14 @@ check_prereqs() {
     echo "You have less than 5GB of free space on the disk where $safe_folder is located. You will need more space to continue"
     df -h $safe_folder
     echo
-    read -p "Would you like to attempt to recover space by cleaning docker images and containers in the system?(y/N)" -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]
-    then
-      $docker_path system prune -af
-      echo "If the cleanup was successful, you may try again now"
+    if tty >/dev/null; then
+      read -p "Would you like to attempt to recover space by cleaning docker images and containers in the system?(y/N)" -n 1 -r
+      echo
+      if [[ $REPLY =~ ^[Yy]$ ]]
+      then
+        $docker_path system prune -af
+        echo "If the cleanup was successful, you may try again now"
+      fi
     fi
     exit 1
   fi
