@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-REDIS_VERSION=5.0.4
+REDIS_VERSION=5.0.5
 
 cd /tmp
 

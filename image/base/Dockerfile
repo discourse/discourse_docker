@@ -60,8 +60,8 @@ RUN mkdir /jemalloc-stable && cd /jemalloc-stable &&\
       cd / && rm -rf /jemalloc-stable
 
 RUN mkdir /jemalloc-new && cd /jemalloc-new &&\
-      wget https://github.com/jemalloc/jemalloc/releases/download/5.1.0/jemalloc-5.1.0.tar.bz2 &&\
-      tar -xjf jemalloc-5.1.0.tar.bz2 && cd jemalloc-5.1.0 && ./configure --prefix=/usr --with-install-suffix=5.1.0 && make build_lib && make install_lib &&\
+      wget https://github.com/jemalloc/jemalloc/releases/download/5.2.0/jemalloc-5.2.0.tar.bz2 &&\
+      tar -xjf jemalloc-5.2.0.tar.bz2 && cd jemalloc-5.2.0 && ./configure --prefix=/usr --with-install-suffix=5.1.0 && make build_lib && make install_lib &&\
       cd / && rm -rf /jemalloc-new
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\

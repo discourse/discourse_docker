@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-VERSION=1.15.12
+VERSION=1.16.0
 cd /tmp
 
 apt-get install -y autoconf

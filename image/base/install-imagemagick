@@ -1,7 +1,7 @@
 #!/bin/bash
 set -o errexit
 
-IMAGE_MAGICK_VERSION="7.0.8-42"
+IMAGE_MAGICK_VERSION="7.0.8-49"
 LIBPNG_VERSION="1.6.37"
 
 PREFIX=/usr/local
