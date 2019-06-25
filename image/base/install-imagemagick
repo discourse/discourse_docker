@@ -1,7 +1,7 @@
 #!/bin/bash
 set -o errexit
 
-IMAGE_MAGICK_VERSION="7.0.8-49"
+IMAGE_MAGICK_VERSION="7.0.8-50"
 LIBPNG_VERSION="1.6.37"
 
 PREFIX=/usr/local
@@ -16,7 +16,7 @@ mkdir -p $WDIR
 cd $WDIR
 
 # Build and install libpng
-wget -O $WDIR/libpng.tar.gz http://prdownloads.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.gz?downlolad
+wget -O $WDIR/libpng.tar.gz https://prdownloads.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.gz?download
 
 tar -xzvf $WDIR/libpng.tar.gz
 cd $WDIR/libpng-$LIBPNG_VERSION
