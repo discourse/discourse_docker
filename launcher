@@ -81,7 +81,7 @@ git_rec_version='1.8.0'
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
-image="discourse/base:2.0.20190505-2322"
+image="discourse/base:2.0.20190625-0946"
 docker_path=`which docker.io 2> /dev/null || which docker`
 git_path=`which git`
 
