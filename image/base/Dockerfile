@@ -1,6 +1,6 @@
 # NAME:     discourse/base
 # VERSION:  release
-FROM ubuntu:16.04
+FROM debian:buster-slim
 
 ENV PG_MAJOR 10
 ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
@@ -10,49 +10,52 @@ ENV RAILS_ENV production
 
 RUN echo 2.0.`date +%Y%m%d` > /VERSION
 
-RUN apt-get update && apt-get install -y lsb-release sudo curl
+RUN apt update && apt install -y gnupg sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
-RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc) main restricted universe" > /etc/apt/sources.list
-RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-updates main restricted universe" >> /etc/apt/sources.list
-RUN echo "deb http://archive.ubuntu.com/ubuntu $(lsb_release -sc)-security main restricted universe" >> /etc/apt/sources.list
-RUN apt-get update && apt-get -y install fping
-RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt-get update || true"
-RUN apt-get -y install software-properties-common
+RUN apt update && apt -y install fping
+RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt update || true"
+RUN apt -y install software-properties-common
 RUN apt-mark hold initscripts
-RUN apt-get -y upgrade
+RUN apt -y upgrade
+
+RUN apt install -y locales locales-all
+ENV LC_ALL en_US.UTF-8
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US.UTF-8
+
 RUN curl https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" | \
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
 RUN curl --silent --location https://deb.nodesource.com/setup_10.x | sudo bash -
-RUN apt-get -y update
-RUN apt-get -y install build-essential git wget \
+RUN apt -y update
+RUN apt -y install build-essential git wget \
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk parallel \
                        postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
                        postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
-                       language-pack-en cron anacron \
+                       cron anacron \
                        psmisc rsyslog vim whois brotli libunwind-dev \
                        libtcmalloc-minimal4
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
 RUN dpkg-divert --local --rename --add /sbin/initctl
 RUN sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"
-RUN apt-get -y install haproxy openssh-server
+RUN apt -y install openssh-server
 RUN cd / &&\
-    apt-get -y install runit monit socat &&\
+    apt -y install runit socat &&\
     mkdir -p /etc/runit/1.d &&\
-    apt-get clean &&\
+    apt clean &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US &&\
-    apt-get install -y nodejs &&\
+    apt install -y nodejs &&\
     npm install -g uglify-js@"<3" &&\
     npm install -g svgo
 
 ADD install-nginx /tmp/install-nginx
 RUN /tmp/install-nginx
 
-RUN apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
+RUN apt -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
 RUN mkdir /jemalloc-stable && cd /jemalloc-stable &&\
       wget https://github.com/jemalloc/jemalloc/releases/download/3.6.0/jemalloc-3.6.0.tar.bz2 &&\
