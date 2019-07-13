@@ -1,0 +1,5 @@
+run:
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: "client_max_body_size 10m"
+     to: "client_max_body_size 100m"
