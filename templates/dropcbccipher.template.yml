@@ -1,0 +1,5 @@
+run:
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: "ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-SHA"
+     to: ""
