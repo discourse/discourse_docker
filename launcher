@@ -25,7 +25,13 @@ usage () {
 
 command=$1
 config=$2
+
+# user_args_argv is assigned once when the argument vector is parsed.
+user_args_argv=""
+# user_args is mutable:  its value may change when templates are parsed.
+# Superset of user_args_argv.
 user_args=""
+
 user_run_image=""
 
 if [[ $command == "run" ]]; then
@@ -44,7 +50,8 @@ while [ ${#} -gt 0 ]; do
     SKIP_MAC_ADDRESS="1"
     ;;
   --docker-args)
-    user_args="$2"
+    user_args_argv="$2"
+    user_args="$user_args_argv"
     shift
     ;;
   --run-image)
@@ -546,7 +553,7 @@ merge_user_args() {
           "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
 
   if [[ -n "$docker_args" ]]; then
-    user_args="$user_args $docker_args"
+    user_args="$user_args_argv $docker_args"
   fi
 }
 
