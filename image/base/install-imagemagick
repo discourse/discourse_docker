@@ -8,8 +8,8 @@ PREFIX=/usr/local
 WDIR=/tmp/imagemagick
 
 # Install build deps
-apt -y -q remove imagemagick
-apt -y -q install ghostscript gsfonts pkg-config autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev
+apt-get -y -q remove imagemagick
+apt-get -y -q install ghostscript gsfonts pkg-config autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev
 
 
 mkdir -p $WDIR

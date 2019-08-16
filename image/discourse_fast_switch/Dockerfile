@@ -6,7 +6,7 @@ FROM discourse/base:2.0.20180608
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
-RUN apt -y install ruby bison autoconf &&\
+RUN apt-get -y install ruby bison autoconf &&\
     cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     /src/ruby-build/install.sh &&\
     sudo ruby-build 2.4.4 /usr/ruby_24 &&\
@@ -14,7 +14,7 @@ RUN apt -y install ruby bison autoconf &&\
     cp -R /usr/ruby_24/lib/* /usr/local/lib/ &&\
     cp -R /usr/ruby_24/share/* /usr/local/share/ &&\
     cp -R /usr/ruby_24/include/* /usr/local/include/ &&\
-    apt -y remove ruby
+    apt-get -y remove ruby
 
 RUN cd / && ruby-build 2.5.1 /usr/ruby_25
 

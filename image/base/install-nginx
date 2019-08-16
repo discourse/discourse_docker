@@ -3,7 +3,7 @@ set -e
 VERSION=1.17.3
 cd /tmp
 
-apt install -y autoconf
+apt-get install -y autoconf
 
 
 git clone https://github.com/bagder/libbrotli
@@ -23,7 +23,7 @@ tar zxf nginx-$VERSION.tar.gz
 cd nginx-$VERSION
 
 # so we get nginx user and so on
-apt install -y nginx libpcre3 libpcre3-dev zlib1g zlib1g-dev
+apt-get install -y nginx libpcre3 libpcre3-dev
 # we don't want to accidentally upgrade nginx and undo our work
 apt-mark hold nginx
 
