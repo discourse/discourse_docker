@@ -41,3 +41,4 @@ cd /
 rm -fr /tmp/nginx
 rm -fr /tmp/libbrotli
 rm -fr /tmp/ngx_brotli
+rm -fr /etc/nginx/modules-enabled/*
