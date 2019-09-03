@@ -38,9 +38,6 @@ run:
         - echo "$ssh_key" >> /root/.ssh/authorized_keys
         - echo "$$ENV_SSH_PUB_KEY" >> /root/.ssh/authorized_keys
         - chmod 640 /root/.ssh/authorized_keys
-        - rm /etc/update-motd.d/00-header
-        - rm /etc/update-motd.d/10-help-text
-        - rm /etc/legal
   - file:
      path: /etc/update-motd.d/00-discourse
      chmod: +x
