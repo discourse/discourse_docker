@@ -1,7 +1,6 @@
 run:
   - exec:
      cmd:
-       # Generate strong Diffie-Hellman parameters
        - "mkdir -p /shared/ssl/"
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
