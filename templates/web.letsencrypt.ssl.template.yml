@@ -10,7 +10,7 @@ hooks:
 
     - exec:
        cmd:
-         - cd /root && git clone https://github.com/Neilpang/acme.sh.git && cd /root/acme.sh && git reset --hard f62a4a0c0ccf6cd73b5746dd8b8790ce3c512833
+         - cd /root && git clone --branch 2.8.2 --depth 1 https://github.com/Neilpang/acme.sh.git && cd /root/acme.sh
          - touch /var/spool/cron/crontabs/root
          - install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
          - cd /root/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --install --log "${LETSENCRYPT_DIR}/acme.sh.log"
@@ -53,27 +53,63 @@ hooks:
        path: /etc/runit/1.d/letsencrypt
        chmod: "+x"
        contents: |
-          #!/bin/bash
-          /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf
+        #!/bin/bash
+        /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf
 
-          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 -w /var/www/discourse/public
+        issue_cert() {
+          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME --keylength $1 -w /var/www/discourse/public
+        }
 
-          if [ ! "$(cd $$ENV_LETSENCRYPT_DIR/$$ENV_DISCOURSE_HOSTNAME && openssl verify -CAfile ca.cer fullchain.cer | grep "OK")" ]; then
-            # Try to issue the cert again if something goes wrong
-            LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME -k 4096 --force -w /var/www/discourse/public
-          else
-            grep -q 'force_https' "/var/www/discourse/config/discourse.conf" || echo "force_https = 'true'" >> "/var/www/discourse/config/discourse.conf"
-          fi
+        cert_exists() {
+          [[ "$(cd $$ENV_LETSENCRYPT_DIR/$$ENV_DISCOURSE_HOSTNAME$1 && openssl verify -CAfile ca.cer fullchain.cer | grep "OK")" ]]
+        }
 
-          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --installcert -d $$ENV_DISCOURSE_HOSTNAME --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key --reloadcmd "sv reload nginx"
+        ########################################################
+        # RSA cert
+        ########################################################
+        issue_cert "4096"
 
-          /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf -s stop
+        if ! cert_exists ""; then
+          # Try to issue the cert again if something goes wrong
+          issue_cert "4096"
+        fi
+
+        LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh \
+          --installcert \
+          -d $$ENV_DISCOURSE_HOSTNAME \
+          --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME$1.cer \
+          --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME$1.key \
+          --reloadcmd "sv reload nginx"
+
+        ########################################################
+        # ECDSA cert
+        ########################################################
+        issue_cert "ec-256"
+
+        if ! cert_exists "_ecc"; then
+          # Try to issue the cert again if something goes wrong
+          issue_cert "ec-256"
+        fi
+
+        LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh \
+          --installcert \
+          -d $$ENV_DISCOURSE_HOSTNAME \
+          --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME$1.cer \
+          --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME$1.key \
+          --reloadcmd "sv reload nginx"
+
+        if cert_exists "" || cert_exists "_ecc"; then
+          grep -q 'force_https' "/var/www/discourse/config/discourse.conf" || echo "force_https = 'true'" >> "/var/www/discourse/config/discourse.conf"
+        fi
+
+        /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf -s stop
 
     - replace:
        filename: "/etc/nginx/conf.d/discourse.conf"
        from: /ssl_certificate.+/
        to: |
          ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer;
+         ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.cer;
 
     - replace:
        filename: /shared/letsencrypt/account.conf
@@ -86,6 +122,7 @@ hooks:
        from: /ssl_certificate_key.+/
        to: |
          ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key;
+         ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.key;
 
     - replace:
        filename: "/etc/nginx/conf.d/discourse.conf"
