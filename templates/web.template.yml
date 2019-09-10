@@ -93,10 +93,12 @@ run:
       cd: $home
       hook: code
       cmd:
+        - git remote remove origin
+        - git remote add origin <YOUR_REPO_ORIGIN_URL>
         - git reset --hard
         - git clean -f
         - git remote set-branches --add origin master
-        - git pull
+        - git pull origin master
         - git fetch origin $version
         - git checkout $version
         - mkdir -p tmp/pids
