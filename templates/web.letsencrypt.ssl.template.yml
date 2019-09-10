@@ -77,8 +77,8 @@ hooks:
         LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh \
           --installcert \
           -d $$ENV_DISCOURSE_HOSTNAME \
-          --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME$1.cer \
-          --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME$1.key \
+          --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer \
+          --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key \
           --reloadcmd "sv reload nginx"
 
         ########################################################
@@ -92,10 +92,10 @@ hooks:
         fi
 
         LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh \
-          --installcert \
+          --installcert --ecc \
           -d $$ENV_DISCOURSE_HOSTNAME \
-          --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME$1.cer \
-          --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME$1.key \
+          --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.cer \
+          --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.key \
           --reloadcmd "sv reload nginx"
 
         if cert_exists "" || cert_exists "_ecc"; then
