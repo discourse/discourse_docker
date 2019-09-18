@@ -235,7 +235,8 @@ check_prereqs() {
       echo
       if [[ $REPLY =~ ^[Yy]$ ]]
       then
-        $docker_path system prune -af
+        $docker_path container prune --force --filter until=1h >/dev/null
+        $docker_path image prune --all --force --filter until=1h >/dev/null
         echo "If the cleanup was successful, you may try again now"
       fi
     fi
@@ -469,7 +470,8 @@ if [ -z $docker_path ]; then
 fi
 
 [ "$command" == "cleanup" ] && {
-  $docker_path system prune -a
+  $docker_path container prune --filter until=1h >/dev/null
+  $docker_path image prune --all --filter until=1h >/dev/null
 
   if [ -d /var/discourse/shared/standalone/postgres_data_old ]; then
     echo
