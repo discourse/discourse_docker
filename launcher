@@ -470,8 +470,8 @@ if [ -z $docker_path ]; then
 fi
 
 [ "$command" == "cleanup" ] && {
-  $docker_path container prune --filter until=1h >/dev/null
-  $docker_path image prune --all --filter until=1h >/dev/null
+  $docker_path container prune --filter until=1h
+  $docker_path image prune --all --filter until=1h
 
   if [ -d /var/discourse/shared/standalone/postgres_data_old ]; then
     echo
