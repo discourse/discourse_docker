@@ -19,13 +19,6 @@ hooks:
           - rm 02-unicorn
 
     - file:
-        path: /etc/apt/preferences.d/mariadb
-        contents: |
-          Package: *
-          Pin: release o=MariaDB
-          Pin-Priority: 1000
-
-    - file:
         path: /etc/mysql/conf.d/import.cnf
         contents: |
           [mysqld]
@@ -43,8 +36,6 @@ hooks:
     - exec:
         cmd:
           - mkdir -p /shared/import/mysql/data
-          - apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xF1656F24C74CD1D8
-          - add-apt-repository 'deb [arch=amd64,i386] http://nyc2.mirrors.digitalocean.com/mariadb/repo/10.1/ubuntu xenial main'
           - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadbclient-dev mariadb-server
           - sed -Ei 's/^log/#&/' /etc/mysql/my.cnf
 
@@ -53,14 +44,23 @@ hooks:
         chmod: "+x"
         contents: |
           #!/bin/bash
+          cd /
+          umask 077
+
           # Make sure the datadir exists, is accessible and contains all system tables
           mkdir -p /shared/import/mysql/data
           chown mysql -R /shared/import/mysql/data
           /usr/bin/mysql_install_db --user=mysql
 
+          # Allow connection as root user without password
+          mysql -uroot -e "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket'"
+          mysql -uroot -e "FLUSH PRIVILEGES"
+
           # Shamelessly copied from http://smarden.org/runit1/runscripts.html#mysql
-          exec 2>&1
-          exec /usr/sbin/mysqld -u mysql
+          MYSQLADMIN='/usr/bin/mysqladmin --defaults-extra-file=/etc/mysql/debian.cnf'
+          trap "$MYSQLADMIN shutdown" 0
+          trap 'exit 2' 1 2 3 15
+          /usr/bin/mysqld_safe & wait
 
     - file:
         path: /etc/runit/3.d/99-mysql
