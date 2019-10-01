@@ -52,10 +52,6 @@ hooks:
           chown mysql -R /shared/import/mysql/data
           /usr/bin/mysql_install_db --user=mysql
 
-          # Allow connection as root user without password
-          mysql -uroot -e "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket'"
-          mysql -uroot -e "FLUSH PRIVILEGES"
-
           # Shamelessly copied from http://smarden.org/runit1/runscripts.html#mysql
           MYSQLADMIN='/usr/bin/mysqladmin --defaults-extra-file=/etc/mysql/debian.cnf'
           trap "$MYSQLADMIN shutdown" 0
@@ -78,6 +74,10 @@ hooks:
 
           chown discourse /shared/import/settings.yml
           chown discourse -R /shared/import/data
+
+          # Allow connection as root user without password
+          mysql -uroot -e "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket'"
+          mysql -uroot -e "FLUSH PRIVILEGES"
 
           if [ -f "/shared/import/data/phpbb_mysql.sql" ]; then
             if [ -f "/shared/import/mysql/imported" ] && ! sha256sum --check /shared/import/mysql/imported &>/dev/null ; then
