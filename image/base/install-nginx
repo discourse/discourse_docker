@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-VERSION=1.17.3
+VERSION=1.17.4
 cd /tmp
 
 apt install -y autoconf
