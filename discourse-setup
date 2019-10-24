@@ -114,7 +114,8 @@ check_osx_memory() {
 ## Linux available memory
 ##
 check_linux_memory() {
-  echo `free -g --si | awk ' /Mem:/  {print $2} '`
+  ## use MB and round up...some VMs come in around 995MB and that's darn near "close enough"
+  echo `free -m --si | awk ' /Mem:/ {printf "%.0f", $2/1000}'`
 }
 
 ##
