@@ -18,49 +18,66 @@ check_root() {
 connect_to_port () {
   HOST="$1"
   PORT="$2"
-  VERIFY=`date +%s | sha256sum | base64 | head -c 20`
-  echo -e "HTTP/1.1 200 OK\n\n $VERIFY" | nc -w 4 -l -p $PORT >/dev/null 2>&1 &
-  if curl --proto =http -s $HOST:$PORT --connect-timeout 3 | grep $VERIFY >/dev/null 2>&1
-  then
-      return 0
+  VERIFY=$(date +%s | sha256sum | base64 | head -c 20)
+  if ! [ -x "$(command -v nc)" ]; then
+    echo "In order to check the connection to $HOST:$PORT we need to open a socket using netcat."
+    echo However netcat is not installed on your system. You can continue without this check
+    echo or abort the setup, install netcat and try again.
+    while true; do
+      read -p "Would you like to continue without this check? [yn] " yn
+      case $yn in
+      [Yy]*) return 2 ;;
+      [Nn]*) exit ;;
+      *) echo "Please answer y or n." ;;
+      esac
+    done
   else
-    curl --proto =http -s localhost:$PORT >/dev/null 2>&1
-    return 1
+    echo -e "HTTP/1.1 200 OK\n\n $VERIFY" | nc -w 4 -l -p $PORT >/dev/null 2>&1 &
+    if curl --proto =http -s $HOST:$PORT --connect-timeout 3 | grep $VERIFY >/dev/null 2>&1; then
+      return 0
+    else
+      curl --proto =http -s localhost:$PORT >/dev/null 2>&1
+      return 1
+    fi
   fi
 }
 
-check_IP_match () {
+check_IP_match() {
   HOST="$1"
   echo
   echo Checking your domain name . . .
-  if connect_to_port $HOST 443
-  then
-      echo
+  connect_to_port $HOST 443; ec=$?
+  case $ec in
+    0)
       echo "Connection to $HOST succeeded."
-  else
-    echo WARNING:: This server does not appear to be accessible at $HOST:443.
-    echo
-    if connect_to_port $HOST 80
-    then
-	echo A connection to port 80 succeeds, however.
-	echo This suggests that your DNS settings are correct,
-	echo but something is keeping traffic to port 443 from getting to your server.
-	echo Check your networking configuration to see that connections to port 443 are allowed.
-    else
-      echo "A connection to http://$HOST (port 80) also fails."
+      ;;
+    1)
+      echo "WARNING:: This server does not appear to be accessible at $HOST:443."
       echo
-      echo This suggests that $HOST resolves to the wrong IP address
-      echo or that traffic is not being routed to your server.
-    fi
-    echo
-    echo Google: \"open ports YOUR CLOUD SERVICE\" for information for resolving this problem.
-    echo
-    echo You should probably answer \"n\" at the next prompt and disable Let\'s Encrypt.
-    echo
-    echo This test might not work for all situations,
-    echo so if you can access Discourse at http://$HOST, you might try anyway.
-    sleep 3
-  fi
+      if connect_to_port $HOST 80; then
+        echo A connection to port 80 succeeds, however.
+        echo This suggests that your DNS settings are correct,
+        echo but something is keeping traffic to port 443 from getting to your server.
+        echo Check your networking configuration to see that connections to port 443 are allowed.
+      else
+        echo "A connection to http://$HOST (port 80) also fails."
+        echo
+        echo "This suggests that $HOST resolves to the wrong IP address"
+        echo or that traffic is not being routed to your server.
+      fi
+      echo
+      echo Google: \"open ports YOUR CLOUD SERVICE\" for information for resolving this problem.
+      echo
+      echo You should probably answer \"n\" at the next prompt and disable Let\'s Encrypt.
+      echo
+      echo This test might not work for all situations,
+      echo "so if you can access Discourse at http://$HOST, you might try anyway."
+      sleep 3
+      ;;
+    2)
+      echo "Continuing without port check."
+      ;;
+  esac
 }
 
 ##
