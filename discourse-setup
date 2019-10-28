@@ -114,7 +114,15 @@ check_osx_memory() {
 ## Linux available memory
 ##
 check_linux_memory() {
-  echo `free -g --si | awk ' /Mem:/  {print $2} '`
+  ## some VMs report just under 1GB of RAM, so
+  ## make an exception and allow those with more
+  ## than 989MB
+  mem=`free -m --si | awk ' /Mem:/ {print $2}'`
+  if [ "$mem" -ge 990 -a "$mem" -lt 1000 ]; then
+    echo 1
+  else
+    echo `free -g --si | awk ' /Mem:/  {print $2} '`
+  fi
 }
 
 ##
