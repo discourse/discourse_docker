@@ -57,7 +57,7 @@ hooks:
         /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf
 
         issue_cert() {
-          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue -d $$ENV_DISCOURSE_HOSTNAME --keylength $1 -w /var/www/discourse/public
+          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue $2 -d $$ENV_DISCOURSE_HOSTNAME --keylength $1 -w /var/www/discourse/public
         }
 
         cert_exists() {
@@ -71,7 +71,7 @@ hooks:
 
         if ! cert_exists ""; then
           # Try to issue the cert again if something goes wrong
-          issue_cert "4096"
+          issue_cert "4096" "--force"
         fi
 
         LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh \
@@ -88,7 +88,7 @@ hooks:
 
         if ! cert_exists "_ecc"; then
           # Try to issue the cert again if something goes wrong
-          issue_cert "ec-256"
+          issue_cert "ec-256" "--force"
         fi
 
         LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh \
