@@ -437,7 +437,7 @@ ask_user_for_config() {
 
     if [ ! -z $letsencrypt_account_email ]
     then
-      read -p "Optional email address for setting up Let's Encrypt? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
+      read -p "Optional email address for Let's Encrypt warnings? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
       if [ ! -z "$new_value" ]
       then
           letsencrypt_account_email="$new_value"
@@ -559,57 +559,37 @@ ask_user_for_config() {
       update_ok="n"
     fi
   fi
-  if [ "$letsencrypt_status" = "ENTER to skip" ]
-  then
-      local src='^  #\?- "templates\/web.ssl.template.yml"'
-      local dst='  #\- "templates\/web.ssl.template.yml"'
-      sed -i -e "s/$src/$dst/w $changelog" $web_file
-      if [ ! -s $changelog ]
-      then
-        update_ok="n"
-        echo "web.ssl.template.yml NOT DISABLED--Are you using a non-standard template?"
-      fi
-      local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
-      local dst='  #- "templates\/web.letsencrypt.ssl.template.yml"'
 
-      sed -i -e "s/$src/$dst/w $changelog" $web_file
-      if [ ! -s $changelog ]
-      then
-        update_ok="n"
-        echo "web.ssl.template.yml NOT DISABLED--Are you using a non-standard template?"
-      fi
-  else # enable let's encrypt
-    echo "Let's Encrypt will be enabled for $letsencrypt_account_email"
-      sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $web_file
-      if [ -s $changelog ]
-      then
-        rm $changelog
-      else
-        echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
-        update_ok="n"
-      fi
-      local src='^  #\?- "templates\/web.ssl.template.yml"'
-      local dst='  \- "templates\/web.ssl.template.yml"'
-      sed -i -e "s/$src/$dst/w $changelog" $web_file
-      if [ -s $changelog ]
-      then
-	  echo "web.ssl.template.yml enabled"
-      else
-        update_ok="n"
-        echo "web.ssl.template.yml NOT ENABLED--was it on already?"
-      fi
-      local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
-      local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
+  echo "Enabling Let's Encrypt"
+    sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
+      update_ok="n"
+    fi
+    local src='^  #\?- "templates\/web.ssl.template.yml"'
+    local dst='  \- "templates\/web.ssl.template.yml"'
+    sed -i -e "s/$src/$dst/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+  echo "web.ssl.template.yml enabled"
+    else
+      update_ok="n"
+      echo "web.ssl.template.yml NOT ENABLED--was it on already?"
+    fi
+    local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
+    local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
 
-      sed -i -e "s/$src/$dst/w $changelog" $web_file
-      if [ -s $changelog ]
-      then
-	      echo "letsencrypt.ssl.template.yml enabled"
-      else
-        update_ok="n"
-        echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
-      fi
-  fi
+    sed -i -e "s/$src/$dst/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      echo "letsencrypt.ssl.template.yml enabled"
+    else
+      update_ok="n"
+      echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
+    fi
 
   if [ "$update_ok" == "y" ]
   then
