@@ -164,6 +164,7 @@ installs you can ensure they are in sync by looking at `/etc/passwd` and
 `/etc/group`, the Discourse account will have UID 1000.
 
 
+
 ### Advanced topics
 
 - [Setting up SSL with Discourse Docker](https://meta.discourse.org/t/allowing-ssl-for-your-discourse-docker-setup/13847)
