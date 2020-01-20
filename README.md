@@ -53,7 +53,7 @@ Commands:
     destroy:    Stop and remove a container
     enter:      Use docker exec to enter a container
     logs:       Docker logs for container
-	memconfig:  Configure sane defaults for available RAM
+    memconfig:  Configure sane defaults for available RAM
     bootstrap:  Bootstrap a container for the config based on a template
     rebuild:    Rebuild a container (destroy old, bootstrap, start new)
 ```
