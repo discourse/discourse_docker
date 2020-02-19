@@ -68,11 +68,9 @@ check_IP_match() {
       echo
       echo Google: \"open ports YOUR CLOUD SERVICE\" for information for resolving this problem.
       echo
-      echo You should probably answer \"n\" at the next prompt and disable Let\'s Encrypt.
-      echo
-      echo This test might not work for all situations,
-      echo "so if you can access Discourse at http://$HOST, you might try anyway."
-      sleep 3
+      echo If you want to proceed anyway, you will need to
+      echo edit the containers/app.yml file manually.
+      exit 1
       ;;
     2)
       echo "Continuing without port check."
@@ -374,6 +372,8 @@ ask_user_for_config() {
       fi
     fi
 
+    check_IP_match $hostname
+
     if [ ! -z "$developer_emails" ]
     then
       read -p "Email address for admin account(s)? [$developer_emails]: " new_value
@@ -448,11 +448,6 @@ ask_user_for_config() {
             letsencrypt_status="Enter 'OFF' to disable."
           fi
       fi
-    fi
-
-    if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
-    then
-       check_IP_match $hostname
     fi
 
     echo -e "\nDoes this look right?\n"
