@@ -68,8 +68,8 @@ check_IP_match() {
       echo
       echo Google: \"open ports YOUR CLOUD SERVICE\" for information for resolving this problem.
       echo
-      echo If you want to proceed anyway, you will need to run 'cp samples/standalone.yml containers/app.yml'
-      echo and edit the containers/app.yml file manually.
+      echo If you want to proceed anyway, you will need to
+      echo edit the containers/app.yml file manually.
       exit 1
       ;;
     2)
