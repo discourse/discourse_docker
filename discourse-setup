@@ -52,24 +52,31 @@ check_IP_match() {
       echo "Connection to $HOST succeeded."
       ;;
     1)
-      echo "WARNING:: This server does not appear to be accessible at $HOST:443."
-      echo
+      echo "WARNING: Port 443 of computer does not appear to be accessible using hostname:  $HOST."
       if connect_to_port $HOST 80; then
-        echo A connection to port 80 succeeds, however.
+        echo
+        echo SUCCESS: A connection to port 80 succeeds!
         echo This suggests that your DNS settings are correct,
         echo but something is keeping traffic to port 443 from getting to your server.
         echo Check your networking configuration to see that connections to port 443 are allowed.
       else
-        echo "A connection to http://$HOST (port 80) also fails."
+        echo "WARNING: Connection to http://$HOST (port 80) also fails."
         echo
-        echo "This suggests that $HOST resolves to the wrong IP address"
-        echo or that traffic is not being routed to your server.
+        echo "This suggests that $HOST resolves to some IP address that does not reach this "
+        echo machine where you are installing discourse.
       fi
       echo
-      echo Google: \"open ports YOUR CLOUD SERVICE\" for information for resolving this problem.
+      echo "The first thing to do is confirm that $HOST resolves to the IP address of this server."
+      echo You usually do this at the same place you purchased the domain.
       echo
-      echo If you want to proceed anyway, you will need to
-      echo edit the containers/app.yml file manually.
+      echo If you are sure that the IP address resolves correctly, it could be a firewall issue.
+      echo A web search for  \"open ports YOUR CLOUD SERVICE\" might help.
+      echo
+      echo This tool is designed only for the most standard installations. If you cannot resolve
+      echo the issue above, you will need to edit containers/app.yml yourself and then type
+      echo
+      echo                   ./launcher rebuild app
+      echo
       exit 1
       ;;
     2)
