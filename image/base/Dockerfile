@@ -28,14 +28,17 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
 RUN curl --silent --location https://deb.nodesource.com/setup_10.x | sudo bash -
 RUN apt -y update
-RUN apt -y install build-essential git wget rsync \
+# install these without recommends to avoid pulling in e.g.
+# X11 libraries, mailutils
+RUN apt -y install --no-install-recommends git rsyslog logrotate cron ssh-client
+RUN apt -y install build-essential rsync \
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk parallel \
                        postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
                        postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
-                       cron anacron \
-                       psmisc rsyslog vim whois brotli libunwind-dev \
+                       anacron wget \
+                       psmisc vim whois brotli libunwind-dev \
                        libtcmalloc-minimal4 cmake
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf

@@ -22,10 +22,8 @@ curl -O https://nginx.org/download/nginx-$VERSION.tar.gz
 tar zxf nginx-$VERSION.tar.gz
 cd nginx-$VERSION
 
-# so we get nginx user and so on
-apt install -y nginx libpcre3 libpcre3-dev zlib1g zlib1g-dev
-# we don't want to accidentally upgrade nginx and undo our work
-apt-mark hold nginx
+# nginx-common for boilerplate files etc.
+apt install -y nginx-common libpcre3 libpcre3-dev zlib1g zlib1g-dev
 
 # now ngx_brotli has brotli as a submodule
 cd /tmp/ngx_brotli && git submodule update --init && cd /tmp/nginx-$VERSION
