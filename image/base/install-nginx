@@ -21,8 +21,8 @@ echo "$HASH nginx-$VERSION.tar.gz" | sha256sum -c
 tar zxf nginx-$VERSION.tar.gz
 cd nginx-$VERSION
 
-# build dependencies
-apt install -y libpcre3 libpcre3-dev zlib1g zlib1g-dev
+# nginx-common for boilerplate files etc.
+apt install -y nginx-common libpcre3 libpcre3-dev zlib1g zlib1g-dev
 
 cd /tmp
 # this is the reason we are compiling by hand...
