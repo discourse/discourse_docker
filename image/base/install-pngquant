@@ -1,5 +1,9 @@
 #!/bin/bash
+set -e
+
+# version check: https://pngquant.org/
 VERSION=2.12.5
+
 cd /tmp
 git clone -b $VERSION --single-branch https://github.com/pornel/pngquant
 cd pngquant

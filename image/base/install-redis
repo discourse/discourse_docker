@@ -1,13 +1,16 @@
 #!/bin/bash
 set -e
+
+# version check: https://redis.io/
 REDIS_VERSION=5.0.5
 REDIS_HASH="2139009799d21d8ff94fc40b7f36ac46699b9e1254086299f8d3b223ca54a375"
 
 cd /tmp
-
 # Prepare Redis source.
 wget http://download.redis.io/releases/redis-$REDIS_VERSION.tar.gz
+sha256sum redis-$REDIS_VERSION.tar.gz
 echo "$REDIS_HASH redis-$REDIS_VERSION.tar.gz" | sha256sum -c
+
 tar zxf redis-$REDIS_VERSION.tar.gz
 cd redis-$REDIS_VERSION
 

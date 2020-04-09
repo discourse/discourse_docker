@@ -1,8 +1,13 @@
 #!/bin/bash
-set -o errexit
+set -e
 
+# version check: https://github.com/ImageMagick/ImageMagick/releases
 IMAGE_MAGICK_VERSION="7.0.10-6"
+IMAGE_MAGICK_HASH="37d36f4d736eb16e0dd43c50302e1d01d1bb1125165333df8273508a22f8a64d"
+
+# version check: https://libpng.sourceforge.io/index.html
 LIBPNG_VERSION="1.6.37"
+LIBPNG_HASH="daeb2620d829575513e35fecc83f0d3791a620b9b93d800b763542ece9390fb4"
 
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
@@ -11,12 +16,13 @@ WDIR=/tmp/imagemagick
 apt -y -q remove imagemagick
 apt -y -q install ghostscript gsfonts pkg-config autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev
 
-
 mkdir -p $WDIR
 cd $WDIR
 
 # Build and install libpng
 wget -O $WDIR/libpng.tar.gz https://prdownloads.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.gz?download
+sha256sum $WDIR/libpng.tar.gz
+echo "$LIBPNG_HASH $WDIR/libpng.tar.gz" | sha256sum -c
 
 tar -xzvf $WDIR/libpng.tar.gz
 cd $WDIR/libpng-$LIBPNG_VERSION
@@ -26,6 +32,8 @@ make all && make install
 
 # Build and install ImageMagick
 wget -O $WDIR/ImageMagick.tar.gz "https://github.com/ImageMagick/ImageMagick/archive/$IMAGE_MAGICK_VERSION.tar.gz"
+sha256sum $WDIR/ImageMagick.tar.gz
+echo "$IMAGE_MAGICK_HASH $WDIR/ImageMagick.tar.gz" | sha256sum -c
 IMDIR=$WDIR/$(tar tzf $WDIR/ImageMagick.tar.gz --wildcards "ImageMagick-*/configure" |cut -d/ -f1)
 tar zxf $WDIR/ImageMagick.tar.gz -C $WDIR
 cd $IMDIR

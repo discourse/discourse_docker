@@ -1,8 +1,15 @@
 #!/bin/bash
 set -e
+
+# version check: https://sourceforge.net/projects/pmt/files/pngcrush/
 PNGCRUSH_VERSION=1.8.13
+PNGCRUSH_HASH="bac37d4b2be88d7e88aadcde9661beb3a513a90e7d26784f906c1e2da8ba332e"
+
 cd /tmp
 wget https://sourceforge.net/projects/pmt/files/pngcrush/$PNGCRUSH_VERSION/pngcrush-$PNGCRUSH_VERSION.tar.gz/download -O pngcrush-$PNGCRUSH_VERSION.tar.gz
+sha256sum pngcrush-$PNGCRUSH_VERSION.tar.gz
+echo "$PNGCRUSH_HASH pngcrush-$PNGCRUSH_VERSION.tar.gz" | sha256sum -c
+
 tar zxf pngcrush-$PNGCRUSH_VERSION.tar.gz
 cd pngcrush-$PNGCRUSH_VERSION
 make && cp -f pngcrush /usr/local/bin
