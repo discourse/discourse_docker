@@ -33,6 +33,7 @@ run:
   - exec:
       hook: sshd
       cmd:
+        - apt -y install openssh-server
         - mkdir -p /var/run/sshd
         - mkdir -p /root/.ssh
         - echo "$ssh_key" >> /root/.ssh/authorized_keys
