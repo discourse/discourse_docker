@@ -2,7 +2,7 @@
 # VERSION:  release
 FROM debian:buster-slim
 
-ENV PG_MAJOR 10
+ENV PG_MAJOR 12
 ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
 ENV RAILS_ENV production
 

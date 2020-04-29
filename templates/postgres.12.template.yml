@@ -19,7 +19,6 @@ hooks:
        to: sv start postgres || exit 1
 
 run:
-  - exec: locale-gen $LANG && update-locale
   - exec: mkdir -p /shared/postgres_run
   - exec: chown postgres:postgres /shared/postgres_run
   - exec: chmod 775 /shared/postgres_run
@@ -36,15 +35,7 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
-        HOME=/var/lib/postgresql USER=postgres exec thpoff chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/12/bin/postmaster -D /etc/postgresql/12/main
-
-  - file:
-     path: /etc/service/postgres/log/run
-     chmod: "+x"
-     contents: |
-       #!/bin/sh
-       mkdir -p /var/log/postgres
-       exec svlogd /var/log/postgres
+        HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/12/bin/postmaster -D /etc/postgresql/12/main
 
   - file:
      path: /etc/runit/3.d/99-postgres
@@ -53,104 +44,12 @@ run:
        #!/bin/bash
        sv stop postgres
 
-  - file:
-     path: /root/upgrade_postgres
-     chmod: "+x"
-     contents: |
-       #!/bin/bash
-       PG_MAJOR_OLD=`cat /shared/postgres_data/PG_VERSION`
-
-       if [ ! "12" = "$PG_MAJOR_OLD" ]; then
-         echo Upgrading PostgreSQL from version ${PG_MAJOR_OLD} to 12
-         free_disk=$(df /shared | tail -n 1 | awk '{print $4}')
-         required=$(($(du -s /shared/postgres_data | awk '{print $1}') * 2))
-
-         if [ "$free_disk" -lt "$required" ]; then
-          echo "WARNING: Upgrading PostgresSQL would require an addtional $(numfmt --to=si $(($required - $free_disk))) of disk space"
-          echo "Please free up some space, or expand your disk, before continuing."
-          echo ''
-          echo 'To avoid upgrading change "templates/postgres.template.yml" TO "templates/postgres.10.template.yml" in containers/app.yml'
-          exit 1
-         fi
-
-         rm -fr /shared/postgres_data_new
-         install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/12/bin/initdb -D /shared/postgres_data_new || exit 0
-         apt-get update
-         apt-get install -y postgresql-${PG_MAJOR_OLD}
-         chown -R postgres:postgres /var/lib/postgresql/12
-         /etc/init.d/postgresql stop
-         rm -fr /shared/postgres_data/postmaster.pid
-         cd ~postgres
-         cp -pr /etc/postgresql/${PG_MAJOR_OLD}/main/* /shared/postgres_data
-         echo  >> /shared/postgres_data/postgresql.conf
-         echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
-         SUCCESS=true
-         sudo -u postgres /usr/lib/postgresql/12/bin/pg_upgrade -d /shared/postgres_data -D /shared/postgres_data_new -b /usr/lib/postgresql/${PG_MAJOR_OLD}/bin -B /usr/lib/postgresql/12/bin || SUCCESS=false
-
-         if [[ "$SUCCESS" == 'false' ]]; then
-           echo -------------------------------------------------------------------------------------
-           echo UPGRADE OF POSTGRES FAILED
-           echo
-           echo You are going to need to export your data and import into a clean instance:
-           echo
-
-           if [ "$PG_MAJOR_OLD" = "10" ]; then
-             echo 'In containers/app.yml: Change "templates/postgres.template.yml" TO "templates/postgres.10.template.yml"'
-             echo
-           fi
-
-           echo Run "./launcher rebuild app" again
-           echo
-           echo When your instance is running:
-           echo Run "./launcher enter app"
-           echo "Run apt-get remove postgresql-client-10 && apt-get install postgresql-client-12"
-           echo Run "cd /shared/postgres_backup && sudo -u postgres pg_dump discourse > backup.db"
-           echo
-
-           if [ "$PG_MAJOR_OLD" = "10" ]; then
-             echo Undo the base_image in your container config
-           fi
-
-           echo Run: "./launcher stop app"
-           echo Run: "sudo mv /var/discourse/shared/standalone/postgres_data /var/discourse/shared/standalone/postgres_data_old"
-           echo Run: "./launcher rebuild app"
-           echo
-           echo Run: "./launcher enter app"
-           echo Run: "cd /shared/postgres_backup"
-           echo Run: "sv stop unicorn"
-           echo Run: "sudo -iu postgres dropdb discourse"
-           echo Run: "sudo -iu postgres createdb discourse"
-           echo Run: "sudo -iu postgres psql discourse < backup.db"
-           echo Run: "exit"
-           echo Run: "./launcher rebuild app"
-           exit 1
-         fi
-
-         mv /shared/postgres_data /shared/postgres_data_old
-         mv /shared/postgres_data_new /shared/postgres_data
-
-         echo -------------------------------------------------------------------------------------
-         echo UPGRADE OF POSTGRES COMPLETE
-         echo
-         echo Old ${PG_MAJOR_OLD} database is stored at /shared/postgres_data_old
-         echo
-         echo To complete the upgrade, rebuild again using:
-         echo
-         echo     ./launcher rebuild app
-         echo -------------------------------------------------------------------------------------
-         # Magic exit status to denote no failure
-         exit 77
-       fi
-
   - exec:
       cmd:
         - chown -R root /var/lib/postgresql/12/main
         - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/12/bin/initdb -D /shared/postgres_data || exit 0"
         - chown -R postgres:postgres /shared/postgres_data
         - chown -R postgres:postgres /var/run/postgresql
-
-  - exec: /root/upgrade_postgres
-  - exec: rm /root/upgrade_postgres
 
   - replace:
       filename: "/etc/postgresql/12/main/postgresql.conf"
