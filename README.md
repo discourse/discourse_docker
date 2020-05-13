@@ -197,23 +197,6 @@ installs you can ensure they are in sync by looking at `/etc/passwd` and
 - [Linking containers for a multiple container setup](https://meta.discourse.org/t/linking-containers-for-a-multiple-container-setup/20867)
 - [Using Rubygems mirror to improve connection problem in China](https://meta.discourse.org/t/replace-rubygems-org-with-taobao-mirror-to-resolve-network-error-in-china/21988/1)
 
-### Developing with Vagrant
-
-If you are looking to make modifications to this repository, you can easily test
-out your changes before committing, using the magic of
-[Vagrant](http://vagrantup.com).  Install Vagrant as per [the default
-instructions](http://docs.vagrantup.com/v2/installation/index.html), and
-then run:
-
-    vagrant up
-
-This will spawn a new Ubuntu VM, install Docker, and then await your
-instructions.  You can then SSH into the VM with `vagrant ssh`, become
-`root` with `sudo -i`, and then you're right to go.  Your live git repo is
-already available at `/vagrant`, so you can just `cd /vagrant`
-and then start running `launcher`.
-
-
 License
 ===
 MIT
