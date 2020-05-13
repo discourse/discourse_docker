@@ -806,7 +806,7 @@ case "$command" in
           echo "Stopping old container"
           (
             set -x
-            $docker_path stop -t 10 $config
+            $docker_path stop -t 60 $config
           )
       fi
 
