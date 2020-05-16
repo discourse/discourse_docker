@@ -21,7 +21,9 @@ params:
 
 env:
   # ensure locale exists in container, you may need to install it
+  LC_ALL: en_US.UTF-8
   LANG: en_US.UTF-8
+  LANGUAGE: en_US.UTF-8
 
 volumes:
   - volume:

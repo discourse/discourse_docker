@@ -14,7 +14,9 @@ expose:
   - "25:25"   # SMTP
 
 env:
+  LC_ALL: en_US.UTF-8
   LANG: en_US.UTF-8
+  LANGUAGE: en_US.UTF-8
 
   ## Where e-mail to your forum should be sent.  In general, it's perfectly fine
   ## to use the same domain as the forum itself here.
