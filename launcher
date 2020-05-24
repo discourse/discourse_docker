@@ -11,6 +11,7 @@ usage () {
   echo "    logs:        View the Docker logs for a container"
   echo "    bootstrap:   Bootstrap a container for the config based on a template"
   echo "    run:         Run the given command with the config in the context of the last bootstrapped image"
+  echo "    update       Update this git repository (recommended before rebuild)"
   echo "    rebuild:     Rebuild a container (destroy old, bootstrap, start new)"
   echo "    cleanup:     Remove all containers that have stopped for > 24 hours"
   echo "    start-cmd:   Generate docker command used to start container"
@@ -63,7 +64,7 @@ while [ ${#} -gt 0 ]; do
   shift 1
 done
 
-if [ -z "$command" -o -z "$config" -a "$command" != "cleanup" ]; then
+if [ -z "$command" -o -z "$config" -a "$command" != "cleanup" -a "$command" != "update" ]; then
   usage
   exit 1
 fi
@@ -244,10 +245,6 @@ check_prereqs() {
   fi
 }
 
-
-if [ -z "$SKIP_PREREQS" ] && [ "$command" != "cleanup" ]; then
-  check_prereqs
-fi
 
 host_run() {
   read -r -d '' env_ruby << 'RUBY'
@@ -464,6 +461,46 @@ RUBY
 
    merge_user_args
 }
+
+if [ "$command" == "update" ]; then
+      if [ "$(git symbolic-ref --short HEAD)" == "master" ]; then
+        echo "Ensuring launcher is up to date"
+
+        git remote update
+
+        LOCAL=$(git rev-parse HEAD)
+        REMOTE=$(git rev-parse @{u})
+        BASE=$(git merge-base HEAD @{u})
+
+        if [ $LOCAL = $REMOTE ]; then
+          echo "Launcher is up-to-date"
+
+        elif [ $LOCAL = $BASE ]; then
+          echo "Updating Launcher"
+          git pull || (echo 'failed to update' && exit 1)
+
+          for (( i=${#BASH_ARGV[@]}-1,j=0; i>=0,j<${#BASH_ARGV[@]}; i--,j++ ))
+          do
+            args[$j]=${BASH_ARGV[$i]}
+          done
+          exec bash $0 "${args[@]}" # $@ is empty, because of shift at the beginning. Use BASH_ARGV instead.
+
+        elif [ $REMOTE = $BASE ]; then
+          echo "Your version of Launcher is ahead of origin"
+
+        else
+          echo "Launcher has diverged source, this is only expected in Dev mode"
+        fi
+
+      else
+        echo "Not on master branch, not updating"
+      fi
+      exit
+fi
+
+if [ -z "$SKIP_PREREQS" ] && [ "$command" != "cleanup" ]; then
+  check_prereqs
+fi
 
 if [ -z $docker_path ]; then
   install_docker
@@ -768,37 +805,6 @@ case "$command" in
       ;;
 
   rebuild)
-      if [ "$(git symbolic-ref --short HEAD)" == "master" ]; then
-        echo "Ensuring launcher is up to date"
-
-        git remote update
-
-        LOCAL=$(git rev-parse HEAD)
-        REMOTE=$(git rev-parse @{u})
-        BASE=$(git merge-base HEAD @{u})
-
-        if [ $LOCAL = $REMOTE ]; then
-          echo "Launcher is up-to-date"
-
-        elif [ $LOCAL = $BASE ]; then
-          echo "Updating Launcher"
-          git pull || (echo 'failed to update' && exit 1)
-
-          for (( i=${#BASH_ARGV[@]}-1,j=0; i>=0,j<${#BASH_ARGV[@]}; i--,j++ ))
-          do
-            args[$j]=${BASH_ARGV[$i]}
-          done
-          exec bash $0 "${args[@]}" # $@ is empty, because of shift at the beginning. Use BASH_ARGV instead.
-
-        elif [ $REMOTE = $BASE ]; then
-          echo "Your version of Launcher is ahead of origin"
-
-        else
-          echo "Launcher has diverged source, this is only expected in Dev mode"
-        fi
-
-      fi
-
       set_existing_container
 
       if [ ! -z $existing ]
