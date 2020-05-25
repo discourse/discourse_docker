@@ -144,6 +144,11 @@ install_docker() {
   exit 1
 }
 
+pull_image() {
+  # Add a single retry to work around dockerhub TLS errors
+  $docker_path pull $image || $docker_path pull image
+}
+
 check_prereqs() {
 
   if [ -z $docker_path ]; then
@@ -196,6 +201,8 @@ check_prereqs() {
     echo
     echo "Please be patient"
     echo
+
+    pull_image
   fi
 
   # 5. running recommended git version
@@ -657,7 +664,7 @@ run_bootstrap() {
 
   # Is the image available?
   # If not, pull it here so the user is aware what's happening.
-  $docker_path history $image >/dev/null 2>&1 || $docker_path pull $image
+  $docker_path history $image >/dev/null 2>&1 || pull_image
 
   set_template_info
 
