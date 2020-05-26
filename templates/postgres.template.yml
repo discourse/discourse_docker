@@ -91,38 +91,10 @@ run:
            echo -------------------------------------------------------------------------------------
            echo UPGRADE OF POSTGRES FAILED
            echo
-           echo You are going to need to export your data and import into a clean instance:
+           echo Please visit https://meta.discourse.org/t/postgresql-12-update/151236 for support
            echo
-
-           if [ "$PG_MAJOR_OLD" = "10" ]; then
-             echo 'In containers/app.yml: Change "templates/postgres.template.yml" TO "templates/postgres.10.template.yml"'
-             echo
-           fi
-
-           echo Run "./launcher rebuild app" again
+           echo You can run "./launcher start app" to restart your app in the meanwhile
            echo
-           echo When your instance is running:
-           echo Run "./launcher enter app"
-           echo "Run apt-get remove postgresql-client-10 && apt-get install postgresql-client-12"
-           echo Run "cd /shared/postgres_backup && sudo -u postgres pg_dump discourse > backup.db"
-           echo
-
-           if [ "$PG_MAJOR_OLD" = "10" ]; then
-             echo Undo the base_image in your container config
-           fi
-
-           echo Run: "./launcher stop app"
-           echo Run: "sudo mv /var/discourse/shared/standalone/postgres_data /var/discourse/shared/standalone/postgres_data_old"
-           echo Run: "./launcher rebuild app"
-           echo
-           echo Run: "./launcher enter app"
-           echo Run: "cd /shared/postgres_backup"
-           echo Run: "sv stop unicorn"
-           echo Run: "sudo -iu postgres dropdb discourse"
-           echo Run: "sudo -iu postgres createdb discourse"
-           echo Run: "sudo -iu postgres psql discourse < backup.db"
-           echo Run: "exit"
-           echo Run: "./launcher rebuild app"
            exit 1
          fi
 
