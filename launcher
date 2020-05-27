@@ -487,7 +487,7 @@ fi
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       echo "removing old PostgreSQL data cluster at /var/discourse/shared/standalone/postgres_data_old..."
-      rm -rf /var/discourse/shared/standalone/postgres_data_old
+      rm -rf /var/discourse/shared/standalone/postgres_data_old*
     else
       exit 1
     fi

@@ -73,6 +73,10 @@ run:
           exit 1
          fi
 
+         if [ -d /shared/postgres_data_old ]; then
+           mv /shared/postgres_data_old /shared/postgres_data_older
+         fi
+
          rm -fr /shared/postgres_data_new
          install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/12/bin/initdb -D /shared/postgres_data_new || exit 0
          apt-get update
