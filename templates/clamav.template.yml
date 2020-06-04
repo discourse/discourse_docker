@@ -1,0 +1,20 @@
+run:
+  - exec:
+      cmd:
+        - apt-get update && apt-get install -y clamav clamav-daemon
+        - mkdir -p /shared/freschlam
+        - freshclam
+  - file:
+     path: /etc/service/clamdscan/run
+     chmod: "+x"
+     contents: |
+        #!/bin/sh
+        exec /etc/init.d/clamav-daemon start
+  - file:
+     path: /shared/freshclam/cron.dd.freshclam
+     contents: |
+        0 */12    * * *   root /usr/bin/freshclam
+  - exec:
+      cmd: 
+        - cp /shared/freshclam/cron.dd.freshclam /etc/cron.d/freshclam
+        - rm -rf /shared/freshclam
