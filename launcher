@@ -146,7 +146,7 @@ install_docker() {
 
 pull_image() {
   # Add a single retry to work around dockerhub TLS errors
-  $docker_path pull $image || $docker_path pull image
+  $docker_path pull $image || $docker_path pull $image
 }
 
 check_prereqs() {
