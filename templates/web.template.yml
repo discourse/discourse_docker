@@ -151,6 +151,12 @@ run:
       hook: bundle_exec
       cmd:
         - su discourse -c 'bundle install --deployment --retry 3 --jobs 4 --verbose --without test development'
+
+  - exec:
+      cd: $home
+      cmd: bundle exec rake plugin:checkout_compatible_all
+      raise_on_fail: false
+
   - exec:
       cd: $home
       hook: db_migrate
