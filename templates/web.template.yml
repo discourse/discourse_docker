@@ -154,7 +154,7 @@ run:
 
   - exec:
       cd: $home
-      cmd: bundle exec rake plugin:checkout_compatible_all
+      cmd: bundle exec rake plugin:pull_compatible_all
       raise_on_fail: false
 
   - exec:
