@@ -152,12 +152,12 @@ run:
       cmd:
         - su discourse -c 'bundle install --deployment --retry 3 --jobs 4 --verbose --without test development'
 
-  - exec:
-      cd: $home
-      cmd:
-        - su discourse -c 'bundle exec rake plugin:pull_compatible_all'
-      raise_on_fail: false
-
+#  - exec:
+#      cd: $home
+#      cmd:
+#        - su discourse -c 'bundle exec rake plugin:pull_compatible_all'
+#      raise_on_fail: false
+#
   - exec:
       cd: $home
       hook: db_migrate
