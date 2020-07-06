@@ -154,7 +154,8 @@ run:
 
   - exec:
       cd: $home
-      cmd: bundle exec rake plugin:pull_compatible_all
+      cmd:
+        - su discourse -c 'bundle exec rake plugin:pull_compatible_all'
       raise_on_fail: false
 
   - exec:
