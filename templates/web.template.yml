@@ -92,6 +92,8 @@ run:
         - git pull
         - git fetch origin $version
         - git checkout $version
+        - mkdir -p tmp
+        - chown discourse:www-data tmp
         - mkdir -p tmp/pids
         - mkdir -p tmp/sockets
         - touch tmp/.gitkeep
