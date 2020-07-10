@@ -87,7 +87,7 @@ ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
 # Validate install
-RUN ruby -Eutf-8 -e "v = \`convert -version\`; %w{png tiff jpeg freetype}.each { |f| unless v.include?(f); STDERR.puts('no ' + f +  ' support in imagemagick'); exit(-1); end }"
+RUN ruby -Eutf-8 -e "v = \`convert -version\`; %w{png tiff jpeg freetype heic}.each { |f| unless v.include?(f); STDERR.puts('no ' + f +  ' support in imagemagick'); exit(-1); end }"
 
 ADD install-pngcrush /tmp/install-pngcrush
 RUN /tmp/install-pngcrush
