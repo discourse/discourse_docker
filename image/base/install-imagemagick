@@ -9,12 +9,16 @@ IMAGE_MAGICK_HASH="37d36f4d736eb16e0dd43c50302e1d01d1bb1125165333df8273508a22f8a
 LIBPNG_VERSION="1.6.37"
 LIBPNG_HASH="daeb2620d829575513e35fecc83f0d3791a620b9b93d800b763542ece9390fb4"
 
+# version check: https://github.com/strukturag/libheif/releases
+LIBHEIF_VERSION="1.7.0"
+LIBHEIF_HASH="11645cf2536f779be82ba9c25854fb7211b0ac30458f4764f1f7de88763deb21"
+
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
 
 # Install build deps
 apt -y -q remove imagemagick
-apt -y -q install ghostscript gsfonts pkg-config autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev libheif-dev
+apt -y -q install ghostscript gsfonts pkg-config autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev libde265-dev
 
 mkdir -p $WDIR
 cd $WDIR
@@ -29,6 +33,17 @@ cd $WDIR/libpng-$LIBPNG_VERSION
 
 ./configure --prefix=$PREFIX
 make all && make install
+
+# Build and install libheif
+cd $WDIR
+wget -O $WDIR/libheif.tar.gz "https://github.com/strukturag/libheif/archive/v$LIBHEIF_VERSION.tar.gz"
+sha256sum $WDIR/libheif.tar.gz
+echo "$LIBHEIF_HASH $WDIR/libheif.tar.gz" | sha256sum -c
+tar -xzvf $WDIR/libheif.tar.gz
+cd libheif-$LIBHEIF_VERSION
+./autogen.sh
+./configure
+make && make install
 
 # Build and install ImageMagick
 wget -O $WDIR/ImageMagick.tar.gz "https://github.com/ImageMagick/ImageMagick/archive/$IMAGE_MAGICK_VERSION.tar.gz"
