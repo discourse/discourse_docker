@@ -9,6 +9,10 @@ IMAGE_MAGICK_HASH="37d36f4d736eb16e0dd43c50302e1d01d1bb1125165333df8273508a22f8a
 LIBPNG_VERSION="1.6.37"
 LIBPNG_HASH="daeb2620d829575513e35fecc83f0d3791a620b9b93d800b763542ece9390fb4"
 
+# version check: https://github.com/strukturag/libheif/releases
+LIBHEIF_VERSION="1.6.2"
+LIBHEIF_HASH="8bc0e2cb3269e960b211b60600d95fa6f54a6ba8ea6eb8c8d3323d15ad66972b"
+
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
 
@@ -29,6 +33,17 @@ cd $WDIR/libpng-$LIBPNG_VERSION
 
 ./configure --prefix=$PREFIX
 make all && make install
+
+# Install libheif from source (needed in Ubuntu CI)
+cd $WDIR
+wget -O $WDIR/libheif.tar.gz "https://github.com/strukturag/libheif/archive/v$LIBHEIF_VERSION.tar.gz"
+sha256sum $WDIR/libheif.tar.gz
+echo "$LIBHEIF_HASH $WDIR/libheif.tar.gz" | sha256sum -c
+tar -xzvf $WDIR/libheif.tar.gz
+cd libheif-$LIBHEIF_VERSION
+./autogen.sh
+./configure
+make && make install
 
 # Build and install ImageMagick
 wget -O $WDIR/ImageMagick.tar.gz "https://github.com/ImageMagick/ImageMagick/archive/$IMAGE_MAGICK_VERSION.tar.gz"
