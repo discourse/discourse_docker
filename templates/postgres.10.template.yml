@@ -5,8 +5,6 @@ params:
   db_default_text_search_config: "pg_catalog.english"
   db_name: discourse
   db_user: discourse
-  db_wal_level: minimal
-  db_max_wal_senders: 0
   db_checkpoint_segments: 6
   db_logging_collector: off
   db_log_min_duration_statement: 100
