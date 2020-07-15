@@ -5,8 +5,6 @@ params:
   db_default_text_search_config: "pg_catalog.english"
   db_name: discourse
   db_user: discourse
-  db_wal_level: minimal
-  db_max_wal_senders: 0
   db_checkpoint_segments: 6
   db_logging_collector: off
   db_log_min_duration_statement: 100
@@ -93,16 +91,6 @@ run:
   - exec:
       cmd:
         - install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
-
-  - replace:
-      filename: "/etc/postgresql/9.5/main/postgresql.conf"
-      from: /#?max_wal_senders *=.*/
-      to: "max_wal_senders = $db_max_wal_senders"
-
-  - replace:
-      filename: "/etc/postgresql/9.5/main/postgresql.conf"
-      from: /#?wal_level *=.*/
-      to: "wal_level = $db_wal_level"
 
   - replace:
       filename: "/etc/postgresql/9.5/main/postgresql.conf"

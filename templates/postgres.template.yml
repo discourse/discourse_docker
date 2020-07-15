@@ -168,16 +168,6 @@ run:
 
   - replace:
       filename: "/etc/postgresql/12/main/postgresql.conf"
-      from: /#?max_wal_senders *=.*/
-      to: "max_wal_senders = $db_max_wal_senders"
-
-  - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
-      from: /#?wal_level *=.*/
-      to: "wal_level = $db_wal_level"
-
-  - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
       from: /#?checkpoint_segments *=.*/
       to: "checkpoint_segments = $db_checkpoint_segments"
 
