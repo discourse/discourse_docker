@@ -23,6 +23,9 @@ usage () {
   exit 1
 }
 
+# for potential re-exec later
+SAVED_ARGV=("$@")
+
 command=$1
 config=$2
 
@@ -788,14 +791,11 @@ case "$command" in
           echo "Launcher is up-to-date"
 
         elif [ $LOCAL = $BASE ]; then
-          echo "Updating Launcher"
+          echo "Updating Launcher..."
           git pull || (echo 'failed to update' && exit 1)
 
-          for (( i=${#BASH_ARGV[@]}-1,j=0; i>=0,j<${#BASH_ARGV[@]}; i--,j++ ))
-          do
-            args[$j]=${BASH_ARGV[$i]}
-          done
-          exec bash $0 "${args[@]}" # $@ is empty, because of shift at the beginning. Use BASH_ARGV instead.
+          echo "Launcher updated, restarting..."
+          exec "$0" "${SAVED_ARGV[@]}"
 
         elif [ $REMOTE = $BASE ]; then
           echo "Your version of Launcher is ahead of origin"
