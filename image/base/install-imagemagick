@@ -2,8 +2,8 @@
 set -e
 
 # version check: https://github.com/ImageMagick/ImageMagick/releases
-IMAGE_MAGICK_VERSION="7.0.10-6"
-IMAGE_MAGICK_HASH="37d36f4d736eb16e0dd43c50302e1d01d1bb1125165333df8273508a22f8a64d"
+IMAGE_MAGICK_VERSION="7.0.10-24"
+IMAGE_MAGICK_HASH="c555b4724127f9993500c9a7bab148e6075a7397957516b9e0dd9faa02d5c98e"
 
 # version check: https://libpng.sourceforge.io/index.html
 LIBPNG_VERSION="1.6.37"
