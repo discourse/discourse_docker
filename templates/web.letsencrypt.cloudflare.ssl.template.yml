@@ -1,0 +1,42 @@
+env:
+  LETSENCRYPT_DIR: "/shared/letsencrypt"
+
+hooks:
+  after_ssl:
+    - exec:
+       cmd:
+         - if [ -z "$LETSENCRYPT_ACCOUNT_EMAIL" ]; then echo "LETSENCRYPT_ACCOUNT_EMAIL ENV variable is required and has not been set."; exit 1; fi
+         - /bin/bash -c "if [[ ! \"$LETSENCRYPT_ACCOUNT_EMAIL\" =~ ([^@]+)@([^\.]+) ]]; then echo \"LETSENCRYPT_ACCOUNT_EMAIL is not a valid email address\"; exit 1; fi"
+         - if [ -z "$CLOUDFLARE_ACCOUNT_EMAIL" ]; then echo "CLOUDFLARE_ACCOUNT_EMAIL ENV variable is required and has not been set."; exit 1; fi
+         - if [ -z "$CLOUDFLARE_KEY" ]; then echo "CLOUDFLARE_KEY ENV variable is required and has not been set."; exit 1; fi
+         - mkdir -p /shared/.secrets/certbot/
+
+    - file:
+       path: "/shared/.secrets/certbot/cloudflare.ini"
+       contents: |
+        # Cloudflare API credentials used by Certbot
+        dns_cloudflare_email = $$ENV_CLOUDFLARE_ACCOUNT_EMAIL
+        dns_cloudflare_api_key = $$ENV_CLOUDFLARE_KEY
+
+    - exec:
+       cmd:
+         - apt install -y python3-certbot python3-certbot-dns-cloudflare
+         - certbot certonly --dns-cloudflare --dns-cloudflare-credentials /shared/.secrets/certbot/cloudflare.ini --rsa-key-size 4096 --agree-tos -m $$ENV_LETSENCRYPT_ACCOUNT_EMAIL -n --config-dir $$LETSENCRYPT_DIR --post-hook 'service nginx restart' -d $$ENV_DISCOURSE_HOSTNAME 
+
+    - replace:
+       filename: "/etc/nginx/conf.d/discourse.conf"
+       from: /ssl_certificate.+/
+       to: |
+         ssl_certificate /shared/letsencrypt/live/$$ENV_DISCOURSE_HOSTNAME/fullchain.pem;
+
+    - replace:
+       filename: "/etc/nginx/conf.d/discourse.conf"
+       from: /ssl_certificate_key.+/
+       to: |
+         ssl_certificate_key /shared/letsencrypt/live/$$ENV_DISCOURSE_HOSTNAME/privkey.pem;
+
+    - replace:
+       filename: "/etc/nginx/conf.d/discourse.conf"
+       from: /add_header.+/
+       to: |
+         add_header Strict-Transport-Security 'max-age=63072000';
