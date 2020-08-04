@@ -185,7 +185,7 @@ get_discourse_config() {
 
 check_plugins() {
   log -e "\n\n==================== PLUGINS ===================="
-  log -e "$(grep git containers/$app_name.yml)"
+  log -e "$(grep 'git clone' containers/$app_name.yml)"
   grep git containers/$app_name.yml > /tmp/$PPID.grep
 
   if grep -cv "github.com/discourse" /tmp/$PPID.grep > /dev/null
