@@ -358,6 +358,7 @@ set_template_info() {
         p e
        end
     end
+    env.each{|k,v| puts "*ERROR." if v.is_a?(Hash)}
     puts env.map{|k,v| "-e\n#{k}=#{v}" }.join("\n")
 RUBY
 
