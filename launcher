@@ -20,6 +20,7 @@ usage () {
   echo "    --docker-args              Extra arguments to pass when running docker"
   echo "    --skip-mac-address         Don't assign a mac address"
   echo "    --run-image                Override the image used for running the container"
+  echo "    --skip-post-migrations     Apply the SKIP_POST_DEPLOYMENT_MIGRATIONS=1 environment variable"
   exit 1
 }
 
@@ -51,6 +52,9 @@ while [ ${#} -gt 0 ]; do
     ;;
   --skip-mac-address)
     SKIP_MAC_ADDRESS="1"
+    ;;
+  --skip-post-migrations)
+    LAUNCHER_SKIP_POST_MIGRATIONS="1"
     ;;
   --docker-args)
     user_args_argv="$2"
@@ -383,6 +387,10 @@ RUBY
       echo "${env[@]}"
       echo "YAML syntax error. Please check your containers/*.yml config files."
       exit 1
+    fi
+
+    if [ "$LAUNCHER_SKIP_POST_MIGRATIONS" -eq 1 ]; then
+      env+=("-e" "SKIP_POST_DEPLOYMENT_MIGRATIONS=1")
     fi
 
     # labels
