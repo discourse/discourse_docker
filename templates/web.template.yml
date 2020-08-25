@@ -288,7 +288,12 @@ run:
         rm -rf /shared/tmp/{backups,restores}
         mkdir -p /shared/tmp/{backups,restores}
         chown -R discourse:www-data /shared/tmp/{backups,restores}
-
+  - file:
+      path: /etc/runit/1.d/01-cleanup-web-pids
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        /bin/rm -f /var/www/discourse/tmp/pids/*.pid
   # change login directory to Discourse home
   - file:
      path: /root/.bash_profile
