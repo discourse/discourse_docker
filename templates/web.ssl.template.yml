@@ -15,6 +15,8 @@ run:
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /listen 80;\s+gzip on;/m
      to: |
+       # Enable QUIC and HTTP/3.
+       listen 443 quic reuseport;
        listen 443 ssl http2;
        SSL_TEMPLATE_SSL_BLOCK
   - replace:
@@ -45,6 +47,8 @@ run:
 
        add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
 
+       add_header alt-svc 'h3-29=":443"; ma=86400'; # Add Alt-Svc header to negotiate HTTP/3.
+
        if ($http_host != $$ENV_DISCOURSE_HOSTNAME) {
           rewrite (.*) https://$$ENV_DISCOURSE_HOSTNAME$1 permanent;
        }
@@ -54,3 +58,4 @@ run:
      to: |
        location @discourse {
        add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
+       add_header alt-svc 'h3-29=":443"; ma=86400'; # Add Alt-Svc header to negotiate HTTP/3.
