@@ -2,6 +2,7 @@
 # TODO: change SOME_SECRET in this template
 
 templates:
+  - "templates/imagemagick.template.yml"
   - "templates/web.template.yml"
   - "templates/web.ratelimited.template.yml"
 ## Uncomment these two lines if you wish to add Lets Encrypt (https)
