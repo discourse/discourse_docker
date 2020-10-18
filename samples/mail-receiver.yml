@@ -29,7 +29,7 @@ env:
   ## This is simply your forum's base URL, with `/admin/email/handle_mail`
   ## appended.  Be careful if you're running a subfolder setup -- in that case,
   ## the URL needs to have the subfolder included!
-  DISCOURSE_MAIL_ENDPOINT: 'http://discourse.example.com/admin/email/handle_mail'
+  DISCOURSE_MAIL_ENDPOINT: 'https://discourse.example.com/admin/email/handle_mail'
 
   ## The master API key of your Discourse forum.  You can get this from
   ## the "API" tab of your admin panel.
