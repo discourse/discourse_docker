@@ -68,7 +68,6 @@ done
 
 if [ -z "$command" -o -z "$config" -a "$command" != "cleanup" ]; then
   usage
-  exit 1
 fi
 
 # Docker doesn't like uppercase characters, spaces or special characters, catch it now before we build everything out and then find out
