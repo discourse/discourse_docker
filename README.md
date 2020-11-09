@@ -44,7 +44,7 @@ The Docker repository will always contain the latest built version at: https://h
 
 The base directory contains a single bash script which is used to manage containers. You can use it to "bootstrap" a new container, enter, start, stop and destroy a container.
 
-```
+```yaml
 Usage: launcher COMMAND CONFIG [--skip-prereqs]
 Commands:
     start:      Start/initialize a container
@@ -66,7 +66,7 @@ The beginning of the container definition can contain the following "special" se
 
 #### templates:
 
-```
+```yaml
 templates:
   - "templates/cron.template.yml"
   - "templates/postgres.template.yml"
@@ -76,7 +76,7 @@ This template is "composed" out of all these child templates, this allows for a 
 
 #### expose:
 
-```
+```yaml
 expose:
   - "2222:22"
   - "127.0.0.1:20080:80"
@@ -87,7 +87,7 @@ Publish port 22 inside the container on port 2222 on ALL local host interfaces. 
 
 #### volumes:
 
-```
+```yaml
 volumes:
   - volume:
       host: /var/discourse/shared
@@ -98,7 +98,8 @@ volumes:
 Expose a directory inside the host to the container.
 
 #### links:
-```
+
+```yaml
 links:
   - link:
       name: postgres
@@ -112,7 +113,7 @@ to the options when running the container.
 
 Setting environment variables to the current container.
 
-```
+```yaml
 # app.yml
 
 env:
@@ -123,7 +124,8 @@ env:
 The above will add `-e DISCOURSE_DB_HOST=some-host -e DISCOURSE_DB_NAME=app_discourse` to the options when running the container.
 
 #### labels:
-```
+
+```yaml
 # app.yml
 
 labels:
