@@ -1,3 +1,6 @@
+params:
+  redis_io_threads: "1"
+
 run:
   - file:
      path: /etc/service/redis/run
@@ -52,6 +55,11 @@ run:
       filename: "/etc/redis/redis.conf"
       from: /^protected-mode yes/
       to: "protected-mode no"
+
+  - replace:
+      filename: "/etc/redis/redis.conf"
+      from: "# io-threads 4"
+      to: "io-threads $redis_io_threads"
 
   - exec:
       cmd: echo redis installed
