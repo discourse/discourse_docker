@@ -26,15 +26,15 @@ run:
   - exec: socat /dev/null UNIX-CONNECT:/shared/postgres_run/.s.PGSQL.5432 || exit 0 && echo postgres already running stop container ; exit 1
   - exec: rm -fr /shared/postgres_run/.s*
   - exec: rm -fr /shared/postgres_run/*.pid
-  - exec: mkdir -p /shared/postgres_run/12-main.pg_stat_tmp
-  - exec: chown postgres:postgres /shared/postgres_run/12-main.pg_stat_tmp
+  - exec: mkdir -p /shared/postgres_run/13-main.pg_stat_tmp
+  - exec: chown postgres:postgres /shared/postgres_run/13-main.pg_stat_tmp
   - file:
      path: /etc/service/postgres/run
      chmod: "+x"
      contents: |
         #!/bin/sh
         exec 2>&1
-        HOME=/var/lib/postgresql USER=postgres exec thpoff chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/12/bin/postmaster -D /etc/postgresql/12/main
+        HOME=/var/lib/postgresql USER=postgres exec thpoff chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/13/bin/postmaster -D /etc/postgresql/13/main
 
   - file:
      path: /etc/service/postgres/log/run
@@ -58,8 +58,8 @@ run:
        #!/bin/bash
        PG_MAJOR_OLD=`cat /shared/postgres_data/PG_VERSION`
 
-       if [ ! "12" = "$PG_MAJOR_OLD" ]; then
-         echo Upgrading PostgreSQL from version ${PG_MAJOR_OLD} to 12
+       if [ ! "13" = "$PG_MAJOR_OLD" ]; then
+         echo Upgrading PostgreSQL from version ${PG_MAJOR_OLD} to 13
          free_disk=$(df -P -B1 /shared | tail -n 1 | awk '{print $4}')
          required=$(($(du -sb /shared/postgres_data | awk '{print $1}') * 2))
 
@@ -76,10 +76,10 @@ run:
          fi
 
          rm -fr /shared/postgres_data_new
-         install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/12/bin/initdb -D /shared/postgres_data_new || exit 0
+         install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/13/bin/initdb -D /shared/postgres_data_new || exit 0
          apt-get update
          apt-get install -y postgresql-${PG_MAJOR_OLD}
-         chown -R postgres:postgres /var/lib/postgresql/12
+         chown -R postgres:postgres /var/lib/postgresql/13
          /etc/init.d/postgresql stop
          rm -fr /shared/postgres_data/postmaster.pid
          cd ~postgres
@@ -87,13 +87,13 @@ run:
          echo  >> /shared/postgres_data/postgresql.conf
          echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
          SUCCESS=true
-         sudo -u postgres /usr/lib/postgresql/12/bin/pg_upgrade -d /shared/postgres_data -D /shared/postgres_data_new -b /usr/lib/postgresql/${PG_MAJOR_OLD}/bin -B /usr/lib/postgresql/12/bin || SUCCESS=false
+         sudo -u postgres /usr/lib/postgresql/13/bin/pg_upgrade -d /shared/postgres_data -D /shared/postgres_data_new -b /usr/lib/postgresql/${PG_MAJOR_OLD}/bin -B /usr/lib/postgresql/13/bin || SUCCESS=false
 
          if [[ "$SUCCESS" == 'false' ]]; then
            echo -------------------------------------------------------------------------------------
            echo UPGRADE OF POSTGRES FAILED
            echo
-           echo Please visit https://meta.discourse.org/t/postgresql-12-update/151236 for support
+           echo Please visit https://meta.discourse.org/t/postgresql-13-update/151236 for support
            echo
            echo You can run "./launcher start app" to restart your app in the meanwhile
            echo
@@ -118,8 +118,8 @@ run:
 
   - exec:
       cmd:
-        - chown -R root /var/lib/postgresql/12/main
-        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/12/bin/initdb -D /shared/postgres_data || exit 0"
+        - chown -R root /var/lib/postgresql/13/main
+        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/13/bin/initdb -D /shared/postgres_data || exit 0"
         - chown -R postgres:postgres /shared/postgres_data
         - chown -R postgres:postgres /var/run/postgresql
 
@@ -127,37 +127,37 @@ run:
   - exec: rm /root/upgrade_postgres
 
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
-      from: "data_directory = '/var/lib/postgresql/12/main'"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
+      from: "data_directory = '/var/lib/postgresql/13/main'"
       to: "data_directory = '/shared/postgres_data'"
 
   # listen on all interfaces
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?listen_addresses *=.*/
       to: "listen_addresses = '*'"
 
   # sync commit off is faster and less spiky, also marginally less safe
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?synchronous_commit *=.*/
       to: "synchronous_commit = $db_synchronous_commit"
 
   # default is 128MB which is way too small
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?shared_buffers *=.*/
       to: "shared_buffers = $db_shared_buffers"
 
   # default is 1MB which is too small
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?work_mem *=.*/
       to: "work_mem = $db_work_mem"
 
   # allow for other
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?default_text_search_config *=.*/
       to: "default_text_search_config = '$db_default_text_search_config'"
 
@@ -167,36 +167,36 @@ run:
         - install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
 
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?checkpoint_segments *=.*/
       to: "checkpoint_segments = $db_checkpoint_segments"
 
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?logging_collector *=.*/
       to: "logging_collector = $db_logging_collector"
 
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?log_min_duration_statement *=.*/
       to: "log_min_duration_statement = $db_log_min_duration_statement"
 
   - replace:
-      filename: "/etc/postgresql/12/main/pg_hba.conf"
+      filename: "/etc/postgresql/13/main/pg_hba.conf"
       from: /^#local +replication +postgres +peer$/
       to: "local replication postgres  peer"
 
   # allow all to connect in with md5 auth
   - replace:
-      filename: "/etc/postgresql/12/main/pg_hba.conf"
-      from: /^host.*all.*all.*127.*$/
+      filename: "/etc/postgresql/13/main/pg_hba.conf"
+      from: /^host.*all.*all.*137.*$/
       to: "host all all 0.0.0.0/0 md5"
 
   - exec:
       background: true
       # use fast shutdown for pg
       stop_signal: INT
-      cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/12/bin/postmaster -D /etc/postgresql/12/main
+      cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/13/bin/postmaster -D /etc/postgresql/13/main
 
   # give db a few secs to start up
   - exec: "sleep 5"
