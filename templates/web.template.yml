@@ -169,7 +169,8 @@ run:
       cd: $home
       hook: assets_precompile
       cmd:
-        - su discourse -c 'bundle exec rake assets:precompile'
+        - su discourse -c 'bundle exec rake themes:update assets:precompile'
+
   - file:
      path: /usr/local/bin/discourse
      chmod: +x
