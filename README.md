@@ -118,7 +118,7 @@ Setting environment variables to the current container.
 
 env:
   DISCOURSE_DB_HOST: some-host
-  DISCOURSE_DB_NAME: {{config}}_discourse
+  DISCOURSE_DB_NAME: "{{config}}_discourse"
 ```
 
 The above will add `-e DISCOURSE_DB_HOST=some-host -e DISCOURSE_DB_NAME=app_discourse` to the options when running the container.
@@ -129,8 +129,8 @@ The above will add `-e DISCOURSE_DB_HOST=some-host -e DISCOURSE_DB_NAME=app_disc
 # app.yml
 
 labels:
-  monitor: 'true'
-  app_name: {{config}}_discourse
+  monitor: "true"
+  app_name: "{{config}}_discourse"
 ```
 
 Add labels to the current container. The above will add `--l monitor=true -l app_name=dev_discourse` to the options
