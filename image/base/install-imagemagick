@@ -24,7 +24,8 @@ mkdir -p $WDIR
 cd $WDIR
 
 # Build and install libpng
-wget -O $WDIR/libpng.tar.gz https://prdownloads.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.gz?download
+## wget -O $WDIR/libpng.tar.gz https://prdownloads.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.gz?download ## Link already dead.
+wget -O $WDIR/libpng.tar.gz https://nchc.dl.sourceforge.net/project/libpng/libpng16/$LIBPNG_VERSION/libpng-$LIBPNG_VERSION.tar.gz
 sha256sum $WDIR/libpng.tar.gz
 echo "$LIBPNG_HASH $WDIR/libpng.tar.gz" | sha256sum -c
 
