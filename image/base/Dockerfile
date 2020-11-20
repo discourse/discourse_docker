@@ -72,12 +72,12 @@ RUN mkdir /jemalloc-new && cd /jemalloc-new &&\
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     mkdir /src && cd /src && git clone https://github.com/sstephenson/ruby-build.git &&\
     cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && (ruby-build 2.6.6 /usr/local)
+    cd / && rm -rf /src/ruby-build && (ruby-build 2.7.2 /usr/local)
 
 RUN gem update --system
 
 RUN gem install bundler --force &&\
-    rm -rf /usr/local/share/ri/2.6.6/system &&\
+    rm -rf /usr/local/share/ri/2.7.2/system &&\
     cd / && git clone https://github.com/discourse/pups.git
 
 ADD install-redis /tmp/install-redis
