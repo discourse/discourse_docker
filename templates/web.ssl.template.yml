@@ -12,11 +12,24 @@ run:
        }
        server {
   - replace:
-     hook: ssl
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /listen 80;\s+gzip on;/m
      to: |
        listen 443 ssl http2;
+       SSL_TEMPLATE_SSL_BLOCK
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /listen 80;\s+listen \[::\]:80;\s+gzip on;/m
+     to: |
+       listen 443 ssl http2;
+       listen [::]:443 ssl http2;
+       SSL_TEMPLATE_SSL_BLOCK
+  - replace:
+     hook: ssl
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /SSL_TEMPLATE_SSL_BLOCK/
+     to: |
+
        ssl_protocols TLSv1.2 TLSv1.3;
        ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
        ssl_prefer_server_ciphers off;
