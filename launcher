@@ -20,6 +20,7 @@ usage () {
   echo "    --docker-args              Extra arguments to pass when running docker"
   echo "    --skip-mac-address         Don't assign a mac address"
   echo "    --run-image                Override the image used for running the container"
+  echo "    --base-image               Override the base image used for the container"
   exit 1
 }
 
@@ -36,6 +37,7 @@ user_args_argv=""
 user_args=""
 
 user_run_image=""
+user_base_image=""
 
 if [[ $command == "run" ]]; then
   run_command=$3
@@ -59,6 +61,10 @@ while [ ${#} -gt 0 ]; do
     ;;
   --run-image)
     user_run_image="$2"
+    shift
+    ;;
+  --base-image)
+    user_base_image="$2"
     shift
     ;;
   esac
@@ -90,7 +96,12 @@ git_rec_version='1.8.0'
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
+
 image="discourse/base:2.0.20201125-2246"
+if [ -n "$user_base_image" ]; then
+  image=$user_base_image
+fi
+
 docker_path=`which docker.io 2> /dev/null || which docker`
 git_path=`which git`
 
