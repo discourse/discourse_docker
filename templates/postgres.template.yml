@@ -67,7 +67,7 @@ run:
           echo "WARNING: Upgrading PostgresSQL would require an addtional $(numfmt --to=si $(($required - $free_disk))) of disk space"
           echo "Please free up some space, or expand your disk, before continuing."
           echo ''
-          echo 'To avoid upgrading change "templates/postgres.template.yml" TO "templates/postgres.10.template.yml" in containers/app.yml'
+          echo 'To avoid upgrading change "templates/postgres.template.yml" TO "templates/postgres.12.template.yml" in containers/app.yml'
           exit 1
          fi
 
