@@ -93,8 +93,7 @@ run:
            echo -------------------------------------------------------------------------------------
            echo UPGRADE OF POSTGRES FAILED
            echo
-           # TODO(mfp): update this link
-           echo Please visit ...
+           echo Please visit https://meta.discourse.org/t/postgresql-13-update/172563 for support.
            echo
            echo You can run "./launcher start app" to restart your app in the meanwhile
            echo
