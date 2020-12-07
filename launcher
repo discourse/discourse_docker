@@ -524,7 +524,7 @@ run_stop() {
      then
        (
         set -x
-        $docker_path stop -t 10 $config
+        $docker_path stop -t 30 $config
        )
      else
        echo "$config was not started !"
