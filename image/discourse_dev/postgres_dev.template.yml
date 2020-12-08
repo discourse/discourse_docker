@@ -1,12 +1,12 @@
 run:
 
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?fullpage_writes *=.*/
       to: "fullpage_writes = off"
 
   - replace:
-      filename: "/etc/postgresql/12/main/postgresql.conf"
+      filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?fsync *=.*/
       to: "fsync = off"
 
@@ -14,7 +14,7 @@ run:
       background: true
       # use fast shutdown for pg
       stop_signal: INT
-      cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/12/bin/postmaster -D /etc/postgresql/12/main
+      cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/13/bin/postmaster -D /etc/postgresql/13/main
 
   - exec:
       background: true
