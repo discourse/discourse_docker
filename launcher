@@ -240,7 +240,7 @@ check_prereqs() {
     df -h $safe_folder
     echo
     if tty >/dev/null; then
-      read -p "Would you like to attempt to recover space by cleaning docker images and containers in the system?(y/N)" -n 1 -r
+      read -p "Would you like to attempt to recover space by cleaning docker images and containers in the system? (y/N)" -n 1 -r
       echo
       if [[ $REPLY =~ ^[Yy]$ ]]
       then
@@ -486,7 +486,7 @@ fi
   if [ -d /var/discourse/shared/standalone/postgres_data_old ]; then
     echo
     echo "Old PostgreSQL backup data cluster detected taking up $(du -hs /var/discourse/shared/standalone/postgres_data_old | awk '{print $1}') detected"
-    read -p "Would you like to remove it? (Y/n): " -n 1 -r && echo
+    read -p "Would you like to remove it? (y/N): " -n 1 -r && echo
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       echo "removing old PostgreSQL data cluster at /var/discourse/shared/standalone/postgres_data_old..."
