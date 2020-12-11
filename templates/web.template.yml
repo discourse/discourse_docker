@@ -89,6 +89,7 @@ run:
         - git reset --hard
         - git clean -f
         - git remote set-branches --add origin master
+        - git pull
         - git remote set-branches origin $version
         - git fetch --depth 1 origin $version
         - git checkout $version
