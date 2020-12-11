@@ -86,12 +86,12 @@ run:
       cd: $home
       hook: code
       cmd:
+        - git reset --hard
+        - git clean -f
         - git remote set-branches --add origin master
         - git remote set-branches origin $version
         - git fetch --depth 1 origin $version
         - git checkout $version
-        - git reset --hard origin $version
-        - git clean -f
         - mkdir -p tmp
         - chown discourse:www-data tmp
         - mkdir -p tmp/pids
