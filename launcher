@@ -258,37 +258,6 @@ if [ -z "$SKIP_PREREQS" ] && [ "$command" != "cleanup" ]; then
   check_prereqs
 fi
 
-host_run() {
-  read -r -d '' env_ruby << 'RUBY'
-  require 'yaml'
-
-  input = STDIN.readlines.join
-  yaml = YAML.load(input)
-
-  if host_run = yaml['host_run']
-    params = yaml['params'] || {}
-    host_run.each do |run|
-      params.each do |k,v|
-        run = run.gsub("$#{k}", v)
-      end
-      STDOUT.write "#{run}--SEP--"
-    end
-  end
-RUBY
-
-  host_run=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e "$env_ruby"`
-
-  while [ "$host_run" ] ; do
-    iter=${host_run%%--SEP--*}
-    echo
-    echo "Host run: $iter"
-    $iter || exit 1
-    echo
-    host_run="${host_run#*--SEP--}"
-  done
-}
-
-
 set_volumes() {
   volumes=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
         "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
@@ -594,8 +563,6 @@ run_start() {
      fi
    fi
 
-   host_run
-
    set_template_info
    set_volumes
    set_links
@@ -663,8 +630,6 @@ run_run() {
 }
 
 run_bootstrap() {
-  host_run
-
   # Is the image available?
   # If not, pull it here so the user is aware what's happening.
   $docker_path history $image >/dev/null 2>&1 || pull_image
