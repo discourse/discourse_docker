@@ -18,7 +18,7 @@ WDIR=/tmp/imagemagick
 
 # Install build deps
 apt -y -q remove imagemagick
-apt -y -q install ghostscript gsfonts pkg-config autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev libde265-dev
+apt -y -q install ghostscript gsfonts pkg-config autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev libde265-dev libwebp-dev
 
 mkdir -p $WDIR
 cd $WDIR
@@ -71,7 +71,8 @@ PKG_CONF_LIBDIR=$PREFIX/lib LDFLAGS=-L$PREFIX/lib CFLAGS=-I$PREFIX/include ./con
           --with-lzma \
           --with-png \
           --with-tiff \
-          --with-heic
+          --with-heic \
+          --with-webp
 make all && make install
 
 cd $HOME
