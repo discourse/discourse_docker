@@ -90,7 +90,7 @@ run:
         - git clean -f
         - git remote set-branches --add origin master
         - git remote set-branches origin $version
-        - git fetch --depth 1 origin $version
+        - git fetch --tags --depth 1 origin $version
         - git checkout $version
         - mkdir -p tmp
         - chown discourse:www-data tmp
