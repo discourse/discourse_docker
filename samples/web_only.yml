@@ -69,6 +69,10 @@ env:
   ## The http or https CDN address for this Discourse instance (configured to pull)
   ## see https://meta.discourse.org/t/14857 for details
   #DISCOURSE_CDN_URL: https://discourse-cdn.example.com
+  
+  ## The maxmind geolocation IP address key for IP address lookup
+  ## see https://meta.discourse.org/t/-/137387/23 for details
+  #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456
 
 volumes:
   - volume:
