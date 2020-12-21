@@ -8,7 +8,6 @@ ENV RAILS_ENV production
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
-ENV IMAGE_VERSION 2.0.`date +%Y%m%d`
 RUN echo 2.0.`date +%Y%m%d` > /VERSION
 
 RUN apt update && apt install -y gnupg sudo curl
