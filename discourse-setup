@@ -513,7 +513,7 @@ ask_user_for_config() {
 
     read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
     local maxmind_license_key=$read_config_result
-    read -p "Optional Maxmind License key [$maxmind_license_key]: " new_value
+    read -p "Optional Maxmind License key ($maxmind_status) [$maxmind_license_key]: " new_value
     if [ ! -z "$new_value" ]
     then
         maxmind_license_key="$new_value"
@@ -667,14 +667,17 @@ ask_user_for_config() {
   fi
 
     echo
-    echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
-    sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
-    if [ -s $changelog ]
+    if [ $maxmind_license_key != "1234567890123456" ]
     then
-      rm $changelog
-    else
-      echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
-      update_ok="n"
+      echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
+      sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
+      if [ -s $changelog ]
+      then
+        rm $changelog
+      else
+        echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
+        update_ok="n"
+      fi
     fi
 
   if [ "$update_ok" == "y" ]
