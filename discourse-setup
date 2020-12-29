@@ -279,6 +279,15 @@ check_ports() {
 ##
 check_port() {
 
+  if ! command -v netstat &> /dev/null
+  then
+    echo "netstat not found. Port check skipped."
+    echo "You should verify that no other processes are using ports 80 or 443"
+    echo "Install netstat with something like "
+    echo "    apt install net-tools"
+    return
+  fi
+  
   local valid=$(netstat -tln | awk '{print $4}' | grep ":${1}\$")
 
   if [ -n "$valid" ]; then
@@ -314,6 +323,17 @@ read_default() {
   config_line=`egrep "^  #?$1:" samples/standalone.yml`
   read_default_result=`echo $config_line | awk  -F":" '{print $2}'`
   read_default_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
+}
+
+assert_maxmind_license_key() {
+  echo "Assert maxmind license key for $web_file"
+  if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file
+  then
+    echo "Adding DISCOURSE_MAXMIND_LICENSE_KEY to $web_file"
+    sed -i -e 's/LETSENCRYPT_ACCOUNT_EMAIL/a\ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' $web_file 
+  else
+    echo "Have maxmind already"
+  fi
 }
 
 ##
@@ -352,6 +372,20 @@ ask_user_for_config() {
     local letsencrypt_status="Enter 'OFF' to disable."
   fi
 
+  read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
+  local maxmind_license_key=$read_config_result
+  if [ -z $maxmind_license_key ]
+  then
+      maxmind_license_key="1234567890123456"
+  fi
+  if [ "$maxmind_license_key" == "1234567890123456" ]
+  then 
+      local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
+  else
+      local maxmind_status="Enter 'NONE' to disable."
+  fi
+
+
   read_config "DISCOURSE_HOSTNAME"
   hostname=$read_config_result
 
@@ -379,7 +413,7 @@ ask_user_for_config() {
       fi
     fi
 
-    check_IP_match $hostname
+#    check_IP_match $hostname 
 
     if [ ! -z "$developer_emails" ]
     then
@@ -457,6 +491,14 @@ ask_user_for_config() {
       fi
     fi
 
+    read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
+    local maxmind_license_key=$read_config_result
+    read -p "Optional Maxmind License key [$maxmind_license_key]: " new_value
+    if [ ! -z "$new_value" ]
+    then
+        maxmind_license_key="$new_value"
+    fi
+
     echo -e "\nDoes this look right?\n"
     echo "Hostname      : $hostname"
     echo "Email         : $developer_emails"
@@ -470,6 +512,7 @@ ask_user_for_config() {
       echo "Let's Encrypt : $letsencrypt_account_email"
     fi
 
+    echo "Maxmind license: $maxmind_license_key"
 
     echo ""
     read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
@@ -576,7 +619,7 @@ ask_user_for_config() {
     sed -i -e "s/$src/$dst/w $changelog" $web_file
     if [ -s $changelog ]
     then
-  echo "web.ssl.template.yml enabled"
+      echo "web.ssl.template.yml enabled"
     else
       update_ok="n"
       echo "web.ssl.template.yml NOT ENABLED--was it on already?"
@@ -591,6 +634,17 @@ ask_user_for_config() {
     else
       update_ok="n"
       echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
+    fi
+
+    echo
+    echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
+    sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
+      update_ok="n"
     fi
 
   if [ "$update_ok" == "y" ]
@@ -611,7 +665,7 @@ validate_config() {
   valid_config="y"
 
   for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
-           DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
+           DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME 
   do
     read_config $x
     local result=$read_config_result
@@ -674,6 +728,7 @@ fi
 check_root
 check_and_install_docker
 check_disk_and_memory
+assert_maxmind_license_key
 
 if [ -a "$web_file" ]
 then
