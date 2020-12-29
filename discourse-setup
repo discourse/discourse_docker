@@ -278,6 +278,15 @@ check_ports() {
 ##
 check_port() {
 
+  if ! command -v netstat &> /dev/null
+  then
+    echo "netstat not found. Port check skipped."
+    echo "You should verify that no other processes are using ports 80 or 443"
+    echo "Install netstat with something like "
+    echo "    apt install net-tools"
+    return
+  fi
+  
   local valid=$(netstat -tln | awk '{print $4}' | grep ":${1}\$")
 
   if [ -n "$valid" ]; then
@@ -410,7 +419,7 @@ ask_user_for_config() {
       fi
     fi
 
-    check_IP_match $hostname
+#    check_IP_match $hostname 
 
     if [ ! -z "$developer_emails" ]
     then
@@ -504,10 +513,10 @@ ask_user_for_config() {
 
     read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
     local maxmind_license_key=$read_config_result
-    read -p "Optional Maxmind License key ($maxmind_status) [$maxmind_license_key]: " new_value
+    read -p "Optional Maxmind License key [$maxmind_license_key]: " new_value
     if [ ! -z "$new_value" ]
     then
-      maxmind_license_key="$new_value"
+        maxmind_license_key="$new_value"
     fi
 
     echo -e "\nDoes this look right?\n"
@@ -622,35 +631,26 @@ ask_user_for_config() {
   fi
 
   echo "Enabling Let's Encrypt"
-  sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    rm $changelog
-  else
-    echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
-    update_ok="n"
-  fi
-  local src='^  #\?- "templates\/web.ssl.template.yml"'
-  local dst='  \- "templates\/web.ssl.template.yml"'
-  sed -i -e "s/$src/$dst/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    echo "web.ssl.template.yml enabled"
-  else
-    update_ok="n"
-    echo "web.ssl.template.yml NOT ENABLED--was it on already?"
-  fi
-  local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
-  local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
-
-  sed -i -e "s/$src/$dst/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    echo "letsencrypt.ssl.template.yml enabled"
-  else
-    update_ok="n"
-    echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
-  fi
+    sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
+      update_ok="n"
+    fi
+    local src='^  #\?- "templates\/web.ssl.template.yml"'
+    local dst='  \- "templates\/web.ssl.template.yml"'
+    sed -i -e "s/$src/$dst/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      echo "web.ssl.template.yml enabled"
+    else
+      update_ok="n"
+      echo "web.ssl.template.yml NOT ENABLED--was it on already?"
+    fi
+    local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
+    local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
 
   echo
   if [ $maxmind_license_key != "1234567890123456" ]
@@ -665,6 +665,17 @@ ask_user_for_config() {
       update_ok="n"
     fi
   fi
+
+    echo
+    echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
+    sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
+      update_ok="n"
+    fi
 
   if [ "$update_ok" == "y" ]
   then
@@ -684,7 +695,7 @@ validate_config() {
   valid_config="y"
 
   for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
-                                  DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
+           DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME 
   do
     read_config $x
     local result=$read_config_result
@@ -747,6 +758,7 @@ changelog=/tmp/changelog
 check_root
 check_and_install_docker
 check_disk_and_memory
+assert_maxmind_license_key
 
 if [ -a "$web_file" ]
 then
