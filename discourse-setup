@@ -381,10 +381,7 @@ ask_user_for_config() {
   if [ "$maxmind_license_key" == "1234567890123456" ]
   then 
       local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
-  else
-      local maxmind_status="Enter 'NONE' to disable."
   fi
-
 
   read_config "DISCOURSE_HOSTNAME"
   hostname=$read_config_result
@@ -493,7 +490,7 @@ ask_user_for_config() {
 
     read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
     local maxmind_license_key=$read_config_result
-    read -p "Optional Maxmind License key [$maxmind_license_key]: " new_value
+    read -p "Optional Maxmind License key ($maxmind_status) [$maxmind_license_key]: " new_value
     if [ ! -z "$new_value" ]
     then
         maxmind_license_key="$new_value"
@@ -512,7 +509,12 @@ ask_user_for_config() {
       echo "Let's Encrypt : $letsencrypt_account_email"
     fi
 
-    echo "Maxmind license: $maxmind_license_key"
+    if [ "$maxmind_license_key" != "1234567890123456" ]
+    then
+      echo "Maxmind license: $maxmind_license_key"
+    else
+	    echo "Maxmind license: (unset)"
+    fi
 
     echo ""
     read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
@@ -637,14 +639,17 @@ ask_user_for_config() {
     fi
 
     echo
-    echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
-    sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
-    if [ -s $changelog ]
+    if [ $maxmind_license_key != "1234567890123456" ]
     then
-      rm $changelog
-    else
-      echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
-      update_ok="n"
+      echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
+      sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
+      if [ -s $changelog ]
+      then
+        rm $changelog
+      else
+        echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
+        update_ok="n"
+      fi
     fi
 
   if [ "$update_ok" == "y" ]
