@@ -388,8 +388,10 @@ ask_user_for_config() {
     maxmind_license_key="1234567890123456"
   fi
   if [ "$maxmind_license_key" == "1234567890123456" ]
-  then
-    local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
+  then 
+      local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
+  else
+      local maxmind_status="Removing a key requires editing yml by hand"
   fi
 
   read_config "DISCOURSE_HOSTNAME"
