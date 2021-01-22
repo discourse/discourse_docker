@@ -326,13 +326,11 @@ read_default() {
 }
 
 assert_maxmind_license_key() {
-  echo "Assert maxmind license key for $web_file"
+  echo "Checking if $web_file has MAXMIND placeholder."
   if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file
   then
-    echo "Adding DISCOURSE_MAXMIND_LICENSE_KEY to $web_file"
+    echo "Adding MAXMIND placeholder to $web_file"
     sed -i -e 's/LETSENCRYPT_ACCOUNT_EMAIL/a\ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' $web_file 
-  else
-    echo "Have maxmind already"
   fi
 }
 
