@@ -414,11 +414,25 @@ ask_user_for_config() {
 
     if [ ! -z "$developer_emails" ]
     then
-      read -p "Email address for admin account(s)? [$developer_emails]: " new_value
-      if [ ! -z "$new_value" ]
-      then
-          developer_emails="$new_value"
-      fi
+      local email_valid="n"
+      until [ "$email_valid" == "y" ]
+      do
+        read -p "Email address for admin account(s)? [$developer_emails]: " new_value
+        if [ ! -z "$new_value" ]
+        then
+          if [[ ${#new_value} -ge 7 && $new_value == *@* ]]
+          then
+            developer_emails="$new_value"
+            email_valid="y"
+          else
+            echo
+            echo "[Error] Invalid email address"
+            echo
+          fi
+        else
+          email_valid="y"
+        fi
+      done
     fi
 
     if [ ! -z "$smtp_address" ]
