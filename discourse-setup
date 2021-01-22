@@ -379,7 +379,7 @@ ask_user_for_config() {
     maxmind_license_key="1234567890123456"
   fi
   if [ "$maxmind_license_key" == "1234567890123456" ]
-  then 
+  then
       local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
   fi
 
@@ -675,7 +675,7 @@ validate_config() {
   valid_config="y"
 
   for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
-           DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME 
+           DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
   do
     read_config $x
     local result=$read_config_result
