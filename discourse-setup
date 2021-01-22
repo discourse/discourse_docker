@@ -279,15 +279,6 @@ check_ports() {
 ##
 check_port() {
 
-  if ! command -v netstat &> /dev/null
-  then
-    echo "netstat not found. Port check skipped."
-    echo "You should verify that no other processes are using ports 80 or 443"
-    echo "Install netstat with something like "
-    echo "    apt install net-tools"
-    return
-  fi
-  
   local valid=$(netstat -tln | awk '{print $4}' | grep ":${1}\$")
 
   if [ -n "$valid" ]; then
