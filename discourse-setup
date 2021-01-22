@@ -666,20 +666,6 @@ ask_user_for_config() {
     fi
   fi
 
-    echo
-    if [ $maxmind_license_key != "1234567890123456" ]
-    then
-      echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
-      sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
-      if [ -s $changelog ]
-      then
-        rm $changelog
-      else
-        echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
-        update_ok="n"
-      fi
-    fi
-
   if [ "$update_ok" == "y" ]
   then
     echo -e "\nConfiguration file at $config_file updated successfully!\n"
