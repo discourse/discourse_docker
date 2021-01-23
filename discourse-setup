@@ -316,6 +316,15 @@ read_default() {
   read_default_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
 }
 
+assert_maxmind_license_key() {
+  echo "Checking if $web_file has MAXMIND placeholder."
+  if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file
+  then
+    echo "Adding MAXMIND placeholder to $web_file"
+    sed -i -e 's/LETSENCRYPT_ACCOUNT_EMAIL/a\ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' $web_file
+  fi
+}
+
 ##
 ## prompt user for typical Discourse config file values
 ##
@@ -350,6 +359,17 @@ ask_user_for_config() {
       local letsencrypt_status="ENTER to skip"
   else
     local letsencrypt_status="Enter 'OFF' to disable."
+  fi
+
+  read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
+  local maxmind_license_key=$read_config_result
+  if [ -z $maxmind_license_key ]
+  then
+      maxmind_license_key="1234567890123456"
+  fi
+  if [ "$maxmind_license_key" == "1234567890123456" ]
+  then
+      local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
   fi
 
   read_config "DISCOURSE_HOSTNAME"
@@ -471,6 +491,14 @@ ask_user_for_config() {
       fi
     fi
 
+    read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
+    local maxmind_license_key=$read_config_result
+    read -p "Optional Maxmind License key ($maxmind_status) [$maxmind_license_key]: " new_value
+    if [ ! -z "$new_value" ]
+    then
+        maxmind_license_key="$new_value"
+    fi
+
     echo -e "\nDoes this look right?\n"
     echo "Hostname      : $hostname"
     echo "Email         : $developer_emails"
@@ -484,6 +512,12 @@ ask_user_for_config() {
       echo "Let's Encrypt : $letsencrypt_account_email"
     fi
 
+    if [ "$maxmind_license_key" != "1234567890123456" ]
+    then
+      echo "Maxmind license: $maxmind_license_key"
+    else
+	    echo "Maxmind license: (unset)"
+    fi
 
     echo ""
     read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
@@ -590,7 +624,7 @@ ask_user_for_config() {
     sed -i -e "s/$src/$dst/w $changelog" $web_file
     if [ -s $changelog ]
     then
-  echo "web.ssl.template.yml enabled"
+      echo "web.ssl.template.yml enabled"
     else
       update_ok="n"
       echo "web.ssl.template.yml NOT ENABLED--was it on already?"
@@ -605,6 +639,20 @@ ask_user_for_config() {
     else
       update_ok="n"
       echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
+    fi
+
+    echo
+    if [ $maxmind_license_key != "1234567890123456" ]
+    then
+      echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
+      sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
+      if [ -s $changelog ]
+      then
+        rm $changelog
+      else
+        echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
+        update_ok="n"
+      fi
     fi
 
   if [ "$update_ok" == "y" ]
@@ -688,6 +736,7 @@ fi
 check_root
 check_and_install_docker
 check_disk_and_memory
+assert_maxmind_license_key
 
 if [ -a "$web_file" ]
 then
