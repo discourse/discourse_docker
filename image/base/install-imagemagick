@@ -18,11 +18,8 @@ WDIR=/tmp/imagemagick
 # Install build deps
 apt -y -q remove imagemagick
 apt -y -q install git make gcc pkg-config autoconf curl g++ \
-    # libaom
     yasm cmake \
-    # libheif
     libde265-0 libde265-dev libjpeg62-turbo libjpeg62-turbo-dev x265 libx265-dev libtool \
-    # IM
     libpng16-16 libpng-dev libjpeg62-turbo libjpeg62-turbo-dev libwebp6 libwebp-dev libgomp1 libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils
 
 mkdir -p $WDIR
