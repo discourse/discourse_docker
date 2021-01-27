@@ -93,9 +93,6 @@ RUN ruby -Eutf-8 -e "v = \`convert -version\`; %w{png tiff jpeg freetype heic}.e
 ADD install-pngcrush /tmp/install-pngcrush
 RUN /tmp/install-pngcrush
 
-ADD install-gifsicle /tmp/install-gifsicle
-RUN /tmp/install-gifsicle
-
 ADD install-pngquant /tmp/install-pngquant
 RUN /tmp/install-pngquant
 
