@@ -40,7 +40,7 @@ RUN apt -y install build-essential rsync \
                        anacron wget \
                        psmisc vim whois brotli libunwind-dev \
                        libtcmalloc-minimal4 cmake \
-                       pngcrush
+                       pngcrush pngquant
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
 RUN sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf
@@ -90,9 +90,6 @@ RUN /tmp/install-imagemagick
 
 # Validate install
 RUN ruby -Eutf-8 -e "v = \`convert -version\`; %w{png tiff jpeg freetype heic}.each { |f| unless v.include?(f); STDERR.puts('no ' + f +  ' support in imagemagick'); exit(-1); end }"
-
-ADD install-pngquant /tmp/install-pngquant
-RUN /tmp/install-pngquant
 
 # This tool allows us to disable huge page support for our current process
 # since the flag is preserved through forks and execs it can be used on any
