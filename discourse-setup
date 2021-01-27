@@ -320,7 +320,7 @@ assert_maxmind_license_key() {
   if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file
   then
     echo "Adding MAXMIND placeholder to $web_file"
-    sed -i '/^.*LETSENCRYPT_ACCOUNT_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' containers/app.yml
+    sed -i '/^.*LETSENCRYPT_ACCOUNT_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' $web_file
   fi
 }
 
