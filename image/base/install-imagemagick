@@ -7,10 +7,13 @@ IMAGE_MAGICK_HASH="0daabb64602164940fbf95cbd6f16709903eef5d3eee7bd329da878f17605
 
 # version check: https://github.com/strukturag/libheif/releases
 LIBHEIF_VERSION="1.10.0"
-LIBHEIF_HASH="ad5af1276f341277dc537b0d19a4193e0833c247b2aacb936e0c5494141533ae"
+LIBHEIF_HASH="317a44bf157ba297638ab5a258040ef6ec4895d620cd58f52195f3f89c9eea28"
 
 # version check: https://aomedia.googlesource.com/aom
 LIB_AOM_VERSION="2.0.1"
+
+# We use debian, but GitHub CI is stuck on Ubuntu Bionic, so this must be compatible with both
+LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo libjpeg62-turbo-dev' || echo 'libjpeg-turbo8 libjpeg-turbo8-dev')
 
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
@@ -19,8 +22,8 @@ WDIR=/tmp/imagemagick
 apt -y -q remove imagemagick
 apt -y -q install git make gcc pkg-config autoconf curl g++ \
     yasm cmake \
-    libde265-0 libde265-dev libjpeg62-turbo libjpeg62-turbo-dev x265 libx265-dev libtool \
-    libpng16-16 libpng-dev libjpeg62-turbo libjpeg62-turbo-dev libwebp6 libwebp-dev libgomp1 libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils
+    libde265-0 libde265-dev ${LIBJPEGTURBO} x265 libx265-dev libtool \
+    libpng16-16 libpng-dev ${LIBJPEGTURBO} libwebp6 libwebp-dev libgomp1 libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils
 
 mkdir -p $WDIR
 cd $WDIR
