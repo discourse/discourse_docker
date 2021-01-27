@@ -2,37 +2,42 @@
 set -e
 
 # version check: https://github.com/ImageMagick/ImageMagick/releases
-IMAGE_MAGICK_VERSION="7.0.10-24"
-IMAGE_MAGICK_HASH="c555b4724127f9993500c9a7bab148e6075a7397957516b9e0dd9faa02d5c98e"
-
-# version check: https://libpng.sourceforge.io/index.html
-LIBPNG_VERSION="1.6.37"
-LIBPNG_HASH="daeb2620d829575513e35fecc83f0d3791a620b9b93d800b763542ece9390fb4"
+IMAGE_MAGICK_VERSION="7.0.10-58"
+IMAGE_MAGICK_HASH="0daabb64602164940fbf95cbd6f16709903eef5d3eee7bd329da878f17605df5"
 
 # version check: https://github.com/strukturag/libheif/releases
-LIBHEIF_VERSION="1.7.0"
-LIBHEIF_HASH="11645cf2536f779be82ba9c25854fb7211b0ac30458f4764f1f7de88763deb21"
+LIBHEIF_VERSION="1.10.0"
+LIBHEIF_HASH="ad5af1276f341277dc537b0d19a4193e0833c247b2aacb936e0c5494141533ae"
+
+# version check: https://aomedia.googlesource.com/aom
+LIB_AOM_VERSION="2.0.1"
 
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
 
 # Install build deps
 apt -y -q remove imagemagick
-apt -y -q install ghostscript gsfonts pkg-config autoconf libbz2-dev libjpeg-dev libtiff-dev libfreetype6-dev libde265-dev libwebp-dev
+apt -y -q install git make gcc pkg-config autoconf curl g++ \
+    # libaom
+    yasm cmake \
+    # libheif
+    libde265-0 libde265-dev libjpeg62-turbo libjpeg62-turbo-dev x265 libx265-dev libtool \
+    # IM
+    libpng16-16 libpng-dev libjpeg62-turbo libjpeg62-turbo-dev libwebp6 libwebp-dev libgomp1 libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils
 
 mkdir -p $WDIR
 cd $WDIR
 
-# Build and install libpng
-wget -O $WDIR/libpng.tar.gz https://prdownloads.sourceforge.net/libpng/libpng-$LIBPNG_VERSION.tar.gz?download
-sha256sum $WDIR/libpng.tar.gz
-echo "$LIBPNG_HASH $WDIR/libpng.tar.gz" | sha256sum -c
-
-tar -xzvf $WDIR/libpng.tar.gz
-cd $WDIR/libpng-$LIBPNG_VERSION
-
-./configure --prefix=$PREFIX
-make all && make install
+# Building libaom
+git clone https://aomedia.googlesource.com/aom
+cd aom && git checkout v${LIB_AOM_VERSION} && cd ..
+mkdir build_aom
+cd build_aom
+cmake ../aom/ -DENABLE_TESTS=0 -DBUILD_SHARED_LIBS=1 && make && make install
+ldconfig /usr/local/lib
+cd ..
+rm -rf aom
+rm -rf build_aom
 
 # Build and install libheif
 cd $WDIR
