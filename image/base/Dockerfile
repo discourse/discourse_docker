@@ -26,7 +26,7 @@ ENV LANGUAGE en_US.UTF-8
 RUN curl https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
-RUN curl --silent --location https://deb.nodesource.com/setup_10.x | sudo bash -
+RUN curl --silent --location https://deb.nodesource.com/setup_14.x | sudo bash -
 RUN apt -y update
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
