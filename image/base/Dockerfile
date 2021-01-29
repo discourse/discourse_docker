@@ -26,7 +26,7 @@ ENV LANGUAGE en_US.UTF-8
 RUN curl https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
-RUN curl --silent --location https://deb.nodesource.com/setup_10.x | sudo bash -
+RUN curl --silent --location https://deb.nodesource.com/setup_14.x | sudo bash -
 RUN apt -y update
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
@@ -39,7 +39,8 @@ RUN apt -y install build-essential rsync \
                        postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
                        anacron wget \
                        psmisc vim whois brotli libunwind-dev \
-                       libtcmalloc-minimal4 cmake
+                       libtcmalloc-minimal4 cmake \
+                       pngcrush pngquant
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
 RUN sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf
@@ -89,15 +90,6 @@ RUN /tmp/install-imagemagick
 
 # Validate install
 RUN ruby -Eutf-8 -e "v = \`convert -version\`; %w{png tiff jpeg freetype heic}.each { |f| unless v.include?(f); STDERR.puts('no ' + f +  ' support in imagemagick'); exit(-1); end }"
-
-ADD install-pngcrush /tmp/install-pngcrush
-RUN /tmp/install-pngcrush
-
-ADD install-gifsicle /tmp/install-gifsicle
-RUN /tmp/install-gifsicle
-
-ADD install-pngquant /tmp/install-pngquant
-RUN /tmp/install-pngquant
 
 # This tool allows us to disable huge page support for our current process
 # since the flag is preserved through forks and execs it can be used on any

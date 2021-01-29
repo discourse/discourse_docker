@@ -8,13 +8,6 @@ HASH="4c373e7ab5bf91d34a4f11a0c9496561061ba5eee6020db272a17a7228d35f99"
 apt install -y autoconf
 
 cd /tmp
-git clone https://github.com/bagder/libbrotli
-cd libbrotli
-./autogen.sh
-./configure
-make install
-
-cd /tmp
 curl -O https://nginx.org/download/nginx-$VERSION.tar.gz
 sha256sum nginx-$VERSION.tar.gz
 echo "$HASH nginx-$VERSION.tar.gz" | sha256sum -c
