@@ -26,9 +26,9 @@ connect_to_port () {
     while true; do
       read -p "Would you like to continue without this check? [yn] " yn
       case $yn in
-      [Yy]*) return 2 ;;
-      [Nn]*) exit ;;
-      *) echo "Please answer y or n." ;;
+        [Yy]*) return 2 ;;
+        [Nn]*) exit ;;
+        *) echo "Please answer y or n." ;;
       esac
     done
   else
@@ -185,7 +185,6 @@ check_disk_and_memory() {
     fi
   fi
 
-
   free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
   if [ "$free_disk" -lt 5000 ]; then
     echo "WARNING: Discourse requires at least 5GB free disk space. This system"
@@ -256,8 +255,8 @@ scale_ram_and_cpu() {
   sed -i -e "s/^  #\?UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $web_file
   if [ -s $changelog ]
   then
-      echo "setting UNICORN_WORKERS = ${unicorn_workers}"
-      rm $changelog
+    echo "setting UNICORN_WORKERS = ${unicorn_workers}"
+    rm $changelog
   fi
 
   echo $data_file memory parameters updated.
@@ -268,9 +267,9 @@ scale_ram_and_cpu() {
 ## standard http / https ports must not be occupied
 ##
 check_ports() {
-    check_port "80"
-    check_port "443"
-    echo "Ports 80 and 443 are free for use"
+  check_port "80"
+  check_port "443"
+  echo "Ports 80 and 443 are free for use"
 }
 
 
@@ -317,11 +316,23 @@ read_default() {
 }
 
 assert_maxmind_license_key() {
-  echo "Checking if $web_file has MAXMIND placeholder."
-  if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file
+  if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file >/dev/null 2>&1
   then
     echo "Adding MAXMIND placeholder to $web_file"
-    sed -i -e 's/LETSENCRYPT_ACCOUNT_EMAIL/a\ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' $web_file
+    sed -i '/^.*LETSENCRYPT_ACCOUNT_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' $web_file
+  fi
+  if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file >/dev/null 2>&1
+  then
+    cat <<EOF
+
+    Adding DISCOURSE_MAXMIND_LICENSE_KEY to $web_file has failed! This
+    indicates either that your $web_file is very old or otherwise not
+    what the script expects or that there is a bug in this script. The
+    best solution for a novice is to delete $web_file and start over.
+    An expert might prefer to edit $web_file by hand.
+
+EOF
+    read -p "Press return to continue or control-c to quit..."
   fi
 }
 
@@ -346,17 +357,17 @@ ask_user_for_config() {
   local smtp_user_name=$read_config_result
   if [ "$smtp_password" = "pa$$word" ]
   then
-      smtp_password = ""
+    smtp_password = ""
   fi
   read_config "LETSENCRYPT_ACCOUNT_EMAIL"
   local letsencrypt_account_email=$read_config_result
   if [ -z $letsencrypt_account_email ]
   then
-      letsencrypt_account_email="me@example.com"
+    letsencrypt_account_email="me@example.com"
   fi
   if [ "$letsencrypt_account_email" = "me@example.com" ]
   then
-      local letsencrypt_status="ENTER to skip"
+    local letsencrypt_status="ENTER to skip"
   else
     local letsencrypt_status="Enter 'OFF' to disable."
   fi
@@ -365,11 +376,11 @@ ask_user_for_config() {
   local maxmind_license_key=$read_config_result
   if [ -z $maxmind_license_key ]
   then
-      maxmind_license_key="1234567890123456"
+    maxmind_license_key="1234567890123456"
   fi
   if [ "$maxmind_license_key" == "1234567890123456" ]
   then
-      local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
+    local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
   fi
 
   read_config "DISCOURSE_HOSTNAME"
@@ -388,7 +399,7 @@ ask_user_for_config() {
       read -p "Hostname for your Discourse? [$hostname]: " new_value
       if [ ! -z "$new_value" ]
       then
-          hostname="$new_value"
+        hostname="$new_value"
       fi
       if [[ $hostname =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]
       then
@@ -453,11 +464,11 @@ ask_user_for_config() {
       fi
       if [ "$smtp_address" == "smtp.sendgrid.net" ]
       then
-  	    smtp_user_name="apikey"
+  	smtp_user_name="apikey"
       fi
       if [ "$smtp_address" == "smtp.mailgun.org" ]
       then
-  	    smtp_user_name="postmaster@$hostname"
+  	smtp_user_name="postmaster@$hostname"
       fi
     fi
 
@@ -466,14 +477,14 @@ ask_user_for_config() {
       read -p "SMTP user name? [$smtp_user_name]: " new_value
       if [ ! -z "$new_value" ]
       then
-          smtp_user_name="$new_value"
+        smtp_user_name="$new_value"
       fi
     fi
 
     read -p "SMTP password? [$smtp_password]: " new_value
     if [ ! -z "$new_value" ]
     then
-        smtp_password="$new_value"
+      smtp_password="$new_value"
     fi
 
     if [ ! -z $letsencrypt_account_email ]
@@ -481,13 +492,13 @@ ask_user_for_config() {
       read -p "Optional email address for Let's Encrypt warnings? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
       if [ ! -z "$new_value" ]
       then
-          letsencrypt_account_email="$new_value"
-          if [ "${new_value,,}" = "off" ]
-          then
-            letsencrypt_status="ENTER to skip"
-          else
-            letsencrypt_status="Enter 'OFF' to disable."
-          fi
+        letsencrypt_account_email="$new_value"
+        if [ "${new_value,,}" = "off" ]
+        then
+          letsencrypt_status="ENTER to skip"
+        else
+          letsencrypt_status="Enter 'OFF' to disable."
+        fi
       fi
     fi
 
@@ -496,7 +507,7 @@ ask_user_for_config() {
     read -p "Optional Maxmind License key ($maxmind_status) [$maxmind_license_key]: " new_value
     if [ ! -z "$new_value" ]
     then
-        maxmind_license_key="$new_value"
+      maxmind_license_key="$new_value"
     fi
 
     echo -e "\nDoes this look right?\n"
@@ -516,7 +527,7 @@ ask_user_for_config() {
     then
       echo "Maxmind license: $maxmind_license_key"
     else
-	    echo "Maxmind license: (unset)"
+      echo "Maxmind license: (unset)"
     fi
 
     echo ""
@@ -581,20 +592,20 @@ ask_user_for_config() {
     SLASH="|"
     if [[ "$smtp_password" == *"$SLASH"* ]]
     then SLASH="+"
-      if [[ "$smtp_password" == *"$SLASH"* ]]
-      then
-        SLASH="Q"
-        if [[ "$smtp_password" == *"$SLASH"* ]]
-	then
-	  SLASH="BROKEN"
-          echo "========================================"
-          echo "WARNING!!!"
-          echo "Your password contains all available delimiters (+, |, and Q). "
-          echo "Your SMTP Password will not be set. You will need to edit app.yml to enter it."
-          echo "========================================"
-          update_ok="n"
+         if [[ "$smtp_password" == *"$SLASH"* ]]
+         then
+           SLASH="Q"
+           if [[ "$smtp_password" == *"$SLASH"* ]]
+	   then
+	     SLASH="BROKEN"
+             echo "========================================"
+             echo "WARNING!!!"
+             echo "Your password contains all available delimiters (+, |, and Q). "
+             echo "Your SMTP Password will not be set. You will need to edit app.yml to enter it."
+             echo "========================================"
+             update_ok="n"
+           fi
          fi
-       fi
     fi
   fi
   if [[ "$SLASH" != "BROKEN" ]]
@@ -611,49 +622,49 @@ ask_user_for_config() {
   fi
 
   echo "Enabling Let's Encrypt"
-    sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $web_file
+  sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $web_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
+    update_ok="n"
+  fi
+  local src='^  #\?- "templates\/web.ssl.template.yml"'
+  local dst='  \- "templates\/web.ssl.template.yml"'
+  sed -i -e "s/$src/$dst/w $changelog" $web_file
+  if [ -s $changelog ]
+  then
+    echo "web.ssl.template.yml enabled"
+  else
+    update_ok="n"
+    echo "web.ssl.template.yml NOT ENABLED--was it on already?"
+  fi
+  local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
+  local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
+
+  sed -i -e "s/$src/$dst/w $changelog" $web_file
+  if [ -s $changelog ]
+  then
+    echo "letsencrypt.ssl.template.yml enabled"
+  else
+    update_ok="n"
+    echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
+  fi
+
+  echo
+  if [ $maxmind_license_key != "1234567890123456" ]
+  then
+    echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
+    sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
     if [ -s $changelog ]
     then
       rm $changelog
     else
-      echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
+      echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
       update_ok="n"
     fi
-    local src='^  #\?- "templates\/web.ssl.template.yml"'
-    local dst='  \- "templates\/web.ssl.template.yml"'
-    sed -i -e "s/$src/$dst/w $changelog" $web_file
-    if [ -s $changelog ]
-    then
-      echo "web.ssl.template.yml enabled"
-    else
-      update_ok="n"
-      echo "web.ssl.template.yml NOT ENABLED--was it on already?"
-    fi
-    local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
-    local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
-
-    sed -i -e "s/$src/$dst/w $changelog" $web_file
-    if [ -s $changelog ]
-    then
-      echo "letsencrypt.ssl.template.yml enabled"
-    else
-      update_ok="n"
-      echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
-    fi
-
-    echo
-    if [ $maxmind_license_key != "1234567890123456" ]
-    then
-      echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
-      sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
-      if [ -s $changelog ]
-      then
-        rm $changelog
-      else
-        echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
-        update_ok="n"
-      fi
-    fi
+  fi
 
   if [ "$update_ok" == "y" ]
   then
@@ -673,7 +684,7 @@ validate_config() {
   valid_config="y"
 
   for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
-           DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
+                                  DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
   do
     read_config $x
     local result=$read_config_result
@@ -712,14 +723,14 @@ validate_config() {
 ## template file names
 ##
 
-if [ "$1" == "2container" ]
+if [ "$1" == "2container" ] || [ -f containers/web_only.yml ]
 then
-    app_name=web_only
-    data_name=data
-    web_template=samples/web_only.yml
-    data_template=samples/data.yml
-    web_file=containers/$app_name.yml
-    data_file=containers/$data_name.yml
+  app_name=web_only
+  data_name=data
+  web_template=samples/web_only.yml
+  data_template=samples/data.yml
+  web_file=containers/$app_name.yml
+  data_file=containers/$data_name.yml
 else
   app_name=app
   data_name=app
@@ -728,7 +739,7 @@ else
   web_file=containers/$app_name.yml
   data_file=containers/$app_name.yml
 fi
-    changelog=/tmp/changelog
+changelog=/tmp/changelog
 
 ##
 ## Check requirements before creating a copy of a config file we won't edit
@@ -736,7 +747,6 @@ fi
 check_root
 check_and_install_docker
 check_disk_and_memory
-assert_maxmind_license_key
 
 if [ -a "$web_file" ]
 then
@@ -751,35 +761,36 @@ then
   cp $web_file containers/$BACKUP
   echo "Stopping existing container in 5 seconds or Control-C to cancel."
   sleep 5
-  ./launcher stop app
+  assert_maxmind_license_key
+  ./launcher stop $app_name
   echo
 else
   check_ports
   cp -v $web_template $web_file
   if [ "$data_name" == "data" ]
   then
-      echo "--------------------------------------------------"
-      echo "This two container setup is currently unsupported. Use at your own risk!"
-      echo "--------------------------------------------------"
-      DISCOURSE_DB_PASSWORD=`date +%s | sha256sum | base64 | head -c 20`
+    echo "--------------------------------------------------"
+    echo "This two container setup is currently unsupported. Use at your own risk!"
+    echo "--------------------------------------------------"
+    DISCOURSE_DB_PASSWORD=`date +%s | sha256sum | base64 | head -c 20`
 
-     sed -i -e "s/DISCOURSE_DB_PASSWORD: SOME_SECRET/DISCOURSE_DB_PASSWORD: $DISCOURSE_DB_PASSWORD/w $changelog" $web_file
-     if  [ -s $changelog ]
-     then
-	 rm $changelog
-     else
-       echo "Problem changing DISCOURSE_DB_PASSWORD" in $web_file
-     fi
+    sed -i -e "s/DISCOURSE_DB_PASSWORD: SOME_SECRET/DISCOURSE_DB_PASSWORD: $DISCOURSE_DB_PASSWORD/w $changelog" $web_file
+    if  [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "Problem changing DISCOURSE_DB_PASSWORD" in $web_file
+    fi
 
-     cp -v $data_template $data_file
-     quote=\'
-     sed -i -e "s/password ${quote}SOME_SECRET${quote}/password '$DISCOURSE_DB_PASSWORD'/w $changelog" $data_file
-     if  [ -s $changelog ]
-     then
-	 rm $changelog
-     else
-       echo "Problem changing DISCOURSE_DB_PASSWORD" in $data_file
-     fi
+    cp -v $data_template $data_file
+    quote=\'
+    sed -i -e "s/password ${quote}SOME_SECRET${quote}/password '$DISCOURSE_DB_PASSWORD'/w $changelog" $data_file
+    if  [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "Problem changing DISCOURSE_DB_PASSWORD" in $data_file
+    fi
   fi
 fi
 
@@ -795,11 +806,11 @@ echo "Updates successful. Rebuilding in 5 seconds."
 sleep 5 # Just a chance to ^C in case they were too fast on the draw
 if [ "$data_name" == "$app_name" ]
 then
-    echo Building $app_name
-    ./launcher rebuild $app_name
+  echo Building $app_name
+  ./launcher rebuild $app_name
 else
-    echo Building $data_name now . . .
-    ./launcher rebuild $data_name
-    echo Building $app_name now . . .
-    ./launcher rebuild $app_name
+  echo Building $data_name now . . .
+  ./launcher rebuild $data_name
+  echo Building $app_name now . . .
+  ./launcher rebuild $app_name
 fi
