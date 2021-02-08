@@ -244,8 +244,8 @@ check_prereqs() {
       echo
       if [[ $REPLY =~ ^[Yy]$ ]]
       then
-        $docker_path container prune --force --filter until=1h >/dev/null
-        $docker_path image prune --all --force --filter until=1h >/dev/null
+        $docker_path container prune --force --filter until=24h >/dev/null
+        $docker_path image prune --all --force --filter until=24h >/dev/null
         echo "If the cleanup was successful, you may try again now"
       fi
     fi
