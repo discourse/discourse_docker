@@ -2,6 +2,34 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
+if [ "$1" == "2container" ] 
+then
+  TWO_CONTAINER="1"
+  echo "2container argument is deprecated. Use --two-container"
+  shift 1
+fi
+
+while [ ${#} -gt 0 ]; do
+  case "${1}" in
+  --debug)
+    DEBUG="1"
+    SKIP_REBUILD="1"
+    ;;
+  --skip-rebuild)
+    SKIP_REBUILD="1"
+    ;;
+  --two-container)
+    TWO_CONTAINER="1"
+    ;;
+  --skip-connection-test)
+    SKIP_CONNECTION_TEST="1"
+    echo "skipping connection test"
+    ;;
+  esac
+
+  shift 1
+done
+
 ##
 ## Make sure only root can run our script
 ##
@@ -45,8 +73,14 @@ connect_to_port () {
 check_IP_match() {
   HOST="$1"
   echo
-  echo Checking your domain name . . .
-  connect_to_port $HOST 443; ec=$?
+  if [ "$SKIP_CONNECTION_TEST" == 1 ]
+  then 
+    echo "Setting EC to 2"
+    ec=2
+  else
+    echo Checking your domain name . . .
+    connect_to_port $HOST 443; ec=$?
+  fi
   case $ec in
     0)
       echo "Connection to $HOST succeeded."
@@ -80,7 +114,7 @@ check_IP_match() {
       exit 1
       ;;
     2)
-      echo "Continuing without port check."
+      echo "Skipping port check."
       ;;
   esac
 }
@@ -278,7 +312,7 @@ check_ports() {
 ##
 check_port() {
 
-  local valid=$(netstat -tln | awk '{print $4}' | grep ":${1}\$")
+  local valid=$(lsof -i:${1} | grep "LISTEN")
 
   if [ -n "$valid" ]; then
     echo "Port ${1} appears to already be in use."
@@ -336,6 +370,50 @@ EOF
   fi
 }
 
+assert_smtp_domain() {
+  if  ! grep DISCOURSE_SMTP_DOMAIN $web_file >/dev/null 2>&1
+  then
+    echo "Adding SMTP_DOMAIN placeholder to $web_file"
+    sed -i '/^.*DISCOURSE_SMTP_PASSWORD.*/a \ \ #DISCOURSE_SMTP_DOMAIN: discourse.example.com    # (required by some providers)' $web_file
+  fi
+  if  ! grep DISCOURSE_SMTP_DOMAIN $web_file >/dev/null 2>&1
+  then
+    cat <<EOF
+
+    Adding DISCOURSE_SMTP_DOMAIN to $web_file has failed! This
+    indicates either that your $web_file is very old or otherwise not
+    what the script expects or that there is a bug in this script. The
+    best solution for a novice is to delete $web_file and start over.
+    An expert might prefer to edit $web_file by hand.
+
+EOF
+    read -p "Press return to continue or control-c to quit..."
+  fi
+}
+
+
+assert_notification_email() {
+  if  ! grep DISCOURSE_NOTIFICATION_EMAIL $web_file >/dev/null 2>&1
+  then
+    echo "Adding DISCOURSE_NOTIFICATION_EMAIL placeholder to $web_file"
+    sed -i '/^.*DISCOURSE_SMTP_PASSWORD.*/a \ \ #DISCOURSE_NOTIFICATION_EMAIL: nobody@discourse.example.com    # (address to send notifications from)' $web_file
+  fi
+  if  ! grep DISCOURSE_NOTIFICATION_EMAIL $web_file >/dev/null 2>&1
+  then
+    cat <<EOF
+
+    Adding DISCOURSE_NOTIFICATION_EMAIL to $web_file has failed! This
+    indicates either that your $web_file is very old or otherwise not
+    what the script expects or that there is a bug in this script. The
+    best solution for a novice is to delete $web_file and start over.
+    An expert might prefer to edit $web_file by hand.
+
+EOF
+    read -p "Press return to continue or control-c to quit..."
+  fi
+}
+
+
 ##
 ## prompt user for typical Discourse config file values
 ##
@@ -343,6 +421,8 @@ ask_user_for_config() {
 
   # NOTE: Defaults now come from standalone.yml
 
+  read_config "DISCOURSE_HOSTNAME"
+  hostname=$read_config_result
   local changelog=/tmp/changelog.$PPID
   read_config "DISCOURSE_SMTP_ADDRESS"
   local smtp_address=$read_config_result
@@ -359,6 +439,11 @@ ask_user_for_config() {
   then
     smtp_password = ""
   fi
+  read_config "DISCOURSE_NOTIFICATION_EMAIL"
+  local notification_email=$read_config_result
+  read_config "DISCOURSE_SMTP_DOMAIN"
+  local discourse_smtp_DOMAIN=$read_config_result
+
   read_config "LETSENCRYPT_ACCOUNT_EMAIL"
   local letsencrypt_account_email=$read_config_result
   if [ -z $letsencrypt_account_email ]
@@ -382,9 +467,6 @@ ask_user_for_config() {
   then
       local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
   fi
-
-  read_config "DISCOURSE_HOSTNAME"
-  hostname=$read_config_result
 
   local new_value=""
   local config_ok="n"
@@ -464,11 +546,11 @@ ask_user_for_config() {
       fi
       if [ "$smtp_address" == "smtp.sendgrid.net" ]
       then
-  	smtp_user_name="apikey"
+        smtp_user_name="apikey"
       fi
       if [ "$smtp_address" == "smtp.mailgun.org" ]
       then
-  	smtp_user_name="postmaster@$hostname"
+        smtp_user_name="postmaster@$hostname"
       fi
     fi
 
@@ -486,6 +568,20 @@ ask_user_for_config() {
     then
       smtp_password="$new_value"
     fi
+
+    if [[ "$notification_email" == "noreply@discourse.example.com"* ]]
+    then
+      notification_email="noreply@$hostname"
+    fi
+  
+    read -p "notification email address? [$notification_email]: " new_value
+    if [ ! -z "$new_value" ]
+    then
+      notification_email="$new_value"
+    fi
+
+    # set smtp_domain default value here rather than use Rails default of localhost
+    smtp_domain=$(echo $notification_email | sed -e "s/.*@//")
 
     if [ ! -z $letsencrypt_account_email ]
     then
@@ -511,12 +607,13 @@ ask_user_for_config() {
     fi
 
     echo -e "\nDoes this look right?\n"
-    echo "Hostname      : $hostname"
-    echo "Email         : $developer_emails"
-    echo "SMTP address  : $smtp_address"
-    echo "SMTP port     : $smtp_port"
-    echo "SMTP username : $smtp_user_name"
-    echo "SMTP password : $smtp_password"
+    echo "Hostname          : $hostname"
+    echo "Email             : $developer_emails"
+    echo "SMTP address      : $smtp_address"
+    echo "SMTP port         : $smtp_port"
+    echo "SMTP username     : $smtp_user_name"
+    echo "SMTP password     : $smtp_password"
+    echo "Notification email: $notification_email"
 
     if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
     then
@@ -576,6 +673,24 @@ ask_user_for_config() {
     rm $changelog
   else
     echo "DISCOURSE_SMTP_USER_NAME change failed."
+    update_ok="n"
+  fi
+
+  sed -i -e "s/^  #\?DISCOURSE_NOTIFICATION_EMAIL:.*/  DISCOURSE_NOTIFICATION_EMAIL: $notification_email/w $changelog" $web_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "DISCOURSE_NOTIFICATION_EMAIL change failed."
+    update_ok="n"
+  fi
+
+  sed -i -e "s/^  #\?DISCOURSE_SMTP_DOMAIN:.*/  DISCOURSE_SMTP_DOMAIN: $smtp_domain/w $changelog" $web_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "DISCOURSE_SMTP_DOMAIN change failed."
     update_ok="n"
   fi
 
@@ -646,7 +761,6 @@ ask_user_for_config() {
   echo
   if [ $maxmind_license_key != "1234567890123456" ]
   then
-    echo "Setting MAXMIND key to $maxmind_license_key in $web_file"
     sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
     if [ -s $changelog ]
     then
@@ -659,10 +773,10 @@ ask_user_for_config() {
 
   if [ "$update_ok" == "y" ]
   then
-    echo -e "\nConfiguration file at $config_file updated successfully!\n"
+    echo -e "\nConfiguration file at $web_file updated successfully!\n"
   else
-    echo -e "\nUnfortunately, there was an error changing $config_file\n"
-    echo -d "This may happen if you have made unexpected changes."
+    echo -e "\nUnfortunately, there was an error changing $web_file\n"
+    echo -e "This may happen if you have made unexpected changes."
     exit 1
   fi
 }
@@ -714,7 +828,7 @@ validate_config() {
 ## template file names
 ##
 
-if [ "$1" == "2container" ] || [ -f containers/web_only.yml ]
+if [ "$TWO_CONTAINER" ] || [ -f containers/web_only.yml ]
 then
   app_name=web_only
   data_name=data
@@ -752,12 +866,17 @@ then
   echo Saving old file as $BACKUP
   cp $web_file containers/$BACKUP
   echo "Stopping existing container in 5 seconds or Control-C to cancel."
-  sleep 5
+  #sleep 5
   assert_maxmind_license_key
-  ./launcher stop $app_name
+  assert_notification_email
+  assert_smtp_domain
+  #./launcher stop $app_name
   echo
 else
-  check_ports
+  if [ "$SKIP_CONNECTION_TEST" != 1 ]
+  then 
+    check_ports
+  fi
   cp -v $web_template $web_file
   if [ "$data_name" == "data" ]
   then
@@ -794,8 +913,15 @@ validate_config
 ## if we reach this point without exiting, OK to proceed
 ## rebuild won't fail if there's nothing to rebuild and does the restart
 ##
+if [ "$SKIP_REBUILD" ]
+then
+  echo "Updates successful. --skip-rebuild requested. Exiting."
+  exit
+fi
+
 echo "Updates successful. Rebuilding in 5 seconds."
 sleep 5 # Just a chance to ^C in case they were too fast on the draw
+
 if [ "$data_name" == "$app_name" ]
 then
   echo Building $app_name

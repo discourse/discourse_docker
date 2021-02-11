@@ -55,6 +55,8 @@ env:
   DISCOURSE_SMTP_USER_NAME: user@example.com
   DISCOURSE_SMTP_PASSWORD: pa$$word
   #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default true)
+  #DISCOURSE_SMTP_DOMAIN: discourse.example.com    # (required by some providers)
+  #DISCOURSE_NOTIFICATION_EMAIL: noreply@discourse.example.com    # (address to send notifications from)
 
   ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
   #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
