@@ -852,7 +852,6 @@ changelog=/tmp/changelog
 check_root
 check_and_install_docker
 check_disk_and_memory
-assert_maxmind_license_key
 
 if [ -a "$web_file" ]
 then
