@@ -75,7 +75,6 @@ check_IP_match() {
   echo
   if [ "$SKIP_CONNECTION_TEST" == 1 ]
   then 
-    echo "Setting EC to 2"
     ec=2
   else
     echo Checking your domain name . . .
