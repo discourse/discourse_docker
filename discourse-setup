@@ -735,27 +735,42 @@ ask_user_for_config() {
     fi
   fi
 
-  echo "Enabling Let's Encrypt"
-    sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $web_file
-    if [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
-      update_ok="n"
-    fi
-    local src='^  #\?- "templates\/web.ssl.template.yml"'
-    local dst='  \- "templates\/web.ssl.template.yml"'
-    sed -i -e "s/$src/$dst/w $changelog" $web_file
-    if [ -s $changelog ]
+  if ! [ -z $DEBUG ]
+  then
+    echo "Enabling Let's Encrypt"
+  fi
+  sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $web_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
+    update_ok="n"
+  fi
+  local src='^  #\?- "templates\/web.ssl.template.yml"'
+  local dst='  \- "templates\/web.ssl.template.yml"'
+  sed -i -e "s/$src/$dst/w $changelog" $web_file
+  if [ -s $changelog ]
+  then
+  if ! [ -z $DEBUG ]
     then
       echo "web.ssl.template.yml enabled"
-    else
-      update_ok="n"
-      echo "web.ssl.template.yml NOT ENABLED--was it on already?"
     fi
-    local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
-    local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
+  else
+    update_ok="n"
+    echo "web.ssl.template.yml NOT ENABLED--was it on already?"
+  fi
+  local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
+  local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
+
+  sed -i -e "s/$src/$dst/w $changelog" $web_file
+  if [ -s $changelog ]
+  then
+    echo "letsencrypt.ssl.template.yml enabled"
+  else
+    update_ok="n"
+    echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
+  fi
 
   echo
   if [ $maxmind_license_key != "1234567890123456" ]
