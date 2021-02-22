@@ -2,7 +2,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
-if [ "$1" == "2container" ] 
+if [ "$1" == "2container" ]
 then
   TWO_CONTAINER="1"
   echo "2container argument is deprecated. Use --two-container"
@@ -74,7 +74,7 @@ check_IP_match() {
   HOST="$1"
   echo
   if [ "$SKIP_CONNECTION_TEST" == 1 ]
-  then 
+  then
     echo "Setting EC to 2"
     ec=2
   else
@@ -573,7 +573,7 @@ ask_user_for_config() {
     then
       notification_email="noreply@$hostname"
     fi
-  
+
     read -p "notification email address? [$notification_email]: " new_value
     if [ ! -z "$new_value" ]
     then
@@ -879,16 +879,21 @@ then
   BACKUP=$app_name.yml.$DATE.bak
   echo Saving old file as $BACKUP
   cp $web_file containers/$BACKUP
-  echo "Stopping existing container in 5 seconds or Control-C to cancel."
-  #sleep 5
+  if [ "$DEBUG" != "1" ]
+  then
+    echo "Stopping existing container in 5 seconds or Control-C to cancel."
+    sleep 5
+  else
+    echo "DEBUG MODE ON. Not stopping the container."
+  fi
+  ./launcher stop $app_name
   assert_maxmind_license_key
   assert_notification_email
   assert_smtp_domain
-  #./launcher stop $app_name
   echo
 else
   if [ "$SKIP_CONNECTION_TEST" != 1 ]
-  then 
+  then
     check_ports
   fi
   cp -v $web_template $web_file
