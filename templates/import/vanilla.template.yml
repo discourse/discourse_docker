@@ -1,0 +1,116 @@
+# This template installs MariaDB and all dependencies needed for importing from vanilla.
+
+params:
+  home: /var/www/discourse
+
+hooks:
+  after_web_config:
+    - exec:
+        cd: /etc/service
+        cmd:
+          - rm -R unicorn
+          - rm -R nginx
+          - rm -R cron
+
+    - exec:
+        cd: /etc/runit/3.d
+        cmd:
+          - rm 01-nginx
+          - rm 02-unicorn
+
+    - file:
+        path: /etc/mysql/conf.d/import.cnf
+        contents: |
+          [mysqld]
+          # disable InnoDB since it is extremly slow in Docker container
+          default-storage-engine=MyISAM
+          default-tmp-storage-engine=MyISAM
+          innodb=OFF
+          sql_mode=NO_AUTO_CREATE_USER
+
+          datadir=/shared/import/mysql/data
+
+          skip-host-cache
+          skip-name-resolve
+
+    - exec:
+        cmd:
+          - mkdir -p /shared/import/mysql/data
+          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadbclient-dev mariadb-server
+          - sed -Ei 's/^log/#&/' /etc/mysql/my.cnf
+
+    - file:
+        path: /etc/service/mysql/run
+        chmod: "+x"
+        contents: |
+          #!/bin/bash
+          cd /
+          umask 077
+
+          # Make sure the datadir exists, is accessible and contains all system tables
+          mkdir -p /shared/import/mysql/data
+          chown mysql -R /shared/import/mysql/data
+          /usr/bin/mysql_install_db --user=mysql
+
+          # Shamelessly copied from http://smarden.org/runit1/runscripts.html#mysql
+          MYSQLADMIN='/usr/bin/mysqladmin --defaults-extra-file=/etc/mysql/debian.cnf'
+          trap "$MYSQLADMIN shutdown" 0
+          trap 'exit 2' 1 2 3 15
+          /usr/bin/mysqld_safe & wait
+
+    - file:
+        path: /etc/runit/3.d/99-mysql
+        chmod: "+x"
+        contents: |
+          #!/bin/bash
+          sv stop mysql
+
+    - file:
+        path: /usr/local/bin/import_vanilla.sh
+        chmod: "+x"
+        contents: |
+          #!/bin/bash
+          set -e
+
+          chown discourse -R /shared/import/data
+
+          # Allow connection as root user without password
+          mysql -uroot -e "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket'"
+          mysql -uroot -e "FLUSH PRIVILEGES"
+
+          if [ -f "/shared/import/data/vanilla_mysql.sql" ]; then
+            if [ -f "/shared/import/mysql/imported" ] && ! sha256sum --check /shared/import/mysql/imported &>/dev/null ; then
+              echo "Checksum of database dump changed..."
+              rm /shared/import/mysql/imported
+            fi
+
+            if [ ! -f "/shared/import/mysql/imported" ]; then
+              echo "Loading database dump into MySQL..."
+              mysql -uroot -e "DROP DATABASE IF EXISTS vanilla"
+              mysql -uroot -e "CREATE DATABASE vanilla"
+              mysql -uroot --default-character-set=utf8 --database=vanilla < /shared/import/data/vanilla_mysql.sql
+              sha256sum /shared/import/data/vanilla_mysql.sql > /shared/import/mysql/imported
+            fi
+          else
+            sv stop mysql
+          fi
+
+          cd $home
+          echo "The Vanilla import is starting..."
+          echo
+          su discourse -c 'bundle exec ruby script/import_scripts/vanilla.rb'
+
+    - exec:
+        cd: $home
+        cmd:
+          - mkdir -p /shared/import/data
+          - chown discourse -R /shared/import
+
+  after_bundle_exec:
+    - exec:
+        cd: $home
+        cmd:
+          - echo "gem 'mysql2'" >> Gemfile
+          - echo "gem 'ruby-bbcode-to-md', :github => 'nlalonde/ruby-bbcode-to-md'" >> Gemfile
+          - su discourse -c 'bundle config unset deployment'
+          - su discourse -c 'bundle install --no-deployment --path vendor/bundle --jobs 4 --without test development'
