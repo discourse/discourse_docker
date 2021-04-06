@@ -53,6 +53,7 @@ RUN cd / &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US &&\
     apt install -y nodejs &&\
+    npm install -g terser &&\
     npm install -g uglify-js &&\
     npm install -g svgo
 
