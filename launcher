@@ -82,6 +82,7 @@ fi
 
 cd "$(dirname "$0")"
 
+pups_version='v1.0.3'
 docker_min_version='17.03.1'
 docker_rec_version='17.06.2'
 git_min_version='1.8.0'
@@ -653,7 +654,7 @@ run_bootstrap() {
 
   run_command="cd /pups &&"
   if [[ ! "false" =  $update_pups ]]; then
-    run_command="$run_command git pull &&"
+    run_command="$run_command git pull && git checkout $pups_version &&"
   fi
   run_command="$run_command /pups/bin/pups --stdin"
 
