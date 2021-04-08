@@ -2,15 +2,15 @@
 set -e
 
 # version check: https://github.com/ImageMagick/ImageMagick/releases
-IMAGE_MAGICK_VERSION="7.0.10-58"
-IMAGE_MAGICK_HASH="0daabb64602164940fbf95cbd6f16709903eef5d3eee7bd329da878f17605df5"
+IMAGE_MAGICK_VERSION="7.0.11-6"
+IMAGE_MAGICK_HASH="8adc1605784653b078572b825e8cd1d3d54f8a1b4ba86b32ca253c038f7e4c37"
 
 # version check: https://github.com/strukturag/libheif/releases
-LIBHEIF_VERSION="1.10.0"
-LIBHEIF_HASH="317a44bf157ba297638ab5a258040ef6ec4895d620cd58f52195f3f89c9eea28"
+LIBHEIF_VERSION="1.11.0"
+LIBHEIF_HASH="993c3320e179b8fdce983e3a7e96615af3830077be6b0ab28bfa25579df08d26"
 
 # version check: https://aomedia.googlesource.com/aom
-LIB_AOM_VERSION="2.0.1"
+LIB_AOM_VERSION="3.0.0"
 
 # We use debian, but GitHub CI is stuck on Ubuntu Bionic, so this must be compatible with both
 LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo libjpeg62-turbo-dev' || echo 'libjpeg-turbo8 libjpeg-turbo8-dev')
