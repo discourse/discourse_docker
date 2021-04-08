@@ -54,8 +54,7 @@ RUN cd / &&\
     locale-gen en_US &&\
     apt install -y nodejs &&\
     npm install -g terser &&\
-    npm install -g uglify-js &&\
-    npm install -g svgo
+    npm install -g uglify-js
 
 ADD install-nginx /tmp/install-nginx
 RUN /tmp/install-nginx
