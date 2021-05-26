@@ -82,7 +82,7 @@ fi
 
 cd "$(dirname "$0")"
 
-pups_version='v1.0.3'
+pups_version='v1.1.1'
 docker_min_version='17.03.1'
 docker_rec_version='17.06.2'
 git_min_version='1.8.0'
@@ -259,16 +259,6 @@ if [ -z "$SKIP_PREREQS" ] && [ "$command" != "cleanup" ]; then
   check_prereqs
 fi
 
-set_volumes() {
-  volumes=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
-        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['volumes'].map{|v| '-v ' << v['volume']['host'] << ':' << v['volume']['guest'] << ' '}.join"`
-}
-
-set_links() {
-    links=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
-        "require 'yaml'; puts YAML.load(STDIN.readlines.join)['links'].map{|l| '--link ' << l['link']['name'] << ':' << l['link']['alias'] << ' '}.join"`
-}
-
 find_templates() {
     local templates=`cat $1 | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
       "require 'yaml'; puts YAML.load(STDIN.readlines.join)['templates']"`
@@ -282,52 +272,65 @@ find_templates() {
     fi
 }
 
-set_template_info() {
-    templates=$(find_templates $config_file)
+# Must provide one argument which is a path to a file in which the concatenated
+# config will be placed.
+concat_template_files() {
+    local templates=$(find_templates $config_file)
+    local arrTemplates=(${templates// / })
+    local config_data=$(cat $config_file)
 
-    arrTemplates=(${templates// / })
-    config_data=$(cat $config_file)
-
-    input="hack: true"
+    # This is set so we have something in the first element of the array after
+    # we split in _FILE_SEPERATOR_.
+    local input="hack: true"
 
     for template in "${arrTemplates[@]}"
     do
       [ ! -z $template ] && {
-        input="$input _FILE_SEPERATOR_ $(cat $template)"
+        input="${input} _FILE_SEPERATOR_ $(cat "${template}")"
       }
     done
 
-    # we always want our config file last so it takes priority
-    input="$input _FILE_SEPERATOR_ $config_data"
+    # $config_data should always be last so it takes priority
+    echo "${input} _FILE_SEPERATOR_ ${config_data}" > "${1}"
+}
+
+# Additional arguments for pups may be provided as a single argument.
+set_docker_run_args() {
+    tmp_input_file=$(mktemp)
+    concat_template_files "${tmp_input_file}"
+    trap "rm -f ${tmp_input_file}" EXIT
+
+    pups_cmd="cd /pups && git pull --quiet && git checkout --quiet ${pups_version} && /pups/bin/pups --stdin --quiet --gen-docker-run-args ${1}"
+    docker_run_args="$(${docker_path} run ${user_args} --rm -i --env env_template_config="${config}" "${image}" bash -c "${pups_cmd}" < ${tmp_input_file})"
+}
+
+# Sets the $env array to contain the DOCKER_USE_HOSTNAME and DISCOURSE_HOSTNAME
+# variables.
+set_docker_hostname_envs() {
+    tmp_input_file=$(mktemp)
+    concat_template_files "${tmp_input_file}"
+    trap "rm -f ${tmp_input_file}" EXIT
 
     read -r -d '' env_ruby << 'RUBY'
     require 'yaml'
-
-    input=STDIN.readlines.join
-    # default to UTF-8 for the dbs sake
-    env = {'LANG' => 'en_US.UTF-8'}
-    input.split('_FILE_SEPERATOR_').each do |yml|
+    env = {}
+    STDIN.readlines.join.split('_FILE_SEPERATOR_').each do |yml|
        yml.strip!
        begin
          env.merge!(YAML.load(yml)['env'] || {})
        rescue Psych::SyntaxError => e
-        puts e
-        puts "*ERROR."
+         puts e
+         puts "*ERROR."
        rescue => e
-        puts yml
-        p e
+         puts yml
+         p e
        end
     end
-    env.each{|k,v| puts "*ERROR." if v.is_a?(Hash)}
-    puts env.map{|k,v| "-e\n#{k}=#{v}" }.join("\n")
+    env.keep_if {|k,_| %w[DOCKER_USE_HOSTNAME DISCOURSE_HOSTNAME].include?(k)}
+    puts env.map{|k,v| "-e\n#{k}=#{v}"}.join("\n")
 RUBY
 
-    tmp_input_file=$(mktemp)
-
-    echo "$input" > "$tmp_input_file"
     raw=`exec cat "$tmp_input_file" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$env_ruby"`
-
-    rm -f "$tmp_input_file"
 
     env=()
     ok=1
@@ -344,96 +347,6 @@ RUBY
       echo "YAML syntax error. Please check your containers/*.yml config files."
       exit 1
     fi
-
-    # labels
-    read -r -d '' labels_ruby << 'RUBY'
-    require 'yaml'
-
-    input=STDIN.readlines.join
-    labels = {}
-    input.split('_FILE_SEPERATOR_').each do |yml|
-       yml.strip!
-       begin
-         labels.merge!(YAML.load(yml)['labels'] || {})
-       rescue Psych::SyntaxError => e
-        puts e
-        puts "*ERROR."
-       rescue => e
-        puts yml
-        p e
-       end
-    end
-    puts labels.map{|k,v| "-l\n#{k}=#{v}" }.join("\n")
-RUBY
-
-    tmp_input_file=$(mktemp)
-
-    echo "$input" > "$tmp_input_file"
-    raw=`exec cat "$tmp_input_file" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$labels_ruby"`
-
-    rm -f "$tmp_input_file"
-
-    labels=()
-    ok=1
-    while read i; do
-      if [ "$i" == "*ERROR." ]; then
-        ok=0
-      elif [ -n "$i" ]; then
-        labels[${#labels[@]}]=$(echo $i | sed s/{{config}}/${config}/g)
-      fi
-    done <<< "$raw"
-
-    if [ "$ok" -ne 1 ]; then
-      echo "${labels[@]}"
-      echo "YAML syntax error. Please check your containers/*.yml config files."
-      exit 1
-    fi
-
-    # expose
-    read -r -d '' ports_ruby << 'RUBY'
-    require 'yaml'
-
-    input=STDIN.readlines.join
-    ports = []
-    input.split('_FILE_SEPERATOR_').each do |yml|
-       yml.strip!
-       begin
-         ports += (YAML.load(yml)['expose'] || [])
-       rescue Psych::SyntaxError => e
-        puts e
-        puts "*ERROR."
-       rescue => e
-        puts yml
-        p e
-       end
-    end
-    puts ports.map { |p| p.to_s.include?(':') ? "-p\n#{p}" : "--expose\n#{p}" }.join("\n")
-RUBY
-
-    tmp_input_file=$(mktemp)
-
-    echo "$input" > "$tmp_input_file"
-    raw=`exec cat "$tmp_input_file" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$ports_ruby"`
-
-    rm -f "$tmp_input_file"
-
-    ports=()
-    ok=1
-    while read i; do
-      if [ "$i" == "*ERROR." ]; then
-        ok=0
-      elif [ -n "$i" ]; then
-        ports[${#ports[@]}]=$i
-      fi
-    done <<< "$raw"
-
-    if [ "$ok" -ne 1 ]; then
-      echo "${ports[@]}"
-      echo "YAML syntax error. Please check your containers/*.yml config files."
-      exit 1
-    fi
-
-   merge_user_args
 }
 
 if [ -z $docker_path ]; then
@@ -524,7 +437,7 @@ merge_user_args() {
   local docker_args
 
   docker_args=`cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
-          "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args']"`
+          "require 'yaml'; puts YAML.load(STDIN.readlines.join)['docker_args'].join(' ')"`
 
   if [[ -n "$docker_args" ]]; then
     user_args="$user_args_argv $docker_args"
@@ -555,13 +468,14 @@ run_start() {
      fi
    fi
 
-   set_template_info
-   set_volumes
-   set_links
+   merge_user_args
    set_run_image
    set_boot_command
+   set_docker_run_args
+   set_docker_hostname_envs
 
-   # get hostname and settings from container configuration
+   # Get hostname and settings from container configuration which is used below
+   # to generate a mac address and set up the hostname for the running container.
    for envar in "${env[@]}"
    do
      if [[ $envar == DOCKER_USE_HOSTNAME* ]] || [[ $envar == DISCOURSE_HOSTNAME* ]]
@@ -586,7 +500,6 @@ run_start() {
      # docker added more hostname rules
      hostname=${hostname//_/-}
 
-
      if [ -z "$SKIP_MAC_ADDRESS" ] ; then
       mac_address="--mac-address $($docker_path run $user_args -i --rm -a stdout -a stderr $image /bin/sh -c "echo $hostname | md5sum | sed 's/^\(..\)\(..\)\(..\)\(..\)\(..\).*$/02:\1:\2:\3:\4:\5/'")"
      fi
@@ -597,24 +510,41 @@ run_start() {
 
      set -x
 
-     $docker_path run --shm-size=512m $links $attach_on_run $restart_policy "${env[@]}" "${labels[@]}" -h "$hostname" \
-        -e DOCKER_HOST_IP="$docker_ip" --name $config -t "${ports[@]}" $volumes $mac_address $user_args \
-        $run_image $boot_command
-
+     bash -c "$docker_path run \
+         --shm-size=512m \
+         $attach_on_run \
+         $restart_policy \
+         -h $hostname \
+         -e DOCKER_HOST_IP=$docker_ip \
+         --name $config \
+         -t $mac_address \
+         ${docker_run_args} \
+         ${user_args} \
+         $run_image \
+         $boot_command"
    )
    exit 0
 
 }
 
 run_run() {
-  set_template_info
-  set_volumes
-  set_links
+  merge_user_args
   set_run_image
+  set_docker_run_args "--ignore expose"
 
   unset ERR
-  (exec $docker_path run --rm --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" -i -a stdin -a stdout -a stderr $volumes $run_image \
-    /bin/bash -c "$run_command") || ERR=$?
+  (
+    bash -c "$docker_path run \
+       --rm \
+       --shm-size=512m \
+       -e DOCKER_HOST_IP=$docker_ip \
+       -i \
+       -a stdin -a stdout -a stderr \
+       ${docker_run_args} \
+       ${user_args} \
+       $run_image \
+       /bin/bash -c \"$run_command\""
+  ) || ERR=$?
 
   if [[ $ERR > 0 ]]; then
     exit 1
@@ -626,7 +556,13 @@ run_bootstrap() {
   # If not, pull it here so the user is aware what's happening.
   $docker_path history $image >/dev/null 2>&1 || pull_image
 
-  set_template_info
+  merge_user_args
+  set_docker_run_args "--ignore expose,env"
+  set_docker_hostname_envs
+
+  tmp_input_file=$(mktemp)
+  concat_template_files "${tmp_input_file}"
+  trap "rm -f ${tmp_input_file}" EXIT
 
   base_image=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
     "require 'yaml'; puts YAML.load(STDIN.readlines.join)['base_image']"`
@@ -638,14 +574,11 @@ run_bootstrap() {
     image=$base_image
   fi
 
-  set_volumes
-  set_links
-
   rm -f $cidbootstrap
 
   run_command="cd /pups &&"
   if [[ ! "false" =  $update_pups ]]; then
-    run_command="$run_command git pull && git checkout $pups_version &&"
+    run_command="$run_command git pull --quiet && git checkout --quiet $pups_version &&"
   fi
   run_command="$run_command /pups/bin/pups --stdin"
 
@@ -653,13 +586,19 @@ run_bootstrap() {
 
   unset ERR
 
-  tmp_input_file=$(mktemp)
-
-  echo "$input" > "$tmp_input_file"
-  (exec cat "$tmp_input_file" | $docker_path run --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
-    /bin/bash -c "$run_command") || ERR=$?
-
-  rm -f "$tmp_input_file"
+  (
+    bash -c "$docker_path run \
+        --shm-size=512m \
+        -e DOCKER_HOST_IP="$docker_ip" \
+        -e env_template_config=$config \
+        --cidfile $cidbootstrap \
+        -i \
+        -a stdin -a stdout -a stderr \
+        ${docker_run_args} \
+        ${user_args} \
+        $image \
+        /bin/bash -c \"$run_command\" < ${tmp_input_file}"
+  ) || ERR=$?
 
   unset FAILED
   # magic exit code that indicates a retry
