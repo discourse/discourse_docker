@@ -2,8 +2,8 @@
 set -e
 
 # version check: https://nginx.org/en/download.html
-VERSION=1.18.0
-HASH="4c373e7ab5bf91d34a4f11a0c9496561061ba5eee6020db272a17a7228d35f99"
+VERSION=1.21.0
+HASH="fe192a4bac2bd3a769e8695cb9fe14a00e57eaceb919095347a83b5b2afc0771"
 
 apt install -y autoconf
 
