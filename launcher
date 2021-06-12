@@ -235,8 +235,7 @@ check_prereqs() {
   # 7. enough space for the bootstrap on docker folder
   folder=`$docker_path info --format '{{.DockerRootDir}}'`
   safe_folder=${folder:-/var/lib/docker}
-  test=$(($(stat -f --format="%a*%S" $safe_folder)/1024**3 < 5))
-  if [[ $test -ne 0 ]] ; then
+  if [[ -d $safe_folder && $(gstat -f --format="%a*%S" $safe_folder)/1024**3 -lt 5 ]] ; then
     echo "You have less than 5GB of free space on the disk where $safe_folder is located. You will need more space to continue"
     df -h $safe_folder
     echo
