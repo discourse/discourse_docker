@@ -15,6 +15,7 @@ hooks:
          - install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
          - cd /root/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --install --log "${LETSENCRYPT_DIR}/acme.sh.log"
          - cd /root/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --upgrade --auto-upgrade
+         - cd /root/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --set-default-ca  --server  letsencrypt
 
     - file:
        path: "/etc/nginx/letsencrypt.conf"
