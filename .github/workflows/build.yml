@@ -1,13 +1,13 @@
 on:
   push:
     branches:
-      - master
+      - build
   schedule:
     - cron:  '0 0 * * *'
 
 jobs:
   base:
-    runs-on: [ubuntu-18.04]
+    runs-on: [ubuntu-20.04]
     steps:
       - name: Setup Docker
         run: |
@@ -37,7 +37,7 @@ jobs:
           docker push discourse/base:release
           docker push discourse/base:2.0.$TAG
   test:
-    runs-on: [ubuntu-18.04]
+    runs-on: [ubuntu-20.04]
     needs: base
     steps:
       - uses: actions/checkout@master
@@ -54,7 +54,7 @@ jobs:
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/discourse_test:release
   dev:
-    runs-on: [ubuntu-18.04]
+    runs-on: [ubuntu-20.04]
     needs: base
     steps:
       - uses: actions/checkout@master
