@@ -11,10 +11,6 @@ jobs:
   base:
     runs-on: [ubuntu-20.04]
     steps:
-      - name: test step
-        if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        run: |
-          echo test
       - name: enable experimental docker features
         run: |
           sudo bash -c 'echo "{ \"cgroup-parent\": \"/actions_job\",\"experimental\":true}" > /etc/docker/daemon.json'
