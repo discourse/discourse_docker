@@ -21,7 +21,10 @@ def run(command)
     rescue Errno::EIO
       # we are done
     end
+    Process.wait(pid)
   end
+
+  raise "'#{command}' exited with status #{$?.exitstatus}" if $?.exitstatus != 0
 
   lines
 end
