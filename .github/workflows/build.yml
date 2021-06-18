@@ -54,7 +54,6 @@ jobs:
         env:
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
-          ruby auto_build.rb discourse_test_public
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/discourse_test:release
   dev:
@@ -72,7 +71,6 @@ jobs:
         env:
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
-          ruby auto_build.rb discourse_dev
           docker tag discourse/discourse_dev:build discourse/discourse_dev:release
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/discourse_dev:release
