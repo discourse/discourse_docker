@@ -14,6 +14,7 @@ usage () {
   echo "    rebuild:     Rebuild a container (destroy old, bootstrap, start new)"
   echo "    cleanup:     Remove all containers that have stopped for > 24 hours"
   echo "    start-cmd:   Generate docker command used to start container"
+  echo "    print-docker-env-args:   Generate a docker env argument list"
   echo
   echo "Options:"
   echo "    --skip-prereqs             Don't check launcher prerequisites"
@@ -665,6 +666,12 @@ case "$command" in
   start-cmd)
     START_CMD_ONLY="1"
     run_start
+    exit 0;
+    ;;
+
+  print-docker-env-args)
+    set_docker_run_args "--ignore links,expose,volumes,labels"
+    echo "${docker_run_args}"
     exit 0;
     ;;
 
