@@ -21,7 +21,7 @@ All of the dependencies for running Discourse.  This includes runit, postgres, n
 
 ### discourse_dev ([discourse/discourse_dev](https://hub.docker.com/r/discourse/discourse_dev/))
 
-Adds redis and postgres just like the "standalone" template for Discourse in order to have an all-in-one container for development.  Note that you are expected to mount your local discourse source directory to `/src`.  See [the README in GitHub's discourse/bin/docker](https://github.com/discourse/discourse/tree/master/bin/docker/) for utilities that help with this.
+Adds redis and postgres just like the "standalone" template for Discourse in order to have an all-in-one container for development.  Note that you are expected to mount your local discourse source directory to `/src`.  See [the README in GitHub's discourse/bin/docker](https://github.com/discourse/discourse/tree/main/bin/docker/) for utilities that help with this.
 
 Note that the discourse user is granted "sudo" permission without asking for a password in the discourse_dev image.  This is to facilitate the command-line Docker tools in discourse proper that run commands as the discourse user.
 
