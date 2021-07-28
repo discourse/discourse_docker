@@ -117,6 +117,12 @@ run:
       from: /^host.*all.*all.*127.*$/
       to: "host all all 0.0.0.0/0 md5"
 
+  # allow all to connect in with md5 auth (IPv6)
+  - replace:
+      filename: "/etc/postgresql/13/main/pg_hba.conf"
+      from: /^host.*all.*all.*::1\/128.*$/
+      to: "host all all ::/0 md5"
+
   - exec:
       background: true
       # use fast shutdown for pg
