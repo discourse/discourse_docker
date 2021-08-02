@@ -1,6 +1,6 @@
 # NAME:     discourse/base
 # VERSION:  release
-FROM debian:buster-slim
+FROM docker.io/library/debian:buster-slim
 
 ENV PG_MAJOR 13
 ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
