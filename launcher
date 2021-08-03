@@ -736,6 +736,13 @@ case "$command" in
 
   rebuild)
       if [ "$(git symbolic-ref --short HEAD)" == "master" ]; then
+        git branch -m master main
+        git fetch origin
+        git branch -u origin/main main
+        git remote set-head origin -a
+      fi
+
+      if [ "$(git symbolic-ref --short HEAD)" == "main" ]; then
         echo "Ensuring launcher is up to date"
 
         git remote update
