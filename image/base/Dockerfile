@@ -140,5 +140,6 @@ RUN useradd discourse -s /bin/bash -m -U &&\
     chown -R discourse:discourse /var/www/discourse &&\
     cd /var/www/discourse &&\
     sudo -u discourse bundle install --deployment --jobs 4 --without test development &&\
+    yarn install &&\
     bundle exec rake maxminddb:get &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
