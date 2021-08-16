@@ -22,7 +22,7 @@ env:
   ## to use the same domain as the forum itself here.
   MAIL_DOMAIN: discourse.example.com
 # uncomment these (and the volume below!) to support TLS 
-#  POSTCONF_smtpd_tls_key_file:  /letsencrypt/discourse.example.com/prop.ltcmp.net.key
+#  POSTCONF_smtpd_tls_key_file:  /letsencrypt/discourse.example.com/discourse.example.com.key
 #  POSTCONF_smtpd_tls_cert_file:  /letsencrypt/discourse.example.com/fullchain.cer
 #  POSTCONF_smtpd_tls_security_level: may
 
