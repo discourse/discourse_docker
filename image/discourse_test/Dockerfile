@@ -19,10 +19,8 @@ RUN gem update bundler --force &&\
 
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - &&\
     echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
-    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add - &&\
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list &&\
     apt update &&\
-    apt install -y libgconf-2-4 libxss1 google-chrome-stable yarn nodejs &&\
+    apt install -y libgconf-2-4 libxss1 google-chrome-stable firefox-esr &&\
     npm install -g eslint babel-eslint &&\
     cd /var/www/discourse && sudo -E -u discourse -H yarn install
 
