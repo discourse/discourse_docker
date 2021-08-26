@@ -120,7 +120,7 @@ run:
 
   # allow all to connect in with md5 auth (IPv6)
   - replace:
-      filename: "/etc/postgresql/13/main/pg_hba.conf"
+      filename: "/etc/postgresql/9.5/main/pg_hba.conf"
       from: /^host.*all.*all.*::1\/128.*$/
       to: "host all all ::/0 md5"
 
