@@ -157,6 +157,11 @@ run:
   - exec:
       cd: $home
       cmd:
+        - "[ ! -d 'node_modules' ] || su discourse -c 'yarn install --production'"
+
+  - exec:
+      cd: $home
+      cmd:
         - su discourse -c 'bundle exec rake plugin:pull_compatible_all'
       raise_on_fail: false
 
