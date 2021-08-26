@@ -157,7 +157,7 @@ run:
   - exec:
       cd: $home
       cmd:
-        - "[ ! -d 'node_modules' ] || su discourse -c 'yarn install --production'"
+        - "[ ! -d 'node_modules' ] || su discourse -c 'yarn install --production && yarn cache clean'"
 
   - exec:
       cd: $home
