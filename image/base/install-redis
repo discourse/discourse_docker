@@ -2,8 +2,8 @@
 set -e
 
 # version check: https://redis.io/
-REDIS_VERSION=6.2.3
-REDIS_HASH="98ed7d532b5e9671f5df0825bb71f0f37483a16546364049384c63db8764512b"
+REDIS_VERSION=6.2.5
+REDIS_HASH="4b9a75709a1b74b3785e20a6c158cab94cf52298aa381eea947a678a60d551ae"
 
 cd /tmp
 # Prepare Redis source.
