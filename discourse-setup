@@ -124,19 +124,16 @@ check_IP_match() {
 ##
 
 check_docker() {
-  (which docker || which docker.io) 2>/dev/null
-  echo $?
+  (which docker || which docker.io) &>/dev/null
 }
 
 check_and_install_docker() {
-  found_docker=$(check_docker)
-  if [ "$found_docker" -ne 0 ]; then
+  if ! check_docker; then
     echo Failed to find docker or docker.io on your PATH.
     read -p "Enter to install Docker from https://get.docker.com/ or Ctrl+C to exit"
     curl https://get.docker.com/ | sh
 
-    found_docker=$(check_docker)
-    if [ "$found_docker" -ne 0 ]; then
+    if ! check_docker; then
       echo Still failed to find docker or docker.io on your PATH.
       echo Docker install failed. Quitting.
       exit
