@@ -196,7 +196,7 @@ check_plugins() {
   else
     log -e "\nNo non-official plugins detected."
   fi
-  log -e "\nSee https://github.com/discourse/discourse/blob/master/lib/plugin/metadata.rb for the official list.\n"
+  log -e "\nSee https://github.com/discourse/discourse/blob/main/lib/plugin/metadata.rb for the official list.\n"
 }
 
 dump_yaml() {
