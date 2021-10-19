@@ -10,7 +10,7 @@ LIBHEIF_VERSION="1.12.0"
 LIBHEIF_HASH="086145b0d990182a033b0011caadb1b642da84f39ab83aa66d005610650b3c65"
 
 # version check: https://aomedia.googlesource.com/aom
-LIB_AOM_VERSION="3.1.2"
+LIB_AOM_VERSION="3.1.3"
 
 # We use debian, but GitHub CI is stuck on Ubuntu Bionic, so this must be compatible with both
 LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo libjpeg62-turbo-dev' || echo 'libjpeg-turbo8 libjpeg-turbo8-dev')
