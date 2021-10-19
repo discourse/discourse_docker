@@ -1,5 +1,6 @@
 env:
   LETSENCRYPT_DIR: "/shared/letsencrypt"
+  DISCOURSE_FORCE_HTTPS: true
 
 hooks:
   after_ssl:
