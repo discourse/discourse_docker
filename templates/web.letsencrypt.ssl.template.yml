@@ -63,7 +63,7 @@ hooks:
         }
 
         cert_exists() {
-          [[ "$(cd $$ENV_LETSENCRYPT_DIR/$$ENV_DISCOURSE_HOSTNAME$1 && openssl verify -CAfile ca.cer fullchain.cer | grep "OK")" ]]
+          [[ "$(cd $$ENV_LETSENCRYPT_DIR/$$ENV_DISCOURSE_HOSTNAME$1 && openssl verify -CAfile <(openssl x509 -in ca.cer) fullchain.cer | grep "OK")" ]]
         }
 
         ########################################################
