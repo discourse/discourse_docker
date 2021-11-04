@@ -1,0 +1,6 @@
+hooks:
+  before_code:
+    - exec:
+       cmd:
+         - git config --global url."https://hub.fastgit.org/".insteadOf "https://github.com/"
+
