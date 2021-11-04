@@ -40,6 +40,7 @@ env:
   LC_ALL: en_US.UTF-8
   LANG: en_US.UTF-8
   LANGUAGE: en_US.UTF-8
+  EMBER_CLI_PROD_ASSETS: 1
   # DISCOURSE_DEFAULT_LOCALE: en
 
   ## How many concurrent web requests are supported? Depends on memory and CPU cores.
