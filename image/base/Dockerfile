@@ -40,7 +40,7 @@ RUN apt -y install build-essential rsync \
                        postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
                        postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
                        anacron wget \
-                       psmisc vim whois brotli libunwind-dev \
+                       psmisc whois brotli libunwind-dev \
                        libtcmalloc-minimal4 cmake \
                        pngcrush pngquant
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
