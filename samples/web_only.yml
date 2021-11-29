@@ -4,8 +4,10 @@
 templates:
   - "templates/web.template.yml"
   - "templates/web.ratelimited.template.yml"
-## Uncomment these two lines if you wish to add Lets Encrypt (https)
+## If after proxy want to get real IP, please select the second one,One of two lines (https)
   #- "templates/web.ssl.template.yml"
+  #- "templates/web.ssl.proxy.template.yml"
+## Uncomment this line if you wish to add Lets Encrypt (https)  
   #- "templates/web.letsencrypt.ssl.template.yml"
 
 ## which TCP/IP ports should this container expose?
@@ -46,6 +48,9 @@ env:
   ## Uncomment if you want the container to be started with the same
   ## hostname (-h option) as specified above (default "$hostname-$config")
   #DOCKER_USE_HOSTNAME: true
+  
+  ## If after proxy and want to get real IP(https) 
+  #DISCOURSE_INTERNAL_ADDRESS: '192.168.1.0/24'
 
   ## TODO: List of comma delimited emails that will be made admin and developer
   ## on initial signup example 'user1@example.com,user2@example.com'
