@@ -1,6 +1,6 @@
 # NAME:     discourse/base
 # VERSION:  release
-FROM debian:buster-slim
+FROM debian:bullseye-slim
 
 ENV PG_MAJOR 13
 ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
@@ -10,6 +10,7 @@ ENV RAILS_ENV production
 
 RUN echo 2.0.`date +%Y%m%d` > /VERSION
 
+RUN echo 'deb http://deb.debian.org/debian bullseye-backports main' > /etc/apt/sources.list.d/bullseye-backports.list
 RUN apt update && apt install -y gnupg sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
 RUN apt update && apt -y install fping
@@ -24,7 +25,7 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
 RUN curl https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ buster-pgdg main" | \
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
 RUN curl --silent --location https://deb.nodesource.com/setup_16.x | sudo bash -
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
