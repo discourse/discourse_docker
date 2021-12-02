@@ -78,3 +78,20 @@ jobs:
           docker tag discourse/discourse_dev:build discourse/discourse_dev:release
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/discourse_dev:release
+  aarch64:
+    runs-on: [ubuntu-20.04]
+    needs: base
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 1
+      - name: build base image for aarch64
+        run: |
+          cd image/base && docker buildx build . --platform linux/arm64 --load --tag discourse/base:aarch64
+      - name: push to dockerhub
+        if: success() && (github.ref == 'refs/heads/main')
+        env:
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: |
+          docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
+          docker push discourse/base:aarch64
