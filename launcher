@@ -194,6 +194,26 @@ check_prereqs() {
     echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer."
   fi
 
+  case `uname -m` in
+    armv7l)
+      echo "ERROR: 32bit arm is not supported. Check if your hardware support arm64, which is supported in experimental capacity."
+      exit 1
+      ;;
+    aarch64 | arm64)
+      echo "WARNING: Support for aarch64 is experimental at the moment. Please report any problems at https://meta.discourse.org/tag/arm "
+      image="discourse/base:aarch64"
+      read -n 1 -s -r -p "Press any key to continue"
+      ;;
+    x86_64)
+      echo "x86_64 arch detected."
+      ;;
+    *)
+      echo "ERROR: unknown arch detected."
+      exit 1
+      ;;
+  esac
+
+
   # 4. discourse docker image is downloaded
   test=`$docker_path images | awk '{print $1 ":" $2 }' | grep "$image"`
 
