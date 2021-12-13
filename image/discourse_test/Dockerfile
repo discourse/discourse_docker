@@ -13,9 +13,10 @@ RUN sudo -E -u discourse -H git config --global user.email "you@example.com" &&\
 RUN gem update bundler --force &&\
       cd /var/www/discourse &&\
       chown -R discourse . &&\
-      rm -fr .bundle &&\
+      bundle config unset deployment &&\
+      bundle config unset without &&\
       sudo -u discourse git pull &&\
-      sudo -u discourse bundle install --standalone --jobs=4
+      sudo -u discourse bundle install --jobs=4
 
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - &&\
     echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
