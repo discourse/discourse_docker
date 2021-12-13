@@ -1,6 +1,6 @@
 # NAME:     discourse/base
 # VERSION:  release
-FROM debian:bullseye-slim AS base-slim
+FROM debian:bullseye-slim
 
 ENV PG_MAJOR 13
 ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
@@ -145,12 +145,3 @@ RUN useradd discourse -s /bin/bash -m -U &&\
     cd discourse &&\
     git remote set-branches --add origin tests-passed &&\
     chown -R discourse:discourse /var/www/discourse
-
-FROM base-slim AS base
-
-RUN cd /var/www/discourse &&\
-    sudo -u discourse bundle install --deployment --jobs 4 --without test development &&\
-    sudo -u discourse yarn install --production &&\
-    sudo -u discourse yarn cache clean &&\
-    bundle exec rake maxminddb:get &&\
-    find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
