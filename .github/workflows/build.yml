@@ -56,24 +56,42 @@ jobs:
   test:
     runs-on: [ubuntu-20.04]
     needs: base
+    defaults:
+      run:
+        working-directory: image/discourse_test 
     steps:
-      - name: enable experimental docker features
-        run: |
-          sudo bash -c 'echo "{ \"cgroup-parent\": \"/actions_job\",\"experimental\":true}" > /etc/docker/daemon.json'
-          sudo service docker restart
-          docker version -f '{{.Server.Experimental}}'
       - uses: actions/checkout@v2
         with:
           fetch-depth: 1
-      - name: build discourse_test image
+      - name: build discourse_test:slim
         run: |
-          cd image && ruby auto_build.rb discourse_test_public
+          docker buildx build . --load \
+            --build-arg from_tag=slim \
+            --target base \
+            --tag discourse/discourse_test:slim
+      - name: build discourse_test:slim-browsers
+        run: |
+          docker buildx build . --load \
+            --build-arg from_tag=slim \
+            --target with_browsers \
+            --tag discourse/discourse_test:slim-browsers
+      - name: build discourse_test:release
+        run: |
+          docker buildx build . --load \
+            --build-arg from_tag=release \
+            --target release \
+            --tag discourse/discourse_test:release
+      - name: Print summary
+        run: |
+          docker images discourse/discourse_test
       - name: push to dockerhub
         if: success() && (github.ref == 'refs/heads/main')
         env:
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
+          docker push discourse/discourse_test:slim
+          docker push discourse/discourse_test:slim-browsers
           docker push discourse/discourse_test:release
   dev:
     runs-on: [ubuntu-20.04]
