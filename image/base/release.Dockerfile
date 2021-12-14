@@ -1,6 +1,7 @@
+ARG from=discourse/base
 ARG tag=build_slim
 
-FROM discourse/base:$tag
+FROM $from:$tag
 
 RUN cd /var/www/discourse &&\
     sudo -u discourse bundle install --deployment --jobs 4 --without test development &&\
