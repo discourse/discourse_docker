@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-$DIR/standard
+$DIR/standalone
 $DIR/two-container
 $DIR/update-old-templates
 
