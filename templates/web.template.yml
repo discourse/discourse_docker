@@ -168,6 +168,12 @@ run:
       cd: $home
       hook: db_migrate
       cmd:
+        - if [ -n "$DISCOURSE_DB_NAME" ]; then sed -i "s/public/$DISCOURSE_DB_NAME/" $home/db/migrate/20140827044811_remove_nullable_dates.rb; fi;
+        - if [ -n "$DISCOURSE_DB_NAME" ]; then sed -i "s/public/$DISCOURSE_DB_NAME/" $home/lib/badge_posts_view_manager.rb; fi;
+        - if [ -n "$DISCOURSE_DB_NAME" ]; then sed -i "s/public/$DISCOURSE_DB_NAME/" $home/db/migrate/20200601130900_correct_schema_discrepancies.rb; fi;
+        - if [ -n "$DISCOURSE_DB_NAME" ]; then sed -i "s/public/$DISCOURSE_DB_NAME/" $home/db/migrate/20200610150900_correct_posts_schema.rb; fi;
+        - if [ -n "$DISCOURSE_DB_NAME" ]; then sed -i "s/public/$DISCOURSE_DB_NAME/" $home/db/migrate/20200611104600_create_missing_badge_indexes.rb; fi;
+        - if [ -n "$DISCOURSE_DB_NAME" ]; then sed -i "s/public/$DISCOURSE_DB_NAME/" $home/db/migrate/20211213060445_email_tokens_token_to_nullable.rb; fi;
         - su discourse -c 'bundle exec rake db:migrate'
   - exec:
       cd: $home
