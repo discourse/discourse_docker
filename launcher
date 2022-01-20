@@ -94,6 +94,9 @@ local_discourse=local_discourse
 image="discourse/base:2.0.20211118-0105"
 docker_path=`which docker.io 2> /dev/null || which docker`
 git_path=`which git`
+if [ -n "$docker_path" ] && [ -n "$DOCKER_ARGS" ]; then
+  docker_path="$docker_path $DOCKER_ARGS"
+fi
 
 if [ "${SUPERVISED}" = "true" ]; then
   restart_policy="--restart=no"
@@ -455,7 +458,7 @@ RUBY
    merge_user_args
 }
 
-if [ -z $docker_path ]; then
+if [ -z "$docker_path" ]; then
   install_docker
 fi
 
