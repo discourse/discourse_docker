@@ -4,7 +4,10 @@ ARG tag=build_slim
 FROM $from:$tag
 
 RUN cd /var/www/discourse &&\
-    sudo -u discourse bundle install --deployment --jobs 4 --without test development &&\
+    sudo -u discourse bundle config --local deployment true &&\
+    sudo -u discourse bundle config --local path ./vendor/bundle &&\
+    sudo -u discourse bundle config --local without test development &&\
+    sudo -u discourse bundle install --jobs 4 &&\
     sudo -u discourse yarn install --production &&\
     sudo -u discourse yarn cache clean &&\
     bundle exec rake maxminddb:get &&\
