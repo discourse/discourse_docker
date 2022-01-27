@@ -3,7 +3,7 @@ set -e
 
 # version check: https://github.com/ImageMagick/ImageMagick/releases
 IMAGE_MAGICK_VERSION="7.1.0-20"
-IMAGE_MAGICK_HASH="ce972f5fad357fdb5d89db82c4eb0c0fb979cd9a8e798bf436bbb6d1d35b163d"
+IMAGE_MAGICK_HASH="c7526ca8b341e42f026f8157632b1722555f0d015c281861d9c4d314c0c8f78c"
 
 # We use debian, but GitHub CI is stuck on Ubuntu Bionic, so this must be compatible with both
 LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo libjpeg62-turbo-dev' || echo 'libjpeg-turbo8 libjpeg-turbo8-dev')
