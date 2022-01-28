@@ -91,7 +91,7 @@ git_rec_version='1.8.0'
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
-image="discourse/base:2.0.20211118-0105"
+image="discourse/base:2.0.20220128-1817"
 docker_path=`which docker.io 2> /dev/null || which docker`
 git_path=`which git`
 
@@ -662,13 +662,21 @@ run_bootstrap() {
 
   rm -f $cidbootstrap
 
-  run_command="cd /pups &&"
-  if [[ ! "false" =  $update_pups ]]; then
-    run_command="$run_command git pull && git checkout $pups_version &&"
-  fi
-  run_command="$run_command /pups/bin/pups --stdin"
+  unset ERR
 
-  echo $run_command
+  $docker_path run $user_args --rm -i $image gem which pups || ERR=$?
+  if [[ "$ERR" ]]; then
+    # Fallback to git pull method here if `pups` was not installed by gem in base image
+    pups_command="cd /pups &&"
+    if [[ ! "false" =  $update_pups ]]; then
+      pups_command="$pups_command git pull && git checkout $pups_version &&"
+    fi
+    pups_command="$pups_command /pups/bin/pups --stdin"
+  else
+    pups_command="/usr/local/bin/pups --stdin"
+  fi
+
+  echo $pups_command
 
   unset ERR
 
@@ -676,7 +684,7 @@ run_bootstrap() {
 
   echo "$input" > "$tmp_input_file"
   (exec cat "$tmp_input_file" | $docker_path run --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
-    /bin/bash -c "$run_command") || ERR=$?
+    /bin/bash -c "$pups_command") || ERR=$?
 
   rm -f "$tmp_input_file"
 
