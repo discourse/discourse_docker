@@ -87,9 +87,10 @@ RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
 
 RUN gem update --system
 
-RUN gem install bundler --force &&\
-    rm -rf /usr/local/share/ri/2.7.5/system &&\
-    cd / && git clone https://github.com/discourse/pups.git
+RUN gem install bundler pups --force &&\
+    mkdir -p /pups/bin/ &&\
+    ln -s /usr/local/bin/pups /pups/bin/pups &&\
+    rm -rf /usr/local/share/ri/2.7.5/system
 
 ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
