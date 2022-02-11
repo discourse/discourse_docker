@@ -36,7 +36,7 @@ hooks:
     - exec:
         cmd:
           - mkdir -p /shared/import/mysql/data
-          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadbclient-dev mariadb-server
+          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadb-dev mariadb-server
           - sed -Ei 's/^log/#&/' /etc/mysql/my.cnf
 
     - file:
@@ -75,9 +75,8 @@ hooks:
           chown discourse /shared/import/settings.yml
           chown discourse -R /shared/import/data
 
-          # Allow connection as root user without password
-          mysql -uroot -e "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket'"
-          mysql -uroot -e "FLUSH PRIVILEGES"
+          # Set password for root user
+          mysql -uroot -e "ALTER USER root@localhost IDENTIFIED VIA mysql_native_password USING PASSWORD('password'); FLUSH PRIVILEGES;" &>/dev/null || true
 
           if [ -f "/shared/import/data/phpbb_mysql.sql" ]; then
             if [ -f "/shared/import/mysql/imported" ] && ! sha256sum --check /shared/import/mysql/imported &>/dev/null ; then
@@ -87,9 +86,9 @@ hooks:
 
             if [ ! -f "/shared/import/mysql/imported" ]; then
               echo "Loading database dump into MySQL..."
-              mysql -uroot -e "DROP DATABASE IF EXISTS phpbb"
-              mysql -uroot -e "CREATE DATABASE phpbb"
-              mysql -uroot --default-character-set=utf8 --database=phpbb < /shared/import/data/phpbb_mysql.sql
+              mysql -uroot -ppassword -e "DROP DATABASE IF EXISTS phpbb"
+              mysql -uroot -ppassword -e "CREATE DATABASE phpbb"
+              mysql -uroot -ppassword --default-character-set=utf8 --database=phpbb < /shared/import/data/phpbb_mysql.sql
               sha256sum /shared/import/data/phpbb_mysql.sql > /shared/import/mysql/imported
             fi
           else
