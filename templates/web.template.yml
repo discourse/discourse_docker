@@ -21,6 +21,7 @@ params:
 
   home: /var/www/discourse
   upload_size: 10m
+  nginx_worker_connections: 4000
 
 run:
   - exec: thpoff echo "thpoff is installed!"
@@ -134,6 +135,11 @@ run:
       filename: "/etc/nginx/conf.d/discourse.conf"
       from: /client_max_body_size.+$/
       to: client_max_body_size $upload_size ;
+
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /worker_connections.+$/
+      to: worker_connections $nginx_worker_connections ;
 
   - exec:
       cmd: echo "done configuring web"
