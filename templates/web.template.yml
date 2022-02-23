@@ -137,7 +137,7 @@ run:
       to: client_max_body_size $upload_size ;
 
   - replace:
-      filename: "/etc/nginx/conf.d/discourse.conf"
+      filename: "/etc/nginx/nginx.conf"
       from: /worker_connections.+$/
       to: worker_connections $nginx_worker_connections ;
 
