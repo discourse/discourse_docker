@@ -34,7 +34,7 @@ RUN apt -y update
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
 RUN apt -y install --no-install-recommends git rsyslog logrotate cron ssh-client less
-RUN apt -y install build-essential rsync \
+RUN apt -y install build-essential ca-certificates rsync \
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libxml2-dev gawk parallel \
