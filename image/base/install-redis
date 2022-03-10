@@ -7,7 +7,7 @@ REDIS_HASH="5b2b8b7a50111ef395bf1c1d5be11e6e167ac018125055daa8b5c2317ae131ab"
 
 cd /tmp
 # Prepare Redis source.
-wget http://download.redis.io/releases/redis-$REDIS_VERSION.tar.gz
+wget -q http://download.redis.io/releases/redis-$REDIS_VERSION.tar.gz
 sha256sum redis-$REDIS_VERSION.tar.gz
 echo "$REDIS_HASH redis-$REDIS_VERSION.tar.gz" | sha256sum -c
 

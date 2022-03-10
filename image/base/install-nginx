@@ -5,17 +5,15 @@ set -e
 VERSION=1.21.6
 HASH="66dc7081488811e9f925719e34d1b4504c2801c81dee2920e5452a86b11405ae"
 
-apt install -y autoconf
-
 cd /tmp
-curl -O https://nginx.org/download/nginx-$VERSION.tar.gz
+wget -q https://nginx.org/download/nginx-$VERSION.tar.gz
 sha256sum nginx-$VERSION.tar.gz
 echo "$HASH nginx-$VERSION.tar.gz" | sha256sum -c
 tar zxf nginx-$VERSION.tar.gz
 cd nginx-$VERSION
 
 # nginx-common for boilerplate files etc.
-apt install -y nginx-common libpcre3 libpcre3-dev zlib1g zlib1g-dev
+apt install -y nginx-common
 
 cd /tmp
 # this is the reason we are compiling by hand...
