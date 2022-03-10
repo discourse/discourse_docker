@@ -107,6 +107,10 @@ RUN rm -fr /usr/share/man &&\
 # this can probably be done, but I worry that people changing PG locales will have issues
 # cd /usr/share/locale && rm -fr `ls -d */ | grep -v en`
 
+# this is required for aarch64 which uses buildx
+# see https://github.com/docker/buildx/issues/150
+RUN rm -f /etc/service
+
 COPY etc/  /etc
 COPY sbin/ /sbin
 
