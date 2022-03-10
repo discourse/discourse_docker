@@ -202,7 +202,7 @@ check_prereqs() {
     aarch64 | arm64)
       echo "WARNING: Support for aarch64 is experimental at the moment. Please report any problems at https://meta.discourse.org/tag/arm "
       image="discourse/base:aarch64"
-      read -n 1 -s -r -p "Press any key to continue"
+      read -t 60 -n 1 -s -r -p "Press any key to continue"
       ;;
     x86_64)
       echo "x86_64 arch detected."
@@ -260,7 +260,7 @@ check_prereqs() {
     df -h $safe_folder
     echo
     if tty >/dev/null; then
-      read -p "Would you like to attempt to recover space by cleaning docker images and containers in the system? (y/N)" -n 1 -r
+      read -t 60 -p "Would you like to attempt to recover space by cleaning docker images and containers in the system? (y/N)" -n 1 -r
       echo
       if [[ $REPLY =~ ^[Yy]$ ]]
       then
@@ -466,7 +466,7 @@ fi
   if [ -d /var/discourse/shared/standalone/postgres_data_old ]; then
     echo
     echo "Old PostgreSQL backup data cluster detected taking up $(du -hs /var/discourse/shared/standalone/postgres_data_old | awk '{print $1}') detected"
-    read -p "Would you like to remove it? (y/N): " -n 1 -r && echo
+    read -t 60 -p "Would you like to remove it? (y/N): " -n 1 -r && echo
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       echo "removing old PostgreSQL data cluster at /var/discourse/shared/standalone/postgres_data_old..."
