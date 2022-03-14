@@ -11,11 +11,9 @@ ENV RAILS_ENV production
 RUN echo 2.0.`date +%Y%m%d` > /VERSION
 
 RUN echo 'deb http://deb.debian.org/debian bullseye-backports main' > /etc/apt/sources.list.d/bullseye-backports.list
-RUN apt update && apt install -y gnupg sudo curl
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
-RUN apt update && apt -y install fping
+RUN apt update && apt -y install gnupg sudo curl fping
 RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt update || true"
-RUN apt -y install software-properties-common
 RUN apt-mark hold initscripts
 RUN apt -y upgrade
 
@@ -34,9 +32,10 @@ RUN apt -y update
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
 RUN apt -y install --no-install-recommends git rsyslog logrotate cron ssh-client less
-RUN apt -y install build-essential ca-certificates rsync \
+RUN apt -y install autoconf build-essential ca-certificates rsync \
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
+                       libpcre3 libpcre3-dev zlib1g zlib1g-dev \
                        libxml2-dev gawk parallel \
                        postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
                        postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
@@ -59,47 +58,30 @@ RUN cd / &&\
     npm install -g terser &&\
     npm install -g uglify-js
 
+ADD install-imagemagick /tmp/install-imagemagick
+RUN /tmp/install-imagemagick
+
+ADD install-jemalloc /tmp/install-jemalloc
+RUN /tmp/install-jemalloc
+
 ADD install-nginx /tmp/install-nginx
 RUN /tmp/install-nginx
 
-RUN apt -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
-
-RUN mkdir /oxipng-install && cd /oxipng-install &&\
-      wget https://github.com/shssoichiro/oxipng/releases/download/v5.0.1/oxipng-5.0.1-x86_64-unknown-linux-musl.tar.gz &&\
-      tar -xzf oxipng-5.0.1-x86_64-unknown-linux-musl.tar.gz && cd oxipng-5.0.1-x86_64-unknown-linux-musl &&\
-      cp oxipng /usr/local/bin &&\
-      cd / && rm -rf /oxipng-install
-
-RUN mkdir /jemalloc-stable && cd /jemalloc-stable &&\
-      wget https://github.com/jemalloc/jemalloc/releases/download/3.6.0/jemalloc-3.6.0.tar.bz2 &&\
-      tar -xjf jemalloc-3.6.0.tar.bz2 && cd jemalloc-3.6.0 && ./configure --prefix=/usr && make && make install &&\
-      cd / && rm -rf /jemalloc-stable
-
-RUN mkdir /jemalloc-new && cd /jemalloc-new &&\
-      wget https://github.com/jemalloc/jemalloc/releases/download/5.2.1/jemalloc-5.2.1.tar.bz2 &&\
-      tar -xjf jemalloc-5.2.1.tar.bz2 && cd jemalloc-5.2.1 && ./configure --prefix=/usr --with-install-suffix=5.2.1 && make build_lib && make install_lib &&\
-      cd / && rm -rf /jemalloc-new
-
-RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
-    mkdir /src && git -C /src clone https://github.com/rbenv/ruby-build.git &&\
-    cd /src/ruby-build && ./install.sh &&\
-    cd / && rm -rf /src/ruby-build && (ruby-build 2.7.5 /usr/local)
-
-RUN gem update --system
-
-RUN gem install bundler pups --force &&\
-    mkdir -p /pups/bin/ &&\
-    ln -s /usr/local/bin/pups /pups/bin/pups &&\
-    rm -rf /usr/local/share/ri/2.7.5/system
+ADD install-oxipng /tmp/install-oxipng
+RUN /tmp/install-oxipng
 
 ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
 
-ADD install-imagemagick /tmp/install-imagemagick
-RUN /tmp/install-imagemagick
+ADD install-ruby /tmp/install-ruby
+RUN /tmp/install-ruby
 
-# Validate install
-RUN ruby -Eutf-8 -e "v = \`convert -version\`; %w{png tiff jpeg freetype heic}.each { |f| unless v.include?(f); STDERR.puts('no ' + f +  ' support in imagemagick'); exit(-1); end }"
+RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
+    gem update --system
+
+RUN gem install bundler pups --force &&\
+    mkdir -p /pups/bin/ &&\
+    ln -s /usr/local/bin/pups /pups/bin/pups
 
 # This tool allows us to disable huge page support for our current process
 # since the flag is preserved through forks and execs it can be used on any
@@ -108,41 +90,32 @@ ADD thpoff.c /src/thpoff.c
 RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
 
 # clean up for docker squash
-RUN   rm -fr /usr/share/man &&\
-      rm -fr /usr/share/doc &&\
-      rm -fr /usr/share/vim/vim74/tutor &&\
-      rm -fr /usr/share/vim/vim74/doc &&\
-      rm -fr /usr/share/vim/vim74/lang &&\
-      rm -fr /usr/local/share/doc &&\
-      rm -fr /usr/local/share/ruby-build &&\
-      rm -fr /root/.gem &&\
-      rm -fr /root/.npm &&\
-      rm -fr /tmp/* &&\
-      rm -fr /usr/share/vim/vim74/spell/en*
-
+RUN rm -fr /usr/share/man &&\
+    rm -fr /usr/share/doc &&\
+    rm -fr /usr/share/vim/vim74/doc &&\
+    rm -fr /usr/share/vim/vim74/lang &&\
+    rm -fr /usr/share/vim/vim74/spell/en* &&\
+    rm -fr /usr/share/vim/vim74/tutor &&\
+    rm -fr /usr/local/share/doc &&\
+    rm -fr /usr/local/share/ri &&\
+    rm -fr /usr/local/share/ruby-build &&\
+    rm -fr /var/lib/apt/lists/* &&\
+    rm -fr /root/.gem &&\
+    rm -fr /root/.npm &&\
+    rm -fr /tmp/*
 
 # this can probably be done, but I worry that people changing PG locales will have issues
 # cd /usr/share/locale && rm -fr `ls -d */ | grep -v en`
 
-RUN mkdir -p /etc/runit/3.d
+# this is required for aarch64 which uses buildx
+# see https://github.com/docker/buildx/issues/150
+RUN rm -f /etc/service
 
-ADD runit-1 /etc/runit/1
-ADD runit-1.d-cleanup-pids /etc/runit/1.d/cleanup-pids
-ADD runit-1.d-anacron /etc/runit/1.d/anacron
-ADD runit-1.d-00-fix-var-logs /etc/runit/1.d/00-fix-var-logs
-ADD runit-2 /etc/runit/2
-ADD runit-3 /etc/runit/3
-ADD boot /sbin/boot
-
-ADD cron /etc/service/cron/run
-ADD rsyslog /etc/service/rsyslog/run
-ADD cron.d_anacron /etc/cron.d/anacron
+COPY etc/  /etc
+COPY sbin/ /sbin
 
 # Discourse specific bits
 RUN useradd discourse -s /bin/bash -m -U &&\
-    mkdir -p /var/www &&\
-    cd /var/www &&\
-    git clone --depth 1 https://github.com/discourse/discourse.git &&\
-    cd discourse &&\
-    git remote set-branches --add origin tests-passed &&\
-    chown -R discourse:discourse /var/www/discourse
+    install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
+    sudo -u discourse git clone --depth 1 https://github.com/discourse/discourse.git /var/www/discourse &&\
+    sudo -u discourse git -C /var/www/discourse remote set-branches --add origin tests-passed
