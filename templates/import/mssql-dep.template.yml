@@ -8,7 +8,7 @@ hooks:
     - exec:
         cd: /tmp
         cmd:
-          - wget -O freetds.tar.gz http://www.freetds.org/files/stable/freetds-1.00.91.tar.gz
+          - wget -q -O freetds.tar.gz http://www.freetds.org/files/stable/freetds-1.00.91.tar.gz
           - tar -xzf freetds.tar.gz
     - exec:
         cd: /tmp/freetds-*

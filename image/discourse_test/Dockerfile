@@ -22,7 +22,7 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo ap
     echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
     apt update &&\
     apt install -y libgconf-2-4 libxss1 google-chrome-stable firefox-esr &&\
-    cd /tmp && wget "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US" -O firefox.tar.bz2 &&\
+    cd /tmp && wget -q "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US" -O firefox.tar.bz2 &&\
     tar xjvf firefox.tar.bz2 && mv /tmp/firefox /opt/firefox-evergreen &&\
     apt clean
 
