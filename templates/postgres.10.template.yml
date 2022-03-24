@@ -155,7 +155,7 @@ run:
         #!/bin/bash
         ID=db-$(date +%F_%T)
         FILENAME=/shared/postgres_backup/$ID.tar.gz
-        pg_basebackup --format=tar --pgdata=- --xlog --gzip --label=$ID > $FILENAME
+        pg_basebackup --format=tar --pgdata=- --wal-method=fetch --gzip --label=$ID > $FILENAME
         echo $FILENAME
 
   - file:
