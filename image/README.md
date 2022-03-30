@@ -2,7 +2,7 @@
 
 ## Building new images
 
-To build a new image, just run `ruby auto_build.rb image-name`. The build process will build a local image with a predefined tag.
+To build a new image, just run `ruby auto_build.rb image-name`. The build process will build a local image with a predefined tag. To build dev/test/bench/fast_switch you need to build base_slim and base first.
 
 Images and tag names are defined [here](https://github.com/discourse/discourse_docker/blob/master/image/auto_build.rb#L6-L11).
 

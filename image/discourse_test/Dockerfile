@@ -21,10 +21,23 @@ FROM base AS with_browsers
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - &&\
     echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
     apt update &&\
-    apt install -y libgconf-2-4 libxss1 google-chrome-stable firefox-esr &&\
+    apt install -y libgconf-2-4 libxss1 google-chrome-stable firefox-esr unzip &&\
     cd /tmp && wget -q "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US" -O firefox.tar.bz2 &&\
     tar xjvf firefox.tar.bz2 && mv /tmp/firefox /opt/firefox-evergreen &&\
     apt clean
+
+ENV CHROMEDRIVER_DIR /chromedriver
+
+# Setup chromedriver based on google-chrome-stable to sync versions.
+RUN chrome_version=$(google-chrome-stable -product-version) &&\
+    chrome_version_no_patch=$(echo "${chrome_version%.*}") &&\
+    mkdir $CHROMEDRIVER_DIR &&\
+    chromedriver_version=$(curl -Ss "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${chrome_version_no_patch}") &&\
+    wget -q --continue -P $CHROMEDRIVER_DIR "https://chromedriver.storage.googleapis.com/${chromedriver_version}/chromedriver_linux64.zip"
+RUN unzip $CHROMEDRIVER_DIR/chromedriver* -d $CHROMEDRIVER_DIR
+
+# Put Chromedriver into the PATH
+ENV PATH $CHROMEDRIVER_DIR:$PATH
 
 FROM with_browsers AS release
 
