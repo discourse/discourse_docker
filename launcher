@@ -711,6 +711,7 @@ run_bootstrap() {
   sleep 5
 
   $docker_path commit \
+    -c "LABEL org.opencontainers.image.created=\"$(TZ=UTC date -Iseconds)\"" \
     "$CONTAINER_ID" \
     $local_discourse/$config || die "FAILED TO COMMIT $CONTAINER_ID"
   $docker_path rm "$CONTAINER_ID"
