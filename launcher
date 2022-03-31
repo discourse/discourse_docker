@@ -140,6 +140,10 @@ compare_version() {
     return 1
 }
 
+die () {
+  echo -e "\n$1\n" >&2
+  exit "${2:-1}"
+}
 
 install_docker() {
   echo "Docker is not installed, you will need to install Docker in order to run Launcher"
@@ -660,61 +664,56 @@ run_bootstrap() {
   set_volumes
   set_links
 
-  rm -f $cidbootstrap
-
-  unset ERR
-
-  $docker_path run $user_args --rm -i $image gem which pups || ERR=$?
-  if [[ "$ERR" ]]; then
+  if $docker_path run $user_args --rm -i $image gem which pups; then
+    pups_command="/usr/local/bin/pups --stdin"
+  else
     # Fallback to git pull method here if `pups` was not installed by gem in base image
     pups_command="cd /pups &&"
     if [[ ! "false" =  $update_pups ]]; then
       pups_command="$pups_command git pull && git checkout $pups_version &&"
     fi
     pups_command="$pups_command /pups/bin/pups --stdin"
-  else
-    pups_command="/usr/local/bin/pups --stdin"
   fi
 
   echo $pups_command
 
-  unset ERR
+  declare -i BOOTSTRAP_EXITCODE
+  rm -f $cidbootstrap
 
-  tmp_input_file=$(mktemp)
+  echo "$input" | $docker_path run --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" --cidfile "$cidbootstrap" -i -a stdin -a stdout -a stderr $volumes $image \
+    /bin/bash -c "$pups_command"
+  BOOTSTRAP_EXITCODE=$?
 
-  echo "$input" > "$tmp_input_file"
-  (exec cat "$tmp_input_file" | $docker_path run --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" --cidfile $cidbootstrap -i -a stdin -a stdout -a stderr $volumes $image \
-    /bin/bash -c "$pups_command") || ERR=$?
+  CONTAINER_ID=$(cat "$cidbootstrap")
+  rm -f "$cidbootstrap"
 
-  rm -f "$tmp_input_file"
-
-  unset FAILED
   # magic exit code that indicates a retry
-  if [[ "$ERR" == 77 ]]; then
-    $docker_path rm `cat $cidbootstrap`
-    rm $cidbootstrap
+  if [[ $BOOTSTRAP_EXITCODE -eq 77 ]]; then
+    $docker_path rm "$CONTAINER_ID"
     exit 77
-  elif [[ "$ERR" > 0 ]]; then
-    FAILED=TRUE
-  fi
-
-  if [[ $FAILED = "TRUE" ]]; then
-    if [[ ! -z "$DEBUG" ]]; then
-      $docker_path commit `cat $cidbootstrap` $local_discourse/$config-debug || echo 'FAILED TO COMMIT'
-      echo "** DEBUG ** Maintaining image for diagnostics $local_discourse/$config-debug"
-    fi
-
-    $docker_path rm `cat $cidbootstrap`
-    rm $cidbootstrap
+  elif [[ $BOOTSTRAP_EXITCODE -gt 0 ]]; then
+    echo "bootstrap failed with exit code $BOOTSTRAP_EXITCODE"
     echo "** FAILED TO BOOTSTRAP ** please scroll up and look for earlier error messages, there may be more than one."
     echo "./discourse-doctor may help diagnose the problem."
+
+    if [[ -n "$DEBUG" ]]; then
+      if $docker_path commit "$CONTAINER_ID" $local_discourse/$config-debug; then
+        echo "** DEBUG ** Maintaining image for diagnostics $local_discourse/$config-debug"
+      else
+        echo "** DEBUG ** Failed to commit container $CONTAINER_ID for diagnostics"
+      fi
+    fi
+
+    $docker_path rm "$CONTAINER_ID"
     exit 1
   fi
 
   sleep 5
 
-  $docker_path commit `cat $cidbootstrap` $local_discourse/$config || echo 'FAILED TO COMMIT'
-  $docker_path rm `cat $cidbootstrap` && rm $cidbootstrap
+  $docker_path commit \
+    "$CONTAINER_ID" \
+    $local_discourse/$config || die "FAILED TO COMMIT $CONTAINER_ID"
+  $docker_path rm "$CONTAINER_ID"
 }
 
 case "$command" in
