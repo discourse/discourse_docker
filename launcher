@@ -140,8 +140,8 @@ compare_version() {
     return 1
 }
 
-die () {
-  echo -e "\n$1\n" >&2
+fatal () {
+  echo -e "\n$1\n"
   exit "${2:-1}"
 }
 
@@ -713,7 +713,7 @@ run_bootstrap() {
   $docker_path commit \
     -c "LABEL org.opencontainers.image.created=\"$(TZ=UTC date -Iseconds)\"" \
     "$CONTAINER_ID" \
-    $local_discourse/$config || die "FAILED TO COMMIT $CONTAINER_ID"
+    $local_discourse/$config || fatal "FAILED TO COMMIT $CONTAINER_ID"
   $docker_path rm "$CONTAINER_ID"
 }
 
