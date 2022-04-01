@@ -33,8 +33,9 @@ RUN chrome_version=$(google-chrome-stable -product-version) &&\
     chrome_version_no_patch=$(echo "${chrome_version%.*}") &&\
     mkdir $CHROMEDRIVER_DIR &&\
     chromedriver_version=$(curl -Ss "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${chrome_version_no_patch}") &&\
-    wget -q --continue -P $CHROMEDRIVER_DIR "https://chromedriver.storage.googleapis.com/${chromedriver_version}/chromedriver_linux64.zip"
-RUN unzip $CHROMEDRIVER_DIR/chromedriver_linux64.zip -d $CHROMEDRIVER_DIR && rm $CHROMEDRIVER_DIR/chromedriver_linux64.zip
+    wget -q --continue -P $CHROMEDRIVER_DIR "https://chromedriver.storage.googleapis.com/${chromedriver_version}/chromedriver_linux64.zip" &&\
+    unzip $CHROMEDRIVER_DIR/chromedriver_linux64.zip -d $CHROMEDRIVER_DIR &&\
+    rm $CHROMEDRIVER_DIR/chromedriver_linux64.zip
 
 # Put Chromedriver into the PATH
 ENV PATH $CHROMEDRIVER_DIR:$PATH
