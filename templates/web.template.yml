@@ -265,7 +265,7 @@ run:
 
   # move state out of the container this fancy is done to support rapid rebuilds of containers,
   # we store anacron and logrotate state outside the container to ensure its maintained across builds
-  # later move this snipped into an intialization script
+  # later move this snipped into an initialization script
   # we also ensure all the symlinks we need to /shared are in place in the correct structure
   # this allows us to bootstrap on one machine and then run on another
   - file:

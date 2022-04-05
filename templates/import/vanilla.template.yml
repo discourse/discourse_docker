@@ -22,7 +22,7 @@ hooks:
         path: /etc/mysql/conf.d/import.cnf
         contents: |
           [mysqld]
-          # disable InnoDB since it is extremly slow in Docker container
+          # disable InnoDB since it is extremely slow in Docker container
           default-storage-engine=MyISAM
           default-tmp-storage-engine=MyISAM
           innodb=OFF

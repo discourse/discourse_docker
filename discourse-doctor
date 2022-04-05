@@ -327,7 +327,7 @@ print_done() {
         log "Publicly available log not generated."
     fi
   fi
-  # The following is not in the web log file since it was copied above, which seems corect
+  # The following is not in the web log file since it was copied above, which seems correct
   log
   log "You can examine the output of this script with "
   log "LESS=-Ri less $LOG_FILE"
