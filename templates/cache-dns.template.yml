@@ -15,5 +15,6 @@
 
 hooks:
   after_bundle_exec:
+    - exec: "gem install pg redis"
     - exec: "mkdir -p /etc/service/cache_critical_dns/"
     - exec: "cp /var/www/discourse/script/cache_critical_dns /etc/service/cache_critical_dns/run"
