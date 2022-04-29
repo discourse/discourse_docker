@@ -4,18 +4,18 @@ on:
       - main
   pull_request:
   schedule:
-    - cron:  '0 0 * * *'
+    - cron: '0 0 * * *'
 
 jobs:
   base:
-    runs-on: [ubuntu-20.04]
+    runs-on: ubuntu-20.04
     steps:
       - name: enable experimental docker features
         run: |
           sudo bash -c 'echo "{ \"cgroup-parent\": \"/actions_job\",\"experimental\":true}" > /etc/docker/daemon.json'
           sudo service docker restart
           docker version -f '{{.Server.Experimental}}'
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 1
       - name: build slim image
@@ -54,13 +54,13 @@ jobs:
           docker push discourse/base:2.0.$TAG
           docker push discourse/base:release
   test:
-    runs-on: [ubuntu-20.04]
+    runs-on: ubuntu-20.04
     needs: base
     defaults:
       run:
-        working-directory: image/discourse_test 
+        working-directory: image/discourse_test
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 1
       - name: build discourse_test:slim
@@ -94,10 +94,10 @@ jobs:
           docker push discourse/discourse_test:slim-browsers
           docker push discourse/discourse_test:release
   dev:
-    runs-on: [ubuntu-20.04]
+    runs-on: ubuntu-20.04
     needs: base
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 1
       - name: build discourse_dev image
@@ -112,7 +112,7 @@ jobs:
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/discourse_dev:release
   aarch64:
-    runs-on: [ubuntu-20.04]
+    runs-on: ubuntu-20.04
     needs: base
     services:
       registry:
@@ -120,7 +120,7 @@ jobs:
         ports:
           - 5000:5000
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 1
       - name: Set up QEMU
@@ -136,7 +136,7 @@ jobs:
             --platform linux/arm64 \
             --tag discourse/base:aarch64-slim
           docker tag discourse/base:aarch64-slim localhost:5000/discourse/base:aarch64-slim
-          docker push localhost:5000/discourse/base:aarch64-slim 
+          docker push localhost:5000/discourse/base:aarch64-slim
       - name: build release image
         working-directory: image/base
         run: |
