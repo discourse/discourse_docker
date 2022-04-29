@@ -39,10 +39,25 @@ def dev_deps()
   run("cp ../templates/redis.template.yml discourse_dev/redis.template.yml")
 end
 
-image = ARGV[0].intern
-raise 'Image not found' unless images.include?(image)
+if ARGV.length != 1
+  puts <<~TEXT
+    Usage:
+    ruby auto_build.rb IMAGE
 
-puts "Building #{images[image]}"
-dev_deps() if image == :discourse_dev
+    Available images:
+    #{images.keys.join(", ")}
+  TEXT
+  exit 1
+else
+  image = ARGV[0].to_sym
 
-build(images[image])
+  if !images.include?(image)
+    $stderr.puts "Image not found"
+    exit 1
+  end
+
+  puts "Building #{images[image]}"
+  dev_deps() if image == :discourse_dev
+
+  build(images[image])
+end
