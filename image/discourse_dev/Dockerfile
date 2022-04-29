@@ -38,8 +38,7 @@ ADD ensure-database /etc/runit/1.d/ensure-database
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - &&\
     echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
     apt update &&\
-    apt install -y google-chrome-stable firefox-esr &&\
-    npm install -g eslint babel-eslint
+    apt install -y google-chrome-stable firefox-esr
 
 # Install & Configure MailHog (https://github.com/mailhog/MailHog)
 RUN wget -qO /tmp/mailhog https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64\
