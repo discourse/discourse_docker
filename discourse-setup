@@ -884,7 +884,7 @@ then
   DATE=`date +"%Y-%m-%d-%H%M%S"`
   BACKUP=$app_name.yml.$DATE.bak
   echo Saving old file as $BACKUP
-  cp $web_file containers/$BACKUP
+  install -m0600 $web_file containers/$BACKUP
   if [ "$DEBUG" != "1" ]
   then
     echo "Stopping existing container in 5 seconds or Control-C to cancel."
@@ -902,7 +902,7 @@ else
   then
     check_ports
   fi
-  cp -v $web_template $web_file
+  install -v -m0600 $web_template $web_file
   if [ "$data_name" == "data" ]
   then
     echo "--------------------------------------------------"
@@ -918,7 +918,7 @@ else
       echo "Problem changing DISCOURSE_DB_PASSWORD" in $web_file
     fi
 
-    cp -v $data_template $data_file
+    install -v -m0600 $data_template $data_file
     quote=\'
     sed -i -e "s/password ${quote}SOME_SECRET${quote}/password '$DISCOURSE_DB_PASSWORD'/w $changelog" $data_file
     if  [ -s $changelog ]
