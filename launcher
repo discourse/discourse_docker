@@ -648,10 +648,6 @@ run_run() {
 }
 
 run_bootstrap() {
-  # Is the image available?
-  # If not, pull it here so the user is aware what's happening.
-  $docker_path history $image >/dev/null 2>&1 || pull_image
-
   set_template_info
 
   base_image=`cat $config_file | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e \
@@ -663,6 +659,10 @@ run_bootstrap() {
   if [[ ! X"" = X"$base_image" ]]; then
     image=$base_image
   fi
+
+  # the base_image may not always be discourse/base,
+  # let's ensure we always build from the latest
+  pull_image
 
   set_volumes
   set_links
