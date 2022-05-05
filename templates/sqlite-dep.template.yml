@@ -1,0 +1,14 @@
+# This template adds the 'sqlite' gem for import scripts depending on it
+
+params:
+  home: /var/www/discourse
+
+hooks:
+  after_bundle_exec:
+    - exec:
+        cd: $home
+        cmd:
+          - echo "gem 'sqlite3'" >> Gemfile
+          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y sqlite3 libsqlite3-dev
+          - su discourse -c 'bundle config unset deployment'
+          - su discourse -c 'bundle install --no-deployment --path vendor/bundle --jobs 4 --without test development'
