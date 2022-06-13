@@ -149,10 +149,10 @@ check_OS() {
 }
 
 ##
-## OS X available memory
+## macOS available memory
 ##
-check_osx_memory() {
-  echo `free -m | awk '/Mem:/ {print $2}'`
+check_macos_memory() {
+  echo $(($(memory_pressure | head -n 1 | awk '{ print $4 }') / 1024 / 1024 / 1024))
 }
 
 ##
@@ -174,11 +174,10 @@ check_linux_memory() {
 ## Do we have enough memory and disk space for Discourse?
 ##
 check_disk_and_memory() {
-
   os_type=$(check_OS)
   avail_mem=0
   if [ "$os_type" == "Darwin" ]; then
-    avail_mem=$(check_osx_memory)
+    avail_mem=$(check_macos_memory)
   else
     avail_mem=$(check_linux_memory)
   fi
@@ -254,7 +253,7 @@ scale_ram_and_cpu() {
   avail_cores=0
   os_type=$(check_OS)
   if [ "$os_type" == "Darwin" ]; then
-    avail_gb=$(check_osx_memory)
+    avail_gb=$(check_macos_memory)
     avail_cores=`sysctl hw.ncpu | awk '/hw.ncpu:/ {print $2}'`
   else
     avail_gb=$(check_linux_memory)
