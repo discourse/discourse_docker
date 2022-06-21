@@ -12,12 +12,12 @@ RUN echo 2.0.`date +%Y%m%d` > /VERSION
 
 RUN echo 'deb http://deb.debian.org/debian bullseye-backports main' > /etc/apt/sources.list.d/bullseye-backports.list
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
-RUN apt update && apt -y install gnupg sudo curl fping
-RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt update || true"
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping
+RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt-get update || true"
 RUN apt-mark hold initscripts
-RUN apt -y upgrade
+RUN apt-get -y upgrade
 
-RUN apt install -y locales locales-all
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y locales locales-all
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
@@ -28,11 +28,11 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main" | \
 RUN curl --silent --location https://deb.nodesource.com/setup_16.x | sudo bash -
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
-RUN apt -y update
+RUN apt-get -y update
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
-RUN apt -y install --no-install-recommends git rsyslog logrotate cron ssh-client less
-RUN apt -y install autoconf build-essential ca-certificates rsync \
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf build-essential ca-certificates rsync \
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libpcre3 libpcre3-dev zlib1g zlib1g-dev \
@@ -49,12 +49,12 @@ RUN sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.co
 RUN dpkg-divert --local --rename --add /sbin/initctl
 RUN sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"
 RUN cd / &&\
-    apt -y install runit socat &&\
+    DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat &&\
     mkdir -p /etc/runit/1.d &&\
-    apt clean &&\
+    apt-get clean &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US &&\
-    apt install -y nodejs yarn &&\
+    DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs yarn &&\
     npm install -g terser &&\
     npm install -g uglify-js
 
