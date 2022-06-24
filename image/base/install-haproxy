@@ -1,0 +1,80 @@
+#!/bin/bash
+set -e
+
+# version check: http://www.haproxy.org/#down
+HAPROXY_URL=https://www.haproxy.org/download/2.6/src/haproxy-2.6.1.tar.gz
+HAPROXY_SHA256=915b351e6450d183342c4cdcda7771eac4f0f72bf90582adcd15a01c700d29b1
+QUICTLS_URL=https://codeload.github.com/quictls/openssl/tar.gz/OpenSSL_1_1_1n+quic
+
+
+groupadd --gid 99 --system haproxy
+useradd \
+    --gid haproxy \
+    --home-dir /var/lib/haproxy \
+    --no-create-home \
+    --system \
+    haproxy \
+
+mkdir /var/lib/haproxy
+chown haproxy:haproxy /var/lib/haproxy
+
+apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    gcc \
+    libc6-dev \
+    liblua5.3-dev \
+    libpcre2-dev \
+    libssl-dev \
+    perl \
+    make \
+    wget
+
+wget -O quictls.tar.gz "$QUICTLS_URL"
+mkdir -p /usr/src/quictls
+tar -xzf quictls.tar.gz -C /usr/src/quictls --strip-components=1
+rm quictls.tar.gz
+cd /usr/src/quictls
+./config --libdir=lib --prefix=/opt/quictls
+make
+make install
+cp /opt/quictls/lib/libcrypto.so /usr/lib/
+cp /opt/quictls/lib/libssl.so /usr/lib/
+cd -
+rm -rf /usr/src/quictls
+
+wget -O haproxy.tar.gz "$HAPROXY_URL"
+echo "$HAPROXY_SHA256 *haproxy.tar.gz" | sha256sum -c
+mkdir -p /usr/src/haproxy
+tar -xzf haproxy.tar.gz -C /usr/src/haproxy --strip-components=1
+rm haproxy.tar.gz
+
+makeOpts=' \
+    TARGET=linux-glibc \
+    USE_GETADDRINFO=1 \
+    USE_LUA=1 LUA_INC=/usr/include/lua5.3 \
+    USE_OPENSSL=1 \
+    USE_QUIC=1 \
+    SSL_INC=/opt/quictls/include SSL_LIB=/opt/quictls/lib \
+    LDFLAGS="-Wl,-rpath,/opt/quictls/lib" \
+    USE_PCRE2=1 USE_PCRE2_JIT=1 \
+    USE_PROMEX=1 \
+    \
+    EXTRA_OBJS=" \
+    " \
+'
+# https://salsa.debian.org/haproxy-team/haproxy/-/commit/53988af3d006ebcbf2c941e34121859fd6379c70
+dpkgArch="$(dpkg --print-architecture)"
+case "$dpkgArch" in \
+    armel) makeOpts="$makeOpts ADDLIB=-latomic" ;; \
+esac
+
+nproc="$(nproc)"
+eval "make -C /usr/src/haproxy -j '$nproc' all $makeOpts"
+eval "make -C /usr/src/haproxy install-bin $makeOpts"
+
+mkdir -p /usr/local/etc/haproxy
+cp -R /usr/src/haproxy/examples/errorfiles /usr/local/etc/haproxy/errors
+rm -rf /usr/src/haproxy
+
+# smoke test
+haproxy -v

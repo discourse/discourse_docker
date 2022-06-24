@@ -67,6 +67,9 @@ RUN /tmp/install-jemalloc
 ADD install-nginx /tmp/install-nginx
 RUN /tmp/install-nginx
 
+ADD install-haproxy /tmp/install-haproxy
+RUN /tmp/install-haproxy
+
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
