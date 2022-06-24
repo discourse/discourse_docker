@@ -112,7 +112,7 @@ jobs:
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/discourse_dev:release
   aarch64:
-    runs-on: ubuntu-20.04
+    runs-on: macos-12
     needs: base
     services:
       registry:
