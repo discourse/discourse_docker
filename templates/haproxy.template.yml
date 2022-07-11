@@ -1,0 +1,41 @@
+run:
+  - file:
+     path: /etc/service/haproxy/run
+     chmod: "+x"
+     contents: |
+        #!/bin/sh
+        exec 2>&1
+        exec /usr/local/sbin/haproxy -f 
+  - file:
+     path: /etc/service/haproxy/log/run
+     chmod: "+x"
+     contents: |
+       #!/bin/sh
+       mkdir -p /var/log/haproxy
+       exec svlogd /var/log/haproxy
+  - file:
+     path: /etc/runit/3.d/9-haproxy
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       sv stop haproxy
+  - file:
+     path: /usr/local/etc/haproxy/config.cfg
+     contents: |
+      global
+          daemon
+          maxconn 256
+
+      defaults
+          mode http
+          timeout connect 5000ms
+          timeout client 50000ms
+          timeout server 50000ms
+
+      frontend http-in
+          bind *:80
+          default_backend servers
+
+      backend servers
+          server server1 unix@/shared/nginx.http.sock maxconn 128
+
