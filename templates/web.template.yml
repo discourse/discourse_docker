@@ -162,7 +162,7 @@ run:
   - exec:
       cd: $home
       cmd:
-        - "[ ! -d 'node_modules' ] || su discourse -c 'yarn install --production && yarn cache clean'"
+        - "[ ! -d 'node_modules' ] || su discourse -c 'yarn install --production --frozen-lockfile && yarn cache clean'"
 
   - exec:
       cd: $home
