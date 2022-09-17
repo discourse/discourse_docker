@@ -155,14 +155,14 @@ run:
 
   - exec:
       cd: $home
-      hook: bundle_exec
       cmd:
-        - su discourse -c 'bundle install --deployment --retry 3 --jobs 4 --verbose --without test development'
+        - "[ ! -d 'node_modules' ] || su discourse -c 'yarn install --production --frozen-lockfile && yarn cache clean'"
 
   - exec:
       cd: $home
+      hook: bundle_exec
       cmd:
-        - "[ ! -d 'node_modules' ] || su discourse -c 'yarn install --production --frozen-lockfile && yarn cache clean'"
+        - su discourse -c 'bundle install --deployment --retry 3 --jobs 4 --verbose --without test development'
 
   - exec:
       cd: $home
