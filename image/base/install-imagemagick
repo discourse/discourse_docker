@@ -8,6 +8,9 @@ IMAGE_MAGICK_HASH="c7526ca8b341e42f026f8157632b1722555f0d015c281861d9c4d314c0c8f
 # We use debian, but GitHub CI is stuck on Ubuntu Bionic, so this must be compatible with both
 LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo libjpeg62-turbo-dev' || echo 'libjpeg-turbo8 libjpeg-turbo8-dev')
 
+# Ubuntu 22.04 (Jammy) doesn't have libwebp6
+LIBWEBP=$(cat /etc/issue | grep -qi 'Ubuntu 22.04' && echo 'libwebp7' || echo 'libwebp6')
+
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
 
@@ -15,7 +18,7 @@ WDIR=/tmp/imagemagick
 apt -y -q remove imagemagick
 apt -y -q install git make gcc pkg-config autoconf curl g++ yasm cmake \
     libde265-0 libde265-dev ${LIBJPEGTURBO} x265 libx265-dev libtool \
-    libpng16-16 libpng-dev ${LIBJPEGTURBO} libwebp6 libwebp-dev libgomp1 \
+    libpng16-16 libpng-dev ${LIBJPEGTURBO} ${LIBWEBP} libwebp-dev libgomp1 \
     libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils \
     libltdl7-dev libbz2-dev gsfonts libtiff-dev libfreetype6-dev libjpeg-dev
 
