@@ -55,8 +55,7 @@ RUN cd / &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
     locale-gen en_US &&\
     DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs yarn &&\
-    npm install -g terser &&\
-    npm install -g uglify-js
+    npm install -g terser uglify-js pnpm
 
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
