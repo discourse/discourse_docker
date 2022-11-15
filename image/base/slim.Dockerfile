@@ -25,7 +25,7 @@ ENV LANGUAGE en_US.UTF-8
 RUN curl https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
-RUN curl --silent --location https://deb.nodesource.com/setup_16.x | sudo bash -
+RUN curl --silent --location https://deb.nodesource.com/setup_18.x | sudo bash -
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
 RUN apt-get -y update
