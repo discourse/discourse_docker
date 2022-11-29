@@ -64,7 +64,7 @@ run:
   - exec:
       cmd: echo redis installed
       hook: redis
-  - exec: cat /etc/redis/redis.conf | grep logfile
+  - exec: grep logfile /etc/redis/redis.conf
 
   - exec:
       background: true
