@@ -1,7 +1,10 @@
 #!/bin/bash
 set -e
 
-RUBY_VERSION="2.7.6"
+RUBY_VERSION="3.2.0-dev"
+export CONFIGURE_OPTS="--enable-yjit"
+
+apt-get -y install --no-install-recommends ruby bison
 
 mkdir /src
 git -C /src clone https://github.com/rbenv/ruby-build.git
@@ -9,3 +12,5 @@ cd /src/ruby-build && ./install.sh
 cd / && rm -fr /src
 
 ruby-build ${RUBY_VERSION} /usr/local
+
+apt-get -y purge ruby
