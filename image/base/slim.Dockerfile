@@ -2,12 +2,9 @@
 # VERSION:  release
 FROM debian:bullseye-slim
 
-ENV PG_MAJOR=13 \
-    RUBY_ALLOCATOR=/usr/lib/libjemalloc.so.1 \
-    RAILS_ENV=production \
-    RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH
+ENV PG_MAJOR 13
+ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
+ENV RAILS_ENV production
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
@@ -74,9 +71,6 @@ RUN /tmp/install-oxipng
 
 ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
-
-ADD install-rust /tmp/install-rust
-RUN /tmp/install-rust
 
 ADD install-ruby /tmp/install-ruby
 RUN /tmp/install-ruby
