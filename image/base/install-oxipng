@@ -2,9 +2,9 @@
 set -e
 
 # version check: https://github.com/shssoichiro/oxipng/releases
-OXIPNG_VERSION="7.0.0"
+OXIPNG_VERSION="5.0.1"
 OXIPNG_FILE="oxipng-${OXIPNG_VERSION}-x86_64-unknown-linux-musl.tar.gz"
-OXIPNG_HASH="f794df937abcc2ef9357dcc52c39908f390461921fcbd19793f35d33120bfc8e"
+OXIPNG_HASH="89240cfd863f8007ab3ad95d88dc2ce15fc003a0421508728d73fec1375f19b6"
 
 # Install other deps
 apt -y -q install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
