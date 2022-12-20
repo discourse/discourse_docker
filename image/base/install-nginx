@@ -2,8 +2,8 @@
 set -e
 
 # version check: https://nginx.org/en/download.html
-VERSION=1.23.3
-HASH="75cb5787dbb9fae18b14810f91cc4343f64ce4c24e27302136fb52498042ba54"
+VERSION=1.21.6
+HASH="66dc7081488811e9f925719e34d1b4504c2801c81dee2920e5452a86b11405ae"
 
 cd /tmp
 wget -q https://nginx.org/download/nginx-$VERSION.tar.gz
