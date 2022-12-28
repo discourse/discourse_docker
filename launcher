@@ -91,7 +91,8 @@ git_rec_version='1.8.0'
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
-image="discourse/base:2.0.20220818-0047"
+image="discourse/base:2.0.20221221-0050"
+image_stable="discourse/base:2.0.20220818-0047"
 docker_path=`which docker.io 2> /dev/null || which docker`
 git_path=`which git`
 
@@ -232,6 +233,14 @@ check_prereqs() {
     echo "Please be patient"
     echo
 
+    pull_image
+  fi
+
+  # use an older image for stable
+  version=$(cat $config_file | $docker_path run $user_args --rm -i -a stdout -a stdin $image ruby -e \
+      "require 'yaml'; puts YAML.load(STDIN.readlines.join)['params']['version']")
+  if [ "$version" = "stable" ]; then
+    image=$image_stable
     pull_image
   fi
 
