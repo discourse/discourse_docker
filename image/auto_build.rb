@@ -4,10 +4,10 @@ require 'pty'
 require 'optparse'
 
 images = {
-  base_slim: { name: 'base', tag: "discourse/base:build_slim", squash: true, extra_args: '-f slim.Dockerfile' },
+  base_slim: { name: 'base', tag: "discourse/base:build_slim", extra_args: '-f slim.Dockerfile' },
   base: { name: 'base', tag: "discourse/base:build", extra_args: '-f release.Dockerfile' },
-  discourse_test_build: { name: 'discourse_test', tag: "discourse/discourse_test:build", squash: false},
-  discourse_dev: { name: 'discourse_dev', tag: "discourse/discourse_dev:build", squash: false },
+  discourse_test_build: { name: 'discourse_test', tag: "discourse/discourse_test:build" },
+  discourse_dev: { name: 'discourse_dev', tag: "discourse/discourse_dev:build" },
 }
 
 def run(command)
@@ -30,7 +30,7 @@ def run(command)
 end
 
 def build(image)
-  lines = run("cd #{image[:name]} && docker build . --no-cache --tag #{image[:tag]} #{image[:squash] ? '--squash' : ''} #{image[:extra_args] ? image[:extra_args] : ''}")
+  lines = run("cd #{image[:name]} && docker build . --no-cache --tag #{image[:tag]} #{image[:extra_args] ? image[:extra_args] : ''}")
   raise "Error building the image for #{image[:name]}: #{lines[-1]}" if lines[-1] =~ /successfully built/
 end
 

@@ -1,0 +1,99 @@
+#!/bin/bash
+set -e
+set -v
+
+echo 2.0.`date +%Y%m%d` > /VERSION
+
+export DEBIAN_FRONTEND=noninteractive;
+
+echo 'deb http://deb.debian.org/debian bullseye-backports main' > /etc/apt/sources.list.d/bullseye-backports.list
+echo "debconf debconf/frontend select Teletype" | debconf-set-selections
+apt-get update && apt-get -y install gnupg sudo curl fping
+sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt-get update || true"
+apt-mark hold initscripts
+apt-get -y upgrade
+
+apt-get install -y locales locales-all
+
+curl https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
+echo "deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main" | \
+  tee /etc/apt/sources.list.d/postgres.list
+curl --silent --location https://deb.nodesource.com/setup_18.x | sudo bash -
+curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
+apt-get -y update
+
+# install these without recommends to avoid pulling in e.g. X11 libraries, mailutils
+apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less
+apt-get -y install autoconf build-essential ca-certificates rsync \
+  libxslt-dev libcurl4-openssl-dev \
+  libssl-dev libyaml-dev libtool \
+  libpcre3 libpcre3-dev zlib1g zlib1g-dev \
+  libxml2-dev gawk parallel \
+  postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
+  postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
+  anacron wget \
+  psmisc whois brotli libunwind-dev \
+  libtcmalloc-minimal4 cmake \
+  pngcrush pngquant
+
+sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
+sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
+sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf
+
+dpkg-divert --local --rename --add /sbin/initctl
+sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"
+
+cd /
+apt-get -y install runit socat 
+mkdir -p /etc/runit/1.d 
+apt-get clean 
+rm -f /etc/apt/apt.conf.d/40proxy 
+locale-gen en_US 
+apt-get install -y nodejs yarn 
+npm install -g terser uglify-js pnpm
+
+/tmp/install-imagemagick
+
+/tmp/install-jemalloc
+
+/tmp/install-nginx
+
+/tmp/install-oxipng
+
+/tmp/install-redis
+
+/tmp/install-rust
+
+/tmp/install-ruby
+
+echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
+  gem update --system
+
+gem install bundler pups --force &&\
+  mkdir -p /pups/bin/ &&\
+  ln -s /usr/local/bin/pups /pups/bin/pups
+
+# This tool allows us to disable huge page support for our current process
+# since the flag is preserved through forks and execs it can be used on any
+# process
+gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
+
+# clean up
+rm -fr /usr/share/man
+rm -fr /usr/share/doc
+rm -fr /usr/share/vim/vim74/doc
+rm -fr /usr/share/vim/vim74/lang
+rm -fr /usr/share/vim/vim74/spell/en*
+rm -fr /usr/share/vim/vim74/tutor
+rm -fr /usr/local/share/doc
+rm -fr /usr/local/share/ri
+rm -fr /usr/local/share/ruby-build
+rm -fr /var/lib/apt/lists/*
+rm -fr /root/.gem
+rm -fr /root/.npm
+rm -fr /tmp/*
+
+# this is required for aarch64 which uses buildx
+# see https://github.com/docker/buildx/issues/150
+rm -f /etc/service

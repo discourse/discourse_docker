@@ -10,11 +10,6 @@ jobs:
   base:
     runs-on: ubuntu-20.04
     steps:
-      - name: enable experimental docker features
-        run: |
-          sudo bash -c 'echo "{ \"cgroup-parent\": \"/actions_job\",\"experimental\":true}" > /etc/docker/daemon.json'
-          sudo service docker restart
-          docker version -f '{{.Server.Experimental}}'
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
