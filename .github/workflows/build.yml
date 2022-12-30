@@ -137,11 +137,10 @@ jobs:
             --tag discourse/base:aarch64-slim
           docker tag discourse/base:aarch64-slim localhost:5000/discourse/base:aarch64-slim
           docker push localhost:5000/discourse/base:aarch64-slim
-      - name: release slim image as release
+      - name: tag slim image as release
         working-directory: image/base
         run: |
-          docker tag discourse/base:aarch64 localhost:5000/discourse/base:aarch64-slim
-          docker push localhost:5000/discourse/base:aarch64
+          docker tag discourse/base:aarch64-slim discourse/base:aarch64
       - name: Print summary
         run: docker images discourse/base
       - name: push to dockerhub
