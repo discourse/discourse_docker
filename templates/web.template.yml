@@ -106,7 +106,7 @@ run:
         - bash -c "ln    -s           /shared/tmp/{backups,restores} $home/tmp"
         - chown -R discourse:www-data /shared/log/rails /shared/uploads /shared/backups /shared/tmp
         # scrub broken symlinks from plugins that have been removed
-        - find public/plugins/ -maxdepth 1 -xtype l -delete
+        - "[ ! -d public/plugins ] || find public/plugins/ -maxdepth 1 -xtype l -delete"
 
   - exec:
       cmd:
@@ -156,7 +156,7 @@ run:
   - exec:
       cd: $home
       cmd:
-        - "[ ! -d 'node_modules' ] || su discourse -c 'yarn install --production --frozen-lockfile && yarn cache clean'"
+        - su discourse -c 'yarn install --production --frozen-lockfile && yarn cache clean'
 
   - exec:
       cd: $home
