@@ -43,6 +43,7 @@ run:
 
   - exec: cd tmp && git clone https://github.com/discourse/discourse.git --depth=1
   - exec: chown -R discourse /tmp/discourse
+  - exec: cd /tmp/discourse && gem install bundler:$(tail -n 1 Gemfile.lock | tr -d " ")
   - exec: cd /tmp/discourse && sudo -u discourse bundle install
   - exec: cd /tmp/discourse && sudo -u discourse yarn install
   - exec: cd /tmp/discourse && sudo -u discourse yarn cache clean
