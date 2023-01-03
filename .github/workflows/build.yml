@@ -6,9 +6,14 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
+concurrency:
+  group: build-${{ format('{0}-{1}', github.head_ref || github.run_number, github.job) }}
+  cancel-in-progress: true
+
 jobs:
   base:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    timeout-minutes: 90
     steps:
       - name: enable experimental docker features
         run: |
@@ -54,7 +59,8 @@ jobs:
           docker push discourse/base:2.0.$TAG
           docker push discourse/base:release
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    timeout-minutes: 30
     needs: base
     defaults:
       run:
@@ -94,7 +100,8 @@ jobs:
           docker push discourse/discourse_test:slim-browsers
           docker push discourse/discourse_test:release
   dev:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    timeout-minutes: 30
     needs: base
     steps:
       - uses: actions/checkout@v3
