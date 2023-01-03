@@ -39,7 +39,7 @@ jobs:
         id: tag-images
         run: |
           TAG=`date +%Y%m%d-%H%M`
-          echo "::set-output name=tag::$(echo $TAG)"
+          echo "tag=$(echo $TAG)" >> $GITHUB_OUTPUT
           docker tag discourse/base:build_slim discourse/base:2.0.$TAG-slim
           docker tag discourse/base:build_slim discourse/base:slim
           docker tag discourse/base:build discourse/base:2.0.$TAG
