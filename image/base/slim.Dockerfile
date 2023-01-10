@@ -84,7 +84,7 @@ RUN /tmp/install-ruby
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     gem update --system
 
-RUN gem install bundler pups --force &&\
+RUN gem install bundler -v 2.1.4 pups --force &&\
     mkdir -p /pups/bin/ &&\
     ln -s /usr/local/bin/pups /pups/bin/pups
 
