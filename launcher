@@ -92,7 +92,7 @@ config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
 image="discourse/base:2.0.20221221-0050"
-image_stable="discourse/base:2.0.20220818-0047"
+image_stable="discourse/base:2.0.20221221-0050"
 docker_path=`which docker.io 2> /dev/null || which docker`
 git_path=`which git`
 
