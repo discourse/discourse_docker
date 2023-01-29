@@ -26,7 +26,7 @@ templates:
 
 params:
   ## Which Git revision should this container use? (default: tests-passed)
-  version: main
+  version: tests-passed
 
 env:
   # LC_ALL: en_US.UTF-8
@@ -97,6 +97,7 @@ hooks:
           - git clone https://github.com/discourse/docker_manager.git
           - git clone https://gitee.com/opensourceway/EaseCheck.git
           - git clone https://github.com/hiddenvillage/discourse-oauth2-basic.git
+          - git clone https://github.com/mondiscourse/discourse-formatting-toolbar.git
 
 ## Remember, this is YAML syntax - you can only have one block with a name
 run:
