@@ -86,6 +86,10 @@ run:
       cd: $home
       hook: code
       cmd:
+        - echo "Operating user and folder owner info:"
+        - echo "$USER"
+        - ls -l /var/www
+        - git config --global --add safe.directory /var/www/discourse
         - git reset --hard
         - git clean -f
         - git remote set-branches --add origin main
