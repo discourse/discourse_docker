@@ -86,12 +86,12 @@ run:
       cd: $home
       hook: code
       cmd:
-        - git reset --hard
-        - git clean -f
-        - git remote set-branches --add origin main
-        - git remote set-branches origin $version
-        - git fetch --depth 1 origin $version
-        - git checkout $version
+        - sudo -H -E -u discourse git reset --hard
+        - sudo -H -E -u discourse git clean -f
+        - sudo -H -E -u discourse git remote set-branches --add origin main
+        - sudo -H -E -u discourse git remote set-branches origin $version
+        - sudo -H -E -u discourse git fetch --depth 1 origin $version
+        - sudo -H -E -u discourse git checkout $version
         - mkdir -p tmp
         - chown discourse:www-data tmp
         - mkdir -p tmp/pids
