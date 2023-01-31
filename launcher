@@ -87,6 +87,7 @@ docker_min_version='17.03.1'
 docker_rec_version='17.06.2'
 git_min_version='1.8.0'
 git_rec_version='1.8.0'
+kernel_min_version='4.14.0'
 
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
@@ -257,6 +258,15 @@ check_prereqs() {
   # Recommend best version
   if compare_version "${git_rec_version}" "${test}"; then
     echo "WARNING: Git version ${test} deprecated, recommend upgrade to ${git_rec_version} or newer."
+  fi
+
+  # Check minimum kernel version due to https://bugs.ruby-lang.org/issues/13885
+  test=($(uname -r))
+
+  # At least minimum version
+  if compare_version "${kernel_min_version}" "${test}"; then
+    echo "ERROR: Kernel version ${test} not supported, please upgrade to at least ${kernel_min_version}"
+    exit 1
   fi
 
   # 6. able to attach stderr / out / tty
