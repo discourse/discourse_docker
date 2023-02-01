@@ -3,7 +3,7 @@
 
 templates:
   - "templates/web.template.yml"
-  - "templates/web.ratelimited.template.yml"
+  # - "templates/web.ratelimited.template.yml"
 ## Uncomment these two lines if you wish to add Lets Encrypt (https)
   #- "templates/web.ssl.template.yml"
   #- "templates/web.letsencrypt.ssl.template.yml"
@@ -37,7 +37,8 @@ env:
   ## How many concurrent web requests are supported? Depends on memory and CPU cores.
   ## will be set automatically by bootstrap based on detected CPUs, or you can override
   UNICORN_WORKERS:
-
+  UNICORN_SIDEKIQS:
+  
   ## TODO: The domain name this Discourse instance will respond to
   DISCOURSE_HOSTNAME: 
 
