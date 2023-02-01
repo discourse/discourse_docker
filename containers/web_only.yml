@@ -36,7 +36,7 @@ env:
 
   ## How many concurrent web requests are supported? Depends on memory and CPU cores.
   ## will be set automatically by bootstrap based on detected CPUs, or you can override
-  # UNICORN_WORKERS:
+  UNICORN_WORKERS:
 
   ## TODO: The domain name this Discourse instance will respond to
   DISCOURSE_HOSTNAME: 
@@ -98,6 +98,7 @@ hooks:
           - git clone https://gitee.com/opensourceway/EaseCheck.git
           - git clone https://github.com/hiddenvillage/discourse-oauth2-basic.git
           - git clone https://github.com/mondiscourse/discourse-formatting-toolbar.git
+          - git clone https://github.com/hiddenvillage/discourse-translator.git
 
 ## Remember, this is YAML syntax - you can only have one block with a name
 run:
