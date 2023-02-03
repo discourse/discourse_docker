@@ -3,7 +3,7 @@
 
 templates:
   - "templates/web.template.yml"
-  # - "templates/web.ratelimited.template.yml"
+  - "templates/web.ratelimited.template.yml"
 ## Uncomment these two lines if you wish to add Lets Encrypt (https)
   #- "templates/web.ssl.template.yml"
   #- "templates/web.letsencrypt.ssl.template.yml"
@@ -97,9 +97,9 @@ hooks:
           - mkdir -p plugins
           - git clone https://github.com/discourse/docker_manager.git
           - git clone https://gitee.com/opensourceway/EaseCheck.git
-          - git clone https://github.com/hiddenvillage/discourse-oauth2-basic.git
-          - git clone https://github.com/mondiscourse/discourse-formatting-toolbar.git
-          - git clone https://github.com/hiddenvillage/discourse-translator.git
+          - git clone https://github.com/opensourceways/discourse-oauth2-basic.git
+          - git clone https://github.com/opensourceways/discourse-formatting-toolbar.git
+          - git clone https://github.com/opensourceways/discourse-translator.git
 
 ## Remember, this is YAML syntax - you can only have one block with a name
 run:
