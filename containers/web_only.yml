@@ -38,9 +38,13 @@ env:
   ## will be set automatically by bootstrap based on detected CPUs, or you can override
   UNICORN_WORKERS:
   UNICORN_SIDEKIQS:
+  UNICORN_SIDEKIQ_MAX_RSS: 1000
   
   ## TODO: The domain name this Discourse instance will respond to
   DISCOURSE_HOSTNAME: 
+
+  ## MaxMind license key
+  DISCOURSE_MAXMIND_LICENSE_KEY:
 
   ## Uncomment if you want the container to be started with the same
   ## hostname (-h option) as specified above (default "$hostname-$config")
