@@ -2,8 +2,8 @@
 set -e
 
 # version check: https://github.com/ImageMagick/ImageMagick/releases
-IMAGE_MAGICK_VERSION="7.1.0-57"
-IMAGE_MAGICK_HASH="e0157354e0282d34968af6686830216b48d175b65720cd9650b4fae5af2f6251"
+IMAGE_MAGICK_VERSION="7.1.0-62"
+IMAGE_MAGICK_HASH="d282117bc6d0e91ad1ad685d096623b96ed8e229f911c891d83277b350ef884a"
 
 # We use debian, but GitHub CI is stuck on Ubuntu Bionic, so this must be compatible with both
 LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo libjpeg62-turbo-dev' || echo 'libjpeg-turbo8 libjpeg-turbo8-dev')
