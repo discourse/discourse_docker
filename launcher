@@ -207,10 +207,9 @@ check_prereqs() {
       exit 1
       ;;
     aarch64 | arm64)
-      echo "WARNING: Support for aarch64 is experimental at the moment. Please report any problems at https://meta.discourse.org/tag/arm "
+      echo "WARNING: Support for aarch64 is experimental at the moment. Please report any problems at https://meta.discourse.org/tag/arm"
       image="discourse/base:aarch64"
       arm=true
-      read -n 1 -s -r -p "Press any key to continue"
       ;;
     x86_64)
       echo "x86_64 arch detected."
