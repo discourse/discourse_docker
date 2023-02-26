@@ -87,6 +87,8 @@ run:
          echo  >> /shared/postgres_data/postgresql.conf
          echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
          SUCCESS=true
+         sudo -u postgres /usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl start -w -D /shared/postgres_data
+         sudo -u postgres /usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl stop -w -D /shared/postgres_data
          sudo -u postgres /usr/lib/postgresql/13/bin/pg_upgrade -d /shared/postgres_data -D /shared/postgres_data_new -b /usr/lib/postgresql/${PG_MAJOR_OLD}/bin -B /usr/lib/postgresql/13/bin || SUCCESS=false
 
          if [[ "$SUCCESS" == 'false' ]]; then
