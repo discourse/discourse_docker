@@ -9,6 +9,13 @@ OXIPNG_HASH="f794df937abcc2ef9357dcc52c39908f390461921fcbd19793f35d33120bfc8e"
 # Install other deps
 apt -y -q install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
+if [ $(dpkg --print-architecture) != "amd64" ]; then
+  cargo install oxipng@${OXIPNG_VERSION}
+  rm -rf /usr/local/cargo/registry
+  
+  exit 0
+fi
+
 mkdir /oxipng-install
 cd /oxipng-install
 
