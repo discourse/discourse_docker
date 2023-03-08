@@ -15,7 +15,7 @@ tar zxf nginx-$NGINX_VERSION.tar.gz
 cd nginx-$NGINX_VERSION
 
 # nginx-common for boilerplate files etc.
-apt install -y nginx-common
+apt-get -y install nginx-common
 
 cd /tmp
 # this is the reason we are compiling by hand...
