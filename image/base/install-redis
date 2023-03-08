@@ -11,7 +11,7 @@ wget -q http://download.redis.io/releases/redis-$REDIS_VERSION.tar.gz
 sha256sum redis-$REDIS_VERSION.tar.gz
 echo "$REDIS_HASH redis-$REDIS_VERSION.tar.gz" | sha256sum -c
 
-tar zxf redis-$REDIS_VERSION.tar.gz
+tar -zxf redis-$REDIS_VERSION.tar.gz
 cd redis-$REDIS_VERSION
 
 # Building and installing binaries.

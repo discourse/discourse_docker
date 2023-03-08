@@ -11,7 +11,7 @@ cd /tmp
 wget -q https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz
 sha256sum nginx-$NGINX_VERSION.tar.gz
 echo "$NGINX_HASH nginx-$NGINX_VERSION.tar.gz" | sha256sum -c
-tar zxf nginx-$NGINX_VERSION.tar.gz
+tar -zxf nginx-$NGINX_VERSION.tar.gz
 cd nginx-$NGINX_VERSION
 
 # nginx-common for boilerplate files etc.
