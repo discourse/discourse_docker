@@ -69,14 +69,14 @@ RUN /tmp/install-jemalloc
 ADD install-nginx /tmp/install-nginx
 RUN /tmp/install-nginx
 
-ADD install-oxipng /tmp/install-oxipng
-RUN /tmp/install-oxipng
-
 ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
 
 ADD install-rust /tmp/install-rust
 RUN /tmp/install-rust
+
+ADD install-oxipng /tmp/install-oxipng
+RUN /tmp/install-oxipng
 
 ADD install-ruby /tmp/install-ruby
 RUN /tmp/install-ruby
