@@ -15,15 +15,15 @@ PREFIX=/usr/local
 WDIR=/tmp/imagemagick
 
 # Install build deps
-apt-get -y -q remove imagemagick
-apt-get -y -q install git make gcc pkg-config autoconf curl g++ yasm cmake \
+apt-get -y remove imagemagick
+apt-get -y install git make gcc pkg-config autoconf curl g++ yasm cmake \
     libde265-0 libde265-dev ${LIBJPEGTURBO} x265 libx265-dev libtool \
     libpng16-16 libpng-dev ${LIBJPEGTURBO} ${LIBWEBP} libwebp-dev libgomp1 \
     libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils librsvg2-dev \
     libltdl7-dev libbz2-dev gsfonts libtiff-dev libfreetype6-dev libjpeg-dev
 
 # Use backports instead of compiling it
-apt-get -y -q install -t bullseye-backports libheif1 libaom-dev libheif-dev
+apt-get -y -t bullseye-backports install libheif1 libaom-dev libheif-dev
 
 mkdir -p $WDIR
 cd $WDIR
