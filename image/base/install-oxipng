@@ -7,6 +7,8 @@ OXIPNG_HASH="ef96d6340e70900de0a38ace8f5f20878f6c256b18b0c59cd87f2b515437b87b"
 OXIPNG_ARCHIVE="v${OXIPNG_VERSION}.tar.gz"
 OXIPNG_DIR="oxipng-${OXIPNG_VERSION}"
 
+export DEBIAN_FRONTEND=noninteractive
+
 # Install other deps
 apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 

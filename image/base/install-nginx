@@ -7,6 +7,8 @@ NGINX_HASH="75cb5787dbb9fae18b14810f91cc4343f64ce4c24e27302136fb52498042ba54"
 NGINX_TEMP_DIR=/var/lib/nginx
 NGINX_LOG_DIR=/var/log/nginx
 
+export DEBIAN_FRONTEND=noninteractive
+
 cd /tmp
 wget -q https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz
 sha256sum nginx-$NGINX_VERSION.tar.gz

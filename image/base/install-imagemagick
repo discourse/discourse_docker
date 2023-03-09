@@ -14,6 +14,8 @@ LIBWEBP=$(cat /etc/issue | grep -qi 'Ubuntu 22.04' && echo 'libwebp7' || echo 'l
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
 
+export DEBIAN_FRONTEND=noninteractive
+
 # Install build deps
 apt-get -y remove imagemagick
 apt-get -y install git make gcc pkg-config autoconf curl g++ yasm cmake \

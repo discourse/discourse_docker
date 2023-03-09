@@ -3,6 +3,7 @@ set -e
 
 RUBY_VERSION="3.2.1"
 export CONFIGURE_OPTS="--enable-yjit"
+export DEBIAN_FRONTEND=noninteractive
 
 apt-get -y --no-install-recommends install ruby bison libffi-dev
 
