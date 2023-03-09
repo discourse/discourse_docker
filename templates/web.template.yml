@@ -88,10 +88,8 @@ run:
       cmd:
         - sudo -H -E -u discourse git reset --hard
         - sudo -H -E -u discourse git clean -f
-        - sudo -H -E -u discourse git remote set-branches --add origin main
-        - sudo -H -E -u discourse git remote set-branches origin $version
-        - sudo -H -E -u discourse git fetch --depth 1 origin $version
-        - sudo -H -E -u discourse git checkout $version
+        - sudo -H -E -u discourse git fetch --prune --prune-tags origin $version
+        - sudo -H -E -u discourse bash -c 'if [[ $(git symbolic-ref --short HEAD) == $version ]] ; then (git pull) ; else (git -c advice.detachedHead=false checkout $version) ; fi'
         - mkdir -p tmp
         - chown discourse:www-data tmp
         - mkdir -p tmp/pids
