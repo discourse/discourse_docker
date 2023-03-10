@@ -442,7 +442,7 @@ ask_user_for_config() {
   local smtp_user_name=$read_config_result
   if [ "$smtp_password" = "pa$$word" ]
   then
-    smtp_password = ""
+    smtp_password=""
   fi
   read_config "DISCOURSE_NOTIFICATION_EMAIL"
   local notification_email=$read_config_result
