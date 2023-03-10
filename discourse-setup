@@ -547,7 +547,7 @@ ask_user_for_config() {
     then
       if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
       then
-      	smtp_user_name="SMTP_Injection"
+        smtp_user_name="SMTP_Injection"
       fi
       if [ "$smtp_address" == "smtp.sendgrid.net" ]
       then
@@ -716,8 +716,8 @@ ask_user_for_config() {
          then
            SLASH="Q"
            if [[ "$smtp_password" == *"$SLASH"* ]]
-	   then
-	     SLASH="BROKEN"
+           then
+             SLASH="BROKEN"
              echo "========================================"
              echo "WARNING!!!"
              echo "Your password contains all available delimiters (+, |, and Q). "
