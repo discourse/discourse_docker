@@ -440,7 +440,7 @@ ask_user_for_config() {
   local smtp_port=$read_config_result
   read_config "DISCOURSE_SMTP_USER_NAME"
   local smtp_user_name=$read_config_result
-  if [ "$smtp_password" = "pa$$word" ]
+  if [ "$smtp_password" = "pa\$\$word" ]
   then
     smtp_password=""
   fi
