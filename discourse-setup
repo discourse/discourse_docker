@@ -447,7 +447,7 @@ ask_user_for_config() {
   read_config "DISCOURSE_NOTIFICATION_EMAIL"
   local notification_email=$read_config_result
   read_config "DISCOURSE_SMTP_DOMAIN"
-  local discourse_smtp_DOMAIN=$read_config_result
+  local discourse_smtp_domain=$read_config_result
 
   read_config "LETSENCRYPT_ACCOUNT_EMAIL"
   local letsencrypt_account_email=$read_config_result
@@ -586,7 +586,9 @@ ask_user_for_config() {
     fi
 
     # set smtp_domain default value here rather than use Rails default of localhost
-    smtp_domain=$(echo $notification_email | sed -e "s/.*@//")
+    default_smtp_domain=${notification_email#*@}
+    # if DISCOURSE_SMTP_DOMAIN is in the config use that instead
+    smtp_domain=${discourse_smtp_domain:-${default_smtp_domain}}
 
     if [ ! -z $letsencrypt_account_email ]
     then
