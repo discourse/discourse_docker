@@ -88,8 +88,25 @@ run:
       cmd:
         - sudo -H -E -u discourse git reset --hard
         - sudo -H -E -u discourse git clean -f
-        - sudo -H -E -u discourse git fetch --prune --prune-tags origin $version
-        - sudo -H -E -u discourse bash -c 'if [[ $(git symbolic-ref --short HEAD) == $version ]] ; then (git pull) ; else (git -c advice.detachedHead=false checkout $version) ; fi'
+        # TODO Remove the special handling of shallow clones when everyone uses images without that clone type
+        - |-
+          sudo -H -E -u discourse bash -c '
+            if [ $(git rev-parse --is-shallow-repository) == "true" ]; then
+                git remote set-branches --add origin main
+                git remote set-branches origin $version
+                git fetch --depth 1 origin $version
+            else
+                git fetch --prune --prune-tags origin $version
+            fi
+          '
+        - |-
+          sudo -H -E -u discourse bash -c '
+            if [[ $(git symbolic-ref --short HEAD) == $version ]] ; then
+                git pull
+            else
+                git -c advice.detachedHead=false checkout $version
+            fi
+          '
         - mkdir -p tmp
         - chown discourse:www-data tmp
         - mkdir -p tmp/pids
