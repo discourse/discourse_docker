@@ -18,7 +18,7 @@ echo "${OXIPNG_HASH} ${OXIPNG_ARCHIVE}" | sha256sum -c
 tar -zxf ${OXIPNG_ARCHIVE}
 cd ${OXIPNG_DIR}
 
-/usr/local/cargo/bin/cargo build --release
+CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse /usr/local/cargo/bin/cargo build --release
 cp target/release/oxipng /usr/local/bin
 
 cd / && rm -fr /tmp/${OXIPNG_DIR}
