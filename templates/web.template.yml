@@ -107,6 +107,7 @@ run:
                 git -c advice.detachedHead=false checkout $version
             fi
           '
+        - sudo -H -E -u discourse git config user.discourse-version $version
         - mkdir -p tmp
         - chown discourse:www-data tmp
         - mkdir -p tmp/pids
