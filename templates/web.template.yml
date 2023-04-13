@@ -96,7 +96,7 @@ run:
                 git remote set-branches origin $version
                 git fetch --depth 1 origin $version
             else
-                git fetch --prune --prune-tags origin $version
+                git fetch --tags --prune-tags --prune --force origin
             fi
           '
         - |-
