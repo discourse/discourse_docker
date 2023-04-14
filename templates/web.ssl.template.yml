@@ -2,6 +2,9 @@ run:
   - exec:
      cmd:
        - "mkdir -p /shared/ssl/"
+  - exec:
+     cmd:
+       - "if [ ! -f /shared/ssl/dhparam.pem ]; then openssl dhparam -out /shared/ssl/dhparam.pem 2048; fi"
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /server.+{/
@@ -37,20 +40,17 @@ run:
        ssl_certificate /shared/ssl/ssl.crt;
        ssl_certificate_key /shared/ssl/ssl.key;
 
+       ssl_dhparam /shared/ssl/dhparam.pem;
+
        ssl_session_tickets off;
        ssl_session_timeout 1d;
-       ssl_session_cache shared:SSL:1m;
+       ssl_session_cache shared:SSL:10m;
+
 
        gzip on;
 
-       add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
+       add_header Strict-Transport-Security 'max-age=63072000' always; # automatically connect to HTTPS for this domain
 
        if ($http_host != $$ENV_DISCOURSE_HOSTNAME) {
           rewrite (.*) https://$$ENV_DISCOURSE_HOSTNAME$1 permanent;
        }
-  - replace:
-     filename: "/etc/nginx/conf.d/discourse.conf"
-     from: "location @discourse {"
-     to: |
-       location @discourse {
-       add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain

@@ -125,9 +125,3 @@ hooks:
        to: |
          ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key;
          ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.key;
-
-    - replace:
-       filename: "/etc/nginx/conf.d/discourse.conf"
-       from: /add_header.+/
-       to: |
-         add_header Strict-Transport-Security 'max-age=63072000';
