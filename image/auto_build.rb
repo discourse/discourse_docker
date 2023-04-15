@@ -4,7 +4,7 @@ require 'pty'
 require 'optparse'
 
 images = {
-  base_slim: { name: 'base', tag: "discourse/base:build_slim", squash: true, extra_args: '-f slim.Dockerfile' },
+  base_slim: { name: 'base', tag: "discourse/base:build-kasanak", squash: true, extra_args: '-f slim.Dockerfile' },
   base: { name: 'base', tag: "discourse/base:build", extra_args: '-f release.Dockerfile' },
   discourse_test_build: { name: 'discourse_test', tag: "discourse/discourse_test:build", squash: false},
   discourse_dev: { name: 'discourse_dev', tag: "discourse/discourse_dev:build", squash: false },
