@@ -776,40 +776,41 @@ case "$command" in
       ;;
 
   rebuild)
-      if [ "$(git symbolic-ref --short HEAD)" == "master" ]; then
-        git branch -m master main
-        git fetch origin
-        git branch -u origin/main main
-        git remote set-head origin -a
-      fi
+      
+      # if [ "$(git symbolic-ref --short HEAD)" == "master" ]; then
+      #   git branch -m master main
+      #   git fetch origin
+      #   git branch -u origin/main main
+      #   git remote set-head origin -a
+      # fi
 
-      if [ "$(git symbolic-ref --short HEAD)" == "main" ]; then
-        echo "Ensuring launcher is up to date"
+      # if [ "$(git symbolic-ref --short HEAD)" == "main" ]; then
+      #   echo "Ensuring launcher is up to date"
 
-        git remote update
+      #   git remote update
 
-        LOCAL=$(git rev-parse HEAD)
-        REMOTE=$(git rev-parse @{u})
-        BASE=$(git merge-base HEAD @{u})
+      #   LOCAL=$(git rev-parse HEAD)
+      #   REMOTE=$(git rev-parse @{u})
+      #   BASE=$(git merge-base HEAD @{u})
 
-        if [ $LOCAL = $REMOTE ]; then
-          echo "Launcher is up-to-date"
+      #   if [ $LOCAL = $REMOTE ]; then
+      #     echo "Launcher is up-to-date"
 
-        elif [ $LOCAL = $BASE ]; then
-          echo "Updating Launcher..."
-          git pull || (echo 'failed to update' && exit 1)
+      #   elif [ $LOCAL = $BASE ]; then
+      #     echo "Updating Launcher..."
+      #     git pull || (echo 'failed to update' && exit 1)
 
-          echo "Launcher updated, restarting..."
-          exec "$0" "${SAVED_ARGV[@]}"
+      #     echo "Launcher updated, restarting..."
+      #     exec "$0" "${SAVED_ARGV[@]}"
 
-        elif [ $REMOTE = $BASE ]; then
-          echo "Your version of Launcher is ahead of origin"
+      #   elif [ $REMOTE = $BASE ]; then
+      #     echo "Your version of Launcher is ahead of origin"
 
-        else
-          echo "Launcher has diverged source, this is only expected in Dev mode"
-        fi
+      #   else
+      #     echo "Launcher has diverged source, this is only expected in Dev mode"
+      #   fi
 
-      fi
+      # fi
 
       set_existing_container
 
