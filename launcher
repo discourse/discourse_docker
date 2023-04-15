@@ -673,7 +673,7 @@ run_bootstrap() {
 
   # the base_image may not always be discourse/base,
   # let's ensure we always build from the latest
-  pull_image
+  # pull_image
 
   set_volumes
   set_links
