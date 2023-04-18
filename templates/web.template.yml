@@ -172,7 +172,7 @@ run:
   - exec:
       cd: $home
       cmd:
-        - su discourse -c 'yarn install --production --frozen-lockfile && yarn cache clean'
+        - su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
 
   - exec:
       cd: $home
