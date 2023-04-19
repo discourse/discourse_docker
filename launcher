@@ -521,7 +521,7 @@ run_stop() {
      then
        (
         set -x
-        $docker_path stop -t 30 $config
+        $docker_path stop -t 600 $config
        )
      else
        echo "$config was not started !"
@@ -817,7 +817,7 @@ case "$command" in
           echo "Stopping old container"
           (
             set -x
-            $docker_path stop -t 60 $config
+            $docker_path stop -t 600 $config
           )
       fi
 
@@ -838,7 +838,7 @@ case "$command" in
 
 
   destroy)
-      (set -x; $docker_path stop -t 10 $config && $docker_path rm $config) || (echo "$config was not found" && exit 0)
+      (set -x; $docker_path stop -t 600 $config && $docker_path rm $config) || (echo "$config was not found" && exit 0)
       exit 0
       ;;
 esac
