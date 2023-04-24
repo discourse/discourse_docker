@@ -7,7 +7,8 @@ ENV PG_MAJOR=13 \
     RAILS_ENV=production \
     RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH
+    PATH=/usr/local/cargo/bin:$PATH \
+    LEFTHOOK=0
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
