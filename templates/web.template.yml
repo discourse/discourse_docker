@@ -3,9 +3,6 @@ env:
   RAILS_ENV: 'production'
   UNICORN_WORKERS: 3
   UNICORN_SIDEKIQS: 1
-  # this gives us very good cache coverage, 96 -> 99
-  # in practice it is 1-2% perf improvement
-  RUBY_GLOBAL_METHOD_CACHE_SIZE: 131072
   # stop heap doubling in size so aggressively, this conserves memory
   RUBY_GC_HEAP_GROWTH_MAX_SLOTS: 40000
   RUBY_GC_HEAP_INIT_SLOTS: 400000
