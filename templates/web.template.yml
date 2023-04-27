@@ -91,6 +91,7 @@ run:
         # TODO Remove the special handling of shallow clones when everyone uses images without that clone type
         - |-
           sudo -H -E -u discourse bash -c '
+            set -o errexit
             if [ $(git rev-parse --is-shallow-repository) == "true" ]; then
                 git remote set-branches --add origin main
                 git remote set-branches origin $version
@@ -101,6 +102,7 @@ run:
           '
         - |-
           sudo -H -E -u discourse bash -c '
+            set -o errexit
             if [[ $(git symbolic-ref --short HEAD) == $version ]] ; then
                 git pull
             else
