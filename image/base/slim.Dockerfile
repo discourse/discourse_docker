@@ -42,8 +42,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf build-essential c
                        libpcre3 libpcre3-dev zlib1g zlib1g-dev \
                        libxml2-dev gawk parallel \
                        postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
-                       postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
-                       anacron wget \
+                       postgresql-contrib-${PG_MAJOR} libpq-dev postgresql-${PG_MAJOR}-pgvector \
+                       libreadline-dev anacron wget \
                        psmisc whois brotli libunwind-dev \
                        libtcmalloc-minimal4 cmake \
                        pngcrush pngquant
