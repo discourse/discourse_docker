@@ -3,4 +3,4 @@
 SHELL=/bin/sh
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-30 7    * * *   root	/usr/sbin/anacron -s >/dev/null
+30 7    * * *   root    /usr/sbin/anacron -s >/dev/null
