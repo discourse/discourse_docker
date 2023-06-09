@@ -96,9 +96,9 @@ hooks:
           fi
 
           cd $home
-          echo "The Vanilla import is starting..."
+          echo "The Flarum import is starting..."
           echo
-          su discourse -c 'bundle exec ruby script/import_scripts/vanilla.rb'
+          su discourse -c 'bundle exec ruby script/import_scripts/flarum_import.rb'
 
     - exec:
         cd: $home
