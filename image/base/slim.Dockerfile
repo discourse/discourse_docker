@@ -73,12 +73,10 @@ RUN /tmp/install-nginx
 ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
 
-ADD install-oxipng /tmp/install-oxipng
-RUN /tmp/install-oxipng
-
 ADD install-rust /tmp/install-rust
 ADD install-ruby /tmp/install-ruby
-RUN /tmp/install-rust && /tmp/install-ruby && rustup self uninstall -y
+ADD install-oxipng /tmp/install-oxipng
+RUN /tmp/install-rust && /tmp/install-ruby && /tmp/install-oxipng && rustup self uninstall -y
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     gem update --system
