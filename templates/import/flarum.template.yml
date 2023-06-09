@@ -36,7 +36,7 @@ hooks:
     - exec:
         cmd:
           - mkdir -p /shared/import/mysql/data
-          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadbclient-dev mariadb-server
+          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadb-dev mariadb-server
           - sed -Ei 's/^log/#&/' /etc/mysql/my.cnf
 
     - file:
@@ -75,7 +75,7 @@ hooks:
           chown discourse -R /shared/import/data
 
           # Allow connection as root user without password
-          mysql -uroot -e "UPDATE mysql.user SET plugin = 'mysql_native_password' WHERE user = 'root' AND plugin = 'unix_socket'"
+          mysql -uroot -e "ALTER USER 'root'@'localhost' IDENTIFIED VIA mysql_native_password"
           mysql -uroot -e "FLUSH PRIVILEGES"
 
           if [ -f "/shared/import/data/ajalan.sql" ]; then
