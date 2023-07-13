@@ -213,8 +213,10 @@ run:
   - exec: su postgres -c 'psql $db_name -c "alter schema public owner to $db_user;"'
   - exec: su postgres -c 'psql template1 -c "create extension if not exists hstore;"'
   - exec: su postgres -c 'psql template1 -c "create extension if not exists pg_trgm;"'
+  - exec: su postgres -c 'psql template1 -c "create extension if not exists vector;"'
   - exec: su postgres -c 'psql $db_name -c "create extension if not exists hstore;"'
   - exec: su postgres -c 'psql $db_name -c "create extension if not exists pg_trgm;"'
+  - exec: su postgres -c 'psql $db_name -c "create extension if not exists vector;"'
   - exec:
       stdin: |
         update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = '$db_name' AND encoding = pg_char_to_encoding('SQL_ASCII');
