@@ -3,6 +3,8 @@ ARG tag=build_slim
 
 FROM $from:$tag
 
+ENV RAILS_ENV=production
+
 RUN cd /var/www/discourse &&\
     sudo -u discourse bundle config --local deployment true &&\
     sudo -u discourse bundle config --local path ./vendor/bundle &&\

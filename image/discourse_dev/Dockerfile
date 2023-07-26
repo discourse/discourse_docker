@@ -1,9 +1,6 @@
 # NAME:     discourse/discourse_dev
 # VERSION:  release
-FROM discourse/base:release
-
-# Unset RAILS_ENV to allow running both dev stuff and tests
-ENV RAILS_ENV=
+FROM discourse/base:slim
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
