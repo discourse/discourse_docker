@@ -1,0 +1,8 @@
+run:
+  - exec: echo "Enabling IPv6 listener"
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: listen 80;
+      to: |
+        listen 80;
+        listen [::]:80;

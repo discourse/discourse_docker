@@ -1,9 +1,6 @@
 # NAME:     discourse/discourse_dev
 # VERSION:  release
-FROM discourse/base:release
-
-# Unset RAILS_ENV to allow running both dev stuff and tests
-ENV RAILS_ENV=
+FROM discourse/base:slim
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
@@ -12,6 +9,8 @@ RUN rm -rf /var/www/*
 
 # Give discourse user no-passwd sudo permissions (for bundle install)
 ADD sudoers.discourse /etc/sudoers.d/discourse
+
+RUN sudo -u discourse bundle config set --global path /home/discourse/.bundle/gems
 
 # get redis going
 ADD redis.template.yml /pups/redis.yml

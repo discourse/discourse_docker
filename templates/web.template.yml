@@ -3,9 +3,6 @@ env:
   RAILS_ENV: 'production'
   UNICORN_WORKERS: 3
   UNICORN_SIDEKIQS: 1
-  # this gives us very good cache coverage, 96 -> 99
-  # in practice it is 1-2% perf improvement
-  RUBY_GLOBAL_METHOD_CACHE_SIZE: 131072
   # stop heap doubling in size so aggressively, this conserves memory
   RUBY_GC_HEAP_GROWTH_MAX_SLOTS: 40000
   RUBY_GC_HEAP_INIT_SLOTS: 400000
@@ -86,16 +83,30 @@ run:
       cd: $home
       hook: code
       cmd:
-        - echo "Operating user and folder owner info:"
-        - whoami
-        - ls -l /var/www
-        - git config --global --add safe.directory /var/www/discourse
-        - git reset --hard
-        - git clean -f
-        - git remote set-branches --add origin main
-        - git remote set-branches origin $version
-        - git fetch --depth 1 origin $version
-        - git checkout $version
+        - sudo -H -E -u discourse git reset --hard
+        - sudo -H -E -u discourse git clean -f
+        # TODO Remove the special handling of shallow clones when everyone uses images without that clone type
+        - |-
+          sudo -H -E -u discourse bash -c '
+            set -o errexit
+            if [ $(git rev-parse --is-shallow-repository) == "true" ]; then
+                git remote set-branches --add origin main
+                git remote set-branches origin $version
+                git fetch --depth 1 origin $version
+            else
+                git fetch --tags --prune-tags --prune --force origin
+            fi
+          '
+        - |-
+          sudo -H -E -u discourse bash -c '
+            set -o errexit
+            if [[ $(git symbolic-ref --short HEAD) == $version ]] ; then
+                git pull
+            else
+                git -c advice.detachedHead=false checkout $version
+            fi
+          '
+        - sudo -H -E -u discourse git config user.discourse-version $version
         - mkdir -p tmp
         - chown discourse:www-data tmp
         - mkdir -p tmp/pids
@@ -110,7 +121,7 @@ run:
         - bash -c "ln    -s           /shared/tmp/{backups,restores} $home/tmp"
         - chown -R discourse:www-data /shared/log/rails /shared/uploads /shared/backups /shared/tmp
         # scrub broken symlinks from plugins that have been removed
-        - find public/plugins/ -maxdepth 1 -xtype l -delete
+        - "[ ! -d public/plugins ] || find public/plugins/ -maxdepth 1 -xtype l -delete"
 
   - exec:
       cmd:
@@ -160,13 +171,19 @@ run:
   - exec:
       cd: $home
       cmd:
-        - "[ ! -d 'node_modules' ] || su discourse -c 'yarn install --production --frozen-lockfile && yarn cache clean'"
+        - |-
+          if [ "$version" != "tests-passed" ]; then
+            rm -rf app/assets/javascripts/node_modules
+          fi
+        - su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
 
   - exec:
       cd: $home
       hook: bundle_exec
       cmd:
-        - su discourse -c 'bundle install --deployment --retry 3 --jobs 4 --verbose --without test development'
+        - su discourse -c 'bundle config --local deployment true'
+        - su discourse -c 'bundle config --local without "development test"'
+        - su discourse -c 'bundle install --retry 3 --jobs 4'
 
   - exec:
       cd: $home
