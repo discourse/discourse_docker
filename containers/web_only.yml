@@ -26,22 +26,22 @@ templates:
 
 params:
   ## Which Git revision should this container use? (default: tests-passed)
-  version: main
+  version:
 
 env:
-  # LC_ALL: en_US.UTF-8
+  LC_ALL: en_US.UTF-8
   LANG: en_US.UTF-8
-  # LANGUAGE: en_US.UTF-8
+  LANGUAGE: en_US.UTF-8
   # DISCOURSE_DEFAULT_LOCALE: en
 
   ## How many concurrent web requests are supported? Depends on memory and CPU cores.
   ## will be set automatically by bootstrap based on detected CPUs, or you can override
-  UNICORN_WORKERS:
+  # UNICORN_WORKERS:
   UNICORN_SIDEKIQS:
-  UNICORN_SIDEKIQ_MAX_RSS: 1000
+  UNICORN_SIDEKIQ_MAX_RSS:
   
   ## TODO: The domain name this Discourse instance will respond to
-  DISCOURSE_HOSTNAME: 
+  DISCOURSE_HOSTNAME:
 
   ## MaxMind license key
   DISCOURSE_MAXMIND_LICENSE_KEY:
@@ -52,7 +52,7 @@ env:
 
   ## TODO: List of comma delimited emails that will be made admin and developer
   ## on initial signup example 'user1@example.com,user2@example.com'
-  DISCOURSE_DEVELOPER_EMAILS: 
+  DISCOURSE_DEVELOPER_EMAILS:
 
   ## TODO: The SMTP mail server used to validate new accounts and send notifications
   # SMTP ADDRESS, username, and password are required
@@ -70,10 +70,10 @@ env:
 
   ## TODO: configure connectivity to the databases
   # DISCOURSE_DB_SOCKET: ''
-  DISCOURSE_DB_USERNAME: 
-  DISCOURSE_DB_PASSWORD: 
-  DISCOURSE_DB_HOST: 
-  DISCOURSE_REDIS_HOST: 
+  DISCOURSE_DB_USERNAME:
+  DISCOURSE_DB_PASSWORD:
+  DISCOURSE_DB_HOST:
+  DISCOURSE_REDIS_HOST:
 
   ## The http or https CDN address for this Discourse instance (configured to pull)
   ## see https://meta.discourse.org/t/14857 for details
@@ -118,12 +118,6 @@ run:
   ## If you want to authorized additional users, uncomment and change:
   #- exec: ssh-import-id username
   #- exec: ssh-import-id anotherusername
-  - exec:
-      cd: /var/www/discourse
-      cmd:
-        - sed -i 's/GlobalSetting.serve_static_assets/true/' config/environments/production.rb
-        - bash -c "touch -a /shared/log/rails/{sidekiq,puma.err,puma}.log"
-        - bash -c "ln -sf /shared/log/rails/{sidekiq,puma.err,puma}.log log/"
-        - sed -i 's/default \$scheme;/default https;/' /etc/nginx/conf.d/discourse.conf
+  
   # - exec: echo "End of custom commands"
   # - exec: awk -F\# '{print $1;}' ~/.ssh/authorized_keys | awk 'BEGIN { print "Authorized SSH keys for this container:"; } NF>=2 {print $NF;}'
