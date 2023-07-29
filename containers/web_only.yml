@@ -105,6 +105,7 @@ hooks:
           - git clone https://github.com/opensourceways/discourse-formatting-toolbar.git
           - git clone https://github.com/opensourceways/discourse-translator.git
           - git clone https://github.com/discourse/discourse-solved.git
+          - git clone https://github.com/discourse/discourse-gamification.git
 
 ## Remember, this is YAML syntax - you can only have one block with a name
 run:
