@@ -87,11 +87,12 @@ docker_min_version='17.03.1'
 docker_rec_version='17.06.2'
 git_min_version='1.8.0'
 git_rec_version='1.8.0'
+kernel_min_version='4.4.0'
 
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
-image="discourse/base:2.0.20220818-0047"
+image="discourse/base:2.0.20230711-0100"
 docker_path=`which docker.io 2> /dev/null || which docker`
 git_path=`which git`
 
@@ -205,10 +206,9 @@ check_prereqs() {
       exit 1
       ;;
     aarch64 | arm64)
-      echo "WARNING: Support for aarch64 is experimental at the moment. Please report any problems at https://meta.discourse.org/tag/arm "
+      echo "WARNING: Support for aarch64 is experimental at the moment. Please report any problems at https://meta.discourse.org/tag/arm"
       image="discourse/base:aarch64"
       arm=true
-      read -n 1 -s -r -p "Press any key to continue"
       ;;
     x86_64)
       echo "x86_64 arch detected."
@@ -248,6 +248,15 @@ check_prereqs() {
   # Recommend best version
   if compare_version "${git_rec_version}" "${test}"; then
     echo "WARNING: Git version ${test} deprecated, recommend upgrade to ${git_rec_version} or newer."
+  fi
+
+  # Check minimum kernel version due to https://bugs.ruby-lang.org/issues/13885
+  test=($(uname -r))
+
+  # At least minimum version
+  if compare_version "${kernel_min_version}" "${test}"; then
+    echo "ERROR: Kernel version ${test} not supported, please upgrade to at least ${kernel_min_version}"
+    exit 1
   fi
 
   # 6. able to attach stderr / out / tty
@@ -512,7 +521,7 @@ run_stop() {
      then
        (
         set -x
-        $docker_path stop -t 30 $config
+        $docker_path stop -t 600 $config
        )
      else
        echo "$config was not started !"
@@ -808,7 +817,7 @@ case "$command" in
           echo "Stopping old container"
           (
             set -x
-            $docker_path stop -t 60 $config
+            $docker_path stop -t 600 $config
           )
       fi
 
@@ -829,7 +838,7 @@ case "$command" in
 
 
   destroy)
-      (set -x; $docker_path stop -t 10 $config && $docker_path rm $config) || (echo "$config was not found" && exit 0)
+      (set -x; $docker_path stop -t 600 $config && $docker_path rm $config) || (echo "$config was not found" && exit 0)
       exit 0
       ;;
 esac

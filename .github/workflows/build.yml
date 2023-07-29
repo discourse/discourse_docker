@@ -6,9 +6,14 @@ on:
   schedule:
     - cron: '0 0 * * *'
 
+concurrency:
+  group: build-${{ format('{0}-{1}', github.head_ref || github.run_number, github.job) }}
+  cancel-in-progress: true
+
 jobs:
   base:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    timeout-minutes: 90
     steps:
       - name: enable experimental docker features
         run: |
@@ -34,7 +39,7 @@ jobs:
         id: tag-images
         run: |
           TAG=`date +%Y%m%d-%H%M`
-          echo "::set-output name=tag::$(echo $TAG)"
+          echo "tag=$(echo $TAG)" >> $GITHUB_OUTPUT
           docker tag discourse/base:build_slim discourse/base:2.0.$TAG-slim
           docker tag discourse/base:build_slim discourse/base:slim
           docker tag discourse/base:build discourse/base:2.0.$TAG
@@ -54,7 +59,8 @@ jobs:
           docker push discourse/base:2.0.$TAG
           docker push discourse/base:release
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    timeout-minutes: 30
     needs: base
     defaults:
       run:
@@ -94,7 +100,8 @@ jobs:
           docker push discourse/discourse_test:slim-browsers
           docker push discourse/discourse_test:release
   dev:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    timeout-minutes: 30
     needs: base
     steps:
       - uses: actions/checkout@v3
@@ -112,7 +119,7 @@ jobs:
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/discourse_dev:release
   aarch64:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: base
     services:
       registry:
@@ -124,10 +131,10 @@ jobs:
         with:
           fetch-depth: 1
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
+        uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         id: buildx
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
       - name: build slim image
         working-directory: image/base
         run: |
@@ -137,17 +144,10 @@ jobs:
             --tag discourse/base:aarch64-slim
           docker tag discourse/base:aarch64-slim localhost:5000/discourse/base:aarch64-slim
           docker push localhost:5000/discourse/base:aarch64-slim
-      - name: build release image
+      - name: tag slim image as release
         working-directory: image/base
         run: |
-          docker buildx create --name builder --use --driver-opt network=host
-          docker buildx build . --load \
-            -f release.Dockerfile \
-            --platform linux/arm64 \
-            --network=host \
-            --build-arg from=localhost:5000/discourse/base \
-            --build-arg tag=aarch64-slim \
-            --tag discourse/base:aarch64
+          docker tag discourse/base:aarch64-slim discourse/base:aarch64
       - name: Print summary
         run: docker images discourse/base
       - name: push to dockerhub

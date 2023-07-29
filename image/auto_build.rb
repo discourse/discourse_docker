@@ -12,9 +12,9 @@ images = {
 
 def run(command)
   lines = []
-  PTY.spawn(command) do |stdin, stdout, pid|
+  PTY.spawn(command) do |stdout, stdin, pid|
     begin
-      stdin.each do |line|
+      stdout.each do |line|
         lines << line
         puts line
       end

@@ -2,9 +2,12 @@
 # VERSION:  release
 FROM debian:bullseye-slim
 
-ENV PG_MAJOR 13
-ENV RUBY_ALLOCATOR /usr/lib/libjemalloc.so.1
-ENV RAILS_ENV production
+ENV PG_MAJOR=13 \
+    RUBY_ALLOCATOR=/usr/lib/libjemalloc.so.1 \
+    RUSTUP_HOME=/usr/local/rustup \
+    CARGO_HOME=/usr/local/cargo \
+    PATH=/usr/local/cargo/bin:$PATH \
+    LEFTHOOK=0
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
@@ -38,8 +41,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf build-essential c
                        libpcre3 libpcre3-dev zlib1g zlib1g-dev \
                        libxml2-dev gawk parallel \
                        postgresql-${PG_MAJOR} postgresql-client-${PG_MAJOR} \
-                       postgresql-contrib-${PG_MAJOR} libpq-dev libreadline-dev \
-                       anacron wget \
+                       postgresql-contrib-${PG_MAJOR} libpq-dev postgresql-${PG_MAJOR}-pgvector \
+                       libreadline-dev anacron wget \
                        psmisc whois brotli libunwind-dev \
                        libtcmalloc-minimal4 cmake \
                        pngcrush pngquant
@@ -66,14 +69,13 @@ RUN /tmp/install-jemalloc
 ADD install-nginx /tmp/install-nginx
 RUN /tmp/install-nginx
 
-ADD install-oxipng /tmp/install-oxipng
-RUN /tmp/install-oxipng
-
 ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
 
+ADD install-rust /tmp/install-rust
 ADD install-ruby /tmp/install-ruby
-RUN /tmp/install-ruby
+ADD install-oxipng /tmp/install-oxipng
+RUN /tmp/install-rust && /tmp/install-ruby && /tmp/install-oxipng && rustup self uninstall -y
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     gem update --system
@@ -116,5 +118,4 @@ COPY sbin/ /sbin
 # Discourse specific bits
 RUN useradd discourse -s /bin/bash -m -U &&\
     install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
-    sudo -u discourse git clone --depth 1 https://github.com/discourse/discourse.git /var/www/discourse &&\
-    sudo -u discourse git -C /var/www/discourse remote set-branches --add origin tests-passed
+    sudo -u discourse git clone --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse
