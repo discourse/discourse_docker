@@ -196,6 +196,13 @@ run:
       hook: db_migrate
       cmd:
         - su discourse -c 'bundle exec rake db:migrate'
+
+  - exec:
+      cd: $home
+      hook: maxminddb_get
+      cmd:
+        - su discourse -c 'bundle exec rake maxminddb:get'
+      
   - exec:
       cd: $home
       hook: assets_precompile
