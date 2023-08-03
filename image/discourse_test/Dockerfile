@@ -35,4 +35,6 @@ RUN cd /var/www/discourse &&\
 RUN cd /var/www/discourse && sudo -E -u discourse -H bundle exec rake plugin:install_all_official &&\
     sudo -E -u discourse -H bundle exec rake plugin:install_all_gems
 
+RUN cd /var/www/discourse && sudo -E -u discourse -H bundle exec script/install_minio_binaries.rb
+
 ENTRYPOINT sudo -E -u discourse -H ruby script/docker_test.rb
