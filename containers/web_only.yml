@@ -106,11 +106,7 @@ hooks:
           - git clone https://github.com/opensourceways/discourse-translator.git
           - git clone https://github.com/discourse/discourse-solved.git
           - git clone https://github.com/discourse/discourse-gamification.git
-          - git clone	https://github.com/discourse/discourse-automation.git
-          - git clone https://github.com/paviliondev/discourse-multilingual.git
-          - git clone https://github.com/discourse/discourse-signatures.git
           - git clone https://github.com/discourse/discourse-reactions.git
-          - git clone https://github.com/discourse/discourse-staff-alias.git
 
 ## Remember, this is YAML syntax - you can only have one block with a name
 run:
@@ -124,6 +120,12 @@ run:
   ## If you want to authorized additional users, uncomment and change:
   #- exec: ssh-import-id username
   #- exec: ssh-import-id anotherusername
-  
+   - exec:
+      cd: /var/www/discourse
+      cmd:
+        - sed -i 's/GlobalSetting.serve_static_assets/true/' config/environments/production.rb
+        - bash -c "touch -a /shared/log/rails/{sidekiq,puma.err,puma}.log"
+        - bash -c "ln -sf /shared/log/rails/{sidekiq,puma.err,puma}.log log/"
+        - sed -i 's/default \$scheme;/default https;/' /etc/nginx/conf.d/discourse.conf
   # - exec: echo "End of custom commands"
   # - exec: awk -F\# '{print $1;}' ~/.ssh/authorized_keys | awk 'BEGIN { print "Authorized SSH keys for this container:"; } NF>=2 {print $NF;}'
