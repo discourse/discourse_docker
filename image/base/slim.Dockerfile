@@ -3,7 +3,6 @@
 FROM debian:bullseye-slim
 
 ENV PG_MAJOR=13 \
-    PG_CLIENT_MAJOR=15 \
     RUBY_ALLOCATOR=/usr/lib/libjemalloc.so.1 \
     RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
@@ -41,7 +40,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf build-essential c
                        libssl-dev libyaml-dev libtool \
                        libpcre3 libpcre3-dev zlib1g zlib1g-dev \
                        libxml2-dev gawk parallel \
-                       postgresql-${PG_MAJOR} postgresql-client-${PG_CLIENT_MAJOR:-$PG_MAJOR} \
+                       postgresql-${PG_MAJOR} postgresql-client \
                        postgresql-contrib-${PG_MAJOR} libpq-dev postgresql-${PG_MAJOR}-pgvector \
                        libreadline-dev anacron wget \
                        psmisc whois brotli libunwind-dev \
