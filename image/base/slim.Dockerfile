@@ -45,7 +45,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf build-essential c
                        libreadline-dev anacron wget \
                        psmisc whois brotli libunwind-dev \
                        libtcmalloc-minimal4 cmake \
-                       pngcrush pngquant
+                       pngcrush pngquant ripgrep
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
 RUN sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf
