@@ -27,13 +27,14 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo ap
 
 FROM with_browsers AS release
 
-RUN cd /var/www/discourse &&\
-    sudo -u discourse bundle install --jobs=4 &&\
-    sudo -E -u discourse -H yarn install &&\
-    sudo -u discourse yarn cache clean
+USER discourse
 
-RUN cd /var/www/discourse && sudo -E -u discourse -H bundle exec rake plugin:install_all_official &&\
-    sudo -E -u discourse -H bundle exec rake plugin:install_all_gems &&\
-    sudo -E -u discourse -H bundle exec ruby script/install_minio_binaries.rb
+RUN bundle install --jobs=4 &&\
+    yarn install &&\
+    yarn cache clean
 
-ENTRYPOINT sudo -E -u discourse -H ruby script/docker_test.rb
+RUN bundle exec rake plugin:install_all_official &&\
+    bundle exec rake plugin:install_all_gems &&\
+    bundle exec ruby script/install_minio_binaries.rb
+
+ENTRYPOINT ruby script/docker_test.rb
