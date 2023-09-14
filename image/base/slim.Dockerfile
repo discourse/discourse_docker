@@ -80,7 +80,7 @@ RUN /tmp/install-rust && /tmp/install-ruby && /tmp/install-oxipng && rustup self
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     gem update --system
 
-RUN gem install bundler pups --force &&\
+RUN gem install pups --force &&\
     mkdir -p /pups/bin/ &&\
     ln -s /usr/local/bin/pups /pups/bin/pups
 
@@ -118,4 +118,5 @@ COPY sbin/ /sbin
 # Discourse specific bits
 RUN useradd discourse -s /bin/bash -m -U &&\
     install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
-    sudo -u discourse git clone --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse
+    sudo -u discourse git clone --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse &&\
+    gem install bundler --conservative -v $(awk '/BUNDLED WITH/ { getline; gsub(/ /,""); print $0 }' /var/www/discourse/Gemfile.lock)
