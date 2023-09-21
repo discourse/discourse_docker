@@ -100,7 +100,7 @@ hooks:
         cmd:
           - mkdir -p plugins
           - git clone https://github.com/discourse/docker_manager.git
-          - git clone https://gitee.com/opensourceway/EaseCheck.git
+          - git clone https://gitee.com/opensourceway/discourse-easecheck.git
           - git clone https://github.com/opensourceways/discourse-oauth2-basic.git
           - git clone https://github.com/opensourceways/discourse-formatting-toolbar.git
           - git clone https://github.com/opensourceways/discourse-translator.git
