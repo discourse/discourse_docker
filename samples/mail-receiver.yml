@@ -27,11 +27,11 @@ env:
 #  POSTCONF_smtpd_tls_security_level: may
 
 
-  ## The URL of the mail processing endpoint of your Discourse forum.
-  ## This is simply your forum's base URL, with `/admin/email/handle_mail`
-  ## appended.  Be careful if you're running a subfolder setup -- in that case,
-  ## the URL needs to have the subfolder included!
-  DISCOURSE_MAIL_ENDPOINT: 'https://discourse.example.com/admin/email/handle_mail'
+  ## The base URL for this Discourse instance.
+  ## This will be whatever your Discourse site URL is. For example,
+  ## https://discourse.example.com. If you're running a subfolder setup,
+  ## be sure to account for that (ie https://example.com/forum).
+  DISCOURSE_BASE_URL: 'https://discourse.example.com'
 
   ## The master API key of your Discourse forum.  You can get this from
   ## the "API" tab of your admin panel.
