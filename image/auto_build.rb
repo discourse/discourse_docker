@@ -19,13 +19,28 @@ images = {
     tag: "discourse/base:build",
     extra_args: "-f release.Dockerfile",
   },
+  base_arm64: {
+    name: "base",
+    tag: "discourse/base:build_arm64",
+    extra_args: "-f release.Dockerfile --platform linux/arm64",
+  },
   discourse_test_build: {
     name: "discourse_test",
     tag: "discourse/discourse_test:build",
   },
+  discourse_test_build_arm64: {
+    name: "discourse_test",
+    tag: "discourse/discourse_test:build_arm64",
+    extra_args: "--platform linux/arm64",
+  },
   discourse_dev: {
     name: "discourse_dev",
     tag: "discourse/discourse_dev:build",
+  },
+  discourse_dev_arm64: {
+    name: "discourse_dev",
+    tag: "discourse/discourse_dev:build_arm64",
+    extra_args: "--platform linux/arm64",
   },
 }
 
