@@ -11,6 +11,7 @@ RUN cd /var/www/discourse &&\
     sudo -u discourse bundle config --local without test development &&\
     sudo -u discourse bundle config --local jobs 4 && \
     sudo -u discourse bundle install &&\
+    sudo -u discourse yarn config set network-timeout 600000 &&\
     sudo -u discourse yarn install --frozen-lockfile &&\
     sudo -u discourse yarn cache clean &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
