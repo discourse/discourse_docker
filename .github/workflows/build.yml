@@ -4,7 +4,7 @@ on:
       - main
   pull_request:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
 
 concurrency:
   group: build-${{ format('{0}-{1}', github.head_ref || github.run_number, github.job) }}
@@ -122,11 +122,6 @@ jobs:
   aarch64:
     runs-on: ubuntu-latest
     needs: base
-    services:
-      registry:
-        image: registry
-        ports:
-          - 5000:5000
     steps:
       - uses: actions/checkout@v3
         with:
@@ -139,11 +134,10 @@ jobs:
       - name: build slim image
         run: |
           cd image && ruby auto_build.rb base_slim_arm64
-          docker tag discourse/base:aarch64-slim localhost:5000/discourse/base:build_slim_arm64
       - name: tag slim image as release
         working-directory: image/base
         run: |
-          docker tag discourse/base:aarch64-slim discourse/base:aarch64
+          docker tag discourse/base:build_slim_arm64 discourse/base:aarch64
       - name: Print summary
         run: docker images discourse/base
       - name: push to dockerhub
