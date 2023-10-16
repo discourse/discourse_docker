@@ -64,3 +64,50 @@ jobs:
           docker push discourse/base:2.0.$TAG-arm64
           docker push discourse/base:release-arm64
           docker push discourse/base:aarch64
+  test:
+    runs-on: ubuntu-20.04
+    needs: base
+    defaults:
+      run:
+        working-directory: image/discourse_test
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: arm64
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: build discourse/discourse_test:slim-arm64
+        run: |
+          docker buildx build . --load \
+            --build-arg from_tag=slim-arm64 \
+            --target base \
+            --tag discourse/discourse_test:slim-arm64
+      - name: build discourse/discourse_test:slim-browsers-arm64
+        run: |
+          docker buildx build . --load \
+            --build-arg from_tag=slim-arm64 \
+            --target with_browsers \
+            --tag discourse/discourse_test:slim-browsers-arm64
+      - name: build discourse/discourse_test:release-arm64
+        run: |
+          docker buildx build . --load \
+            --build-arg from_tag=release-arm64 \
+            --target release \
+            --tag discourse/discourse_test:release-arm64
+      - name: Print summary
+        run: |
+          docker images discourse/discourse_test
+      - name: push to dockerhub
+        if: success() && (github.ref == 'refs/heads/main')
+        env:
+          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
+        run: |
+          docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
+          docker push discourse/discourse_test:slim-arm64
+          docker push discourse/discourse_test:slim-browsers-arm64
+          docker push discourse/discourse_test:release-arm64
