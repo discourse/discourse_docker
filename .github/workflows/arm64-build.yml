@@ -29,25 +29,26 @@ jobs:
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
-      - name: build slim image
-        run: |
-          cd image && ruby auto_build.rb base_slim_arm64
-      - name: tag slim images
-        id: tag-images
-        run: |
-          TAG=`date +%Y%m%d-%H%M`
-          echo "tag=$(echo $TAG)" >> $GITHUB_OUTPUT
-          docker tag discourse/base:build_slim_arm64 discourse/base:2.0.$TAG-slim-arm64
-          docker tag discourse/base:build_slim_arm64 discourse/base:slim-arm64
-          docker push localhost:5000/discourse/base:build_slim_arm64
+      # - name: build slim image
+      #   run: |
+      #     cd image && ruby auto_build.rb base_slim_arm64
+      # - name: tag slim images
+      #   id: tag-images
+      #   run: |
+      #     TAG=`date +%Y%m%d-%H%M`
+      #     echo "tag=$(echo $TAG)" >> $GITHUB_OUTPUT
+      #     docker tag discourse/base:build_slim_arm64 discourse/base:2.0.$TAG-slim-arm64
+      #     docker tag discourse/base:build_slim_arm64 discourse/base:slim-arm64
+      #     docker push localhost:5000/discourse/base:build_slim_arm64
       - name: build release image
         run: |
-          cd image && ruby auto_build.rb base_arm64 --build-arg from=localhost:5000/discourse/base
+          cd image && ruby auto_build.rb base_arm64 --build-arg from=tgxworld/base
       - name: tag release images
         run: |
-          TAG=${{ steps.tag-images.outputs.tag }}
-          docker tag discourse/base:build_arm64 discourse/base:2.0.$TAG-arm64
-          docker tag discourse/base:build_arm64 discourse/base:release-arm64
+          # TAG=${{ steps.tag-images.outputs.tag }}
+          # docker tag discourse/base:build_arm64 discourse/base:2.0.$TAG-arm64
+          # docker tag discourse/base:build_arm64 discourse/base:release-arm64
+          docker tag discourse/base:build_arm64 localhost:5000/discourse/base:build_arm64
           docker push localhost:5000/discourse/base:build_arm64
       - name: build test_build image
         run: |
