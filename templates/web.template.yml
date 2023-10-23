@@ -83,6 +83,13 @@ run:
       cd: $home
       hook: code
       cmd:
+        - sudo -H -E -u discourse git remote set-url origin git@github.com:WorshipOnline/forum.git
+        - mkdir /root/.ssh/
+        - echo "$SSH_KEY" > /root/.ssh/id_ed25519
+        - chmod 600 /root/.ssh/id_ed25519
+        - touch /root/.ssh/known_hosts
+        - ssh-keyscan github.com >> /root/.ssh/known_hosts
+        - sudo -H -E -u discourse git fetch
         - sudo -H -E -u discourse git reset --hard
         - sudo -H -E -u discourse git clean -f
         # TODO Remove the special handling of shallow clones when everyone uses images without that clone type
