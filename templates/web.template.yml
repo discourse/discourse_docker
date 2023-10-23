@@ -84,35 +84,18 @@ run:
       hook: code
       cmd:
         - sudo -H -E -u discourse git remote set-url origin git@github.com:WorshipOnline/forum.git
+        - git config --global --add safe.directory /var/www/discourse
         - mkdir /root/.ssh/
-        - echo "$SSH_KEY" > /root/.ssh/id_ed25519
+        - cp /shared/id_ed25519.pub ~/.ssh/
+        - chmod 600 /root/.ssh/id_ed25519.pub
+        - cp /shared/id_ed25519 ~/.ssh/
         - chmod 600 /root/.ssh/id_ed25519
         - touch /root/.ssh/known_hosts
         - ssh-keyscan github.com >> /root/.ssh/known_hosts
-        - sudo -H -E -u discourse git fetch
-        - sudo -H -E -u discourse git reset --hard
-        - sudo -H -E -u discourse git clean -f
-        # TODO Remove the special handling of shallow clones when everyone uses images without that clone type
-        - |-
-          sudo -H -E -u discourse bash -c '
-            set -o errexit
-            if [ $(git rev-parse --is-shallow-repository) == "true" ]; then
-                git remote set-branches --add origin main
-                git remote set-branches origin $version
-                git fetch --depth 1 origin $version
-            else
-                git fetch --tags --prune-tags --prune --force origin
-            fi
-          '
-        - |-
-          sudo -H -E -u discourse bash -c '
-            set -o errexit
-            if [[ $(git symbolic-ref --short HEAD) == $version ]] ; then
-                git pull
-            else
-                git -c advice.detachedHead=false checkout $version
-            fi
-          '
+        - ssh-keyscan '140.82.114.4' >> /root/.ssh/known_hosts
+        - eval "$(ssh-agent -s)"
+        - git fetch
+        - git reset --hard origin/main
         - sudo -H -E -u discourse git config user.discourse-version $version
         - mkdir -p tmp
         - chown discourse:www-data tmp
