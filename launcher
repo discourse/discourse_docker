@@ -92,7 +92,7 @@ kernel_min_version='4.4.0'
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
-image="discourse/base:2.0.20231023-1613"
+image="discourse/base:2.0.20231023-1945"
 docker_path=`which docker.io 2> /dev/null || which docker`
 git_path=`which git`
 
