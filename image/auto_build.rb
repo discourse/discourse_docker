@@ -17,7 +17,7 @@ images = {
   base: {
     name: "base",
     tag: "discourse/base:build",
-    extra_args: '-f release.Dockerfile --build-arg SSH_KEY="$(cat ~/.ssh/id_ed25519.pub)"',
+    extra_args: "-f release.Dockerfile",
   },
   discourse_test_build: {
     name: "discourse_test",

@@ -1,7 +1,5 @@
 ARG from=discourse/base
 ARG tag=build_slim
-ARG SSH_KEY
-ENV SSH_KEY=$SSH_KEY
 
 FROM $from:$tag
 
