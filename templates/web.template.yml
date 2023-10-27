@@ -22,9 +22,12 @@ params:
 
 run:
   - exec: thpoff echo "thpoff is installed!"
-  - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
-  - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
-  - exec: /usr/local/bin/ruby -e 'if (ENV["DISCOURSE_CDN_URL"] || "")[0..1] == "//"; puts "Aborting! CDN must have a protocol specified. Once fixed you should rebake your posts now to correct all posts."; exit 1; end'
+  - exec:
+      tag: precompile
+      cmd:
+        - /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
+        - /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
+        - /usr/local/bin/ruby -e 'if (ENV["DISCOURSE_CDN_URL"] || "")[0..1] == "//"; puts "Aborting! CDN must have a protocol specified. Once fixed you should rebake your posts now to correct all posts."; exit 1; end'
   # TODO: move to base image (anacron can not be fired up using rc.d)
   - exec: rm -f /etc/cron.d/anacron
   - file:
@@ -55,6 +58,12 @@ run:
         # postgres
         cd $home
         chown -R discourse:www-data /shared/log/rails
+        if [[ -z "$PRECOMPILE_ON_BOOT" ]]; then
+          PRECOMPILE_ON_BOOT=1
+        fi
+        if [ -f /usr/local/bin/create_db ] && [ "$CREATE_DB_ON_BOOT" = "1" ]; then /usr/local/bin/create_db; fi;
+        if [ "$MIGRATE_ON_BOOT" = "1" ]; then su discourse -c 'bundle exec rake db:migrate'; fi
+        if [ "$PRECOMPILE_ON_BOOT" = "1" ]; then SKIP_EMBER_CLI_COMPILE=1 su discourse -c 'bundle exec rake assets:precompile'; fi
         LD_PRELOAD=$RUBY_ALLOCATOR HOME=/home/discourse USER=discourse exec thpoff chpst -u discourse:www-data -U discourse:www-data bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
   - file:
@@ -193,14 +202,27 @@ run:
 
   - exec:
       cd: $home
+      tag: migrate
       hook: db_migrate
       cmd:
         - su discourse -c 'bundle exec rake db:migrate'
   - exec:
       cd: $home
+      tag: build
+      hook: assets_precompile_build
+      cmd:
+        - su discourse -c 'bundle exec rake assets:precompile:build'
+  - exec:
+      cd: $home
+      tag: precompile
       hook: assets_precompile
       cmd:
-        - su discourse -c 'bundle exec rake themes:update assets:precompile'
+        - su discourse -c 'SKIP_EMBER_CLI_COMPILE=1 bundle exec rake themes:update assets:precompile'
+  - replace:
+      tag: precompile
+      filename: /etc/service/unicorn/run
+      from: PRECOMPILE_ON_BOOT=1
+      to: "PRECOMPILE_ON_BOOT=0"
 
   - file:
      path: /usr/local/bin/discourse
