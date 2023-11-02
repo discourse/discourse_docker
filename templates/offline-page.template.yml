@@ -10,18 +10,6 @@ run:
            root /var/www/discourse-offline-page/html;
            internal;
          }
-         location /error-page.png {
-           root /var/www/discourse-offline-page/html;
-         }
-         location /error-page-dark.png {
-           root /var/www/discourse-offline-page/html;
-         }
-         location /error-page-bg.png {
-           root /var/www/discourse-offline-page/html;
-         }
-         location /error-page-favicon.png {
-           root /var/www/discourse-offline-page/html;
-         }
 
   - exec:
       cmd: git clone https://github.com/discourse/discourse-offline-page.git /var/www/discourse-offline-page
