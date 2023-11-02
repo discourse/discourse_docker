@@ -1,0 +1,16 @@
+run:
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     global: true
+     from: /server.+{/
+     to: |
+       server {
+         error_page 502 /error_page.html;
+         location /error_page.html {
+           root /var/www/discourse-offline-page/html;
+           internal;
+         }
+
+  - exec:
+      cmd: git clone https://github.com/discourse/discourse-offline-page.git /var/www/discourse-offline-page
+      raise_on_fail: false
