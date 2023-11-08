@@ -1,3 +1,8 @@
+env:
+  MIGRATE_ON_BOOT: 1
+  PRECOMPILE_ON_BOOT: 1
+  CREATE_DB_ON_BOOT: 1
+
 run:
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
