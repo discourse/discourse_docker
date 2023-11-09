@@ -3,6 +3,9 @@ env:
   PRECOMPILE_ON_BOOT: 1
   CREATE_DB_ON_BOOT: 1
 
+params:
+  offline_page_repository: https://github.com/discourse/discourse-offline-page.git
+
 run:
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
@@ -17,5 +20,5 @@ run:
          }
 
   - exec:
-      cmd: git clone https://github.com/discourse/discourse-offline-page.git /var/www/discourse-offline-page
+      cmd: git clone $offline_page_repository /var/www/discourse-offline-page
       raise_on_fail: false
