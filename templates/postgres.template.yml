@@ -55,6 +55,7 @@ run:
        sv stop postgres
 
   - file:
+     tag: db
      path: /root/upgrade_postgres
      chmod: "+x"
      contents: |
