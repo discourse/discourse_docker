@@ -22,20 +22,6 @@ hooks:
          sv start postgres || exit 1
 
 run:
-  - exec:
-      cmd:
-        - locale-gen $LANG && update-locale
-        - mkdir -p /shared/postgres_run
-        - chown postgres:postgres /shared/postgres_run
-        - chmod 775 /shared/postgres_run
-        - rm -fr /var/run/postgresql
-        - ln -s /shared/postgres_run /var/run/postgresql
-        - socat /dev/null UNIX-CONNECT:/shared/postgres_run/.s.PGSQL.5432 || exit 0 && echo postgres already running stop container ; exit 1
-        - rm -fr /shared/postgres_run/.s*
-        - rm -fr /shared/postgres_run/*.pid
-        - mkdir -p /shared/postgres_run/13-main.pg_stat_tmp
-        - chown postgres:postgres /shared/postgres_run/13-main.pg_stat_tmp
-      tag: db
   - file:
      path: /etc/service/postgres/run
      chmod: "+x"
@@ -152,16 +138,6 @@ run:
          exit 77
        fi
 
-  - exec:
-      tag: db
-      cmd:
-        - chown -R root /var/lib/postgresql/13/main
-        - "[ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/13/bin/initdb -D /shared/postgres_data || exit 0"
-        - chown -R postgres:postgres /shared/postgres_data
-        - chown -R postgres:postgres /var/run/postgresql
-        - /root/upgrade_postgres
-        - rm /root/upgrade_postgres
-
   - replace:
       filename: "/etc/postgresql/13/main/postgresql.conf"
       from: "data_directory = '/var/lib/postgresql/13/main'"
@@ -196,12 +172,6 @@ run:
       filename: "/etc/postgresql/13/main/postgresql.conf"
       from: /#?default_text_search_config *=.*/
       to: "default_text_search_config = '$db_default_text_search_config'"
-
-  # Necessary to enable backups
-  - exec:
-      cmd:
-        - install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
-      tag: db
 
   - replace:
       filename: "/etc/postgresql/13/main/postgresql.conf"
@@ -242,28 +212,6 @@ run:
       stop_signal: INT
       cmd: HOME=/var/lib/postgresql USER=postgres exec chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/13/bin/postmaster -D /etc/postgresql/13/main
 
-  # give db a few secs to start up
-  - exec:
-      tag: db
-      cmd:
-        - "sleep 5"
-        - su postgres -c 'createdb $db_name' || true
-        - su postgres -c 'psql $db_name -c "create user $db_user;"' || true
-        - su postgres -c 'psql $db_name -c "grant all privileges on database $db_name to $db_user;"' || true
-        - su postgres -c 'psql $db_name -c "alter schema public owner to $db_user;"'
-        - su postgres -c 'psql template1 -c "create extension if not exists hstore;"'
-        - su postgres -c 'psql template1 -c "create extension if not exists pg_trgm;"'
-        - su postgres -c 'psql template1 -c "create extension if not exists vector;"'
-        - su postgres -c 'psql $db_name -c "create extension if not exists hstore;"'
-        - su postgres -c 'psql $db_name -c "create extension if not exists pg_trgm;"'
-        - su postgres -c 'psql $db_name -c "create extension if not exists vector;"'
-  - exec:
-      tag: db
-      stdin: |
-        update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = '$db_name' AND encoding = pg_char_to_encoding('SQL_ASCII');
-      cmd: sudo -u postgres psql $db_name
-      raise_on_fail: false
-
   - file:
       path: /usr/local/bin/create_db
       chmod: +x
@@ -303,5 +251,8 @@ run:
       tag: db
       hook: postgres
       cmd:
-        - rm -f /root/install_postgres
+        # give db a few secs to start up
+        - "sleep 5"
+        - "[ -f /root/install_postgres ] && /root/install_postgres && rm -f /root/install_postgres"
+        - /usr/local/bin/create_db
         - "echo postgres installed!"
