@@ -71,6 +71,7 @@ run:
           /root/upgrade_postgres
           rm /root/upgrade_postgres
         fi
+        # Necessary to enable backups
         install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
 
   - file:
@@ -207,6 +208,10 @@ run:
 
   - exec:
       tag: db
+      cmd: "[ -f /root/install_postgres ] && /root/install_postgres && rm -f /root/install_postgres"
+
+  - exec:
+      tag: db
       background: true
       # use fast shutdown for pg
       stop_signal: INT
@@ -253,6 +258,5 @@ run:
       cmd:
         # give db a few secs to start up
         - "sleep 5"
-        - "[ -f /root/install_postgres ] && /root/install_postgres && rm -f /root/install_postgres"
         - /usr/local/bin/create_db
         - "echo postgres installed!"
