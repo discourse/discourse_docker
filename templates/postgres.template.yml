@@ -14,7 +14,12 @@ hooks:
     - replace:
        filename: /etc/service/unicorn/run
        from: "# postgres"
-       to: sv start postgres || exit 1
+       to: |
+         if [ -f /root/install_postgres ]; then
+           /root/install_postgres
+           rm /root/install_postgres
+         fi
+         sv start postgres || exit 1
 
 run:
   - exec:
@@ -55,7 +60,34 @@ run:
        sv stop postgres
 
   - file:
-     tag: db
+      path: /root/install_postgres
+      chmod: "+x"
+      contents: |
+        #!/bin/bash
+        locale-gen $LANG && update-locale
+        mkdir -p /shared/postgres_run
+        chown postgres:postgres /shared/postgres_run
+        chmod 775 /shared/postgres_run
+        rm -fr /var/run/postgresql
+        ln -s /shared/postgres_run /var/run/postgresql
+        if [ -e /shared/postgres_run/.s.PGSQL.5432 ]; then
+          socat /dev/null UNIX-CONNECT:/shared/postgres_run/.s.PGSQL.5432 || exit 0 && echo postgres already running stop container ; exit 1
+        fi
+        rm -fr /shared/postgres_run/.s*
+        rm -fr /shared/postgres_run/*.pid
+        mkdir -p /shared/postgres_run/13-main.pg_stat_tmp
+        chown postgres:postgres /shared/postgres_run/13-main.pg_stat_tmp
+        chown -R root /var/lib/postgresql/13/main
+        [ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/13/bin/initdb -D /shared/postgres_data || exit 0
+        chown -R postgres:postgres /shared/postgres_data
+        chown -R postgres:postgres /var/run/postgresql
+        if [ -f /root/upgrade_postgres ]; then
+          /root/upgrade_postgres
+          rm /root/upgrade_postgres
+        fi
+        install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
+
+  - file:
      path: /root/upgrade_postgres
      chmod: "+x"
      contents: |
@@ -270,4 +302,6 @@ run:
   - exec:
       tag: db
       hook: postgres
-      cmd: "echo postgres installed!"
+      cmd:
+        - rm -f /root/install_postgres
+        - "echo postgres installed!"
