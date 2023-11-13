@@ -31,7 +31,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends rs
 
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install anacron rsync parallel gawk \
                        postgresql-${PG_MAJOR} postgresql-client \
-                       postgresql-contrib-${PG_MAJOR} libpq-dev postgresql-${PG_MAJOR}-pgvector \
+                       postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
 
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
@@ -60,7 +60,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf build-essential c
                        libxslt-dev libcurl4-openssl-dev \
                        libssl-dev libyaml-dev libtool \
                        libpcre3 libpcre3-dev zlib1g zlib1g-dev \
-                       libxml2-dev \
+                       libxml2-dev libpq-dev \
                        libreadline-dev wget \
                        psmisc whois brotli libunwind-dev \
                        libtcmalloc-minimal4 cmake \
