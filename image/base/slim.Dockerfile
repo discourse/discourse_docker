@@ -29,7 +29,7 @@ RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main" | \
 # install these without recommends to avoid pulling in e.g. X11 libraries, mailutils
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends rsyslog logrotate cron ssh-client less
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install anacron rsync wget parallel gawk \
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install anacron rsync parallel gawk \
                        postgresql-${PG_MAJOR} postgresql-client \
                        postgresql-contrib-${PG_MAJOR} libpq-dev postgresql-${PG_MAJOR}-pgvector \
 
@@ -61,10 +61,10 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf build-essential c
                        libssl-dev libyaml-dev libtool \
                        libpcre3 libpcre3-dev zlib1g zlib1g-dev \
                        libxml2-dev \
-                       libreadline-dev \
+                       libreadline-dev wget \
                        psmisc whois brotli libunwind-dev \
                        libtcmalloc-minimal4 cmake \
-                       pngcrush pngquant ripgrep
+                       pngcrush pngquant ripgrep 
 
 RUN locale-gen en_US &&\
     DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs yarn &&\
