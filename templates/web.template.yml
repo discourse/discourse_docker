@@ -189,6 +189,7 @@ run:
       cd: $home
       cmd:
         - su discourse -c 'LOAD_PLUGINS=0 bundle exec rake plugin:pull_compatible_all'
+      hook: plugin_compatibility
       raise_on_fail: false
 
   - exec:
