@@ -33,6 +33,7 @@ run:
       to: ""
 
   - exec:
+      tag: db
       cmd:
         - install -d -m 0755 -o redis -g redis /shared/redis_data
 
