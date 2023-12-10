@@ -44,7 +44,7 @@ run:
   - exec: su postgres -c 'psql discourse_test_multisite -c "create extension if not exists pg_trgm;"'
   - exec: su postgres -c 'psql discourse_test_multisite -c "create extension if not exists vector;"'
 
-  - exec: cd tmp && git clone https://github.com/discourse/discourse.git --depth=1
+  - exec: cd tmp && git clone git@github.com:question-dialectics/dialectics.git --depth=1
   - exec: chown -R discourse /tmp/discourse
   - exec: cd /tmp/discourse && sudo -u discourse bundle config --local path ./vendor/bundle
   - exec: cd /tmp/discourse && sudo -u discourse bundle install

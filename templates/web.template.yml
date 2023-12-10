@@ -165,6 +165,7 @@ run:
       hook: web
       cmd:
         # install bundler version to match Gemfile.lock
+        - gem sources -a http://mirrors.aliyun.com/rubygems/ -r https://rubygems.org/
         - gem install bundler --conservative -v $(awk '/BUNDLED WITH/ { getline; gsub(/ /,""); print $0 }' Gemfile.lock)
         - find $home ! -user discourse -exec chown discourse {} \+
 
@@ -175,6 +176,8 @@ run:
           if [ "$version" != "tests-passed" ]; then
             rm -rf app/assets/javascripts/node_modules
           fi
+        - su discourse -c 'npm config set registry https://registry.npm.taobao.org/'
+        - su discourse -c 'yarn config set registry https://registry.npm.taobao.org/'
         - su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
 
   - exec:
@@ -183,6 +186,7 @@ run:
       cmd:
         - su discourse -c 'bundle config --local deployment true'
         - su discourse -c 'bundle config --local without "development test"'
+        - su discourse -c 'bundle config mirror.https://rubygems.org https://gems.ruby-china.com'
         - su discourse -c 'bundle install --retry 3 --jobs 4'
 
   - exec:
