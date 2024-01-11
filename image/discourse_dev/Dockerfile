@@ -36,13 +36,13 @@ RUN mv /shared/postgres_data /shared/postgres_data_orig
 # invocations when used with a mounted volume)
 ADD ensure-database /etc/runit/1.d/ensure-database
 
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - &&\
-    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
-    apt update &&\
-    apt install -y google-chrome-stable firefox-esr
+ADD install-rust /tmp/install-rust
+ADD install-selenium /tmp/install-selenium
+RUN /tmp/install-selenium
 
 # Install & Configure MailHog (https://github.com/mailhog/MailHog)
 RUN wget -qO /tmp/mailhog https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64\
     && echo "e2ed634ded49929f089b20045581955ed217672078fd86082dd7a6c67c5d09c7 /tmp/mailhog" | sha256sum -c -\
     && mv /tmp/mailhog /usr/local/bin/mailhog\
-    && chmod +x /usr/local/bin/mailhog
+    && chmod +x /usr/local/bin/mailhog\
+    && rm -rf /tmp/*
