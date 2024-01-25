@@ -1,0 +1,27 @@
+name: "run discourse"
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+env:
+
+jobs:
+  deploy:
+    name: "Terraform Infrastructure Change Management"
+    runs-on: runner-app
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout the repository to the runner
+        uses: actions/checkout@v3
+    
+      - name: Terraform init
+        id: run
+        run: ./launcher rebuild app
