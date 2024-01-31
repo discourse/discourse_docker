@@ -120,7 +120,7 @@ jobs:
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/discourse_dev:release
   aarch64:
-    runs-on: ubuntu-latest
+    runs-on: macos-14
     needs: base
     steps:
       - uses: actions/checkout@v3
