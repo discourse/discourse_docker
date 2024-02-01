@@ -121,16 +121,13 @@ jobs:
   #         docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
   #         docker push discourse/discourse_dev:release
   aarch64:
-    runs-on: macos-14
+    runs-on: macos-13
     # needs: base
     steps:
       - name: Set up docker and colima
         run: |
           brew install docker colima
-          colima start --arch aarch64 --vm-type=vz --vz-rosetta
-      - name: Setup tmate session
-        if: always()
-        uses: mxschmitt/action-tmate@v3
+          colima start --arch aarch64
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
