@@ -126,8 +126,8 @@ jobs:
     steps:
       - name: Set up docker and colima
         run: |
-          brew install qemu docker colima
-          colima start
+          brew install docker colima
+          colima start --vm-type vz
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
