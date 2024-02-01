@@ -126,7 +126,6 @@ jobs:
     steps:
       - name: Set up docker and colima
         run: |
-          brew uninstall qemu
           brew install qemu docker colima
           colima start
       - uses: actions/checkout@v3
