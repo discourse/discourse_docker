@@ -127,7 +127,7 @@ jobs:
       - name: Set up docker and colima
         run: |
           brew install docker colima
-          colima start --vm-type vz
+          colima start --arch x86_64
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
