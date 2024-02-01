@@ -126,13 +126,12 @@ jobs:
     steps:
       - name: Set up docker and colima
         run: |
-          brew install docker colima
+          brew uninstall qemu
+          brew install qemu docker colima
           colima start
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
