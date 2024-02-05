@@ -40,7 +40,7 @@ echo "$IMAGE_MAGICK_HASH $WDIR/ImageMagick.tar.gz" | sha256sum -c
 IMDIR=$WDIR/$(tar tzf $WDIR/ImageMagick.tar.gz --wildcards "ImageMagick-*/configure" |cut -d/ -f1)
 tar zxf $WDIR/ImageMagick.tar.gz -C $WDIR
 cd $IMDIR
-PKG_CONF_LIBDIR=$PREFIX/lib LDFLAGS=-L$PREFIX/lib CFLAGS=-I$PREFIX/include ./configure \
+PKG_CONF_LIBDIR=$PREFIX/lib LDFLAGS=-L$PREFIX/lib CFLAGS='-O2 -I$PREFIX/include' ./configure \
           --prefix=$PREFIX \
           --enable-static \
           --enable-bounds-checking \
