@@ -19,6 +19,9 @@ params:
   home: /var/www/discourse
   upload_size: 10m
   nginx_worker_connections: 4000
+  imagemagick_resource_memory: 1GiB
+  imagemagick_resource_map: 2GiB
+  imagemagick_resource_disk: 8GiB
 
 run:
   - exec: thpoff echo "thpoff is installed!"
@@ -396,13 +399,13 @@ run:
           <!-- <policy domain="system" name="memory-map" value="anonymous"/> -->
           <!-- <policy domain="system" name="max-memory-request" value="256MiB"/> -->
           <!-- <policy domain="resource" name="temporary-path" value="/tmp"/> -->
-          <policy domain="resource" name="memory" value="1GiB"/>
-          <policy domain="resource" name="map" value="2GiB"/>
+          <policy domain="resource" name="memory" value="$imagemagick_resource_memory"/>
+          <policy domain="resource" name="map" value="$imagemagick_resource_map"/>
           <policy domain="resource" name="width" value="64KP"/>
           <policy domain="resource" name="height" value="64KP"/>
           <!-- <policy domain="resource" name="list-length" value="128"/> -->
           <policy domain="resource" name="area" value="4GP"/>
-          <policy domain="resource" name="disk" value="8GiB"/>
+          <policy domain="resource" name="disk" value="$imagemagick_resource_disk"/>
           <!-- <policy domain="resource" name="file" value="768"/> -->
           <!-- <policy domain="resource" name="thread" value="4"/> -->
           <!-- <policy domain="resource" name="throttle" value="0"/> -->
