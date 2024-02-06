@@ -62,7 +62,7 @@ PKG_CONF_LIBDIR=$PREFIX/lib LDFLAGS=-L$PREFIX/lib CFLAGS='-O2 -I$PREFIX/include'
           --with-heic \
           --with-rsvg \
           --with-webp
-make all && make install
+make all -j"$(nproc)" && make install
 
 cd $HOME
 rm -rf $WDIR

@@ -15,7 +15,7 @@ tar zxf redis-$REDIS_VERSION.tar.gz
 cd redis-$REDIS_VERSION
 
 # Building and installing binaries.
-make BUILD_TLS=yes && make install PREFIX=/usr
+make -j"$(nproc)" BUILD_TLS=yes && make install PREFIX=/usr
 
 # Add `redis` user and group.
 adduser --system --home /var/lib/redis --quiet --group redis || true
