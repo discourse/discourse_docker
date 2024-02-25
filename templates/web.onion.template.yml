@@ -1,4 +1,9 @@
-# Adds another server on port 80 for hidden service hosting
+# Adds another server on port 80 for Onion Service hosting
+#
+# This does not configure the Tor daemon, which should be done separately.
+#
+# See https://meta.discourse.org/t/template-for-serving-through-an-onion-address-with-docker/41536
+#     https://meta.discourse.org/t/how-to-create-mirror-in-tor-with-onion-domain/220292
 
 run:
   - exec:
@@ -34,9 +39,25 @@ run:
 
   - replace:
       filename: "/etc/nginx/conf.d/onion.conf"
+      from: /proxy_buffer_size.*$/
+      to: ""
+
+  - replace:
+      filename: "/etc/nginx/conf.d/onion.conf"
+      from: /proxy_buffers.*$/
+      to: ""
+
+  - replace:
+      filename: "/etc/nginx/conf.d/onion.conf"
+      from: /large_client_header_buffers.*$/
+      to: ""
+
+  - replace:
+      filename: "/etc/nginx/conf.d/onion.conf"
       from: /log_format.*$/
       to: ""
 
+  # Set the Onion Service address
   - replace:
       filename: "/etc/nginx/conf.d/onion.conf"
       from: /server_name.+$/
@@ -47,3 +68,9 @@ run:
       filename: "/etc/nginx/conf.d/onion.conf"
       from: /client_max_body_size.+$/
       to: client_max_body_size $upload_size ;
+
+  # Ensure an appropriate bucket size for the server names hash tables
+  - file:
+     path: /etc/nginx/conf.d/server_names_hash_bucket_size.conf
+     contents: |
+       server_names_hash_bucket_size 128;
