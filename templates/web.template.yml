@@ -171,6 +171,11 @@ run:
   - exec:
       cd: $home
       cmd:
+        - "su discourse -c 'yarn config set network-timeout 600000 -g'"
+        
+  - exec:
+      cd: $home
+      cmd:
         - |-
           if [ "$version" != "tests-passed" ]; then
             rm -rf app/assets/javascripts/node_modules
