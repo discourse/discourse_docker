@@ -14,6 +14,11 @@ echo "$REDIS_HASH redis-$REDIS_VERSION.tar.gz" | sha256sum -c
 tar zxf redis-$REDIS_VERSION.tar.gz
 cd redis-$REDIS_VERSION
 
+# aarch64 compatibility
+if uname -m | grep -qi 'aarch64'; then
+  export JEMALLOC_CONFIGURE_OPTS="--with-lg-page=16"
+fi
+
 # Building and installing binaries.
 make -j"$(nproc)" BUILD_TLS=yes && make install PREFIX=/usr
 
