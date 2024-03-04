@@ -3,7 +3,7 @@
 FROM debian:bullseye-slim
 
 ENV PG_MAJOR=13 \
-    RUBY_ALLOCATOR=/usr/lib/libjemalloc.so.1 \
+    RUBY_ALLOCATOR=/usr/lib/libjemalloc.so \
     RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH \
