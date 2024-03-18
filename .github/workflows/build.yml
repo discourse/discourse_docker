@@ -15,36 +15,76 @@ env:
 
 jobs:
   base:
-    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    # `unbuntu-20.04-8core` for arch amd64 non-scheduled builds
+    # `unbuntu-20.04` for arch amd64 scheduled builds
+    # `unbuntu-20.04-8core-arm` for arch arm64 non-scheduled builds
+    # `unbuntu-20.04-2core-arm` for arch arm64 scheduled builds
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || (( matrix.arch == 'arm64' && '-2core' ) || '') }}${{ ((matrix.arch == 'arm64') && '-arm' || '') }}
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
     timeout-minutes: 90
     steps:
+      - name: Install Docker
+        if: ${{ matrix.arch == 'arm64' }}
+        run: |
+          # Add Docker's official GPG key:
+          sudo apt-get update
+          sudo apt-get install ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+          # Add the repository to Apt sources:
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+
+          # Install Docker
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+
+          # Give the current user permission to run docker without sudo
+          sudo usermod -aG docker $USER
+          sudo apt-get install -y acl
+          sudo setfacl --modify user:$USER:rw /var/run/docker.sock
+      - name: Install Ruby
+        if: ${{ matrix.arch == 'arm64' }}
+        run: |
+          sudo apt-get install -y ruby
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
+      - name: Set arch helper output
+        id: arch-helper
+        run: |
+          echo "arch_postfix_dash=${{ ((matrix.arch == 'arm64' && '-arm64') || '') }}" >> $GITHUB_OUTPUT
+          echo "arch_postfix_underscore=${{ ((matrix.arch == 'arm64' && '_arm64') || '') }}" >> $GITHUB_OUTPUT
       - name: build slim image
         run: |
-          cd image && ruby auto_build.rb base_slim
+          cd image && ruby auto_build.rb base_slim${{ steps.arch-helper.outputs.arch_postfix_underscore }}
       - name: tag slim images
         id: tag-images
         run: |
           TAG=`date +%Y%m%d-%H%M`
           echo "tag=$(echo $TAG)" >> $GITHUB_OUTPUT
-          docker tag discourse/base:build_slim discourse/base:2.0.$TAG-slim
-          docker tag discourse/base:build_slim discourse/base:slim
+          docker tag discourse/base:build_slim${{ steps.arch-helper.outputs.arch_postfix_underscore }} discourse/base:2.0.$TAG-slim${{ steps.arch-helper.outputs.arch_postfix_dash }}
+          docker tag discourse/base:build_slim${{ steps.arch-helper.outputs.arch_postfix_underscore }} discourse/base:slim${{ steps.arch-helper.outputs.arch_postfix_dash }}
       - name: build release image
         run: |
-          cd image && ruby auto_build.rb base
-      - name: tag release images
+          cd image && ruby auto_build.rb base${{ steps.arch-helper.outputs.arch_postfix_underscore }}
+      - name: tag amd64 release images
         run: |
           TAG=${{ steps.tag-images.outputs.tag }}
-          docker tag discourse/base:build discourse/base:2.0.$TAG
-          docker tag discourse/base:build discourse/base:release
+          docker tag discourse/base:build${{ steps.arch-helper.outputs.arch_postfix_underscore }} discourse/base:2.0.$TAG${{ steps.arch-helper.outputs.arch_postfix_dash }}
+          docker tag discourse/base:build${{ steps.arch-helper.outputs.arch_postfix_underscore }} discourse/base:release${{ steps.arch-helper.outputs.arch_postfix_dash }}
       - name: build test_build image
         run: |
-          cd image && ruby auto_build.rb discourse_test_build
+          cd image && ruby auto_build.rb discourse_test_build${{ steps.arch-helper.outputs.arch_postfix_underscore }}
       - name: run specs
         run: |
-          docker run --rm -e RUBY_ONLY=1 -e USE_TURBO=1 -e SKIP_PLUGINS=1 -e SKIP_LINT=1 discourse/discourse_test:build
+          docker run --rm -e RUBY_ONLY=1 -e USE_TURBO=1 -e SKIP_PLUGINS=1 -e SKIP_LINT=1 discourse/discourse_test:build${{ steps.arch-helper.outputs.arch_postfix_underscore }}
       - name: Print summary
         run: |
           docker images discourse/base
@@ -55,12 +95,19 @@ jobs:
         run: |
           TAG=${{ steps.tag-images.outputs.tag }}
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
-          docker push discourse/base:2.0.$TAG-slim
-          docker push discourse/base:slim
-          docker push discourse/base:2.0.$TAG
-          docker push discourse/base:release
+          docker push discourse/base:2.0.$TAG-slim${{ steps.arch-helper.outputs.arch_postfix_dash }}
+          docker push discourse/base:slim${{ steps.arch-helper.outputs.arch_postfix_dash }}
+          docker push discourse/base:2.0.$TAG${{ steps.arch-helper.outputs.arch_postfix_dash }}
+          docker push discourse/base:release${{ steps.arch-helper.outputs.arch_postfix_dash }}
   test:
-    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    # `unbuntu-20.04-8core` for arch amd64 non-scheduled builds
+    # `unbuntu-20.04` for arch amd64 scheduled builds
+    # `unbuntu-20.04-8core-arm` for arch arm64 non-scheduled builds
+    # `unbuntu-20.04-2core-arm` for arch arm64 scheduled builds
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || (( matrix.arch == 'arm64' && '-2core' ) || '') }}${{ ((matrix.arch == 'arm64') && '-arm' || '') }}
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
     timeout-minutes: 30
     needs: base
     defaults:
@@ -70,24 +117,29 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
+      - name: Set arch helper output
+        id: arch-helper
+        run: |
+          echo "arch_postfix_dash=${{ ((matrix.arch == 'arm64' && '-arm64') || '') }}" >> $GITHUB_OUTPUT
+          echo "arch_postfix_underscore=${{ ((matrix.arch == 'arm64' && '_arm64') || '') }}" >> $GITHUB_OUTPUT
       - name: build discourse_test:slim
         run: |
           docker buildx build . --load \
-            --build-arg from_tag=slim \
+            --build-arg from_tag=slim${{ steps.arch-helper.outputs.arch_postfix_dash }} \
             --target base \
-            --tag discourse/discourse_test:slim
+            --tag discourse/discourse_test:slim${{ steps.arch-helper.outputs.arch_postfix_dash }}
       - name: build discourse_test:slim-browsers
         run: |
           docker buildx build . --load \
-            --build-arg from_tag=slim \
+            --build-arg from_tag=slim${{ steps.arch-helper.outputs.arch_postfix_dash }} \
             --target with_browsers \
-            --tag discourse/discourse_test:slim-browsers
+            --tag discourse/discourse_test:slim-browsers${{ steps.arch-helper.outputs.arch_postfix_dash }}
       - name: build discourse_test:release
         run: |
           docker buildx build . --load \
-            --build-arg from_tag=release \
+            --build-arg from_tag=release${{ steps.arch-helper.outputs.arch_postfix_dash }} \
             --target release \
-            --tag discourse/discourse_test:release
+            --tag discourse/discourse_test:release${{ steps.arch-helper.outputs.arch_postfix_dash }}
       - name: Print summary
         run: |
           docker images discourse/discourse_test
@@ -97,74 +149,37 @@ jobs:
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
-          docker push discourse/discourse_test:slim
-          docker push discourse/discourse_test:slim-browsers
-          docker push discourse/discourse_test:release
+          docker push discourse/discourse_test:slim${{ steps.arch-helper.outputs.arch_postfix_dash }}
+          docker push discourse/discourse_test:slim-browsers${{ steps.arch-helper.outputs.arch_postfix_dash }}
+          docker push discourse/discourse_test:release${{ steps.arch-helper.outputs.arch_postfix_dash }}
   dev:
-    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    # `unbuntu-20.04-8core` for arch amd64 non-scheduled builds
+    # `unbuntu-20.04` for arch amd64 scheduled builds
+    # `unbuntu-20.04-8core-arm` for arch arm64 non-scheduled builds
+    # `unbuntu-20.04-2core-arm` for arch arm64 scheduled builds
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || (( matrix.arch == 'arm64' && '-2core' ) || '') }}${{ ((matrix.arch == 'arm64') && '-arm' || '') }}
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
     timeout-minutes: 30
     needs: base
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
+      - name: Set arch helper output
+        id: arch-helper
+        run: |
+          echo "arch_postfix_dash=${{ ((matrix.arch == 'arm64' && '-arm64') || '') }}" >> $GITHUB_OUTPUT
+          echo "arch_postfix_underscore=${{ ((matrix.arch == 'arm64' && '_arm64') || '') }}" >> $GITHUB_OUTPUT
       - name: build discourse_dev image
         run: |
-          cd image && ruby auto_build.rb discourse_dev
-      - name: push to dockerhub
-        if: success() && (github.ref == 'refs/heads/main')
-        env:
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-        run: |
-          docker tag discourse/discourse_dev:build discourse/discourse_dev:release
-          docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
-          docker push discourse/discourse_dev:release
-  aarch64:
-    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '-2core' }}-arm
-    needs: base
-    steps:
-      - name: Install Docker
-        run: |
-          # Add Docker's official GPG key:
-          sudo apt-get update
-          sudo apt-get install ca-certificates curl
-          sudo install -m 0755 -d /etc/apt/keyrings
-          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-          sudo chmod a+r /etc/apt/keyrings/docker.asc
-          # Add the repository to Apt sources:
-          echo \
-            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt-get update
-          # Install Docker
-          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin
-          # Give the current user permission to run docker without sudo
-          sudo usermod -aG docker $USER
-          sudo apt-get install -y acl
-          sudo setfacl --modify user:$USER:rw /var/run/docker.sock
-      - name: Install Ruby
-        run: |
-          sudo apt-get install -y ruby
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
-      - name: build slim image
-        run: |
-          cd image && ruby auto_build.rb base_slim_arm64
-      - name: build release image
-        run: |
-          cd image && ruby auto_build.rb base_arm64
-      - name: tag release image as release
-        working-directory: image/base
-        run: |
-          docker tag discourse/base:build_arm64 discourse/base:aarch64
-      - name: Print summary
-        run: docker images discourse/base
+          cd image && ruby auto_build.rb discourse_dev${{ steps.arch-helper.outputs.arch_postfix_underscore }}
       - name: push to dockerhub
         if: success() && (github.ref == 'refs/heads/main')
         env:
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
-          docker push discourse/base:aarch64
+          docker tag discourse/discourse_dev:build${{ steps.arch-helper.outputs.arch_postfix_underscore }} discourse/discourse_dev:release${{ steps.arch-helper.outputs.arch_postfix_dash }}
+          docker push discourse/discourse_dev:release${{ steps.arch-helper.outputs.arch_postfix_dash }}

@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+# https://googlechromelabs.github.io/chrome-for-testing/ doesn't provide linux/arm64 binaries for chrome or chromedriver
+# yet. Therefore on arm64, we install chromium instead of chrome and installs a chromedriver for linux/arm64 from
+# https://github.com/electron/electron/releases/.
+#
+# On that on the current debian, Chromium 120.0.6099.224 is installed so we have to install a chromedriver that is of the
+# same version.
+if [ "$(dpkg --print-architecture)" = "arm64" ]; then
+  apt update && apt install -y chromium unzip &&\
+    wget -q -O /tmp/chromedriver.zip https://github.com/electron/electron/releases/download/v28.2.2/chromedriver-v28.2.2-linux-arm64.zip &&\
+    unzip /tmp/chromedriver.zip -d /tmp/chromedriver &&\
+    mv /tmp/chromedriver/chromedriver /usr/bin &&\
+    rm -rf /tmp/chromedriver /tmp/chromedriver.zip
+else
+  wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - &&\
+    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
+    apt update &&\
+    apt install -y google-chrome-stable
+fi

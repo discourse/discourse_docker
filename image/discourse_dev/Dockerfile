@@ -1,6 +1,7 @@
 # NAME:     discourse/discourse_dev
 # VERSION:  release
-FROM discourse/base:slim
+ARG from_tag=slim
+FROM discourse/base:$from_tag
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
@@ -37,8 +38,14 @@ RUN mv /shared/postgres_data /shared/postgres_data_orig
 ADD ensure-database /etc/runit/1.d/ensure-database
 
 ADD install-rust /tmp/install-rust
-ADD install-selenium /tmp/install-selenium
-RUN /tmp/install-selenium
+ADD install-selenium-manager /tmp/install-selenium-manager
+ADD install-chrome /tmp/install-chrome
+
+RUN /tmp/install-selenium-manager &&\
+    /tmp/install-chrome
+
+RUN apt update &&\
+    apt install -y firefox-esr
 
 # Install & Configure MailHog (https://github.com/mailhog/MailHog)
 RUN wget -qO /tmp/mailhog https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64\

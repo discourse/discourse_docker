@@ -1,13 +1,9 @@
 #!/bin/bash
 set -e
 
-# The chrome webdriver isn’t available for the aarch64 architecture (yet). We
-# have to rely on the geckodriver instead, so we’re just installing firefox and
-# not even chromium.
 # The Selenium gem isn’t shipped with the `selenium-manager` binary for aarch64
 # either (yet). So we have to compile it ourselves.
 if [ "$(dpkg --print-architecture)" = "arm64" ]; then
-    apt update && apt install -y firefox-esr
     cd /tmp
     /tmp/install-rust
     git clone --depth 1 --no-checkout https://github.com/SeleniumHQ/selenium.git
@@ -20,9 +16,4 @@ if [ "$(dpkg --print-architecture)" = "arm64" ]; then
     rustup self uninstall -y
     cd /
     rm -rf /tmp/*
-else
-    wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - &&\
-    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
-    apt update &&\
-    apt install -y google-chrome-stable firefox-esr
 fi

@@ -27,7 +27,7 @@ ENV LANGUAGE en_US.UTF-8
 
 RUN curl https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
 RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main" | \
-        tee /etc/apt/sources.list.d/postgres.list
+    tee /etc/apt/sources.list.d/postgres.list
 RUN curl --silent --location https://deb.nodesource.com/setup_18.x | sudo bash -
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
@@ -36,16 +36,16 @@ RUN apt-get -y update
 # X11 libraries, mailutils
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less
 RUN DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf build-essential ca-certificates rsync \
-                       libxslt-dev libcurl4-openssl-dev \
-                       libssl-dev libyaml-dev libtool \
-                       libpcre3 libpcre3-dev zlib1g zlib1g-dev \
-                       libxml2-dev gawk parallel \
-                       postgresql-${PG_MAJOR} postgresql-client \
-                       postgresql-contrib-${PG_MAJOR} libpq-dev postgresql-${PG_MAJOR}-pgvector \
-                       libreadline-dev anacron wget \
-                       psmisc whois brotli libunwind-dev \
-                       libtcmalloc-minimal4 cmake \
-                       pngcrush pngquant ripgrep
+    libxslt-dev libcurl4-openssl-dev \
+    libssl-dev libyaml-dev libtool \
+    libpcre3 libpcre3-dev zlib1g zlib1g-dev \
+    libxml2-dev gawk parallel \
+    postgresql-${PG_MAJOR} postgresql-client \
+    postgresql-contrib-${PG_MAJOR} libpq-dev postgresql-${PG_MAJOR}-pgvector \
+    libreadline-dev anacron wget \
+    psmisc whois brotli libunwind-dev \
+    libtcmalloc-minimal4 cmake \
+    pngcrush pngquant ripgrep
 RUN sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron
 RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
 RUN sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf
