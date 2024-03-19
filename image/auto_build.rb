@@ -28,6 +28,11 @@ images = {
     name: "discourse_test",
     tag: "discourse/discourse_test:build",
   },
+  discourse_test_build_arm64: {
+    name: "discourse_test",
+    tag: "discourse/discourse_test:build_arm64",
+    extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_arm64\"",
+  },
   discourse_dev: {
     name: "discourse_dev",
     tag: "discourse/discourse_dev:build",
