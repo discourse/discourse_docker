@@ -2,7 +2,7 @@
 set -e
 
 # https://googlechromelabs.github.io/chrome-for-testing/ doesn't provide linux/arm64 binaries for chrome or chromedriver
-# yet. Therefore on arm64, we install chromium instead of chrome and installs a chromedriver for linux/arm64 from
+# yet. Therefore on arm64, we install chromium instead of chrome and install a chromedriver for linux/arm64 from
 # https://github.com/electron/electron/releases/.
 #
 # On the current debian Chromium 120.0.6099.224 is installed so we have to install a chromedriver that is of the same version.
