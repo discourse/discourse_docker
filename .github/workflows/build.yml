@@ -120,24 +120,45 @@ jobs:
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/discourse_dev:release
   aarch64:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '-2core' }}-arm
     needs: base
     steps:
+      - name: Install Docker
+        run: |
+          # Add Docker's official GPG key:
+          sudo apt-get update
+          sudo apt-get install ca-certificates curl
+          sudo install -m 0755 -d /etc/apt/keyrings
+          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+          sudo chmod a+r /etc/apt/keyrings/docker.asc
+          # Add the repository to Apt sources:
+          echo \
+            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+          sudo apt-get update
+          # Install Docker
+          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+          # Give the current user permission to run docker without sudo
+          sudo usermod -aG docker $USER
+          sudo apt-get install -y acl
+          sudo setfacl --modify user:$USER:rw /var/run/docker.sock
+      - name: Install Ruby
+        run: |
+          sudo apt-get install -y ruby
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v2
       - name: build slim image
         run: |
           cd image && ruby auto_build.rb base_slim_arm64
-      - name: tag slim image as release
+      - name: build release image
+        run: |
+          cd image && ruby auto_build.rb base_arm64
+      - name: tag release image as release
         working-directory: image/base
         run: |
-          docker tag discourse/base:build_slim_arm64 discourse/base:aarch64
+          docker tag discourse/base:build_arm64 discourse/base:aarch64
       - name: Print summary
         run: docker images discourse/base
       - name: push to dockerhub
