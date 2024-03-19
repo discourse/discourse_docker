@@ -19,7 +19,7 @@ jobs:
     # `unbuntu-20.04` for arch amd64 scheduled builds
     # `unbuntu-20.04-8core-arm` for arch arm64 non-scheduled builds
     # `unbuntu-20.04-2core-arm` for arch arm64 scheduled builds
-    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || (( matrix.arch == 'arm64' && '-2core' ) || '') }}${{ ((matrix.arch == 'arm64') && '-arm' || '') }}
+    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || (( matrix.arch == 'arm64' && '-2core' ) || '') }}${{ (matrix.arch == 'arm64') && '-arm' || '' }}
     strategy:
       matrix:
         arch: [amd64, arm64]
