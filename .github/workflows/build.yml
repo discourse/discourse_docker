@@ -59,8 +59,8 @@ jobs:
       - name: Set arch helper output
         id: arch-helper
         run: |
-          echo "arch_postfix_dash=${{ ((matrix.arch == 'arm64' && '-arm64') || '') }}" >> $GITHUB_OUTPUT
-          echo "arch_postfix_underscore=${{ ((matrix.arch == 'arm64' && '_arm64') || '') }}" >> $GITHUB_OUTPUT
+          echo "arch_postfix_dash=${{ (matrix.arch == 'arm64' && '-arm64') || '' }}" >> $GITHUB_OUTPUT
+          echo "arch_postfix_underscore=${{ (matrix.arch == 'arm64' && '_arm64') || '' }}" >> $GITHUB_OUTPUT
       - name: build slim image
         run: |
           cd image && ruby auto_build.rb base_slim${{ steps.arch-helper.outputs.arch_postfix_underscore }}
