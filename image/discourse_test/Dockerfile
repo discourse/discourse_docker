@@ -17,10 +17,8 @@ RUN chown -R discourse . &&\
 
 FROM base AS with_browsers
 
-ADD install-chrome /tmp/install-chrome
-RUN /tmp/install-chrome &&\
-    apt update &&\
-    apt install -y libgconf-2-4 libxss1 firefox-esr &&\
+RUN apt update &&\
+    apt install -y libgconf-2-4 libxss1 firefox-esr chromium-driver &&\
     cd /tmp && wget -q "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US" -O firefox.tar.bz2 &&\
     tar xjvf firefox.tar.bz2 && mv /tmp/firefox /opt/firefox-evergreen &&\
     apt clean
