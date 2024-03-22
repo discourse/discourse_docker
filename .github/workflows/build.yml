@@ -23,7 +23,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    timeout-minutes: 30
+    timeout-minutes: ${{ (github.event_name != 'schedule' && 30) || ((matrix.arch == 'arm64' && 45) || 30) }}
     steps:
       - name: Install Docker
         if: ${{ matrix.arch == 'arm64' }}
