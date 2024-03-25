@@ -180,8 +180,11 @@ check_prereqs() {
     echo "You can tell what filesystem you are using by running \"docker info\" and looking at the 'Storage Driver' line."
     echo
     echo "If you wish to continue anyway using your existing unsupported storage driver,"
-    echo "read the source code of launcher and figure out how to bypass this check."
-    exit 1
+    echo "you can do this by running \"export DISCOURSE_LAUNCHER_ALLOW_UNSUPPORTED_STORAGE_DRIVER=true\""
+    echo "before running this script again."
+    if [ -z "$DISCOURSE_LAUNCHER_ALLOW_UNSUPPORTED_STORAGE_DRIVER" ]; then
+      exit 1
+    fi
   fi
 
   # 3. running recommended docker version
@@ -191,7 +194,13 @@ check_prereqs() {
   # At least minimum docker version
   if compare_version "${docker_min_version}" "${test}"; then
     echo "ERROR: Docker version ${test} not supported, please upgrade to at least ${docker_min_version}, or recommended ${docker_rec_version}"
-    exit 1
+    echo
+    echo "If you wish to continue anyway using your existing unsupported docker version,"
+    echo "you can do this by running \"export DISCOURSE_LAUNCHER_ALLOW_UNSUPPORTED_DOCKER_VERSION=true\""
+    echo "before running this script again."
+    if [ -z "$DISCOURSE_LAUNCHER_ALLOW_UNSUPPORTED_DOCKER_VERSION" ]; then
+      exit 1
+    fi
   fi
 
   # Recommend newer docker version
