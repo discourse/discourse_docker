@@ -1,6 +1,6 @@
 # NAME:     discourse/base
 # VERSION:  release
-FROM debian:bullseye-slim
+FROM debian:bookworm-slim
 
 ENV PG_MAJOR=13 \
     RUBY_ALLOCATOR=/usr/lib/libjemalloc.so \
@@ -13,7 +13,7 @@ ENV PG_MAJOR=13 \
 
 RUN echo 2.0.`date +%Y%m%d` > /VERSION
 
-RUN echo 'deb http://deb.debian.org/debian bullseye-backports main' > /etc/apt/sources.list.d/bullseye-backports.list
+RUN echo 'deb http://deb.debian.org/debian bookworm-backports main' > /etc/apt/sources.list.d/bookworm-backports.list
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping
 RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt-get update || true"
@@ -26,7 +26,7 @@ ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
 RUN curl https://apt.postgresql.org/pub/repos/apt/ACCC4CF8.asc | apt-key add -
-RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ bullseye-pgdg main" | \
+RUN echo "deb http://apt.postgresql.org/pub/repos/apt/ bookworm-pgdg main" | \
         tee /etc/apt/sources.list.d/postgres.list
 RUN curl --silent --location https://deb.nodesource.com/setup_18.x | sudo bash -
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
