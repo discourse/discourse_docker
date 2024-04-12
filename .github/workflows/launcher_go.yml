@@ -1,0 +1,104 @@
+name: launcher_go
+
+on:
+  release:
+    types: [created]
+  push:
+    branches:
+      - main
+  pull_request: {}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.21.0'
+      - run: |
+          if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
+            exit 1
+          fi
+        working-directory: ./launcher_go/v2
+  test:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 5
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.21.0'
+      - run: go test ./...
+        working-directory: ./launcher_go/v2
+
+  build_latest:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    strategy:
+      matrix:
+        goos: [linux, darwin]
+        goarch: ["386", amd64, arm64]
+        exclude:
+          - goarch: "386"
+            goos: darwin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: wangyoucao577/go-release-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          project_path: ./launcher_go/v2
+          binary_name: launcher2
+          overwrite: true
+          release_tag: latest
+
+  add_version:
+    runs-on: ubuntu-latest
+    needs: build_latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '>=1.21.0'
+      - run: go run ./... --version > ../../launcher_version.txt
+        working-directory: ./launcher_go/v2
+      - name: upload version
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: latest
+          files: launcher_version.txt
+
+  build_release:
+    if: github.event_name == 'release'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    strategy:
+      matrix:
+        goos: [linux, darwin]
+        goarch: ["386", amd64, arm64]
+        exclude:
+          - goarch: "386"
+            goos: darwin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: wangyoucao577/go-release-action@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          project_path: ./launcher_go/v2
+          binary_name: launcher2
