@@ -11,7 +11,7 @@ ENV PG_MAJOR=13 \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH \
     LEFTHOOK=0 \
-    RUBY_VERSION=3.2.3 \
+    RUBY_VERSION=3.2.4 \
     DEBIAN_RELEASE=${DEBIAN_RELEASE}
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
