@@ -1,10 +1,21 @@
 hooks:
+  before_code:
+    - exec:
+        cmd:
+          - su discourse -c 'git config --global url."https://mirror.ghproxy.com/https://github.com/".insteadOf "https://github.com/"'
+
   before_web:
     - exec:
-       cmd:
-         - gem sources --add https://gems.ruby-china.com/ --remove https://rubygems.org/
+        cmd:
+          - su discourse -c 'gem sources --add https://mirrors.tuna.tsinghua.edu.cn/rubygems/ --remove https://rubygems.org/'
+
+  before_yarn:
+    - exec:
+        cmd:
+          - su discourse -c 'yarn config set registry https://registry.npmmirror.com --global'
+          - su discourse -c 'cd $home && sed -i "s#https://registry.yarnpkg.com#https://registry.npmmirror.com#g" yarn.lock'
 
   before_bundle_exec:
     - exec:
-       cmd:
-         - su discourse -c 'bundle config mirror.https://rubygems.org https://gems.ruby-china.com/'
+        cmd:
+          - su discourse -c 'bundle config mirror.https://rubygems.org https://mirrors.tuna.tsinghua.edu.cn/rubygems'

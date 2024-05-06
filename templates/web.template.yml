@@ -179,6 +179,7 @@ run:
 
   - exec:
       cd: $home
+      hook: yarn
       cmd:
         - |-
           if [ "$version" != "tests-passed" ]; then
