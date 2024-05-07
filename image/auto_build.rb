@@ -58,10 +58,10 @@ def run(command)
   lines
 end
 
-def build(image)
+def build(image, cli_args)
   lines =
     run(
-      "cd #{image[:name]} && docker buildx build . --load --no-cache --tag #{image[:tag]} #{image[:extra_args] ? image[:extra_args] : ""}",
+      "cd #{image[:name]} && docker buildx build . --load --no-cache --tag #{image[:tag]} #{image[:extra_args] ? image[:extra_args] : ""} #{cli_args}",
     )
   if lines[-1] =~ /successfully built/
     raise "Error building the image for #{image[:name]}: #{lines[-1]}"
@@ -76,7 +76,7 @@ def dev_deps()
   run("cp base/install-rust discourse_dev/install-rust")
 end
 
-if ARGV.length != 1
+if ARGV.length == 0
   puts <<~TEXT
     Usage:
     ruby auto_build.rb IMAGE
@@ -96,5 +96,5 @@ else
   puts "Building #{images[image]}"
   dev_deps() if image == :discourse_dev
 
-  build(images[image])
+  build(images[image], ARGV[1..-1].join(" "))
 end
