@@ -5,13 +5,14 @@ ARG DEBIAN_RELEASE=bullseye
 FROM debian:${DEBIAN_RELEASE}-slim
 
 ARG DEBIAN_RELEASE
+ARG RUBY_VERSION=3.2.4
 ENV PG_MAJOR=13 \
     RUBY_ALLOCATOR=/usr/lib/libjemalloc.so \
     RUSTUP_HOME=/usr/local/rustup \
     CARGO_HOME=/usr/local/cargo \
     PATH=/usr/local/cargo/bin:$PATH \
     LEFTHOOK=0 \
-    RUBY_VERSION=3.2.4 \
+    RUBY_VERSION=${RUBY_VERSION} \
     DEBIAN_RELEASE=${DEBIAN_RELEASE}
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
