@@ -354,21 +354,29 @@ read_default() {
   read_default_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
 }
 
-assert_maxmind_license_key() {
+assert_maxmind_envs() {
   if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file >/dev/null 2>&1
   then
-    echo "Adding MAXMIND placeholder to $web_file"
+    echo "Adding MAXMIND_LICENSE_KEY placeholder to $web_file"
     sed -i '/^.*LETSENCRYPT_ACCOUNT_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' $web_file
   fi
-  if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file >/dev/null 2>&1
+
+  if  ! grep DISCOURSE_MAXMIND_ACCOUNT_ID $web_file >/dev/null 2>&1
+  then
+    echo "Adding MAXMIND_ACCOUNT_ID placeholder to $web_file"
+    sed -i '/^.*LETSENCRYPT_ACCOUNT_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_ACCOUNT_ID: 123456' $web_file
+  fi
+
+
+  if ! grep -e DISCOURSE_MAXMIND_LICENSE_KEY -e DISCOURSE_MAXMIND_ACCOUNT_ID $web_file >/dev/null 2>&1
   then
     cat <<EOF
 
-    Adding DISCOURSE_MAXMIND_LICENSE_KEY to $web_file has failed! This
-    indicates either that your $web_file is very old or otherwise not
-    what the script expects or that there is a bug in this script. The
-    best solution for a novice is to delete $web_file and start over.
-    An expert might prefer to edit $web_file by hand.
+    Adding DISCOURSE_MAXMIND_ACCOUNT_ID and DISCOURSE_MAXMIND_LICENSE_KEY to
+    $web_file has failed! This indicates either that your $web_file is very
+    old or otherwise not what the script expects or that there is a bug in
+    this script. The best solution for a novice is to delete $web_file and
+    start over. An expert might prefer to edit $web_file by hand.
 
 EOF
     read -p "Press return to continue or control-c to quit..."
@@ -462,15 +470,23 @@ ask_user_for_config() {
     local letsencrypt_status="Enter 'OFF' to disable."
   fi
 
+  read_config "DISCOURSE_MAXMIND_ACCOUNT_ID"
+  local maxmind_account_id=$read_config_result
+  if [ -z $maxmind_account_id ]
+  then
+    maxmind_account_id="123456"
+  fi
+
+  if [ "$maxmind_account_id" == "123456" ]
+  then
+    local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
+  fi
+
   read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
   local maxmind_license_key=$read_config_result
   if [ -z $maxmind_license_key ]
   then
     maxmind_license_key="1234567890123456"
-  fi
-  if [ "$maxmind_license_key" == "1234567890123456" ]
-  then
-    local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
   fi
 
   local new_value=""
@@ -603,12 +619,21 @@ ask_user_for_config() {
       fi
     fi
 
-    read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
-    local maxmind_license_key=$read_config_result
-    read -p "Optional Maxmind License key ($maxmind_status) [$maxmind_license_key]: " new_value
+    read_config "DISCOURSE_MAXMIND_ACCOUNT_ID"
+    local maxmind_account_id=$read_config_result
+    read -p "Optional MaxMind Account ID ($maxmind_status) [$maxmind_account_id]: " new_value
     if [ ! -z "$new_value" ]
     then
-      maxmind_license_key="$new_value"
+      maxmind_account_id="$new_value"
+
+      read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
+      local maxmind_license_key=$read_config_result
+      read -p "MaxMind License key [$maxmind_license_key]: " new_value
+
+      if [ ! -z "$new_value" ]
+      then
+        maxmind_license_key="$new_value"
+      fi
     fi
 
     echo -e "\nDoes this look right?\n"
@@ -625,11 +650,18 @@ ask_user_for_config() {
       echo "Let's Encrypt : $letsencrypt_account_email"
     fi
 
+    if [ "$maxmind_account_id" != "123456" ]
+    then
+      echo "MaxMind account ID: $maxmind_account_id"
+    else
+      echo "MaxMind account ID: (unset)"
+    fi
+
     if [ "$maxmind_license_key" != "1234567890123456" ]
     then
-      echo "Maxmind license: $maxmind_license_key"
+      echo "MaxMind license key: $maxmind_license_key"
     else
-      echo "Maxmind license: (unset)"
+      echo "MaxMind license key: (unset)"
     fi
 
     echo ""
@@ -779,6 +811,19 @@ ask_user_for_config() {
   fi
 
   echo
+
+  if [ $maxmind_account_id != "123456" ]
+  then
+    sed -i -e "s/^.*DISCOURSE_MAXMIND_ACCOUNT_ID:.*/  DISCOURSE_MAXMIND_ACCOUNT_ID: $maxmind_account_id/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "DISCOURSE_MAXMIND_ACCOUNT_ID change failed."
+      update_ok="n"
+    fi
+  fi
+
   if [ $maxmind_license_key != "1234567890123456" ]
   then
     sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
@@ -892,7 +937,7 @@ then
   else
     echo "DEBUG MODE ON. Not stopping the container."
   fi
-  assert_maxmind_license_key
+  assert_maxmind_envs
   assert_notification_email
   assert_smtp_domain
   echo
