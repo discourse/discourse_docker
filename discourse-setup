@@ -888,10 +888,10 @@ then
   then
     echo "Stopping existing container in 5 seconds or Control-C to cancel."
     sleep 5
+    ./launcher stop $app_name
   else
     echo "DEBUG MODE ON. Not stopping the container."
   fi
-  ./launcher stop $app_name
   assert_maxmind_license_key
   assert_notification_email
   assert_smtp_domain
