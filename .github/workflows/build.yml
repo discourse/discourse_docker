@@ -104,37 +104,6 @@ jobs:
         run: |
           docker tag discourse/base:release${{ steps.arch-helper.outputs.arch_postfix_dash }} discourse/base:aarch64
           docker push discourse/base:aarch64
-  ruby_3_3:
-    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
-    timeout-minutes: 30
-    needs: base
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
-      - name: build slim image
-        run: |
-          cd image && ruby auto_build.rb base_slim --build-arg="RUBY_VERSION=3.3.1"
-      - name: build release image
-        run: |
-          cd image && ruby auto_build.rb base
-      - name: build test_build image
-        run: |
-          cd image && ruby auto_build.rb discourse_test_build
-      - name: run specs
-        run: |
-          docker run --rm -e RUBY_ONLY=1 -e USE_TURBO=1 -e SKIP_PLUGINS=1 -e SKIP_LINT=1 discourse/discourse_test:build
-      - name: Print summary
-        run: |
-          docker images discourse/base
-      - name: push to dockerhub
-        if: success() && (github.ref == 'refs/heads/main')
-        env:
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
-        run: |
-          docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
-          docker tag discourse/base:build discourse/base:release-ruby-3.3.1
-          docker push discourse/base:release-ruby-3.3.1
   test:
     runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
     timeout-minutes: 30
