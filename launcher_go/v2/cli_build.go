@@ -142,7 +142,10 @@ type CleanCmd struct {
 
 func (r *CleanCmd) Run(cli *Cli) error {
 	dir := cli.BuildDir + "/" + r.Config
+	os.Remove(dir + "/docker-compose.yaml")
 	os.Remove(dir + "/config.yaml")
+	os.Remove(dir + "/.envrc")
+	os.Remove(dir + "/" + "Dockerfile")
 	if err := os.Remove(dir); err != nil {
 		return err
 	}

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -16,6 +17,29 @@ import (
 
 const defaultBootCommand = "/sbin/boot"
 const defaultBaseImage = "discourse/base:2.0.20231121-0024"
+
+type DockerComposeYaml struct {
+	Services ComposeAppService
+	Volumes  map[string]*interface{}
+}
+type ComposeAppService struct {
+	App ComposeService
+}
+type ComposeService struct {
+	Image       string
+	Build       ComposeBuild
+	Volumes     []string
+	Links       []string
+	Environment map[string]string
+	Ports       []string
+}
+type ComposeBuild struct {
+	Dockerfile string
+	Labels     map[string]string
+	Shm_Size   string
+	Args       []string
+	No_Cache   bool
+}
 
 type Config struct {
 	Name            string `yaml:-`
@@ -131,6 +155,98 @@ func (config *Config) Yaml() string {
 	return strings.Join(config.rawYaml, "_FILE_SEPERATOR_")
 }
 
+func (config *Config) WriteDockerCompose(dir string, bakeEnv bool) error {
+	if err := config.WriteEnvConfig(dir); err != nil {
+		return err
+	}
+	pupsArgs := "--skip-tags=precompile,migrate,db"
+	if err := config.WriteDockerfile(dir, pupsArgs, bakeEnv); err != nil {
+		return err
+	}
+	labels := map[string]string{}
+	for k, v := range config.Labels {
+		labels[k] = v
+	}
+	env := map[string]string{}
+	for k, v := range config.Env {
+		env[k] = v
+	}
+	env["CREATE_DB_ON_BOOT"] = "1"
+	env["MIGRATE_ON_BOOT"] = "1"
+
+	links := []string{}
+	for _, v := range config.Links {
+		links = append(links, v.Link.Name+":"+v.Link.Alias)
+	}
+	slices.Sort(links)
+	volumes := []string{}
+	composeVolumes := map[string]*interface{}{}
+	for _, v := range config.Volumes {
+		volumes = append(volumes, v.Volume.Host+":"+v.Volume.Guest)
+		// if this is a docker volume (vs a bind mount), add to global volume list
+		matched, _ := regexp.MatchString(`^[A-Za-z]`, v.Volume.Host)
+		if matched {
+			composeVolumes[v.Volume.Host] = nil
+		}
+	}
+	slices.Sort(volumes)
+	ports := []string{}
+	for _, v := range config.Expose {
+		ports = append(ports, v)
+	}
+	slices.Sort(ports)
+
+	args := []string{}
+	for k, _ := range config.Env {
+		args = append(args, k)
+	}
+	slices.Sort(args)
+	compose := &DockerComposeYaml{
+		Services: ComposeAppService{
+			App: ComposeService{
+				Image: utils.BaseImageName + config.Name,
+				Build: ComposeBuild{
+					Dockerfile: "./Dockerfile",
+					Labels:     labels,
+					Shm_Size:   "512m",
+					Args:       args,
+					No_Cache:   true,
+				},
+				Environment: env,
+				Links:       links,
+				Volumes:     volumes,
+				Ports:       ports,
+			},
+		},
+		Volumes: composeVolumes,
+	}
+
+	var b bytes.Buffer
+	encoder := yaml.NewEncoder(&b)
+	encoder.SetIndent(2)
+	err := encoder.Encode(&compose)
+	yaml := b.Bytes()
+	if err != nil {
+		return errors.New("error marshalling compose file to write docker-compose.yaml")
+	}
+	if err := os.WriteFile(strings.TrimRight(dir, "/")+"/"+"docker-compose.yaml", yaml, 0660); err != nil {
+		return errors.New("error writing compose file docker-compose.yaml")
+	}
+	return nil
+}
+
+func (config *Config) WriteDockerfile(dir string, pupsArgs string, bakeEnv bool) error {
+	if err := config.WriteYamlConfig(dir); err != nil {
+		return err
+	}
+
+	file := strings.TrimRight(dir, "/") + "/" + "Dockerfile"
+	if err := os.WriteFile(file, []byte(config.Dockerfile(pupsArgs, bakeEnv)), 0660); err != nil {
+		return errors.New("error writing dockerfile Dockerfile " + file)
+	}
+	return nil
+}
+
 func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 	builder := strings.Builder{}
 	builder.WriteString("ARG dockerfile_from_image=" + config.Base_Image + "\n")
@@ -152,6 +268,14 @@ func (config *Config) WriteYamlConfig(dir string) error {
 	file := strings.TrimRight(dir, "/") + "/config.yaml"
 	if err := os.WriteFile(file, []byte(config.Yaml()), 0660); err != nil {
 		return errors.New("error writing config file " + file)
+	}
+	return nil
+}
+
+func (config *Config) WriteEnvConfig(dir string) error {
+	file := strings.TrimRight(dir, "/") + "/.envrc"
+	if err := os.WriteFile(file, []byte(config.ExportEnv()), 0660); err != nil {
+		return errors.New("error writing export env " + file)
 	}
 	return nil
 }
@@ -180,6 +304,17 @@ func (config *Config) EnvArray(includeKnownSecrets bool) []string {
 
 func (config *Config) DockerArgs() []string {
 	return strings.Fields(config.Docker_Args)
+}
+
+func (config *Config) ExportEnv() string {
+	builder := []string{}
+	for k, v := range config.Env {
+		val := strings.ReplaceAll(v, "\\", "\\\\")
+		val = strings.ReplaceAll(val, "\"", "\\\"")
+		builder = append(builder, "export "+k+"=\""+val+"\"")
+	}
+	slices.Sort(builder)
+	return strings.Join(builder, "\n")
 }
 
 func (config *Config) dockerfileEnvs() string {

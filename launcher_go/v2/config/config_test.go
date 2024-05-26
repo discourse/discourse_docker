@@ -44,6 +44,42 @@ var _ = Describe("Config", func() {
 		Expect(dockerfile).To(ContainSubstring("EXPOSE 80"))
 	})
 
+	It("can write env file", func() {
+		conf.WriteEnvConfig(testDir)
+		out, err := os.ReadFile(testDir + "/.envrc")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("export DISCOURSE_HOSTNAME"))
+	})
+
+	It("can write a dockerfile", func() {
+		conf.WriteDockerfile(testDir, "", false)
+		out, err := os.ReadFile(testDir + "/config.yaml")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
+		out, err = os.ReadFile(testDir + "/Dockerfile")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("RUN cat /temp-config.yaml"))
+		Expect(string(out[:])).To(ContainSubstring("EXPOSE 80"))
+	})
+
+	It("can write a docker compose setup", func() {
+		conf.WriteDockerCompose(testDir, false)
+		out, err := os.ReadFile(testDir + "/.envrc")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("export DISCOURSE_HOSTNAME"))
+		out, err = os.ReadFile(testDir + "/config.yaml")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
+		out, err = os.ReadFile(testDir + "/Dockerfile")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("RUN cat /temp-config.yaml"))
+
+		out, err = os.ReadFile(testDir + "/docker-compose.yaml")
+		Expect(err).To(BeNil())
+		Expect(string(out[:])).To(ContainSubstring("build:"))
+		Expect(string(out[:])).To(ContainSubstring("image: local_discourse/test"))
+	})
+
 	Context("hostname tests", func() {
 		It("replaces hostname", func() {
 			config := config.Config{Env: map[string]string{"DOCKER_USE_HOSTNAME": "true", "DISCOURSE_HOSTNAME": "asdfASDF"}}
