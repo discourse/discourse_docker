@@ -18,6 +18,8 @@ type Cli struct {
 	BuildDir     string             `default:"./tmp" hidden:"" help:"Temporary build folder for building images." predictor:"dir"`
 	BuildCmd     DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image. This command does not need a running database. Saves resulting container."`
 	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets. Saves resulting container."`
+	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks for a site. Running container is temporary and is not saved."`
+	BootstrapCmd DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Builds, migrates, and configures an image. Resulting image is a fully built and configured Discourse image."`
 }
 
 func main() {
