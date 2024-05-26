@@ -34,3 +34,9 @@ func CreateNewFakeCmdRunner() func(cmd *exec.Cmd) utils.ICmdRunner {
 		return cmdRunner
 	}
 }
+
+func GetLastCommand() exec.Cmd {
+	cmd := RanCmds[0]
+	RanCmds = RanCmds[1:]
+	return cmd
+}

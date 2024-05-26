@@ -4,6 +4,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"time"
 )
 
 const Version = "v2.0.0"
@@ -44,3 +45,5 @@ func findDockerPath() string {
 var DockerPath = findDockerPath()
 
 var Out io.Writer = os.Stdout
+
+var CommitWait = 2 * time.Second
