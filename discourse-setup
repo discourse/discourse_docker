@@ -62,7 +62,7 @@ connect_to_port () {
     done
   else
     echo -e "HTTP/1.1 200 OK\n\n $VERIFY" | nc -w 4 -l $PORT >/dev/null 2>&1 &
-    if curl --proto =$PROTO -s $PROTO://$HOST:$PORT --connect-timeout 3 | grep $VERIFY >/dev/null 2>&1; then
+    if curl --proto =$PROTO -s $PROTO://$HOST:$PORT --connect-timeout 3 >/dev/null 2>&1; then
       return 0
     else
       curl --proto =$PROTO -s $PROTO://localhost:$PORT >/dev/null 2>&1
