@@ -19,9 +19,19 @@ images = {
     tag: "discourse/base:build",
     extra_args: "-f release.Dockerfile",
   },
+  base_arm64: {
+    name: "base",
+    tag: "discourse/base:build_arm64",
+    extra_args: "-f release.Dockerfile --platform linux/arm64 --build-arg=\"tag=build_slim_arm64\"",
+  },
   discourse_test_build: {
     name: "discourse_test",
     tag: "discourse/discourse_test:build",
+  },
+  discourse_test_build_arm64: {
+    name: "discourse_test",
+    tag: "discourse/discourse_test:build_arm64",
+    extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_arm64\"",
   },
   discourse_dev: {
     name: "discourse_dev",
@@ -48,10 +58,10 @@ def run(command)
   lines
 end
 
-def build(image)
+def build(image, cli_args)
   lines =
     run(
-      "cd #{image[:name]} && docker buildx build . --load --no-cache --tag #{image[:tag]} #{image[:extra_args] ? image[:extra_args] : ""}",
+      "cd #{image[:name]} && docker buildx build . --load --no-cache --tag #{image[:tag]} #{image[:extra_args] ? image[:extra_args] : ""} #{cli_args}",
     )
   if lines[-1] =~ /successfully built/
     raise "Error building the image for #{image[:name]}: #{lines[-1]}"
@@ -66,7 +76,7 @@ def dev_deps()
   run("cp base/install-rust discourse_dev/install-rust")
 end
 
-if ARGV.length != 1
+if ARGV.length == 0
   puts <<~TEXT
     Usage:
     ruby auto_build.rb IMAGE
@@ -86,5 +96,5 @@ else
   puts "Building #{images[image]}"
   dev_deps() if image == :discourse_dev
 
-  build(images[image])
+  build(images[image], ARGV[1..-1].join(" "))
 end
