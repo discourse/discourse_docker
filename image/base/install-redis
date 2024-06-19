@@ -20,7 +20,7 @@ if uname -m | grep -qi 'aarch64'; then
 fi
 
 # Building and installing binaries.
-make -j"$(nproc)" BUILD_TLS=yes && make install PREFIX=/usr
+make BUILD_TLS=yes && make install PREFIX=/usr
 
 # Add `redis` user and group.
 adduser --system --home /var/lib/redis --quiet --group redis || true

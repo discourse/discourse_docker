@@ -16,7 +16,7 @@ if uname -m | grep -qi 'aarch64'; then
   sha256sum jemalloc-5.3.0.tar.bz2
   echo "2db82d1e7119df3e71b7640219b6dfe84789bc0537983c3b7ac4f7189aecfeaa jemalloc-5.3.0.tar.bz2" | sha256sum -c
   tar --strip-components=1 -xjf jemalloc-5.3.0.tar.bz2
-  ./configure --prefix=/usr --with-lg-page=16 && make build_lib -j"$(nproc)" && make install_lib
+  ./configure --prefix=/usr --with-lg-page=16 && make build_lib && make install_lib
   cd / && rm -rf /jemalloc-new
 else
   # jemalloc stable
@@ -27,7 +27,7 @@ else
   sha256sum jemalloc-3.6.0.tar.bz2
   echo "e16c2159dd3c81ca2dc3b5c9ef0d43e1f2f45b04548f42db12e7c12d7bdf84fe jemalloc-3.6.0.tar.bz2" | sha256sum -c
   tar --strip-components=1 -xjf jemalloc-3.6.0.tar.bz2
-  ./configure --prefix=/usr $EXTRA_CONF && make -j"$(nproc)" && make install
+  ./configure --prefix=/usr $EXTRA_CONF && make && make install
   cd / && rm -rf /jemalloc-stable
 
   # jemalloc new
@@ -38,6 +38,6 @@ else
   sha256sum jemalloc-5.3.0.tar.bz2
   echo "2db82d1e7119df3e71b7640219b6dfe84789bc0537983c3b7ac4f7189aecfeaa jemalloc-5.3.0.tar.bz2" | sha256sum -c
   tar --strip-components=1 -xjf jemalloc-5.3.0.tar.bz2
-  ./configure --prefix=/usr --with-install-suffix=5.3.0 && make build_lib -j"$(nproc)" && make install_lib
+  ./configure --prefix=/usr --with-install-suffix=5.3.0 && make build_lib && make install_lib
   cd / && rm -rf /jemalloc-new
 fi

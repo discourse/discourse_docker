@@ -13,7 +13,8 @@ ENV PG_MAJOR=13 \
     PATH=/usr/local/cargo/bin:$PATH \
     LEFTHOOK=0 \
     RUBY_VERSION=${RUBY_VERSION} \
-    DEBIAN_RELEASE=${DEBIAN_RELEASE}
+    DEBIAN_RELEASE=${DEBIAN_RELEASE} \
+    MAKEFLAGS="--jobs $(nproc)"
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
