@@ -1,0 +1,438 @@
+env:
+  # You can have redis on a different box
+  RAILS_ENV: 'production'
+  UNICORN_WORKERS: 3
+  UNICORN_SIDEKIQS: 1
+  # stop heap doubling in size so aggressively, this conserves memory
+  RUBY_GC_HEAP_GROWTH_MAX_SLOTS: 40000
+  RUBY_GC_HEAP_INIT_SLOTS: 400000
+  RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR: 1.5
+
+  DISCOURSE_DB_SOCKET: /var/run/postgresql
+  DISCOURSE_DB_HOST:
+  DISCOURSE_DB_PORT:
+
+
+params:
+  version: tests-passed
+
+  home: /var/www/discourse
+  upload_size: 10m
+  nginx_worker_connections: 4000
+
+run:
+  - exec: thpoff echo "thpoff is installed!"
+  - exec:
+      tag: precompile
+      cmd:
+        - /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
+        - /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
+        - /usr/local/bin/ruby -e 'if (ENV["DISCOURSE_CDN_URL"] || "")[0..1] == "//"; puts "Aborting! CDN must have a protocol specified. Once fixed you should rebake your posts now to correct all posts."; exit 1; end'
+  # TODO: move to base image (anacron can not be fired up using rc.d)
+  - exec: rm -f /etc/cron.d/anacron
+  - file:
+     path: /etc/cron.d/anacron
+     contents: |
+        SHELL=/bin/sh
+        PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+        30 7    * * *   root	/usr/sbin/anacron -s >/dev/null
+  - file:
+     path: /etc/runit/1.d/copy-env
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        env > ~/boot_env
+        conf=/var/www/discourse/config/discourse.conf
+
+        # find DISCOURSE_ env vars, strip the leader, lowercase the key
+        /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = '\''#{v}'\''" if k =~ /^DISCOURSE_(.*)/}' > $conf
+
+  - file:
+     path: /etc/service/unicorn/run
+     chmod: "+x"
+     contents: |
+        #!/bin/bash
+        exec 2>&1
+        # redis
+        # postgres
+        cd $home
+        chown -R discourse:www-data /shared/log/rails
+        if [[ -z "$PRECOMPILE_ON_BOOT" ]]; then
+          PRECOMPILE_ON_BOOT=1
+        fi
+        if [ -f /usr/local/bin/create_db ] && [ "$CREATE_DB_ON_BOOT" = "1" ]; then /usr/local/bin/create_db; rm -f /usr/local/bin/create_db; fi;
+        if [ "$MIGRATE_ON_BOOT" = "1" ]; then su discourse -c 'bundle exec rake db:migrate'; fi
+        if [ "$PRECOMPILE_ON_BOOT" = "1" ]; then SKIP_EMBER_CLI_COMPILE=1 su discourse -c 'bundle exec rake assets:precompile'; fi
+        LD_PRELOAD=$RUBY_ALLOCATOR HOME=/home/discourse USER=discourse exec thpoff chpst -u discourse:www-data -U discourse:www-data bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
+
+  - file:
+     path: /etc/service/nginx/run
+     chmod: "+x"
+     contents: |
+        #!/bin/sh
+        exec 2>&1
+        exec /usr/sbin/nginx
+
+  - file:
+     path: /etc/runit/3.d/01-nginx
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       sv stop nginx
+
+  - file:
+     path: /etc/runit/3.d/02-unicorn
+     chmod: "+x"
+     contents: |
+       #!/bin/bash
+       sv stop unicorn
+
+  - exec:
+      cd: $home
+      hook: code
+      cmd:
+        - sudo -H -E -u discourse git reset --hard
+        - sudo -H -E -u discourse git clean -f
+        # TODO Remove the special handling of shallow clones when everyone uses images without that clone type
+        - |-
+          sudo -H -E -u discourse bash -c '
+            set -o errexit
+            if [ $(git rev-parse --is-shallow-repository) == "true" ]; then
+                git remote set-branches --add origin main
+                git remote set-branches origin $version
+                git fetch --depth 1 origin $version
+            else
+                git fetch --tags --prune-tags --prune --force origin
+            fi
+          '
+        - |-
+          sudo -H -E -u discourse bash -c '
+            set -o errexit
+            if [[ $(git symbolic-ref --short HEAD) == $version ]] ; then
+                git pull
+            else
+                git -c advice.detachedHead=false checkout $version
+            fi
+          '
+        - sudo -H -E -u discourse git config user.discourse-version $version
+        - mkdir -p tmp
+        - chown discourse:www-data tmp
+        - mkdir -p tmp/pids
+        - mkdir -p tmp/sockets
+        - touch tmp/.gitkeep
+        - mkdir -p                    /shared/log/rails
+        - bash -c "touch -a           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr,sidekiq}.log"
+        - bash -c "ln    -s           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr,sidekiq}.log $home/log"
+        - bash -c "mkdir -p           /shared/{uploads,backups}"
+        - bash -c "ln    -s           /shared/{uploads,backups} $home/public"
+        - bash -c "mkdir -p           /shared/tmp/{backups,restores}"
+        - bash -c "ln    -s           /shared/tmp/{backups,restores} $home/tmp"
+        - chown -R discourse:www-data /shared/log/rails /shared/uploads /shared/backups /shared/tmp
+        # scrub broken symlinks from plugins that have been removed
+        - "[ ! -d public/plugins ] || find public/plugins/ -maxdepth 1 -xtype l -delete"
+
+  - exec:
+      cmd:
+        - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
+        - "rm /etc/nginx/sites-enabled/default"
+        - "mkdir -p /var/nginx/cache"
+
+  - replace:
+      filename: /etc/nginx/nginx.conf
+      from: pid /run/nginx.pid;
+      to: daemon off;
+
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /upstream[^\}]+\}/m
+      to: "upstream discourse {
+        server 127.0.0.1:3000;
+      }"
+
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /server_name.+$/
+      to: server_name _ ;
+
+  - replace:
+      filename: "/etc/nginx/conf.d/discourse.conf"
+      from: /client_max_body_size.+$/
+      to: client_max_body_size $upload_size ;
+
+  - replace:
+      filename: "/etc/nginx/nginx.conf"
+      from: /worker_connections.+$/
+      to: worker_connections $nginx_worker_connections ;
+
+  - exec:
+      cmd: echo "done configuring web"
+      hook: web_config
+
+  - exec:
+      cd: $home
+      hook: web
+      cmd:
+        # install bundler version to match Gemfile.lock
+        - gem install bundler --conservative -v $(awk '/BUNDLED WITH/ { getline; gsub(/ /,""); print $0 }' Gemfile.lock)
+        - find $home ! -user discourse -exec chown discourse {} \+
+
+  - exec:
+      cd: $home
+      cmd:
+        - |-
+          if [ "$version" != "tests-passed" ]; then
+            rm -rf app/assets/javascripts/node_modules
+          fi
+        - su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
+
+  - exec:
+      cd: $home
+      hook: bundle_exec
+      cmd:
+        - su discourse -c 'bundle config --local deployment true'
+        - su discourse -c 'bundle config --local without "development test"'
+        - su discourse -c 'bundle install --retry 3 --jobs 4'
+
+  - exec:
+      cd: $home
+      cmd:
+        - su discourse -c 'LOAD_PLUGINS=0 bundle exec rake plugin:pull_compatible_all'
+      raise_on_fail: false
+
+  - exec:
+      cd: $home
+      tag: migrate
+      hook: db_migrate
+      cmd:
+        - su discourse -c 'bundle exec rake db:migrate'
+  - exec:
+      cd: $home
+      tag: build
+      hook: assets_precompile_build
+      cmd:
+        - su discourse -c 'bundle exec rake assets:precompile:build'
+  - exec:
+      cd: $home
+      tag: precompile
+      hook: assets_precompile
+      cmd:
+        - su discourse -c 'SKIP_EMBER_CLI_COMPILE=1 bundle exec rake themes:update assets:precompile'
+  - replace:
+      tag: precompile
+      filename: /etc/service/unicorn/run
+      from: PRECOMPILE_ON_BOOT=1
+      to: "PRECOMPILE_ON_BOOT=0"
+
+  - file:
+     path: /usr/local/bin/discourse
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/discourse "$@")
+
+  - file:
+     path: /usr/local/bin/rails
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       # If they requested a console, load pry instead
+       if [ "$*" == "c" -o "$*" == "console" ]
+       then
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec pry -r ./config/environment)
+       else
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/rails "$@")
+       fi
+
+  - file:
+     path: /usr/local/bin/rake
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec bin/rake "$@")
+
+  - file:
+     path: /usr/local/bin/rbtrace
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec rbtrace "$@")
+
+  - file:
+     path: /usr/local/bin/stackprof
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec stackprof "$@")
+
+  - file:
+     path: /etc/update-motd.d/10-web
+     chmod: +x
+     contents: |
+       #!/bin/bash
+       echo
+       echo Use: rails, rake or discourse to execute commands in production
+       echo
+
+  - file:
+     path: /etc/logrotate.d/rails
+     contents: |
+        /shared/log/rails/*.log
+        {
+                rotate 7
+                dateext
+                daily
+                missingok
+                delaycompress
+                compress
+                postrotate
+                sv 1 unicorn
+                endscript
+        }
+
+  - file:
+     path: /etc/logrotate.d/nginx
+     contents: |
+        /var/log/nginx/*.log {
+          daily
+          missingok
+          rotate 7
+          compress
+          delaycompress
+          create 0644 www-data www-data
+          sharedscripts
+          postrotate
+            sv 1 nginx
+          endscript
+        }
+
+  # move state out of the container this fancy is done to support rapid rebuilds of containers,
+  # we store anacron and logrotate state outside the container to ensure its maintained across builds
+  # later move this snipped into an initialization script
+  # we also ensure all the symlinks we need to /shared are in place in the correct structure
+  # this allows us to bootstrap on one machine and then run on another
+  - file:
+      path: /etc/runit/1.d/00-ensure-links
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        if [[ ! -L /var/lib/logrotate ]]; then
+          rm -fr /var/lib/logrotate
+          mkdir -p /shared/state/logrotate
+          ln -s /shared/state/logrotate /var/lib/logrotate
+        fi
+        if [[ ! -L /var/spool/anacron ]]; then
+          rm -fr /var/spool/anacron
+          mkdir -p /shared/state/anacron-spool
+          ln -s /shared/state/anacron-spool /var/spool/anacron
+        fi
+        if [[ ! -d /shared/log/rails ]]; then
+          mkdir -p /shared/log/rails
+          chown -R discourse:www-data /shared/log/rails
+        fi
+        if [[ ! -d /shared/uploads ]]; then
+          mkdir -p /shared/uploads
+          chown -R discourse:www-data /shared/uploads
+        fi
+        if [[ ! -d /shared/backups ]]; then
+          mkdir -p /shared/backups
+          chown -R discourse:www-data /shared/backups
+        fi
+
+        rm -rf /shared/tmp/{backups,restores}
+        mkdir -p /shared/tmp/{backups,restores}
+        chown -R discourse:www-data /shared/tmp/{backups,restores}
+  - file:
+      path: /etc/runit/1.d/01-cleanup-web-pids
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        /bin/rm -f /var/www/discourse/tmp/pids/*.pid
+  # change login directory to Discourse home
+  - file:
+     path: /root/.bash_profile
+     chmod: 644
+     contents: |
+        cd $home
+
+  - file:
+     path: /usr/local/etc/ImageMagick-7/policy.xml
+     contents: |
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE policymap [
+          <!ELEMENT policymap (policy)+>
+          <!ATTLIST policymap xmlns CDATA #FIXED ''>
+          <!ELEMENT policy EMPTY>
+          <!ATTLIST policy xmlns CDATA #FIXED '' domain NMTOKEN #REQUIRED
+            name NMTOKEN #IMPLIED pattern CDATA #IMPLIED rights NMTOKEN #IMPLIED
+            stealth NMTOKEN #IMPLIED value CDATA #IMPLIED>
+        ]>
+        <!--
+          Configure ImageMagick policies.
+
+          Domains include system, delegate, coder, filter, path, or resource.
+
+          Rights include none, read, write, execute and all.  Use | to combine them,
+          for example: "read | write" to permit read from, or write to, a path.
+
+          Use a glob expression as a pattern.
+
+          Suppose we do not want users to process MPEG video images:
+
+            <policy domain="delegate" rights="none" pattern="mpeg:decode" />
+
+          Here we do not want users reading images from HTTP:
+
+            <policy domain="coder" rights="none" pattern="HTTP" />
+
+          The /repository file system is restricted to read only.  We use a glob
+          expression to match all paths that start with /repository:
+
+            <policy domain="path" rights="read" pattern="/repository/*" />
+
+          Lets prevent users from executing any image filters:
+
+            <policy domain="filter" rights="none" pattern="*" />
+
+          Any large image is cached to disk rather than memory:
+
+            <policy domain="resource" name="area" value="1GP"/>
+
+          Define arguments for the memory, map, area, width, height and disk resources
+          with SI prefixes (.e.g 100MB).  In addition, resource policies are maximums
+          for each instance of ImageMagick (e.g. policy memory limit 1GB, -limit 2GB
+          exceeds policy maximum so memory limit is 1GB).
+
+          Rules are processed in order.  Here we want to restrict ImageMagick to only
+          read or write a small subset of proven web-safe image types:
+
+            <policy domain="delegate" rights="none" pattern="*" />
+            <policy domain="filter" rights="none" pattern="*" />
+            <policy domain="coder" rights="none" pattern="*" />
+            <policy domain="coder" rights="read|write" pattern="{GIF,JPEG,PNG,WEBP}" />
+        -->
+        <policymap>
+          <!-- <policy domain="system" name="shred" value="2"/> -->
+          <!-- <policy domain="system" name="precision" value="6"/> -->
+          <!-- <policy domain="system" name="memory-map" value="anonymous"/> -->
+          <!-- <policy domain="system" name="max-memory-request" value="256MiB"/> -->
+          <!-- <policy domain="resource" name="temporary-path" value="/tmp"/> -->
+          <policy domain="resource" name="memory" value="1GiB"/>
+          <policy domain="resource" name="map" value="2GiB"/>
+          <policy domain="resource" name="width" value="64KP"/>
+          <policy domain="resource" name="height" value="64KP"/>
+          <!-- <policy domain="resource" name="list-length" value="128"/> -->
+          <policy domain="resource" name="area" value="4GP"/>
+          <policy domain="resource" name="disk" value="8GiB"/>
+          <!-- <policy domain="resource" name="file" value="768"/> -->
+          <!-- <policy domain="resource" name="thread" value="4"/> -->
+          <!-- <policy domain="resource" name="throttle" value="0"/> -->
+          <!-- <policy domain="resource" name="time" value="3600"/> -->
+          <!-- <policy domain="coder" rights="none" pattern="MVG" /> -->
+          <policy domain="module" rights="none" pattern="{PS,PS2,PS3,EPS,PDF,XPS}" />
+          <!-- <policy domain="delegate" rights="none" pattern="HTTPS" /> -->
+          <!-- <policy domain="path" rights="none" pattern="@*" /> -->
+          <!-- <policy domain="cache" name="memory-map" value="anonymous"/> -->
+          <!-- <policy domain="cache" name="synchronize" value="True"/> -->
+          <!-- <policy domain="cache" name="shared-secret" value="passphrase" stealth="true"/> -->
+        </policymap>
