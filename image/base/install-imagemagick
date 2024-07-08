@@ -69,4 +69,4 @@ rm -rf $WDIR
 ldconfig /usr/local/lib
 
 # Validate ImageMagick install
-test $(convert -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
+test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
