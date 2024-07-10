@@ -191,9 +191,7 @@ run:
       cd: $home
       hook: bundle_exec
       cmd:
-        - su discourse -c 'bundle config --local deployment true'
-        - su discourse -c 'bundle config --local without "development test"'
-        - su discourse -c 'bundle install --retry 3 --jobs 4'
+        - su discourse -c 'bundle install --retry 3'
 
   - exec:
       cd: $home
