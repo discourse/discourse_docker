@@ -102,20 +102,32 @@ hooks:
           - mkdir -p /shared/import/data
           - chown discourse -R /shared/import
 
+  before_code:
+    - exec:
+        cd: $home
+        cmd: 
+          # Add your discourse core fork and pull custom code 
+          - git config --global --add safe.directory /var/www/discourse
+          - git remote set-url origin https://github.com/{github_username}/discourse.git
+          
+
+  after_code:
+    - exec: 
+        cd: $home
+        cmd: 
+          # Pulls the code from the vanilla branch
+          - git fetch origin vanilla
+          - git reset --hard origin/vanilla
+
   after_bundle_exec:
     - exec:
         cd: $home
         cmd:
-          # Add your discourse core fork and pull custom code
-          - git config --global --add safe.directory /var/www/discourse
-          - git remote add import https://github.com/{github_username}/discourse.git
-          - git fetch import vanilla
-          - git reset --hard import/vanilla
-          # Creates the database from the data to be imported
-          - sh /usr/local/bin/import_vanilla.sh
-          - rake db:migrate
           # Add the gems used in the script
           - echo "gem 'mysql2'" >> Gemfile 
           - echo "gem 'ruby-bbcode-to-md', :github => 'nlalonde/ruby-bbcode-to-md'" >> Gemfile
           - su discourse -c 'bundle config unset deployment'
           - su discourse -c 'bundle install --no-deployment --path vendor/bundle --jobs 4 --without test development'
+          - service mariadb start
+          # imports the DB into mysql
+          - sh /usr/local/bin/import_flarum_test.sh 
