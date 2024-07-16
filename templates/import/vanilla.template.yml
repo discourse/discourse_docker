@@ -8,8 +8,9 @@ hooks:
     - exec:
         cd: /etc/service
         cmd:
-          - rm -R nginx
-          - rm -R cron
+          - echo "" > unicorn/run
+          - echo "" > nginx/run
+          - echo "" > cron/run
 
     - exec:
         cd: /etc/runit/3.d
