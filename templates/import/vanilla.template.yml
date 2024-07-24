@@ -102,6 +102,13 @@ hooks:
         cmd:
           - mkdir -p /shared/import/data
           - chown discourse -R /shared/import
+  
+  before_code:
+    - exec:
+        cd: $home
+        cmd: 
+          # Add your discourse core fork and pull custom code 
+          - su discourse -c 'git remote set-url origin https://github.com/{github_username}/discourse.git'
 
   after_bundle_exec:
     - exec:
