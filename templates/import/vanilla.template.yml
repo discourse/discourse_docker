@@ -1,17 +1,13 @@
 # This template installs MariaDB and all dependencies needed for importing from vanilla.
+env:
+  UNICORN_SIDEKIQS: 0
+
 
 params:
   home: /var/www/discourse
 
 hooks:
   after_web_config:
-    - exec:
-        cd: /etc/service
-        cmd:
-          - echo "" > unicorn/run
-          - echo "" > nginx/run
-          - echo "" > cron/run
-
     - exec:
         cd: /etc/runit/3.d
         cmd:
