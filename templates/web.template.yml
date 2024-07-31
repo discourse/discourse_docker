@@ -285,6 +285,7 @@ run:
                 missingok
                 delaycompress
                 compress
+                sharedscripts
                 postrotate
                 sv 1 unicorn
                 endscript
