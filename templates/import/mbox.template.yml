@@ -34,4 +34,4 @@ hooks:
           - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libsqlite3-dev
           - echo "gem 'sqlite3'" >> Gemfile
           - su discourse -c 'bundle config unset deployment'
-          - su discourse -c 'bundle install --no-deployment --path vendor/bundle --jobs 4 --without test development'
+          - su discourse -c 'bundle install --no-deployment --path vendor/bundle --jobs $(($(nproc) - 1)) --without test development'
