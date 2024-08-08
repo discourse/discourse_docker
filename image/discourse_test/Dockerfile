@@ -29,7 +29,7 @@ RUN /tmp/install-chrome &&\
 FROM with_browsers AS release
 
 RUN cd /var/www/discourse &&\
-    sudo -u discourse bundle install &&\
+    sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
     sudo -E -u discourse -H yarn install &&\
     sudo -u discourse yarn cache clean
 

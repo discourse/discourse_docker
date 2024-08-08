@@ -192,7 +192,7 @@ run:
       cd: $home
       hook: bundle_exec
       cmd:
-        - su discourse -c 'bundle install --retry 3'
+        - su discourse -c 'bundle install --jobs $(($(nproc) - 1)) --retry 3'
 
   - exec:
       cd: $home

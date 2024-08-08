@@ -47,7 +47,7 @@ run:
   - exec: cd tmp && git clone https://github.com/discourse/discourse.git --depth=1
   - exec: chown -R discourse /tmp/discourse
   - exec: cd /tmp/discourse && sudo -u discourse bundle config --local path ./vendor/bundle
-  - exec: cd /tmp/discourse && sudo -u discourse bundle install
+  - exec: cd /tmp/discourse && sudo -u discourse bundle install --jobs $(($(nproc) - 1))
   - exec: cd /tmp/discourse && sudo -u discourse yarn install
   - exec: cd /tmp/discourse && sudo -u discourse yarn cache clean
   - exec: cd /tmp/discourse && sudo -u discourse bundle exec rake db:migrate

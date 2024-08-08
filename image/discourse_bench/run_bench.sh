@@ -10,7 +10,7 @@ redis-server /etc/redis/redis.conf
 git pull
 
 # install needed gems
-sudo -E -u discourse bundle install
+sudo -E -u discourse bundle install --jobs $(($(nproc) - 1))
 
 # start mailcatcher
 mailcatcher --http-ip 0.0.0.0
