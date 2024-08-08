@@ -60,7 +60,7 @@ connect_to_port () {
       esac
     done
   else
-    echo -e "HTTP/1.1 200 OK\n\n $VERIFY" | nc -w 4 -l $PORT >/dev/null 2>&1 &
+    echo -e "HTTP/1.1 200 OK\n\n $VERIFY" | nc -w 4 -l -p $PORT >/dev/null 2>&1 &
     if curl --proto =http -s $HOST:$PORT --connect-timeout 3 | grep $VERIFY >/dev/null 2>&1; then
       return 0
     else
