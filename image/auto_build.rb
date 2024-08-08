@@ -9,6 +9,11 @@ images = {
     tag: "discourse/base:build_slim",
     extra_args: "-f slim.Dockerfile",
   },
+  base_slim_bookworm: {
+    name: "base",
+    tag: "discourse/base:build_slim_bookworm",
+    extra_args: "-f slim.Dockerfile --build-arg=\"DEBIAN_RELEASE=bookworm\"",
+  },
   base_slim_arm64: {
     name: "base",
     tag: "discourse/base:build_slim_arm64",
@@ -19,6 +24,11 @@ images = {
     tag: "discourse/base:build",
     extra_args: "-f release.Dockerfile",
   },
+  base_bookworm: {
+    name: "base",
+    tag: "discourse/base:build_bookworm",
+    extra_args: "-f release.Dockerfile --build-arg=\"tag=build_slim_bookworm\"",
+  },
   base_arm64: {
     name: "base",
     tag: "discourse/base:build_arm64",
@@ -27,6 +37,11 @@ images = {
   discourse_test_build: {
     name: "discourse_test",
     tag: "discourse/discourse_test:build",
+  },
+  discourse_test_build_bookworm: {
+    name: "discourse_test",
+    tag: "discourse/discourse_test:build_bookworm",
+    extra_args: "--build-arg=\"from_tag=build_bookworm\"",
   },
   discourse_test_build_arm64: {
     name: "discourse_test",
