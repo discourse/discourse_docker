@@ -8,8 +8,8 @@ IMAGE_MAGICK_HASH="d282117bc6d0e91ad1ad685d096623b96ed8e229f911c891d83277b350ef8
 # We use debian, but GitHub CI is stuck on Ubuntu Bionic, so this must be compatible with both
 LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo libjpeg62-turbo-dev' || echo 'libjpeg-turbo8 libjpeg-turbo8-dev')
 
-# Ubuntu 22.04/22.10  doesn't have libwebp6
-LIBWEBP=$(cat /etc/issue | grep -qi 'Ubuntu 22' && echo 'libwebp7' || echo 'libwebp6')
+# Ubuntu 22.04/22.10 and Debian 12  doesn't have libwebp6
+LIBWEBP=$(cat /etc/issue | grep -qiE 'Ubuntu 22|Debian.*12' && echo 'libwebp7' || echo 'libwebp6')
 
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
@@ -22,13 +22,7 @@ apt -y -q install git make gcc pkg-config autoconf curl g++ yasm cmake \
     libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils librsvg2-dev \
     libltdl7-dev libbz2-dev gsfonts libtiff-dev libfreetype6-dev libjpeg-dev
 
-# Ubuntu doesn't like `bullseye-backports`
-if cat /etc/issue | grep -qi 'Ubuntu 22'; then
-  apt -y install libheif1 libaom-dev libheif-dev
-else
-  # Use backports instead of compiling it
-  apt -y -q install -t bullseye-backports libheif1 libaom-dev libheif-dev
-fi
+apt -y install libheif1 libaom-dev libheif-dev
 
 mkdir -p $WDIR
 cd $WDIR
