@@ -86,4 +86,8 @@ hooks:
     - replace:
        filename: /etc/service/unicorn/run
        from: "# redis"
-       to: sv start redis || exit 1
+       to: |
+         if [ ! -d /shared/redis_data ]; then
+           install -d -m 0755 -o redis -g redis /shared/redis_data
+         fi
+         sv start redis || exit 1
