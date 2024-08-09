@@ -229,11 +229,11 @@ run:
         su postgres -c 'psql template1 -c "create extension if not exists hstore;"'
         su postgres -c 'psql template1 -c "create extension if not exists pg_trgm;"'
         su postgres -c 'psql template1 -c "create extension if not exists vector;"'
-        su postgres -c 'psql template1 -c "alter extension vector update to '0.7.0';"' || true
+        su postgres -c 'psql template1 -c "alter extension vector update to \'0.7.0\';"' || true
         su postgres -c 'psql $db_name -c "create extension if not exists hstore;"'
         su postgres -c 'psql $db_name -c "create extension if not exists pg_trgm;"'
         su postgres -c 'psql $db_name -c "create extension if not exists vector;"'
-        su postgres -c 'psql $db_name -c "alter extension vector update to '0.7.0';"' || true
+        su postgres -c 'psql $db_name -c "alter extension vector update to \'0.7.0\';"' || true
         sudo -u postgres psql $db_name <<< "update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = '$db_name' AND encoding = pg_char_to_encoding('SQL_ASCII');" || true
 
   - file:
