@@ -17,9 +17,7 @@ RUN chown -R discourse . &&\
 
 FROM base AS with_browsers
 
-ENV TESTEM_DEFAULT_BROWSER Chromium
-ADD install-chrome /tmp/install-chrome
-RUN /tmp/install-chrome &&\
+RUN npx @puppeteer/browsers install chrome@stable &&\
     apt update &&\
     apt install -y libgconf-2-4 libxss1 firefox-esr &&\
     cd /tmp && wget -q "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US" -O firefox.tar.bz2 &&\
