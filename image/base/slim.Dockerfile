@@ -73,8 +73,13 @@ RUN /tmp/install-imagemagick
 ADD install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
 
+# From https://nginx.org/en/pgp_keys.html
+ADD nginx_public_keys.key /tmp/nginx_public_keys.key
 ADD install-nginx /tmp/install-nginx
-RUN /tmp/install-nginx
+
+RUN gpg --import /tmp/nginx_public_keys.key &&\
+    rm /tmp/nginx_public_keys.key &&\
+    /tmp/install-nginx
 
 ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
