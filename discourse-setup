@@ -448,14 +448,14 @@ ask_user_for_config() {
   local smtp_port=$read_config_result
   read_config "DISCOURSE_SMTP_USER_NAME"
   local smtp_user_name=$read_config_result
-  if [ "$smtp_password" = "pa$$word" ]
+  if [ "$smtp_password" = "pa\$\$word" ]
   then
-    smtp_password = ""
+    smtp_password=""
   fi
   read_config "DISCOURSE_NOTIFICATION_EMAIL"
   local notification_email=$read_config_result
   read_config "DISCOURSE_SMTP_DOMAIN"
-  local discourse_smtp_DOMAIN=$read_config_result
+  local discourse_smtp_domain=$read_config_result
 
   read_config "LETSENCRYPT_ACCOUNT_EMAIL"
   local letsencrypt_account_email=$read_config_result
@@ -563,7 +563,7 @@ ask_user_for_config() {
     then
       if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
       then
-      	smtp_user_name="SMTP_Injection"
+        smtp_user_name="SMTP_Injection"
       fi
       if [ "$smtp_address" == "smtp.sendgrid.net" ]
       then
@@ -602,7 +602,9 @@ ask_user_for_config() {
     fi
 
     # set smtp_domain default value here rather than use Rails default of localhost
-    smtp_domain=$(echo $notification_email | sed -e "s/.*@//")
+    default_smtp_domain=${notification_email#*@}
+    # if DISCOURSE_SMTP_DOMAIN is in the config use that instead
+    smtp_domain=${discourse_smtp_domain:-${default_smtp_domain}}
 
     if [ ! -z $letsencrypt_account_email ]
     then
@@ -748,8 +750,8 @@ ask_user_for_config() {
          then
            SLASH="Q"
            if [[ "$smtp_password" == *"$SLASH"* ]]
-	   then
-	     SLASH="BROKEN"
+           then
+             SLASH="BROKEN"
              echo "========================================"
              echo "WARNING!!!"
              echo "Your password contains all available delimiters (+, |, and Q). "
