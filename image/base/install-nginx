@@ -2,13 +2,12 @@
 set -e
 
 # version check: https://nginx.org/en/download.html
-VERSION=1.25.3
-HASH="64c5b975ca287939e828303fa857d22f142b251f17808dfe41733512d9cded86"
+VERSION=1.26.1
 
 cd /tmp
 wget -q https://nginx.org/download/nginx-$VERSION.tar.gz
-sha256sum nginx-$VERSION.tar.gz
-echo "$HASH nginx-$VERSION.tar.gz" | sha256sum -c
+wget -q https://nginx.org/download/nginx-$VERSION.tar.gz.asc
+gpg --verify nginx-$VERSION.tar.gz.asc nginx-$VERSION.tar.gz
 tar zxf nginx-$VERSION.tar.gz
 cd nginx-$VERSION
 
