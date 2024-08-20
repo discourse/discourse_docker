@@ -1,7 +1,7 @@
 # NAME:     discourse/base
 # VERSION:  release
 
-ARG DEBIAN_RELEASE=bullseye
+ARG DEBIAN_RELEASE=bookworm
 FROM debian:${DEBIAN_RELEASE}-slim
 
 ARG DEBIAN_RELEASE
