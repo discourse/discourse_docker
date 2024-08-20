@@ -1,6 +1,15 @@
 # NAME:     discourse/discourse_dev
 # VERSION:  release
-FROM discourse/base:slim
+
+ARG from_tag=slim
+
+FROM discourse/base:$from_tag AS repo-fetcher
+WORKDIR /repo
+RUN chown discourse .
+USER discourse
+RUN git clone https://github.com/discourse/discourse . --depth 1
+
+FROM discourse/base:$from_tag
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
@@ -49,3 +58,18 @@ RUN wget -qO /tmp/mailhog https://github.com/mailhog/MailHog/releases/download/v
     && mv /tmp/mailhog /usr/local/bin/mailhog\
     && chmod +x /usr/local/bin/mailhog\
     && rm -rf /tmp/*
+
+USER discourse
+
+# Warm global bundle cache, then delete the compressed `cache/` versions (`/gem/` are enough)
+RUN --mount=type=bind,src=/repo,from=repo-fetcher,target=/tmp/discourse-clone,readwrite \
+    cd /tmp/discourse-clone \
+    && bundle install --deployment \
+    && rm -rf /home/discourse/.bundle/gems/ruby/*/cache/*
+
+# Warm global yarn cache
+RUN --mount=type=bind,src=/repo,from=repo-fetcher,target=/tmp/discourse-clone,readwrite \
+    cd /tmp/discourse-clone \
+    && yarn install
+
+USER root
