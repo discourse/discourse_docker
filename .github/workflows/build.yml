@@ -12,6 +12,7 @@ concurrency:
 
 env:
   BUILDKIT_PROGRESS: plain
+  DISCOURSE_TURBO_RSPEC_RETRY_AND_LOG_FLAKY_TESTS: true
 
 jobs:
   base:
