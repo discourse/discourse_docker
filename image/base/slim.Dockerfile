@@ -17,8 +17,16 @@ ENV PG_MAJOR=13 \
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
-RUN echo 2.0.`date +%Y%m%d` > /VERSION
+# Ensures that the gid and uid of the following users are consistent to avoid permission issues on directories in the
+# mounted volumes.
+RUN groupadd --gid 104 postgres &&\
+    useradd --uid 101 --gid 104 --home /var/lib/postgresql --shell /bin/bash -c "PostgreSQL administrator,,," postgres &&\
+    groupadd --gid 106 redis &&\
+    useradd --uid 103 --gid 106 --home /var/lib/redis --shell /usr/sbin/nologin redis &&\
+    groupadd --gid 1000 discourse &&\
+    useradd --uid 1000 --gid 1000 -m --shell /bin/bash discourse
 
+RUN echo 2.0.`date +%Y%m%d` > /VERSION
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
 RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping
@@ -128,7 +136,6 @@ COPY etc/  /etc
 COPY sbin/ /sbin
 
 # Discourse specific bits
-RUN useradd discourse -s /bin/bash -m -U &&\
-    install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
+RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
     sudo -u discourse git clone --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse &&\
     gem install bundler --conservative -v $(awk '/BUNDLED WITH/ { getline; gsub(/ /,""); print $0 }' /var/www/discourse/Gemfile.lock)
