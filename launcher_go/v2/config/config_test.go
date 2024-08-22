@@ -36,4 +36,11 @@ var _ = Describe("Config", func() {
 		Expect(strings.Contains(string(out[:]), ""))
 		Expect(string(out[:])).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
 	})
+
+	It("can convert pups config to dockerfile format", func() {
+		dockerfile := conf.Dockerfile("", false)
+		Expect(dockerfile).To(ContainSubstring("ARG DISCOURSE_DEVELOPER_EMAILS"))
+		Expect(dockerfile).To(ContainSubstring("RUN cat /temp-config.yaml"))
+		Expect(dockerfile).To(ContainSubstring("EXPOSE 80"))
+	})
 })
