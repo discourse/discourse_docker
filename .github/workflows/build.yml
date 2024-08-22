@@ -16,44 +16,16 @@ env:
 
 jobs:
   base:
-    # `unbuntu-20.04-8core` for arch amd64 non-scheduled builds
-    # `unbuntu-20.04` for arch amd64 scheduled builds
-    # `unbuntu-20.04-8core-arm` for arch arm64 non-scheduled builds
-    # `unbuntu-20.04-2core-arm` for arch arm64 scheduled builds
-    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || (( matrix.arch == 'arm64' && '-2core' ) || '') }}${{ (matrix.arch == 'arm64') && '-arm' || '' }}
+    # `unbuntu-22.04-8core` for arch amd64 non-scheduled builds
+    # `unbuntu-22.04` for arch amd64 scheduled builds
+    # `unbuntu-22.04-8core-arm` for arch arm64 non-scheduled builds
+    # `unbuntu-22.04-2core-arm` for arch arm64 scheduled builds
+    runs-on: ubuntu-22.04${{ ((github.event_name != 'schedule') && '-8core') || (( matrix.arch == 'arm64' && '-2core' ) || '') }}${{ (matrix.arch == 'arm64') && '-arm' || '' }}
     strategy:
       matrix:
         arch: [amd64, arm64]
     timeout-minutes: ${{ (github.event_name != 'schedule' && 30) || ((matrix.arch == 'arm64' && 60) || 30) }}
     steps:
-      - name: Install Docker
-        if: ${{ matrix.arch == 'arm64' }}
-        run: |
-          # Add Docker's official GPG key:
-          sudo apt-get update
-          sudo apt-get install ca-certificates curl
-          sudo install -m 0755 -d /etc/apt/keyrings
-          sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-          sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-          # Add the repository to Apt sources:
-          echo \
-            "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-            $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-            sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-          sudo apt-get update
-
-          # Install Docker
-          sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin
-
-          # Give the current user permission to run docker without sudo
-          sudo usermod -aG docker $USER
-          sudo apt-get install -y acl
-          sudo setfacl --modify user:$USER:rw /var/run/docker.sock
-      - name: Install Ruby
-        if: ${{ matrix.arch == 'arm64' }}
-        run: |
-          sudo apt-get install -y ruby
       - uses: actions/checkout@v3
         with:
           fetch-depth: 1
@@ -106,7 +78,7 @@ jobs:
           docker tag discourse/base:release${{ steps.arch-helper.outputs.arch_postfix_dash }} discourse/base:aarch64
           docker push discourse/base:aarch64
   test:
-    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    runs-on: ubuntu-22.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
     timeout-minutes: 30
     needs: base
     defaults:
@@ -147,7 +119,7 @@ jobs:
           docker push discourse/discourse_test:slim-browsers
           docker push discourse/discourse_test:release
   dev:
-    runs-on: ubuntu-20.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    runs-on: ubuntu-22.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
     timeout-minutes: 30
     needs: base
     steps:
