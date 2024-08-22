@@ -14,7 +14,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var DefaultBootCommand = "/sbin/boot"
+const defaultBootCommand = "/sbin/boot"
 
 func DefaultBaseImage() string {
 	if runtime.GOARCH == "arm64" {
@@ -74,7 +74,7 @@ func (config *Config) loadTemplate(templateDir string, template string) error {
 func LoadConfig(dir string, configName string, includeTemplates bool, templatesDir string) (*Config, error) {
 	config := &Config{
 		Name:         configName,
-		Boot_Command: DefaultBootCommand,
+		Boot_Command: defaultBootCommand,
 		Base_Image:   DefaultBaseImage(),
 	}
 	matched, _ := regexp.MatchString("[[:upper:]/ !@#$%^&*()+~`=]", configName)
@@ -134,16 +134,16 @@ func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 	builder := strings.Builder{}
 	builder.WriteString("ARG dockerfile_from_image=" + config.Base_Image + "\n")
 	builder.WriteString("FROM ${dockerfile_from_image}\n")
-	builder.WriteString(config.DockerfileArgs() + "\n")
+	builder.WriteString(config.dockerfileArgs() + "\n")
 	if bakeEnv {
-		builder.WriteString(config.DockerfileEnvs() + "\n")
+		builder.WriteString(config.dockerfileEnvs() + "\n")
 	}
-	builder.WriteString(config.DockerfileExpose() + "\n")
+	builder.WriteString(config.dockerfileExpose() + "\n")
 	builder.WriteString("COPY config.yaml /temp-config.yaml\n")
 	builder.WriteString("RUN " +
 		"cat /temp-config.yaml | /usr/local/bin/pups " + pupsArgs + " --stdin " +
 		"&& rm /temp-config.yaml\n")
-	builder.WriteString("CMD [\"" + config.BootCommand() + "\"]")
+	builder.WriteString("CMD [\"" + config.bootCommand() + "\"]")
 	return builder.String()
 }
 
@@ -155,13 +155,13 @@ func (config *Config) WriteYamlConfig(dir string) error {
 	return nil
 }
 
-func (config *Config) BootCommand() string {
+func (config *Config) bootCommand() string {
 	if len(config.Boot_Command) > 0 {
 		return config.Boot_Command
 	} else if config.No_Boot_Command {
 		return ""
 	} else {
-		return "/sbin/boot"
+		return defaultBootCommand
 	}
 }
 
@@ -177,7 +177,7 @@ func (config *Config) EnvArray(includeKnownSecrets bool) []string {
 	return envs
 }
 
-func (config *Config) DockerfileEnvs() string {
+func (config *Config) dockerfileEnvs() string {
 	builder := []string{}
 	for k, _ := range config.Env {
 		builder = append(builder, "ENV "+k+"=${"+k+"}")
@@ -186,7 +186,7 @@ func (config *Config) DockerfileEnvs() string {
 	return strings.Join(builder, "\n")
 }
 
-func (config *Config) DockerfileArgs() string {
+func (config *Config) dockerfileArgs() string {
 	builder := []string{}
 	for k, _ := range config.Env {
 		builder = append(builder, "ARG "+k)
@@ -195,7 +195,7 @@ func (config *Config) DockerfileArgs() string {
 	return strings.Join(builder, "\n")
 }
 
-func (config *Config) DockerfileExpose() string {
+func (config *Config) dockerfileExpose() string {
 	builder := []string{}
 	for _, p := range config.Expose {
 		port := p

@@ -13,10 +13,9 @@ import (
 
 type Cli struct {
 	Version      kong.VersionFlag `help:"Show version."`
-	ConfDir      string           `default:"./containers" help:"Discourse pups config directory." predictor:"dir"`
-	TemplatesDir string           `default:"." help:"Home project directory containing a templates/ directory which in turn contains pups yaml templates." predictor:"dir"`
-	BuildDir     string           `default:"./tmp" help:"Temporary build folder for building images." predictor:"dir"`
-	ForceMkdir   bool             `short:"p" name:"parent-dirs" help:"Create intermediate output directories as required.  If this option is not specified, the full path prefix of each operand must already exist."`
+	ConfDir      string           `default:"./containers" hidden:"" help:"Discourse pups config directory." predictor:"dir"`
+	TemplatesDir string           `default:"." hidden:"" help:"Home project directory containing a templates/ directory which in turn contains pups yaml templates." predictor:"dir"`
+	BuildDir     string           `default:"./tmp" hidden:"" help:"Temporary build folder for building images." predictor:"dir"`
 	BuildCmd     DockerBuildCmd   `cmd:"" name:"build" help:"Build a base image. This command does not need a running database. Saves resulting container."`
 }
 

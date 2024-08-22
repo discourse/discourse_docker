@@ -29,14 +29,8 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 	}
 
 	dir := cli.BuildDir + "/" + r.Config
-	if cli.ForceMkdir {
-		if err := os.MkdirAll(dir, 0755); err != nil && !os.IsExist(err) {
-			return err
-		}
-	} else {
-		if err := os.Mkdir(dir, 0755); err != nil && !os.IsExist(err) {
-			return err
-		}
+	if err := os.MkdirAll(dir, 0755); err != nil && !os.IsExist(err) {
+		return err
 	}
 	if err := config.WriteYamlConfig(dir); err != nil {
 		return err

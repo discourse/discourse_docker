@@ -19,7 +19,7 @@ var _ = Describe("Config", func() {
 	AfterEach(func() {
 		os.RemoveAll(testDir)
 	})
-	It("should be able to load", func() {
+	It("should be able to run LoadConfig to load yaml configuration", func() {
 		conf, err := config.LoadConfig("../test/containers", "test", true, "../test")
 		Expect(err).To(BeNil())
 		result := conf.Yaml()
