@@ -17,7 +17,7 @@ RUN chown -R discourse . &&\
 
 FROM base AS with_browsers
 
-ENV TESTEM_DEFAULT_BROWSER Chromium
+ENV TESTEM_DEFAULT_BROWSER Chrome
 ADD install-chrome /tmp/install-chrome
 RUN /tmp/install-chrome &&\
     apt update &&\
