@@ -23,9 +23,9 @@ var _ = Describe("Config", func() {
 		conf, err := config.LoadConfig("../test/containers", "test", true, "../test")
 		Expect(err).To(BeNil())
 		result := conf.Yaml()
-		Expect(string(result)).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
-		Expect(string(result)).To(ContainSubstring("_FILE_SEPERATOR_"))
-		Expect(string(result)).To(ContainSubstring("version: tests-passed"))
+		Expect(result).To(ContainSubstring("DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'"))
+		Expect(result).To(ContainSubstring("_FILE_SEPERATOR_"))
+		Expect(result).To(ContainSubstring("version: tests-passed"))
 	})
 
 	It("can write raw yaml config", func() {
