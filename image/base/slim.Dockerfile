@@ -5,7 +5,7 @@ ARG DEBIAN_RELEASE=bookworm
 FROM debian:${DEBIAN_RELEASE}-slim
 
 ARG DEBIAN_RELEASE
-ARG RUBY_VERSION=3.3.3
+ARG RUBY_VERSION=3.3.4
 ENV PG_MAJOR=13 \
     RUBY_ALLOCATOR=/usr/lib/libjemalloc.so \
     RUSTUP_HOME=/usr/local/rustup \
