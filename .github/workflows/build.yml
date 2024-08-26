@@ -14,19 +14,18 @@ env:
   BUILDKIT_PROGRESS: plain
   DISCOURSE_TURBO_RSPEC_RETRY_AND_LOG_FLAKY_TESTS: true
 
-
 jobs:
   timestamp:
     runs-on: ubuntu-latest
     outputs:
       timestamp: ${{ steps.timestamp.outputs.timestamp }}
-    steps: 
-    - id: timestamp
-      run: |
-        timestamp=`date +%Y%m%d-%H%M`
-        echo "timestamp=$timestamp"
-        echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
-        
+    steps:
+      - id: timestamp
+        run: |
+          timestamp=`date +%Y%m%d-%H%M`
+          echo "timestamp=$timestamp"
+          echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
+
   base:
     # `unbuntu-22.04-8core` for arch amd64 non-scheduled builds
     # `unbuntu-22.04` for arch amd64 scheduled builds
@@ -36,7 +35,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    timeout-minutes: ${{ (github.event_name != 'schedule' && 30) || ((matrix.arch == 'arm64' && 60) || 30) }}
+    timeout-minutes: ${{ (github.event_name == 'schedule' && 60) || ((matrix.arch == 'arm64' && 45) || 30) }}
     needs: timestamp
     env:
       ARCH: ${{matrix.arch}}
