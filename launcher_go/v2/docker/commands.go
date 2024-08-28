@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -94,19 +95,28 @@ func (r *DockerRunner) Run() error {
 	}
 
 	cmd.Env = r.Config.EnvArray(true)
+	envKeys := make([]string, 0, len(r.Config.Env))
+
+	for envKey := range r.Config.Env {
+		envKeys = append(envKeys, envKey)
+	}
+
+	sort.Strings(envKeys)
 
 	if r.DryRun {
 		// multi-line env doesn't work super great from CLI, but we can print out the rest.
-		for k, v := range r.Config.Env {
-			if !strings.Contains(v, "\n") {
+		for _, envKey := range envKeys {
+			value := r.Config.Env[envKey]
+
+			if !strings.Contains(value, "\n") {
 				cmd.Args = append(cmd.Args, "--env")
-				cmd.Args = append(cmd.Args, k+"="+shellwords.Escape(v))
+				cmd.Args = append(cmd.Args, envKey+"="+shellwords.Escape(value))
 			}
 		}
 	} else {
-		for k, _ := range r.Config.Env {
+		for _, envKey := range envKeys {
 			cmd.Args = append(cmd.Args, "--env")
-			cmd.Args = append(cmd.Args, k)
+			cmd.Args = append(cmd.Args, envKey)
 		}
 	}
 
@@ -156,10 +166,10 @@ func (r *DockerRunner) Run() error {
 	}
 
 	if r.Detatch {
-		cmd.Args = append(cmd.Args, "-d")
+		cmd.Args = append(cmd.Args, "--detach")
 	}
 
-	cmd.Args = append(cmd.Args, "-i")
+	cmd.Args = append(cmd.Args, "--interactive")
 
 	// Docker args override settings above
 	for _, f := range r.Config.DockerArgs() {
@@ -170,8 +180,11 @@ func (r *DockerRunner) Run() error {
 		cmd.Args = append(cmd.Args, f)
 	}
 
-	cmd.Args = append(cmd.Args, "-h")
-	cmd.Args = append(cmd.Args, r.Hostname)
+	if r.Hostname != "" {
+		cmd.Args = append(cmd.Args, "--hostname")
+		cmd.Args = append(cmd.Args, r.Hostname)
+	}
+
 	cmd.Args = append(cmd.Args, "--name")
 	cmd.Args = append(cmd.Args, r.ContainerId)
 
@@ -216,21 +229,26 @@ func (r *DockerPupsRunner) Run() error {
 	rm := false
 	// remove : in case docker tag is blank, and use default latest tag
 	r.SavedImageName = strings.TrimRight(r.SavedImageName, ":")
+
 	if r.SavedImageName == "" {
 		rm = true
 	}
+
 	defer func(rm bool) {
 		if !rm {
 			time.Sleep(utils.CommitWait)
 			runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-			cmd := exec.CommandContext(runCtx, utils.DockerPath, "rm", "-f", r.ContainerId)
+			cmd := exec.CommandContext(runCtx, utils.DockerPath, "rm", "--force", r.ContainerId)
 			utils.CmdRunner(cmd).Run()
 			cancel()
 		}
 	}(rm)
-	commands := []string{"/bin/bash",
+
+	commands := []string{
+		"/bin/bash",
 		"-c",
-		"/usr/local/bin/pups --stdin " + r.PupsArgs}
+		"/usr/local/bin/pups --stdin " + r.PupsArgs,
+	}
 
 	runner := DockerRunner{Config: r.Config,
 		Ctx:         r.Ctx,
@@ -248,6 +266,7 @@ func (r *DockerPupsRunner) Run() error {
 
 	if len(r.SavedImageName) > 0 {
 		time.Sleep(utils.CommitWait)
+
 		cmd := exec.Command("docker",
 			"commit",
 			"--change",
@@ -257,13 +276,16 @@ func (r *DockerPupsRunner) Run() error {
 			r.ContainerId,
 			r.SavedImageName,
 		)
+
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 
 		fmt.Fprintln(utils.Out, cmd)
+
 		if err := utils.CmdRunner(cmd).Run(); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
