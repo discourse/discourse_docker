@@ -143,7 +143,7 @@ func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 	builder.WriteString("RUN " +
 		"cat /temp-config.yaml | /usr/local/bin/pups " + pupsArgs + " --stdin " +
 		"&& rm /temp-config.yaml\n")
-	builder.WriteString("CMD [\"" + config.bootCommand() + "\"]")
+	builder.WriteString("CMD [\"" + config.BootCommand() + "\"]")
 	return builder.String()
 }
 
@@ -155,7 +155,7 @@ func (config *Config) WriteYamlConfig(dir string) error {
 	return nil
 }
 
-func (config *Config) bootCommand() string {
+func (config *Config) BootCommand() string {
 	if len(config.Boot_Command) > 0 {
 		return config.Boot_Command
 	} else if config.No_Boot_Command {
@@ -175,6 +175,10 @@ func (config *Config) EnvArray(includeKnownSecrets bool) []string {
 	}
 	slices.Sort(envs)
 	return envs
+}
+
+func (config *Config) DockerArgs() []string {
+	return strings.Fields(config.Docker_Args)
 }
 
 func (config *Config) dockerfileEnvs() string {
@@ -206,4 +210,22 @@ func (config *Config) dockerfileExpose() string {
 	}
 	slices.Sort(builder)
 	return strings.Join(builder, "\n")
+}
+
+func (config *Config) RunImage() string {
+	if len(config.Run_Image) > 0 {
+		return config.Run_Image
+	}
+	return utils.BaseImageName + config.Name
+}
+
+func (config *Config) DockerHostname(defaultHostname string) string {
+	_, exists := config.Env["DOCKER_USE_HOSTNAME"]
+	re := regexp.MustCompile(`[^a-zA-Z-]`)
+	hostname := defaultHostname
+	if exists {
+		hostname = config.Env["DISCOURSE_HOSTNAME"]
+	}
+	hostname = string(re.ReplaceAll([]byte(hostname), []byte("-"))[:])
+	return hostname
 }

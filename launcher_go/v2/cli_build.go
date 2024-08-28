@@ -5,6 +5,8 @@ import (
 	"errors"
 	"github.com/discourse/discourse_docker/launcher_go/v2/config"
 	"github.com/discourse/discourse_docker/launcher_go/v2/docker"
+	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
+	"github.com/google/uuid"
 	"os"
 	"strings"
 )
@@ -51,6 +53,29 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 	cleaner.Run(cli)
 
 	return nil
+}
+
+type DockerConfigureCmd struct {
+	Tag    string `default:"latest" help:"Resulting image tag."`
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
+}
+
+func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
+	if err != nil {
+		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
+	}
+
+	containerId := "discourse-build-" + uuid.NewString()
+	pups := docker.DockerPupsRunner{
+		Config:         config,
+		PupsArgs:       "--tags=db,precompile",
+		SavedImageName: utils.BaseImageName + r.Config + ":" + r.Tag,
+		ExtraEnv:       []string{"SKIP_EMBER_CLI_COMPILE=1"},
+		Ctx:            ctx,
+		ContainerId:    containerId,
+	}
+	return pups.Run()
 }
 
 type CleanCmd struct {
