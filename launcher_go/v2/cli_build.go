@@ -3,12 +3,14 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
+	"os"
+	"strings"
+
 	"github.com/discourse/discourse_docker/launcher_go/v2/config"
 	"github.com/discourse/discourse_docker/launcher_go/v2/docker"
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"github.com/google/uuid"
-	"os"
-	"strings"
 )
 
 /*
@@ -66,7 +68,16 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
 
-	containerId := "discourse-build-" + uuid.NewString()
+	var uuidString string
+
+	if flag.Lookup("test.v") == nil {
+		uuidString = uuid.NewString()
+	} else {
+		uuidString = "test"
+	}
+
+	containerId := "discourse-build-" + uuidString
+
 	pups := docker.DockerPupsRunner{
 		Config:         config,
 		PupsArgs:       "--tags=db,precompile",
@@ -75,6 +86,7 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 		Ctx:            ctx,
 		ContainerId:    containerId,
 	}
+
 	return pups.Run()
 }
 

@@ -81,7 +81,7 @@ env:
   ## The http or https CDN address for this Discourse instance (configured to pull)
   ## see https://meta.discourse.org/t/14857 for details
   #DISCOURSE_CDN_URL: https://discourse-cdn.example.com
-  
+
   ## The maxmind geolocation IP address key for IP address lookup
   ## see https://meta.discourse.org/t/-/137387/23 for details
   #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456
@@ -105,6 +105,7 @@ hooks:
 
 ## Remember, this is YAML syntax - you can only have one block with a name
 run:
+  - exec: echo "custom test command"
   - exec: echo "Beginning of custom commands"
 
   ## If you want to configure password login for root, uncomment and change:

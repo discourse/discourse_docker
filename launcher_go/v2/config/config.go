@@ -1,15 +1,16 @@
 package config
 
 import (
-	"dario.cat/mergo"
 	"errors"
 	"fmt"
-	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"os"
 	"regexp"
 	"runtime"
 	"slices"
 	"strings"
+
+	"dario.cat/mergo"
+	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 
 	"gopkg.in/yaml.v3"
 )
@@ -77,7 +78,9 @@ func LoadConfig(dir string, configName string, includeTemplates bool, templatesD
 		Boot_Command: defaultBootCommand,
 		Base_Image:   DefaultBaseImage(),
 	}
+
 	matched, _ := regexp.MatchString("[[:upper:]/ !@#$%^&*()+~`=]", configName)
+
 	if matched {
 		msg := "ERROR: Config name '" + configName + "' must not contain upper case characters, spaces or special characters. Correct config name and rerun."
 		fmt.Println(msg)
@@ -86,12 +89,14 @@ func LoadConfig(dir string, configName string, includeTemplates bool, templatesD
 
 	config_filename := string(strings.TrimRight(dir, "/") + "/" + config.Name + ".yml")
 	content, err := os.ReadFile(config_filename)
+
 	if err != nil {
 		if os.IsNotExist(err) {
 			fmt.Println("config file does not exist: " + config_filename)
 		}
 		return nil, err
 	}
+
 	baseConfig := &Config{}
 
 	if err := yaml.Unmarshal(content, baseConfig); err != nil {
@@ -105,10 +110,13 @@ func LoadConfig(dir string, configName string, includeTemplates bool, templatesD
 			}
 		}
 	}
+
 	if err := mergo.Merge(config, baseConfig, mergo.WithOverride); err != nil {
 		return nil, err
 	}
+
 	config.rawYaml = append(config.rawYaml, string(content[:]))
+
 	if err != nil {
 		return nil, err
 	}
