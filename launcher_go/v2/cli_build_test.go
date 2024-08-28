@@ -6,13 +6,14 @@ import (
 
 	"bytes"
 	"context"
-	ddocker "github.com/discourse/discourse_docker/launcher_go/v2"
-	. "github.com/discourse/discourse_docker/launcher_go/v2/test_utils"
-	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
+
+	ddocker "github.com/discourse/discourse_docker/launcher_go/v2"
+	. "github.com/discourse/discourse_docker/launcher_go/v2/test_utils"
+	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
 )
 
 var _ = Describe("Build", func() {

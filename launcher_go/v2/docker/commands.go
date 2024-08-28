@@ -3,10 +3,6 @@ package docker
 import (
 	"context"
 	"fmt"
-	"github.com/Wing924/shellwords"
-	"github.com/discourse/discourse_docker/launcher_go/v2/config"
-	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
-	"golang.org/x/sys/unix"
 	"io"
 	"os"
 	"os/exec"
@@ -14,6 +10,11 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/Wing924/shellwords"
+	"github.com/discourse/discourse_docker/launcher_go/v2/config"
+	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
+	"golang.org/x/sys/unix"
 )
 
 type DockerBuilder struct {
@@ -91,6 +92,7 @@ func (r *DockerRunner) Run() error {
 			return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
 		}
 	}
+
 	cmd.Env = r.Config.EnvArray(true)
 
 	if r.DryRun {
@@ -113,14 +115,16 @@ func (r *DockerRunner) Run() error {
 		cmd.Args = append(cmd.Args, "--env")
 		cmd.Args = append(cmd.Args, e)
 	}
+
 	for k, v := range r.Config.Labels {
 		cmd.Args = append(cmd.Args, "--label")
 		cmd.Args = append(cmd.Args, k+"="+v)
 	}
+
 	if !r.SkipPorts {
 		for _, v := range r.Config.Expose {
 			if strings.Contains(v, ":") {
-				cmd.Args = append(cmd.Args, "-p")
+				cmd.Args = append(cmd.Args, "--publish")
 				cmd.Args = append(cmd.Args, v)
 			} else {
 				cmd.Args = append(cmd.Args, "--expose")
@@ -128,39 +132,49 @@ func (r *DockerRunner) Run() error {
 			}
 		}
 	}
+
 	for _, v := range r.Config.Volumes {
-		cmd.Args = append(cmd.Args, "-v")
+		cmd.Args = append(cmd.Args, "--volume")
 		cmd.Args = append(cmd.Args, v.Volume.Host+":"+v.Volume.Guest)
 	}
+
 	for _, v := range r.Config.Links {
 		cmd.Args = append(cmd.Args, "--link")
 		cmd.Args = append(cmd.Args, v.Link.Name+":"+v.Link.Alias)
 	}
+
 	cmd.Args = append(cmd.Args, "--shm-size=512m")
+
 	if r.Rm {
 		cmd.Args = append(cmd.Args, "--rm")
 	}
+
 	if r.Restart {
 		cmd.Args = append(cmd.Args, "--restart=always")
 	} else {
 		cmd.Args = append(cmd.Args, "--restart=no")
 	}
+
 	if r.Detatch {
 		cmd.Args = append(cmd.Args, "-d")
 	}
+
 	cmd.Args = append(cmd.Args, "-i")
 
 	// Docker args override settings above
 	for _, f := range r.Config.DockerArgs() {
 		cmd.Args = append(cmd.Args, f)
 	}
+
 	for _, f := range r.ExtraFlags {
 		cmd.Args = append(cmd.Args, f)
 	}
+
 	cmd.Args = append(cmd.Args, "-h")
 	cmd.Args = append(cmd.Args, r.Hostname)
 	cmd.Args = append(cmd.Args, "--name")
 	cmd.Args = append(cmd.Args, r.ContainerId)
+
 	if len(r.CustomImage) > 0 {
 		cmd.Args = append(cmd.Args, r.CustomImage)
 	} else {
@@ -176,7 +190,9 @@ func (r *DockerRunner) Run() error {
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = r.Stdin
 	}
+
 	runner := utils.CmdRunner(cmd)
+
 	if r.DryRun {
 		fmt.Println(cmd)
 	} else {
