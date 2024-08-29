@@ -90,6 +90,51 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 	return pups.Run()
 }
 
+type DockerMigrateCmd struct {
+	Config                       string `arg:"" name:"config" help:"config" predictor:"config"`
+	SkipPostDeploymentMigrations bool   `env:"SKIP_POST_DEPLOYMENT_MIGRATIONS" help:"Skip post-deployment migrations. Runs safe migrations only. Defers breaking-change migrations. Make sure you run post-deployment migrations after a full deploy is complete if you use this option."`
+}
+
+func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
+	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
+	if err != nil {
+		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
+	}
+	containerId := "discourse-build-" + uuid.NewString()
+	env := []string{"SKIP_EMBER_CLI_COMPILE=1"}
+	if r.SkipPostDeploymentMigrations {
+		env = append(env, "SKIP_POST_DEPLOYMENT_MIGRATIONS=1")
+	}
+	pups := docker.DockerPupsRunner{
+		Config:      config,
+		PupsArgs:    "--tags=db,migrate",
+		ExtraEnv:    env,
+		Ctx:         ctx,
+		ContainerId: containerId,
+	}
+	return pups.Run()
+}
+
+type DockerBootstrapCmd struct {
+	Config string `arg:"" name:"config" help:"config" predictor:"config"`
+}
+
+func (r *DockerBootstrapCmd) Run(cli *Cli, ctx *context.Context) error {
+	buildStep := DockerBuildCmd{Config: r.Config, BakeEnv: false}
+	migrateStep := DockerMigrateCmd{Config: r.Config}
+	configureStep := DockerConfigureCmd{Config: r.Config}
+	if err := buildStep.Run(cli, ctx); err != nil {
+		return err
+	}
+	if err := migrateStep.Run(cli, ctx); err != nil {
+		return err
+	}
+	if err := configureStep.Run(cli, ctx); err != nil {
+		return err
+	}
+	return nil
+}
+
 type CleanCmd struct {
 	Config string `arg:"" name:"config" help:"config to clean" predictor:"config"`
 }
