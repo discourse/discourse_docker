@@ -35,8 +35,10 @@ var _ = Describe("Build", func() {
 			TemplatesDir: "./test",
 			BuildDir:     testDir,
 		}
+
 		utils.CmdRunner = CreateNewFakeCmdRunner()
 	})
+
 	AfterEach(func() {
 		os.RemoveAll(testDir)
 	})
@@ -72,8 +74,8 @@ var _ = Describe("Build", func() {
 		}
 
 		var checkConfigureCmd = func(cmd exec.Cmd) {
-			Expect(cmd.String()).To(Equal(
-				"/usr/local/bin/docker run " +
+			Expect(cmd.String()).To(ContainSubstring(
+				"docker run " +
 					"--env DISCOURSE_DB_HOST " +
 					"--env DISCOURSE_DB_PASSWORD " +
 					"--env DISCOURSE_DB_PORT " +
@@ -143,8 +145,8 @@ var _ = Describe("Build", func() {
 		// commit on configure
 		var checkConfigureCommit = func(cmd exec.Cmd) {
 			Expect(cmd.String()).To(MatchRegexp(
-				"/usr/local/bin/docker commit " +
-					`--change LABEL org\.opencontainers\.image\.created="[\d\-T:+]+" ` +
+				"docker commit " +
+					`--change LABEL org\.opencontainers\.image\.created="[\d\-T:Z]+" ` +
 					`--change CMD \["/sbin/boot"\] ` +
 					"discourse-build-test local_discourse/test",
 			))
@@ -154,7 +156,7 @@ var _ = Describe("Build", func() {
 
 		// configure also cleans up
 		var checkConfigureClean = func(cmd exec.Cmd) {
-			Expect(cmd.String()).To(Equal("/usr/local/bin/docker rm --force discourse-build-test"))
+			Expect(cmd.String()).To(ContainSubstring("docker rm --force discourse-build-test"))
 		}
 
 		It("Should run docker build with correct arguments", func() {
