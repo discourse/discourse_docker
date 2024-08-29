@@ -270,7 +270,7 @@ func (r *DockerPupsRunner) Run() error {
 		cmd := exec.Command("docker",
 			"commit",
 			"--change",
-			"LABEL org.opencontainers.image.created=\""+time.Now().Format(time.RFC3339)+"\"",
+			"LABEL org.opencontainers.image.created=\""+time.Now().UTC().Format(time.RFC3339)+"\"",
 			"--change",
 			"CMD [\""+r.Config.BootCommand()+"\"]",
 			r.ContainerId,
