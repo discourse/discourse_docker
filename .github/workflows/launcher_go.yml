@@ -1,12 +1,14 @@
 name: launcher_go
 
 on:
-  release:
-    types: [created]
   push:
     branches:
       - main
-  pull_request: {}
+    paths:
+      - "launcher_go/**"
+  pull_request:
+    paths:
+      - "launcher_go/**"
 
 jobs:
   lint:
@@ -18,7 +20,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '>=1.21.0'
+          go-version: ">=1.21.0"
       - run: |
           if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
             exit 1
@@ -35,7 +37,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '>=1.21.0'
+          go-version: ">=1.21.0"
       - run: go test ./...
         working-directory: ./launcher_go/v2
 
@@ -73,7 +75,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '>=1.21.0'
+          go-version: ">=1.21.0"
       - run: go run ./... --version > ../../launcher_version.txt
         working-directory: ./launcher_go/v2
       - name: upload version
