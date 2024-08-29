@@ -6,9 +6,11 @@ on:
       - main
     paths:
       - "launcher_go/**"
+      - ".github/workflows/launcher_go.yml"
   pull_request:
     paths:
       - "launcher_go/**"
+      - ".github/workflows/launcher_go.yml"
 
 jobs:
   lint:

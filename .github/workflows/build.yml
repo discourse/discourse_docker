@@ -2,7 +2,11 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "launcher_go/**"
   pull_request:
+    paths-ignore:
+      - "launcher_go/**"
   schedule:
     - cron: "0 0 * * *"
 
