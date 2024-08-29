@@ -21,11 +21,13 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ">=1.21.0"
-      - run: |
+      - name: Run gofmt
+        working-directory: ./launcher_go/v2
+        run: |
           if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
             exit 1
           fi
-        working-directory: ./launcher_go/v2
+
   test:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
@@ -38,8 +40,9 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: ">=1.21.0"
-      - run: go test ./...
+      - name: Run tests
         working-directory: ./launcher_go/v2
+        run: go test ./...
 
   build_latest:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
