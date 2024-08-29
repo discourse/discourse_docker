@@ -31,6 +31,8 @@ mv /usr/share/nginx/sbin/nginx /usr/sbin
 
 cd /
 rm -fr /tmp/nginx
+rm -f /tmp/nginx-$VERSION.tar.gz
+rm -f /tmp/nginx-$VERSION.tar.gz.asc
 rm -fr /tmp/libbrotli
 rm -fr /tmp/ngx_brotli
 rm -fr /etc/nginx/modules-enabled/*

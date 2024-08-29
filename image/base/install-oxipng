@@ -21,4 +21,4 @@ cd ${OXIPNG_DIR}
 CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse /usr/local/cargo/bin/cargo build --release
 cp target/release/oxipng /usr/local/bin
 
-cd / && rm -fr /tmp/${OXIPNG_DIR}
+cd / && rm -fr /tmp/${OXIPNG_DIR} && rm -f /tmp/${OXIPNG_ARCHIVE}
