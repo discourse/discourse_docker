@@ -6,10 +6,11 @@ import (
 
 	"bytes"
 	"context"
+	"os"
+
 	ddocker "github.com/discourse/discourse_docker/launcher_go/v2"
 	. "github.com/discourse/discourse_docker/launcher_go/v2/test_utils"
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
-	"os"
 )
 
 var _ = Describe("Runtime", func() {
@@ -23,7 +24,6 @@ var _ = Describe("Runtime", func() {
 		out = &bytes.Buffer{}
 		utils.Out = out
 		testDir, _ = os.MkdirTemp("", "ddocker-test")
-
 		ctx = context.Background()
 
 		cli = &ddocker.Cli{
@@ -31,52 +31,58 @@ var _ = Describe("Runtime", func() {
 			TemplatesDir: "./test",
 			BuildDir:     testDir,
 		}
+
 		utils.CmdRunner = CreateNewFakeCmdRunner()
 	})
+
 	AfterEach(func() {
 		os.RemoveAll(testDir)
 	})
 
 	Context("When running run commands", func() {
-
 		var checkStartCmd = func() {
 			cmd := GetLastCommand()
-			Expect(cmd.String()).To(ContainSubstring("docker ps -q --filter name=test"))
+			Expect(cmd.String()).To(ContainSubstring("docker ps --quiet --filter name=test"))
+
 			cmd = GetLastCommand()
-			Expect(cmd.String()).To(ContainSubstring("docker ps -a -q --filter name=test"))
+			Expect(cmd.String()).To(ContainSubstring("docker ps --all --quiet --filter name=test"))
+
 			cmd = GetLastCommand()
 			Expect(cmd.String()).To(ContainSubstring("docker run"))
-			Expect(cmd.String()).To(ContainSubstring("-d"))
+			Expect(cmd.String()).To(ContainSubstring("--detach"))
+			Expect(cmd.String()).To(ContainSubstring("--restart=always"))
 			Expect(cmd.String()).To(ContainSubstring("--name test local_discourse/test /sbin/boot"))
 		}
 
 		var checkStartCmdWhenStarted = func() {
 			cmd := GetLastCommand()
-			Expect(cmd.String()).To(ContainSubstring("docker ps -q --filter name=test"))
+			Expect(cmd.String()).To(ContainSubstring("docker ps --quiet --filter name=test"))
 		}
 
 		var checkStopCmd = func() {
 			cmd := GetLastCommand()
-			Expect(cmd.String()).To(ContainSubstring("docker ps -a -q --filter name=test"))
+			Expect(cmd.String()).To(ContainSubstring("docker ps --all --quiet --filter name=test"))
 			cmd = GetLastCommand()
-			Expect(cmd.String()).To(ContainSubstring("docker stop -t 600 test"))
+			Expect(cmd.String()).To(ContainSubstring("docker stop --time 600 test"))
 		}
 
 		var checkStopCmdWhenMissing = func() {
 			cmd := GetLastCommand()
-			Expect(cmd.String()).To(ContainSubstring("docker ps -a -q --filter name=test"))
+			Expect(cmd.String()).To(ContainSubstring("docker ps --all --quiet --filter name=test"))
 		}
 
-		It("should run start commands", func() {
-			runner := ddocker.StartCmd{Config: "test"}
-			runner.Run(cli, &ctx)
-			checkStartCmd()
-		})
+		Context("without a running container", func() {
+			It("should run start commands", func() {
+				runner := ddocker.StartCmd{Config: "test"}
+				runner.Run(cli, &ctx)
+				checkStartCmd()
+			})
 
-		It("should not run stop commands", func() {
-			runner := ddocker.StopCmd{Config: "test"}
-			runner.Run(cli, &ctx)
-			checkStopCmdWhenMissing()
+			It("should not run stop commands", func() {
+				runner := ddocker.StopCmd{Config: "test"}
+				runner.Run(cli, &ctx)
+				checkStopCmdWhenMissing()
+			})
 		})
 
 		Context("with a running container", func() {
@@ -124,7 +130,7 @@ var _ = Describe("Runtime", func() {
 
 				// destroying
 				cmd = GetLastCommand()
-				Expect(cmd.String()).To(ContainSubstring("docker ps -a -q --filter name=web_only"))
+				Expect(cmd.String()).To(ContainSubstring("docker ps --all --quiet --filter name=web_only"))
 				cmd = GetLastCommand()
 				Expect(cmd.String()).To(ContainSubstring("docker stop -t 600 web_only"))
 				cmd = GetLastCommand()
@@ -133,7 +139,7 @@ var _ = Describe("Runtime", func() {
 				// starting container --run command won't run because
 				// tests already believe we're running
 				cmd = GetLastCommand()
-				Expect(cmd.String()).To(ContainSubstring("docker ps -q"))
+				Expect(cmd.String()).To(ContainSubstring("docker ps --quiet"))
 
 				// run post-deploy migrations
 				cmd = GetLastCommand()
@@ -153,7 +159,7 @@ var _ = Describe("Runtime", func() {
 				cmd = GetLastCommand()
 
 				// stop
-				Expect(cmd.String()).To(ContainSubstring("docker ps -a -q --filter name=standalone"))
+				Expect(cmd.String()).To(ContainSubstring("docker ps --all --quiet --filter name=standalone"))
 				cmd = GetLastCommand()
 				Expect(cmd.String()).To(ContainSubstring("docker stop"))
 
@@ -174,7 +180,7 @@ var _ = Describe("Runtime", func() {
 
 				// run destroy
 				cmd = GetLastCommand()
-				Expect(cmd.String()).To(ContainSubstring("docker ps -a -q"))
+				Expect(cmd.String()).To(ContainSubstring("docker ps --all --quiet"))
 				cmd = GetLastCommand()
 				Expect(cmd.String()).To(ContainSubstring("docker stop"))
 				cmd = GetLastCommand()
@@ -182,7 +188,7 @@ var _ = Describe("Runtime", func() {
 
 				// run start (we think we're already started here so this is just ps)
 				cmd = GetLastCommand()
-				Expect(cmd.String()).To(ContainSubstring("docker ps -q"))
+				Expect(cmd.String()).To(ContainSubstring("docker ps --quiet"))
 				Expect(len(RanCmds)).To(Equal(0))
 			})
 		})

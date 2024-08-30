@@ -44,16 +44,21 @@ type StartCmd struct {
 func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 	//start stopped container first if exists
 	running, _ := docker.ContainerRunning(r.Config)
+
 	if running && !r.DryRun {
 		fmt.Fprintln(utils.Out, "Nothing to do, your container has already started!")
 		return nil
 	}
+
 	exists, _ := docker.ContainerExists(r.Config)
+
 	if exists && !r.DryRun {
 		fmt.Fprintln(utils.Out, "starting up existing container")
 		cmd := exec.CommandContext(*ctx, utils.DockerPath, "start", r.Config)
+
 		if r.Supervised {
 			cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+
 			cmd.Cancel = func() error {
 				if runtime.GOOS == "darwin" {
 					runCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -63,28 +68,35 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 				}
 				return unix.Kill(-cmd.Process.Pid, unix.SIGINT)
 			}
+
 			cmd.Args = append(cmd.Args, "--attach")
 			cmd.Stdin = os.Stdin
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
 		}
+
 		fmt.Fprintln(utils.Out, cmd)
+
 		if err := utils.CmdRunner(cmd).Run(); err != nil {
 			return err
 		}
+
 		return nil
 	}
 
 	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
+
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
+
 	defaultHostname, _ := os.Hostname()
 	defaultHostname = defaultHostname + "-" + r.Config
 	hostname := config.DockerHostname(defaultHostname)
 
 	restart := true
 	detatch := true
+
 	if r.Supervised {
 		restart = false
 		detatch = false
@@ -92,6 +104,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 
 	extraFlags := strings.Fields(r.DockerArgs)
 	bootCmd := config.BootCommand()
+
 	runner := docker.DockerRunner{
 		Config:      config,
 		Ctx:         ctx,
@@ -105,6 +118,7 @@ func (r *StartCmd) Run(cli *Cli, ctx *context.Context) error {
 		Hostname:    hostname,
 		Cmd:         []string{bootCmd},
 	}
+
 	fmt.Fprintln(utils.Out, "starting new container...")
 	return runner.Run()
 }
@@ -145,7 +159,7 @@ func (r *StopCmd) Run(cli *Cli, ctx *context.Context) error {
 		fmt.Fprintln(utils.Out, r.Config+" was not found")
 		return nil
 	}
-	cmd := exec.CommandContext(*ctx, "docker", "stop", "-t", "600", r.Config)
+	cmd := exec.CommandContext(*ctx, "docker", "stop", "--time", "600", r.Config)
 	fmt.Fprintln(utils.Out, cmd)
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
@@ -162,12 +176,15 @@ type RestartCmd struct {
 func (r *RestartCmd) Run(cli *Cli, ctx *context.Context) error {
 	start := StartCmd{Config: r.Config, DockerArgs: r.DockerArgs, RunImage: r.RunImage}
 	stop := StopCmd{Config: r.Config}
+
 	if err := stop.Run(cli, ctx); err != nil {
 		return err
 	}
+
 	if err := start.Run(cli, ctx); err != nil {
 		return err
 	}
+
 	return nil
 }
 
