@@ -114,7 +114,6 @@ var _ = Describe("Runtime", func() {
 
 			It("should keep running during commits, and be post-deploy migration aware when using a web only container", func() {
 				runner := ddocker.RebuildCmd{Config: "web_only"}
-
 				runner.Run(cli, &ctx)
 
 				//initial build
@@ -140,7 +139,7 @@ var _ = Describe("Runtime", func() {
 				cmd = GetLastCommand()
 				Expect(cmd.String()).To(ContainSubstring("docker ps --all --quiet --filter name=web_only"))
 				cmd = GetLastCommand()
-				Expect(cmd.String()).To(ContainSubstring("docker stop -t 600 web_only"))
+				Expect(cmd.String()).To(ContainSubstring("docker stop --time 600 web_only"))
 				cmd = GetLastCommand()
 				Expect(cmd.String()).To(ContainSubstring("docker rm"))
 

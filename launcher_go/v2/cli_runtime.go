@@ -159,7 +159,8 @@ func (r *StopCmd) Run(cli *Cli, ctx *context.Context) error {
 		fmt.Fprintln(utils.Out, r.Config+" was not found")
 		return nil
 	}
-	cmd := exec.CommandContext(*ctx, "docker", "stop", "--time", "600", r.Config)
+	cmd := exec.CommandContext(*ctx, utils.DockerPath, "stop", "--time", "600", r.Config)
+
 	fmt.Fprintln(utils.Out, cmd)
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
@@ -199,7 +200,7 @@ func (r *DestroyCmd) Run(cli *Cli, ctx *context.Context) error {
 		return nil
 	}
 
-	cmd := exec.CommandContext(*ctx, utils.DockerPath, "stop", "-t", "600", r.Config)
+	cmd := exec.CommandContext(*ctx, utils.DockerPath, "stop", "--time", "600", r.Config)
 	fmt.Fprintln(utils.Out, cmd)
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
@@ -248,8 +249,8 @@ type RebuildCmd struct {
 }
 
 func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
-
 	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
+
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
@@ -267,37 +268,50 @@ func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err := build.Run(cli, ctx); err != nil {
 		return err
 	}
+
 	if !externalDb {
 		if err := stop.Run(cli, ctx); err != nil {
 			return err
 		}
 	}
+
 	_, migrateOnBoot := config.Env["MIGRATE_ON_BOOT"]
+
 	if !migrateOnBoot || r.FullBuild {
 		migrate := DockerMigrateCmd{Config: r.Config}
+
 		if externalDb {
 			// defer post deploy migrations until after reboot
 			migrate.SkipPostDeploymentMigrations = true
 		}
+
 		if err := migrate.Run(cli, ctx); err != nil {
 			return err
 		}
+
 		extraEnv = append(extraEnv, "MIGRATE_ON_BOOT=0")
 	}
+
 	_, precompileOnBoot := config.Env["PRECOMPILE_ON_BOOT"]
+
 	if !precompileOnBoot || r.FullBuild {
 		if err := configure.Run(cli, ctx); err != nil {
 			return err
 		}
+
 		extraEnv = append(extraEnv, "PRECOMPILE_ON_BOOT=0")
 	}
+
 	if err := destroy.Run(cli, ctx); err != nil {
 		return err
 	}
+
 	start := StartCmd{Config: r.Config, extraEnv: extraEnv}
+
 	if err := start.Run(cli, ctx); err != nil {
 		return err
 	}
+
 	// run post deploy migrations since we've rebooted
 	if externalDb {
 		migrate := DockerMigrateCmd{Config: r.Config}
@@ -305,11 +319,13 @@ func (r *RebuildCmd) Run(cli *Cli, ctx *context.Context) error {
 			return err
 		}
 	}
+
 	if r.Clean {
 		if err := clean.Run(cli, ctx); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
