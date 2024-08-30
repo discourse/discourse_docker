@@ -41,6 +41,8 @@ var _ = Describe("Runtime", func() {
 
 	Context("When running run commands", func() {
 		var checkStartCmd = func() {
+			Expect(len(RanCmds)).To(Equal(3))
+
 			cmd := GetLastCommand()
 			Expect(cmd.String()).To(ContainSubstring("docker ps --quiet --filter name=test"))
 
@@ -55,11 +57,15 @@ var _ = Describe("Runtime", func() {
 		}
 
 		var checkStartCmdWhenStarted = func() {
+			Expect(len(RanCmds)).To(Equal(1))
+
 			cmd := GetLastCommand()
 			Expect(cmd.String()).To(ContainSubstring("docker ps --quiet --filter name=test"))
 		}
 
 		var checkStopCmd = func() {
+			Expect(len(RanCmds)).To(Equal(2))
+
 			cmd := GetLastCommand()
 			Expect(cmd.String()).To(ContainSubstring("docker ps --all --quiet --filter name=test"))
 			cmd = GetLastCommand()
@@ -67,6 +73,8 @@ var _ = Describe("Runtime", func() {
 		}
 
 		var checkStopCmdWhenMissing = func() {
+			Expect(len(RanCmds)).To(Equal(1))
+
 			cmd := GetLastCommand()
 			Expect(cmd.String()).To(ContainSubstring("docker ps --all --quiet --filter name=test"))
 		}
