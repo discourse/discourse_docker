@@ -195,6 +195,7 @@ type DestroyCmd struct {
 
 func (r *DestroyCmd) Run(cli *Cli, ctx *context.Context) error {
 	exists, _ := docker.ContainerExists(r.Config)
+
 	if !exists {
 		fmt.Fprintln(utils.Out, r.Config+" was not found")
 		return nil
@@ -202,14 +203,18 @@ func (r *DestroyCmd) Run(cli *Cli, ctx *context.Context) error {
 
 	cmd := exec.CommandContext(*ctx, utils.DockerPath, "stop", "--time", "600", r.Config)
 	fmt.Fprintln(utils.Out, cmd)
+
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
+
 	cmd = exec.CommandContext(*ctx, utils.DockerPath, "rm", r.Config)
 	fmt.Fprintln(utils.Out, cmd)
+
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -222,9 +227,11 @@ func (r *EnterCmd) Run(cli *Cli, ctx *context.Context) error {
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -235,9 +242,11 @@ type LogsCmd struct {
 func (r *LogsCmd) Run(cli *Cli, ctx *context.Context) error {
 	cmd := exec.CommandContext(*ctx, utils.DockerPath, "logs", r.Config)
 	output, err := utils.CmdRunner(cmd).Output()
+
 	if err != nil {
 		return err
 	}
+
 	fmt.Fprintln(utils.Out, string(output[:]))
 	return nil
 }
@@ -333,14 +342,19 @@ type CleanupCmd struct{}
 
 func (r *CleanupCmd) Run(cli *Cli, ctx *context.Context) error {
 	cmd := exec.CommandContext(*ctx, utils.DockerPath, "container", "prune", "--filter", "until=1h")
+
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
+
 	cmd = exec.CommandContext(*ctx, utils.DockerPath, "image", "prune", "--all", "--filter", "until=1h")
+
 	if err := utils.CmdRunner(cmd).Run(); err != nil {
 		return err
 	}
+
 	_, err := os.Stat("/var/discourse/shared/standalone/postgres_data_old")
+
 	if !os.IsNotExist(err) {
 		fmt.Fprintln(utils.Out, "Old PostgreSQL backup data cluster detected")
 		fmt.Fprintln(utils.Out, "Would you like to remove it? (y/N)")
