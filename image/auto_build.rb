@@ -37,13 +37,13 @@ images = {
   discourse_dev_amd64: {
     name: "discourse_dev",
     tag: "discourse/discourse_dev:build_amd64",
-    extra_args: "--build-arg=\"from_tag=build_slim_amd64\""
+    extra_args: "--build-arg=\"from_tag=build_slim_amd64\"",
   },
   discourse_dev_arm64: {
     name: "discourse_dev",
     tag: "discourse/discourse_dev:build_arm64",
-    extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_slim_arm64\""
-  }
+    extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_slim_arm64\"",
+  },
 }
 
 def run(command)

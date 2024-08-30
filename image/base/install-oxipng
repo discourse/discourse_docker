@@ -2,23 +2,24 @@
 set -e
 
 # version check: https://github.com/shssoichiro/oxipng/releases
-OXIPNG_VERSION="8.0.0"
-OXIPNG_HASH="ef96d6340e70900de0a38ace8f5f20878f6c256b18b0c59cd87f2b515437b87b"
-OXIPNG_ARCHIVE="v${OXIPNG_VERSION}.tar.gz"
-OXIPNG_DIR="oxipng-${OXIPNG_VERSION}"
+OXIPNG_VERSION="9.1.2"
+dpkgArch="$(dpkg --print-architecture)"
+
+case "${dpkgArch##*-}" in
+    amd64) OXIPNG_FILE="oxipng-${OXIPNG_VERSION}-x86_64-unknown-linux-musl.tar.gz"; OXIPNG_HASH='211d53f3781be4a71566fbaad6611a3da018ac9b22d500651b091c2b42ebe318' ;;
+    arm64) OXIPNG_FILE="oxipng-${OXIPNG_VERSION}-aarch64-unknown-linux-musl.tar.gz"; OXIPNG_HASH='818d47d7195e1e0c4d58a9f3b6fd84aa3cd21770c60c876e73e2e6a17ca69b52' ;;
+    *) echo >&2 "unsupported architecture: ${dpkgArch}"; exit 1 ;;
+esac
 
 # Install other deps
-apt-get -y install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
+apt -y -q install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
 
-cd /tmp
-wget -q https://github.com/shssoichiro/oxipng/archive/refs/tags/${OXIPNG_ARCHIVE}
-sha256sum ${OXIPNG_ARCHIVE}
-echo "${OXIPNG_HASH} ${OXIPNG_ARCHIVE}" | sha256sum -c
+mkdir /oxipng-install
+cd /oxipng-install
 
-tar -zxf ${OXIPNG_ARCHIVE}
-cd ${OXIPNG_DIR}
-
-CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse /usr/local/cargo/bin/cargo build --release
-cp target/release/oxipng /usr/local/bin
-
-cd / && rm -fr /tmp/${OXIPNG_DIR} && rm -f /tmp/${OXIPNG_ARCHIVE}
+wget -q https://github.com/shssoichiro/oxipng/releases/download/v${OXIPNG_VERSION}/${OXIPNG_FILE}
+sha256sum ${OXIPNG_FILE}
+echo "${OXIPNG_HASH} ${OXIPNG_FILE}" | sha256sum -c
+tar --strip-components=1 -xzf $OXIPNG_FILE
+cp -v ./oxipng /usr/local/bin
+cd / && rm -fr /oxipng-install
