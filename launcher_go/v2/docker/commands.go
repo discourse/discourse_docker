@@ -293,12 +293,15 @@ func (r *DockerPupsRunner) Run() error {
 func ContainerExists(container string) (bool, error) {
 	cmd := exec.Command(utils.DockerPath, "ps", "--all", "--quiet", "--filter", "name="+container)
 	result, err := utils.CmdRunner(cmd).Output()
+
 	if err != nil {
 		return false, err
 	}
+
 	if len(result) > 0 {
 		return true, nil
 	}
+
 	return false, nil
 }
 
