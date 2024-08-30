@@ -12,4 +12,5 @@ RUN cd /var/www/discourse &&\
     sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
     sudo -u discourse yarn install --frozen-lockfile &&\
     sudo -u discourse yarn cache clean &&\
+    find /var/www/discourse/vendor/bundle -name cache -not -path '*/gems/*' -type d -exec rm -rf {} + &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
