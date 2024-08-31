@@ -50,7 +50,8 @@ run:
       chmod: "+x"
       contents: |
         #!/bin/bash
-        locale-gen $LANG && update-locale
+        sed "s/^# $LANG/$LANG/" /etc/locale.gen
+        locale-gen && update-locale
         mkdir -p /shared/postgres_run
         chown postgres:postgres /shared/postgres_run
         chmod 775 /shared/postgres_run
