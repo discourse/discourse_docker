@@ -184,7 +184,12 @@ run:
           if [ "$version" != "tests-passed" ]; then
             rm -rf app/assets/javascripts/node_modules
           fi
-        - su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
+        - |-
+          if [ -f yarn.lock ]; then
+            su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
+          else
+            su discourse -c 'pnpm install --frozen-lockfile'
+          fi
 
   - exec:
       cd: $home
