@@ -64,6 +64,7 @@ type DockerConfigureCmd struct {
 
 func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 	config, err := config.LoadConfig(cli.ConfDir, r.Config, true, cli.TemplatesDir)
+
 	if err != nil {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}

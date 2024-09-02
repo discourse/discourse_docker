@@ -20,6 +20,16 @@ type Cli struct {
 	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets. Saves resulting container."`
 	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks for a site. Running container is temporary and is not saved."`
 	BootstrapCmd DockerBootstrapCmd `cmd:"" name:"bootstrap" help:"Builds, migrates, and configures an image. Resulting image is a fully built and configured Discourse image."`
+
+	DestroyCmd DestroyCmd `cmd:"" alias:"rm" name:"destroy" help:"Shutdown and destroy container."`
+	LogsCmd    LogsCmd    `cmd:"" name:"logs" help:"Print logs for container."`
+	CleanupCmd CleanupCmd `cmd:"" name:"cleanup" help:"Cleanup unused containers."`
+	EnterCmd   EnterCmd   `cmd:"" name:"enter" help:"Connects to a shell running in the container."`
+	RunCmd     RunCmd     `cmd:"" name:"run" help:"Runs the specified command in context of a docker container."`
+	StartCmd   StartCmd   `cmd:"" name:"start" help:"Starts container."`
+	StopCmd    StopCmd    `cmd:"" name:"stop" help:"Stops container."`
+	RestartCmd RestartCmd `cmd:"" name:"restart" help:"Stops then starts container."`
+	RebuildCmd RebuildCmd `cmd:"" name:"rebuild" help:"Builds new image, then destroys old container, and starts new container."`
 }
 
 func main() {
