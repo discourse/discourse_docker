@@ -2,17 +2,12 @@
 # VERSION:  release
 
 ARG DEBIAN_RELEASE=bookworm
-FROM debian:${DEBIAN_RELEASE}-slim
+FROM discourse/ruby:3.3.4-${DEBIAN_RELEASE}-slim
 
 ARG DEBIAN_RELEASE
-ARG RUBY_VERSION=3.3.4
 ENV PG_MAJOR=13 \
     RUBY_ALLOCATOR=/usr/lib/libjemalloc.so \
-    RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH \
     LEFTHOOK=0 \
-    RUBY_VERSION=${RUBY_VERSION} \
     DEBIAN_RELEASE=${DEBIAN_RELEASE}
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
@@ -92,10 +87,8 @@ RUN gpg --import /tmp/nginx_public_keys.key &&\
 ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
 
-ADD install-rust /tmp/install-rust
-ADD install-ruby /tmp/install-ruby
 ADD install-oxipng /tmp/install-oxipng
-RUN /tmp/install-rust && /tmp/install-ruby $RUBY_VERSION && /tmp/install-oxipng && rustup self uninstall -y
+RUN /tmp/install-oxipng
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     gem update --system
@@ -119,7 +112,6 @@ RUN rm -fr /usr/share/man &&\
     rm -fr /usr/share/vim/vim74/tutor &&\
     rm -fr /usr/local/share/doc &&\
     rm -fr /usr/local/share/ri &&\
-    rm -fr /usr/local/share/ruby-build &&\
     rm -fr /var/lib/apt/lists/* &&\
     rm -fr /root/.gem &&\
     rm -fr /root/.npm &&\
