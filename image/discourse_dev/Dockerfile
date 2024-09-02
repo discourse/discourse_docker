@@ -70,6 +70,6 @@ RUN --mount=type=bind,src=/repo,from=repo-fetcher,target=/tmp/discourse-clone,re
 # Warm global yarn cache
 RUN --mount=type=bind,src=/repo,from=repo-fetcher,target=/tmp/discourse-clone,readwrite \
     cd /tmp/discourse-clone \
-    && (test -f yarn.lock && yarn install || pnpm install)
+    && (if [ -f yarn.lock ]; then; yarn install; else; pnpm install; fi)
 
 USER root
