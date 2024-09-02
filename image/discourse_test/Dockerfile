@@ -30,7 +30,7 @@ FROM with_browsers AS release
 
 RUN cd /var/www/discourse &&\
     sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
-    sudo -E -u discourse -H $(test -f yarn.lock && echo yarn || echo pnpm) install
+    sudo -E -u discourse -H /bin/bash -c 'test -f yarn.lock && (yarn install && yarn cache clean) || pnpm install'
 
 RUN cd /var/www/discourse && sudo -E -u discourse -H bundle exec rake plugin:install_all_official &&\
     LOAD_PLUGINS=1 sudo -E -u discourse -H bundle exec rake plugin:install_all_gems &&\
