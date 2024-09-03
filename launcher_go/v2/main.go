@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/alecthomas/kong"
 	"github.com/discourse/discourse_docker/launcher_go/v2/utils"
+	"github.com/posener/complete"
+	"github.com/willabides/kongplete"
 	"golang.org/x/sys/unix"
 	"os"
 	"os/exec"
@@ -30,13 +32,25 @@ type Cli struct {
 	StopCmd    StopCmd    `cmd:"" name:"stop" help:"Stops container."`
 	RestartCmd RestartCmd `cmd:"" name:"restart" help:"Stops then starts container."`
 	RebuildCmd RebuildCmd `cmd:"" name:"rebuild" help:"Builds new image, then destroys old container, and starts new container."`
+
+	InstallCompletions kongplete.InstallCompletions `cmd:"" aliases:"sh" help:"Print shell autocompletions. Add output to dotfiles, or 'source <(./launcher2 sh)'."`
 }
 
 func main() {
 	cli := Cli{}
 	runCtx, cancel := context.WithCancel(context.Background())
 
+	// pre parse to get config dir for prediction of conf dir
+	confFiles := utils.FindConfigNames()
+
 	parser := kong.Must(&cli, kong.UsageOnError(), kong.Bind(&runCtx), kong.Vars{"version": utils.Version})
+
+	// Run kongplete.Complete to handle completion requests
+	kongplete.Complete(parser,
+		kongplete.WithPredictor("config", complete.PredictSet(confFiles...)),
+		kongplete.WithPredictor("file", complete.PredictFiles("*")),
+		kongplete.WithPredictor("dir", complete.PredictDirs("*")),
+	)
 
 	ctx, err := parser.Parse(os.Args[1:])
 	parser.FatalIfErrorf(err)
