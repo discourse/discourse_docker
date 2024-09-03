@@ -173,6 +173,45 @@ var _ = Describe("Build", func() {
 			checkMigrateCmd(RanCmds[0])
 		})
 
+		Context("With a custom namespace", func() {
+			BeforeEach(func() {
+				cli.Namespace = "testnamespace"
+			})
+
+			It("Should run docker build with correct namespace and custom flags", func() {
+				runner := ddocker.DockerBuildCmd{Config: "test", Tag: "testtag"}
+				runner.Run(cli, &ctx)
+				Expect(len(RanCmds)).To(Equal(1))
+				checkBuildCmd(RanCmds[0])
+				Expect(RanCmds[0].String()).To(ContainSubstring("testnamespace/test:testtag"))
+			})
+
+			It("Should run docker configure with correct namespace and tags", func() {
+				runner := ddocker.DockerConfigureCmd{Config: "test", SourceTag: "build", TargetTag: "configure"}
+				runner.Run(cli, &ctx)
+				Expect(len(RanCmds)).To(Equal(3))
+
+				Expect(RanCmds[0].String()).To(MatchRegexp(
+					"--name discourse-build-test " +
+						"testnamespace/test:build /bin/bash -c /usr/local/bin/pups --stdin --tags=db,precompile",
+				))
+				Expect(RanCmds[1].String()).To(MatchRegexp(
+					"docker commit " +
+						`--change LABEL org\.opencontainers\.image\.created="[\d\-T:Z]+" ` +
+						`--change CMD \["/sbin/boot"\] ` +
+						"discourse-build-test testnamespace/test:configure",
+				))
+				checkConfigureClean(RanCmds[2])
+			})
+
+			It("Should run docker migrate with correct namespace", func() {
+				runner := ddocker.DockerMigrateCmd{Config: "test"}
+				runner.Run(cli, &ctx)
+				Expect(len(RanCmds)).To(Equal(1))
+				Expect(RanCmds[0].String()).To(ContainSubstring("testnamespace/test "))
+			})
+		})
+
 		It("Should allow skip post deployment migrations", func() {
 			runner := ddocker.DockerMigrateCmd{Config: "test", SkipPostDeploymentMigrations: true}
 			runner.Run(cli, &ctx)

@@ -19,11 +19,12 @@ import (
 )
 
 type DockerBuilder struct {
-	Config   *config.Config
-	Ctx      *context.Context
-	Stdin    io.Reader
-	Dir      string
-	ImageTag string
+	Config    *config.Config
+	Ctx       *context.Context
+	Stdin     io.Reader
+	Dir       string
+	Namespace string
+	ImageTag  string
 }
 
 func (r *DockerBuilder) Run() error {
@@ -46,7 +47,7 @@ func (r *DockerBuilder) Run() error {
 	cmd.Args = append(cmd.Args, "--pull")
 	cmd.Args = append(cmd.Args, "--force-rm")
 	cmd.Args = append(cmd.Args, "-t")
-	cmd.Args = append(cmd.Args, utils.BaseImageName+r.Config.Name+":"+r.ImageTag)
+	cmd.Args = append(cmd.Args, r.Namespace+"/"+r.Config.Name+":"+r.ImageTag)
 	cmd.Args = append(cmd.Args, "--shm-size=512m")
 	cmd.Args = append(cmd.Args, "-f")
 	cmd.Args = append(cmd.Args, "-")
@@ -219,6 +220,7 @@ func (r *DockerRunner) Run() error {
 type DockerPupsRunner struct {
 	Config         *config.Config
 	PupsArgs       string
+	FromImageName  string
 	SavedImageName string
 	ExtraEnv       []string
 	Ctx            *context.Context
@@ -254,6 +256,7 @@ func (r *DockerPupsRunner) Run() error {
 		Ctx:         r.Ctx,
 		ExtraEnv:    r.ExtraEnv,
 		Rm:          rm,
+		CustomImage: r.FromImageName,
 		ContainerId: r.ContainerId,
 		Cmd:         commands,
 		Stdin:       strings.NewReader(r.Config.Yaml()),
