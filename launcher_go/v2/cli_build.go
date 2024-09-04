@@ -40,13 +40,18 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 		return err
 	}
 
+	namespace := cli.Namespace
+	if namespace == "" {
+		namespace = utils.DefaultNamespace
+	}
 	pupsArgs := "--skip-tags=precompile,migrate,db"
 	builder := docker.DockerBuilder{
-		Config:   config,
-		Ctx:      ctx,
-		Stdin:    strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv)),
-		Dir:      dir,
-		ImageTag: r.Tag,
+		Config:    config,
+		Ctx:       ctx,
+		Stdin:     strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv)),
+		Dir:       dir,
+		Namespace: namespace,
+		ImageTag:  r.Tag,
 	}
 	if err := builder.Run(); err != nil {
 		return err
@@ -58,8 +63,9 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 }
 
 type DockerConfigureCmd struct {
-	Tag    string `default:"latest" help:"Resulting image tag."`
-	Config string `arg:"" name:"config" help:"config" predictor:"config"`
+	SourceTag string `help:"Source image tag to build from."`
+	TargetTag string `help:"Target image tag to save as."`
+	Config    string `arg:"" name:"config" help:"config" predictor:"config"`
 }
 
 func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
@@ -78,11 +84,24 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 	}
 
 	containerId := "discourse-build-" + uuidString
+	namespace := cli.Namespace
+	if namespace == "" {
+		namespace = utils.DefaultNamespace
+	}
+	sourceTag := ""
+	if len(r.SourceTag) > 0 {
+		sourceTag = ":" + r.SourceTag
+	}
+	targetTag := ""
+	if len(r.TargetTag) > 0 {
+		targetTag = ":" + r.TargetTag
+	}
 
 	pups := docker.DockerPupsRunner{
 		Config:         config,
 		PupsArgs:       "--tags=db,precompile",
-		SavedImageName: utils.BaseImageName + r.Config + ":" + r.Tag,
+		FromImageName:  namespace + "/" + r.Config + sourceTag,
+		SavedImageName: namespace + "/" + r.Config + targetTag,
 		ExtraEnv:       []string{"SKIP_EMBER_CLI_COMPILE=1"},
 		Ctx:            ctx,
 		ContainerId:    containerId,
@@ -93,6 +112,7 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 
 type DockerMigrateCmd struct {
 	Config                       string `arg:"" name:"config" help:"config" predictor:"config"`
+	Tag                          string `default:"latest" help:"Image tag to migrate."`
 	SkipPostDeploymentMigrations bool   `env:"SKIP_POST_DEPLOYMENT_MIGRATIONS" help:"Skip post-deployment migrations. Runs safe migrations only. Defers breaking-change migrations. Make sure you run post-deployment migrations after a full deploy is complete if you use this option."`
 }
 
@@ -106,12 +126,22 @@ func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
 	if r.SkipPostDeploymentMigrations {
 		env = append(env, "SKIP_POST_DEPLOYMENT_MIGRATIONS=1")
 	}
+
+	namespace := cli.Namespace
+	if namespace == "" {
+		namespace = utils.DefaultNamespace
+	}
+	tag := ""
+	if len(r.Tag) > 0 {
+		tag = ":" + r.Tag
+	}
 	pups := docker.DockerPupsRunner{
-		Config:      config,
-		PupsArgs:    "--tags=db,migrate",
-		ExtraEnv:    env,
-		Ctx:         ctx,
-		ContainerId: containerId,
+		Config:        config,
+		PupsArgs:      "--tags=db,migrate",
+		FromImageName: namespace + "/" + r.Config + tag,
+		ExtraEnv:      env,
+		Ctx:           ctx,
+		ContainerId:   containerId,
 	}
 	return pups.Run()
 }

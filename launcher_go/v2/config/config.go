@@ -15,7 +15,7 @@ import (
 )
 
 const defaultBootCommand = "/sbin/boot"
-const defaultBaseImage = "discourse/base:2.0.20231121-0024"
+const defaultBaseImage = "discourse/base:2.0.20240825-0027"
 
 type Config struct {
 	Name            string `yaml:-`
@@ -217,7 +217,7 @@ func (config *Config) RunImage() string {
 	if len(config.Run_Image) > 0 {
 		return config.Run_Image
 	}
-	return utils.BaseImageName + config.Name
+	return "local_discourse/" + config.Name
 }
 
 func (config *Config) DockerHostname(defaultHostname string) string {

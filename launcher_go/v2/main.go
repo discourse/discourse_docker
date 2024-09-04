@@ -18,6 +18,7 @@ type Cli struct {
 	ConfDir      string             `default:"./containers" hidden:"" help:"Discourse pups config directory." predictor:"dir"`
 	TemplatesDir string             `default:"." hidden:"" help:"Home project directory containing a templates/ directory which in turn contains pups yaml templates." predictor:"dir"`
 	BuildDir     string             `default:"./tmp" hidden:"" help:"Temporary build folder for building images." predictor:"dir"`
+	Namespace    string             `default:"local_discourse" env:"DISCOURSE_NAMESPACE" help:"image namespace."`
 	BuildCmd     DockerBuildCmd     `cmd:"" name:"build" help:"Build a base image. This command does not need a running database. Saves resulting container."`
 	ConfigureCmd DockerConfigureCmd `cmd:"" name:"configure" help:"Configure and save an image with all dependencies and environment baked in. Updates themes and precompiles all assets. Saves resulting container."`
 	MigrateCmd   DockerMigrateCmd   `cmd:"" name:"migrate" help:"Run migration tasks for a site. Running container is temporary and is not saved."`
