@@ -83,8 +83,8 @@ fi
 cd "$(dirname "$0")"
 
 pups_version='v1.0.3'
-docker_min_version='17.03.1'
-docker_rec_version='17.06.2'
+docker_min_version='24.0.7'
+docker_rec_version='24.0.7'
 git_min_version='1.8.0'
 git_rec_version='1.8.0'
 kernel_min_version='4.4.0'
