@@ -30,7 +30,7 @@ make install
 mv /usr/share/nginx/sbin/nginx /usr/sbin
 
 cd /
-rm -fr /tmp/nginx
+rm -fr /tmp/nginx-$VERSION
 rm -f /tmp/nginx-$VERSION.tar.gz
 rm -f /tmp/nginx-$VERSION.tar.gz.asc
 rm -fr /tmp/libbrotli
