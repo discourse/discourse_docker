@@ -189,7 +189,7 @@ run:
           if [ -f yarn.lock ]; then
             su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
           else
-            su discourse -c 'pnpm install --frozen-lockfile'
+            su discourse -c 'CI=1 pnpm install --frozen-lockfile'
           fi
 
   - exec:
