@@ -4,45 +4,86 @@ require "pty"
 require "optparse"
 
 images = {
-  base_slim_amd64: {
+  base_deps_amd64: {
     name: "base",
-    tag: "discourse/base:build_slim_amd64",
-    extra_args: "-f slim.Dockerfile",
+    tag: "discourse/base:build_deps_amd64",
+    extra_args: "--target discourse_dependencies",
   },
-  base_slim_arm64: {
+  base_deps_arm64: {
     name: "base",
-    tag: "discourse/base:build_slim_arm64",
-    extra_args: "-f slim.Dockerfile --platform linux/arm64",
+    tag: "discourse/base:build_deps_arm64",
+    extra_args: "--platform linux/arm64 --target discourse_dependencies",
   },
-  base_amd64: {
+  base_slim_main_amd64: {
     name: "base",
-    tag: "discourse/base:build_amd64",
-    extra_args: "-f release.Dockerfile --build-arg=\"tag=build_slim_amd64\"",
+    tag: "discourse/base:build_slim_main_amd64",
+    extra_args: "--target discourse_slim",
+    use_cache: true,
   },
-  base_arm64: {
+  base_slim_stable_amd64: {
     name: "base",
-    tag: "discourse/base:build_arm64",
-    extra_args: "-f release.Dockerfile --platform linux/arm64 --build-arg=\"tag=build_slim_arm64\"",
+    tag: "discourse/base:build_slim_main_amd64",
+    extra_args: "--target discourse_slim --build-arg=\"DISCOURSE_BRANCH=stable\"",
+    use_cache: true,
+  },
+  base_slim_main_arm64: {
+    name: "base",
+    tag: "discourse/base:build_slim_main_arm64",
+    extra_args: "--platform linux/arm64 --target discourse_slim",
+    use_cache: true,
+  },
+  base_slim_stable_arm64: {
+    name: "base",
+    tag: "discourse/base:build_slim_stable_arm64",
+    extra_args:
+      "--platform linux/arm64 --target discourse_slim --build-arg=\"DISCOURSE_BRANCH=stable\"",
+    use_cache: true,
+  },
+  base_release_main_amd64: {
+    name: "base",
+    tag: "discourse/base:build_release_main_amd64",
+    extra_args: "--build-arg=\"DISCOURSE_BRANCH=main\" --target discourse_release",
+    use_cache: true,
+  },
+  base_release_main_arm64: {
+    name: "base",
+    tag: "discourse/base:build_release_main_arm64",
+    extra_args:
+      "--platform linux/arm64 --build-arg=\"DISCOURSE_BRANCH=main\" --target discourse_release",
+    use_cache: true,
+  },
+  base_release_stable_amd64: {
+    name: "base",
+    tag: "discourse/base:build_release_stable_amd64",
+    extra_args: "--build-arg=\"DISCOURSE_BRANCH=stable\" --target discourse_release",
+    use_cache: true,
+  },
+  base_release_stable_arm64: {
+    name: "base",
+    tag: "discourse/base:build_release_stable_arm64",
+    extra_args:
+      "--platform linux/arm64 --build-arg=\"DISCOURSE_BRANCH=stable\" --target discourse_release",
+    use_cache: true,
   },
   discourse_test_build_amd64: {
     name: "discourse_test",
     tag: "discourse/discourse_test:build_amd64",
-    extra_args: "--build-arg=\"from_tag=build_amd64\"",
+    extra_args: "--build-arg=\"from_tag=build_release_main_amd64\"",
   },
   discourse_test_build_arm64: {
     name: "discourse_test",
     tag: "discourse/discourse_test:build_arm64",
-    extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_arm64\"",
+    extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_release_main_arm64\"",
   },
   discourse_dev_amd64: {
     name: "discourse_dev",
     tag: "discourse/discourse_dev:build_amd64",
-    extra_args: "--build-arg=\"from_tag=build_slim_amd64\"",
+    extra_args: "--build-arg=\"from_tag=build_slim_main_amd64\"",
   },
   discourse_dev_arm64: {
     name: "discourse_dev",
     tag: "discourse/discourse_dev:build_arm64",
-    extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_slim_arm64\"",
+    extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_slim_main_arm64\"",
   },
 }
 
@@ -68,8 +109,9 @@ end
 def build(image, cli_args)
   lines =
     run(
-      "cd #{image[:name]} && docker buildx build . --load --no-cache --tag #{image[:tag]} #{image[:extra_args] ? image[:extra_args] : ""} #{cli_args}",
+      "cd #{image[:name]} && docker buildx build . --load #{image[:use_cache] == true ? "" : "--no-cache"} --tag #{image[:tag]} #{image[:extra_args] ? image[:extra_args] : ""} #{cli_args}",
     )
+
   if lines[-1] =~ /successfully built/
     raise "Error building the image for #{image[:name]}: #{lines[-1]}"
   end
