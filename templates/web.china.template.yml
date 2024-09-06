@@ -12,8 +12,7 @@ hooks:
   before_yarn:
     - exec:
         cmd:
-          - su discourse -c 'yarn config set registry https://registry.npmmirror.com --global'
-          - su discourse -c 'cd $home && sed -i "s#https://registry.yarnpkg.com#https://registry.npmmirror.com#g" yarn.lock'
+          - su discourse -c 'pnpm config set registry https://registry.npmmirror.com --global'
 
   before_bundle_exec:
     - exec:
