@@ -15,7 +15,6 @@ import (
 )
 
 const defaultBootCommand = "/sbin/boot"
-const defaultBaseImage = "discourse/base:2.0.20240825-0027"
 
 type Config struct {
 	Name            string `yaml:-`
@@ -69,7 +68,7 @@ func LoadConfig(dir string, configName string, includeTemplates bool, templatesD
 	config := &Config{
 		Name:         configName,
 		Boot_Command: defaultBootCommand,
-		Base_Image:   defaultBaseImage,
+		Base_Image:   utils.DefaultBaseImage,
 	}
 
 	matched, _ := regexp.MatchString("[[:upper:]/ !@#$%^&*()+~`=]", configName)
