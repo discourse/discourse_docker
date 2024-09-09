@@ -2,7 +2,7 @@
 # VERSION:  release
 
 ARG DEBIAN_RELEASE=bookworm
-FROM discourse/ruby:3.3.4-${DEBIAN_RELEASE}-slim
+FROM discourse/ruby:3.3.4-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
 ARG DEBIAN_RELEASE
 ENV PG_MAJOR=13 \
@@ -127,7 +127,24 @@ RUN rm -f /etc/service
 COPY etc/  /etc
 COPY sbin/ /sbin
 
+FROM discourse_dependencies AS discourse_slim
+ARG DISCOURSE_BRANCH=main
+
 # Discourse specific bits
 RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
-    sudo -u discourse git clone --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse &&\
+    sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse &&\
     gem install bundler --conservative -v $(awk '/BUNDLED WITH/ { getline; gsub(/ /,""); print $0 }' /var/www/discourse/Gemfile.lock)
+
+FROM discourse_slim AS discourse_release
+ENV RAILS_ENV=production
+
+RUN cd /var/www/discourse &&\
+    sudo -u discourse bundle config --local deployment true &&\
+    sudo -u discourse bundle config --local path ./vendor/bundle &&\
+    sudo -u discourse bundle config --local without test development &&\
+    sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
+    find /var/www/discourse/vendor/bundle -name cache -not -path '*/gems/*' -type d -exec rm -rf {} + &&\
+    find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
+
+RUN cd /var/www/discourse &&\
+    sudo -u discourse /bin/bash -c 'if [ -f yarn.lock ]; then yarn install --frozen-lockfile && yarn cache clean; else pnpm install --frozen-lockfile; fi'

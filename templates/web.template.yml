@@ -12,10 +12,8 @@ env:
   DISCOURSE_DB_HOST:
   DISCOURSE_DB_PORT:
 
-
 params:
   version: tests-passed
-
   home: /var/www/discourse
   upload_size: 10m
   nginx_worker_connections: 4000
