@@ -14,7 +14,6 @@ env:
 
 params:
   version: tests-passed
-  clean_up_node_modules: true # This controls whether node_modules are removed before install JS dependencies when not on tests-passed branch.
   home: /var/www/discourse
   upload_size: 10m
   nginx_worker_connections: 4000
