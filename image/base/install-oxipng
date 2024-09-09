@@ -11,9 +11,6 @@ case "${dpkgArch##*-}" in
     *) echo >&2 "unsupported architecture: ${dpkgArch}"; exit 1 ;;
 esac
 
-# Install other deps
-apt -y -q install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
-
 mkdir /oxipng-install
 cd /oxipng-install
 

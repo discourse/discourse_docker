@@ -11,9 +11,6 @@ gpg --verify nginx-$VERSION.tar.gz.asc nginx-$VERSION.tar.gz
 tar zxf nginx-$VERSION.tar.gz
 cd nginx-$VERSION
 
-# nginx-common for boilerplate files etc.
-apt install -y nginx-common
-
 cd /tmp
 # this is the reason we are compiling by hand...
 git clone https://github.com/google/ngx_brotli.git
