@@ -117,7 +117,7 @@ jobs:
       - name: Push discourse/base:aarch64 image for backwards compatibility
         if: (github.ref == 'refs/heads/main') && (matrix.arch == 'arm64')
         run: |
-          docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-${{ matrix.arch }} discourse/base:aarch64
+          docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} discourse/base:aarch64
           docker push discourse/base:aarch64
 
   push_multiarch_manifests:
