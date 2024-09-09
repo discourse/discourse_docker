@@ -181,11 +181,11 @@ run:
       hook: yarn
       cmd:
         - |-
-          if [ "$version" != "tests-passed" ] && [ "$clean_up_node_modules" == true ]; then
-            rm -rf app/assets/javascripts/node_modules
-          fi
-        - |-
           if [ -f yarn.lock ]; then
+            if [ -d node_modules/.pnpm ]; then
+              echo "This version of Discourse uses yarn, but pnpm node_modules are preset. Cleaning up..."
+              find ./node_modules ./app/assets/javascripts/*/node_modules -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            fi
             su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
           else
             su discourse -c 'CI=1 pnpm install --frozen-lockfile'
