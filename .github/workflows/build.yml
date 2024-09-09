@@ -137,7 +137,7 @@ jobs:
             -a discourse/base:2.0.${{ env.TIMESTAMP }}-slim-arm64
 
           # Slim release
-          docker manifest create discourse/base:release-slim \
+          docker manifest create discourse/base:slim \
             -a discourse/base:2.0.${{ env.TIMESTAMP }}-slim-amd64 \
             -a discourse/base:2.0.${{ env.TIMESTAMP }}-slim-arm64
 
@@ -172,7 +172,7 @@ jobs:
             -a discourse/discourse_dev:${{ env.TIMESTAMP }}-arm64
 
           docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-slim
-          docker manifest push discourse/base:release-slim
+          docker manifest push discourse/base:slim
           docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}
           docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-stable
           docker manifest push discourse/base:release
@@ -193,13 +193,13 @@ jobs:
       - name: build discourse_test:slim
         run: |
           docker buildx build . --load \
-            --build-arg from_tag=release-slim \
+            --build-arg from_tag=slim \
             --target base \
             --tag discourse/discourse_test:slim
       - name: build discourse_test:slim-browsers
         run: |
           docker buildx build . --load \
-            --build-arg from_tag=release-slim \
+            --build-arg from_tag=slim \
             --target with_browsers \
             --tag discourse/discourse_test:slim-browsers
       - name: build discourse_test:release
