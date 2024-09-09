@@ -257,7 +257,8 @@ scale_ram_and_cpu() {
     avail_cores=`sysctl hw.ncpu | awk '/hw.ncpu:/ {print $2}'`
   else
     avail_gb=$(check_linux_memory)
-    avail_cores=`lscpu --parse=core | egrep -v ^# | sort -u | wc -l`
+    threads_per_core=$(lscpu | awk 'BEGIN {FS=":"} /Thread\(s\) per core/ {print $2}')
+    avail_cores=$((`lscpu | awk '/^CPU\(s\)/ {print $2}'`*${threads_per_core}))
   fi
   echo "Found ${avail_gb}GB of memory and $avail_cores physical CPU cores"
 
