@@ -135,6 +135,14 @@ run:
         - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
         - "rm /etc/nginx/sites-enabled/default"
         - "mkdir -p /var/nginx/cache"
+        - "mkdir -p /etc/nginx/conf.d/outlets/before-server"
+        - "mkdir -p /etc/nginx/conf.d/outlets/server"
+        - "mkdir -p /etc/nginx/conf.d/outlets/discourse"
+
+        # Stop building the container if the Nginx outlets are missing
+        - "grep -q 'outlets/before-server' /etc/nginx/conf.d/discourse.conf || ( >&2 echo 'The \"before-server\" Nginx outlet is missing. This version of discourse_docker is not compatible with the chosen Discourse version.' ; exit 1 )"
+        - "grep -q 'outlets/server' /etc/nginx/conf.d/discourse.conf || ( >&2 echo 'The \"server\" Nginx outlet is missing. This version of discourse_docker is not compatible with the chosen Discourse version.' ; exit 1 )"
+        - "grep -q 'outlets/discourse' /etc/nginx/conf.d/discourse.conf || ( >&2 echo 'The \"discourse\" Nginx outlet is missing. This version of discourse_docker is not compatible with the chosen Discourse version.' ; exit 1 )"
 
   - replace:
       filename: /etc/nginx/nginx.conf
@@ -142,26 +150,25 @@ run:
       to: daemon off;
 
   - replace:
-      filename: "/etc/nginx/conf.d/discourse.conf"
-      from: /upstream[^\}]+\}/m
-      to: "upstream discourse {
-        server 127.0.0.1:3000;
-      }"
-
-  - replace:
-      filename: "/etc/nginx/conf.d/discourse.conf"
-      from: /server_name.+$/
-      to: server_name _ ;
+      filename: "/etc/nginx/nginx.conf"
+      from: /worker_connections.+$/
+      to: worker_connections $nginx_worker_connections;
 
   - replace:
       filename: "/etc/nginx/conf.d/discourse.conf"
       from: /client_max_body_size.+$/
-      to: client_max_body_size $upload_size ;
+      to: client_max_body_size $upload_size;
 
-  - replace:
-      filename: "/etc/nginx/nginx.conf"
-      from: /worker_connections.+$/
-      to: worker_connections $nginx_worker_connections ;
+  - exec:
+      cmd:
+        # Move `listen 80` to an outlet
+        - sed -i 's#listen 80;##g' /etc/nginx/conf.d/discourse.conf
+        - |-
+          if [ -f "/proc/net/if_inet6" ]; then
+            echo "listen 80;\nlisten [::]:80;" > /etc/nginx/conf.d/outlets/server/http.conf
+          else
+            echo "listen 80;" > /etc/nginx/conf.d/outlets/server/http.conf
+          fi
 
   - exec:
       cmd: echo "done configuring web"
@@ -222,6 +229,7 @@ run:
       hook: assets_precompile
       cmd:
         - su discourse -c 'SKIP_EMBER_CLI_COMPILE=1 bundle exec rake themes:update assets:precompile'
+
   - replace:
       tag: precompile
       filename: /etc/service/unicorn/run
