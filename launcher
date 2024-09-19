@@ -693,7 +693,7 @@ run_bootstrap() {
   declare -i BOOTSTRAP_EXITCODE
   rm -f $cidbootstrap
 
-  echo "$input" | $docker_path run --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" --cidfile "$cidbootstrap" -i -a stdin -a stdout -a stderr $volumes $image \
+  echo "$input" | $docker_path run --shm-size=512m $user_args $links "${env[@]}" -e DOCKER_HOST_IP="$docker_ip" --cidfile "$cidbootstrap" -i -a stdin -a stdout -a stderr -v $PWD:/discourse_docker $volumes $image \
     /bin/bash -c "$pups_command"
   BOOTSTRAP_EXITCODE=$?
 
