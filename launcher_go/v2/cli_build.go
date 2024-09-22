@@ -36,7 +36,8 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 	if err := os.MkdirAll(dir, 0755); err != nil && !os.IsExist(err) {
 		return err
 	}
-	if err := config.WriteYamlConfig(dir); err != nil {
+	configFile := "config.yaml"
+	if err := config.WriteYamlConfig(dir, configFile); err != nil {
 		return err
 	}
 
@@ -48,7 +49,7 @@ func (r *DockerBuildCmd) Run(cli *Cli, ctx *context.Context) error {
 	builder := docker.DockerBuilder{
 		Config:    config,
 		Ctx:       ctx,
-		Stdin:     strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv)),
+		Stdin:     strings.NewReader(config.Dockerfile(pupsArgs, r.BakeEnv, configFile)),
 		Dir:       dir,
 		Namespace: namespace,
 		ImageTag:  r.Tag,

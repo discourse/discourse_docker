@@ -29,7 +29,7 @@ var _ = Describe("Config", func() {
 	})
 
 	It("can write raw yaml config", func() {
-		err := conf.WriteYamlConfig(testDir)
+		err := conf.WriteYamlConfig(testDir, "config.yaml")
 		Expect(err).To(BeNil())
 		out, err := os.ReadFile(testDir + "/config.yaml")
 		Expect(err).To(BeNil())
@@ -38,7 +38,7 @@ var _ = Describe("Config", func() {
 	})
 
 	It("can convert pups config to dockerfile format", func() {
-		dockerfile := conf.Dockerfile("", false)
+		dockerfile := conf.Dockerfile("", false, "config.yaml")
 		Expect(dockerfile).To(ContainSubstring("ARG DISCOURSE_DEVELOPER_EMAILS"))
 		Expect(dockerfile).To(ContainSubstring("RUN cat /temp-config.yaml"))
 		Expect(dockerfile).To(ContainSubstring("EXPOSE 80"))
