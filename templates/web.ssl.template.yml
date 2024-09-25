@@ -15,14 +15,16 @@ run:
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /listen 80;\s+gzip on;/m
      to: |
-       listen 443 ssl http2;
+       listen 443 ssl;
+       http2;
        SSL_TEMPLATE_SSL_BLOCK
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
      from: /listen 80;\s+listen \[::\]:80;\s+gzip on;/m
      to: |
-       listen 443 ssl http2;
-       listen [::]:443 ssl http2;
+       listen 443 ssl;
+       listen [::]:443 ssl;
+       http2;
        SSL_TEMPLATE_SSL_BLOCK
   - replace:
      hook: ssl
