@@ -56,6 +56,7 @@ run:
         # postgres
         cd $home
         chown -R discourse:www-data /shared/log/rails
+        # before precompile
         if [[ -z "$PRECOMPILE_ON_BOOT" ]]; then
           PRECOMPILE_ON_BOOT=1
         fi
@@ -224,7 +225,7 @@ run:
   - replace:
       tag: precompile
       filename: /etc/service/unicorn/run
-      from: PRECOMPILE_ON_BOOT=1
+      from: "# before precompile"
       to: "PRECOMPILE_ON_BOOT=0"
 
   - file:
