@@ -265,5 +265,5 @@ run:
       cmd:
         # give db a few secs to start up
         - "sleep 5"
-        - /usr/local/bin/create_db
+        - /usr/local/bin/create_db && rm /usr/local/bin/create_db
         - "echo postgres installed!"
