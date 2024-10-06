@@ -102,7 +102,7 @@ func (r *DockerConfigureCmd) Run(cli *Cli, ctx *context.Context) error {
 		PupsArgs:       "--tags=db,precompile",
 		FromImageName:  namespace + "/" + r.Config + sourceTag,
 		SavedImageName: namespace + "/" + r.Config + targetTag,
-		ExtraEnv:       []string{"SKIP_EMBER_CLI_COMPILE=1"},
+		ExtraEnv:       []string{},
 		Ctx:            ctx,
 		ContainerId:    containerId,
 	}
@@ -122,7 +122,7 @@ func (r *DockerMigrateCmd) Run(cli *Cli, ctx *context.Context) error {
 		return errors.New("YAML syntax error. Please check your containers/*.yml config files.")
 	}
 	containerId := "discourse-build-" + uuid.NewString()
-	env := []string{"SKIP_EMBER_CLI_COMPILE=1"}
+	env := []string{}
 	if r.SkipPostDeploymentMigrations {
 		env = append(env, "SKIP_POST_DEPLOYMENT_MIGRATIONS=1")
 	}
