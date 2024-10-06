@@ -234,13 +234,13 @@ run:
       tag: build
       hook: assets_precompile_build
       cmd:
-        - su discourse -c 'bundle exec rake assets:precompile:build'
+        - su discourse -c 'SKIP_DB_AND_REDIS=1 bundle exec rake assets:precompile'
   - exec:
       cd: $home
       tag: precompile
       hook: assets_precompile
       cmd:
-        - su discourse -c 'SKIP_EMBER_CLI_COMPILE=1 bundle exec rake themes:update assets:precompile'
+        - su discourse -c 'bundle exec rake themes:update maxminddb:refresh assets:precompile:css'
 
   - replace:
       tag: precompile
