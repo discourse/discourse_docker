@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+export LC_ALL=C  # lscpu output is localized.
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 cd $DIR
 
@@ -258,7 +260,7 @@ scale_ram_and_cpu() {
   else
     avail_gb=$(check_linux_memory)
     threads_per_core=$(lscpu | awk 'BEGIN {FS=":"} /Thread\(s\) per core/ {print $2}')
-    avail_cores=$((`lscpu | awk '/^CPU\(s\)/ {print $2}'`*${threads_per_core}))
+    avail_cores=$((`lscpu | awk '/^CPU\(s\):[[:blank:]]+[0-9]+[[:blank:]]*$/ {print $2; exit}'`*${threads_per_core}))
   fi
   echo "Found ${avail_gb}GB of memory and $avail_cores physical CPU cores"
 
