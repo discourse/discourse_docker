@@ -11,15 +11,13 @@ run:
           return 301 https://$$ENV_DISCOURSE_HOSTNAME$request_uri;
         }
 
-  - file:
-      path: "/etc/nginx/conf.d/outlets/server/http.conf"
-      contents: ""
+  - exec: rm /etc/nginx/conf.d/outlets/server/http.conf
 
   - file:
       hook: ssl
       path: "/etc/nginx/conf.d/outlets/server/https.conf"
       contents: |
-        listen 443 ssl;
+        listen 443 ssl http2;
 
         ssl_protocols TLSv1.2 TLSv1.3;
         ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
@@ -48,5 +46,5 @@ run:
         - |-
           if [ -f "/proc/net/if_inet6" ] ; then
             sed -i 's/listen 80;/listen 80;\nlisten [::]:80;/g' /etc/nginx/conf.d/outlets/before-server/redirect-http-to-https.conf
-            sed -i 's/listen 443 ssl;/listen 443 ssl;\nlisten [::]:443 ssl;/g' /etc/nginx/conf.d/outlets/server/https.conf
+            sed -i 's/listen 443 ssl http2;/listen 443 ssl http2;\nlisten [::]:443 ssl http2;/g' /etc/nginx/conf.d/outlets/server/https.conf
           fi
