@@ -1,0 +1,4 @@
+run:
+  - exec: |-
+      echo "Deprecation warning: IPv6 is enabled by default when possible"
+      echo "Remove templates/web.ipv6.template.yml from your containers/*.yml files"

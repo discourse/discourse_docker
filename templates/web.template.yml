@@ -133,7 +133,6 @@ run:
 
   - exec:
       cmd:
-        - "cp -r /discourse_docker/templates/files/nginx/* /etc/nginx/conf.d"
         - "rm /etc/nginx/sites-enabled/default"
         - "mkdir -p /var/nginx/cache"
 
