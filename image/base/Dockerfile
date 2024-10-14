@@ -33,8 +33,8 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y locales
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
-ADD locale.gen /etc/locale.gen
-RUN locale-gen
+RUN echo 'en_US.UTF-8 UTF-8' >> /etc/locale.gen; \
+    locale-gen
 
 RUN install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
