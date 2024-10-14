@@ -4,7 +4,7 @@
 # this file, you need to rerun locale-gen.
 
 
-C.UTF-8 UTF-8
+#C.UTF-8 UTF-8
 # aa_DJ ISO-8859-1
 # aa_DJ.UTF-8 UTF-8
 # aa_ER UTF-8
@@ -160,8 +160,8 @@ C.UTF-8 UTF-8
 # en_SC.UTF-8 UTF-8
 # en_SG ISO-8859-1
 # en_SG.UTF-8 UTF-8
-en_US ISO-8859-1
-en_US.ISO-8859-15 ISO-8859-15
+#en_US ISO-8859-1
+#en_US.ISO-8859-15 ISO-8859-15
 en_US.UTF-8 UTF-8
 # en_ZA ISO-8859-1
 # en_ZA.UTF-8 UTF-8
