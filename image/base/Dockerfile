@@ -23,13 +23,27 @@ RUN groupadd --gid 104 postgres &&\
 
 RUN echo 2.0.`date +%Y%m%d` > /VERSION
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
-RUN echo "debconf debconf/frontend select Teletype" | debconf-set-selections
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping
-RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt-get update || true"
-RUN apt-mark hold initscripts
-RUN apt-get -y upgrade
+RUN --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+  echo "debconf debconf/frontend select Teletype" | debconf-set-selections
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y locales
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  --mount=type=tmpfs,target=/usr/share/doc \
+  --mount=type=tmpfs,target=/usr/share/man \
+  --mount=type=tmpfs,target=/var/log \
+  apt-get update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping
+
+RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://proxy:3128\";}; };' > /etc/apt/apt.conf.d/40proxy && apt-get update || true"
+
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  --mount=type=tmpfs,target=/usr/share/doc \
+  --mount=type=tmpfs,target=/usr/share/man \
+  --mount=type=tmpfs,target=/var/log \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y locales
+
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
@@ -40,14 +54,35 @@ RUN install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${DEBIAN_RELEASE}-pgdg main" > /etc/apt/sources.list.d/pgdg.list
 
-RUN curl --silent --location https://deb.nodesource.com/setup_18.x | sudo bash -
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  --mount=type=tmpfs,target=/var/log \
+  --mount=type=tmpfs,target=/usr/share/doc \
+  --mount=type=tmpfs,target=/usr/share/man \
+  curl --silent --location https://deb.nodesource.com/setup_18.x | sudo bash -
 RUN curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
 RUN echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
-RUN apt-get -y update
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  apt-get -y update
+
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install autoconf build-essential ca-certificates rsync \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  --mount=type=tmpfs,target=/usr/share/doc \
+  --mount=type=tmpfs,target=/usr/share/man \
+  DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  --mount=type=tmpfs,target=/usr/share/doc \
+  --mount=type=tmpfs,target=/usr/share/man \
+  DEBIAN_FRONTEND=noninteractive apt-get -y install ca-certificates rsync \
+    cmake g++ pkg-config patch \
     libxslt-dev libcurl4-openssl-dev \
     libssl-dev libyaml-dev libtool \
     libpcre3 libpcre3-dev zlib1g zlib1g-dev \
@@ -63,7 +98,13 @@ RUN sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf
 RUN sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf
 RUN dpkg-divert --local --rename --add /sbin/initctl
 RUN sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"
-RUN cd / &&\
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  --mount=type=tmpfs,target=/usr/share/doc \
+  --mount=type=tmpfs,target=/usr/share/man \
+  --mount=type=tmpfs,target=/root/.npm \
+  cd / &&\
     DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat &&\
     mkdir -p /etc/runit/1.d &&\
     apt-get clean &&\
@@ -72,7 +113,12 @@ RUN cd / &&\
     npm install -g terser uglify-js pnpm
 
 ADD install-imagemagick /tmp/install-imagemagick
-RUN /tmp/install-imagemagick
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  --mount=type=tmpfs,target=/usr/share/doc \
+  --mount=type=tmpfs,target=/usr/share/man \
+  /tmp/install-imagemagick
 
 ADD install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
@@ -81,7 +127,10 @@ RUN /tmp/install-jemalloc
 ADD nginx_public_keys.key /tmp/nginx_public_keys.key
 ADD install-nginx /tmp/install-nginx
 
-RUN gpg --import /tmp/nginx_public_keys.key &&\
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    gpg --import /tmp/nginx_public_keys.key &&\
     rm /tmp/nginx_public_keys.key &&\
     /tmp/install-nginx
 
@@ -89,7 +138,10 @@ ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
 
 ADD install-oxipng /tmp/install-oxipng
-RUN /tmp/install-oxipng
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    /tmp/install-oxipng
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     gem update --system
@@ -107,19 +159,12 @@ RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
 # clean up for docker squash
 RUN rm -fr /usr/share/man &&\
     rm -fr /usr/share/doc &&\
-    rm -fr /usr/share/vim/vim74/doc &&\
-    rm -fr /usr/share/vim/vim74/lang &&\
-    rm -fr /usr/share/vim/vim74/spell/en* &&\
-    rm -fr /usr/share/vim/vim74/tutor &&\
     rm -fr /usr/local/share/doc &&\
     rm -fr /usr/local/share/ri &&\
     rm -fr /var/lib/apt/lists/* &&\
     rm -fr /root/.gem &&\
     rm -fr /root/.npm &&\
     rm -fr /tmp/*
-
-# this can probably be done, but I worry that people changing PG locales will have issues
-# cd /usr/share/locale && rm -fr `ls -d */ | grep -v en`
 
 # this is required for aarch64 which uses buildx
 # see https://github.com/docker/buildx/issues/150
