@@ -29,10 +29,12 @@ RUN sh -c "fping proxy && echo 'Acquire { Retries \"0\"; HTTP { Proxy \"http://p
 RUN apt-mark hold initscripts
 RUN apt-get -y upgrade
 
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y locales locales-all
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y locales
 ENV LC_ALL en_US.UTF-8
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
+RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
+    locale-gen
 
 RUN install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
@@ -66,7 +68,6 @@ RUN cd / &&\
     mkdir -p /etc/runit/1.d &&\
     apt-get clean &&\
     rm -f /etc/apt/apt.conf.d/40proxy &&\
-    locale-gen en_US &&\
     DEBIAN_FRONTEND=noninteractive apt-get install -y nodejs yarn &&\
     npm install -g terser uglify-js pnpm
 
