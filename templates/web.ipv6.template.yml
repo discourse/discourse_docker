@@ -1,8 +1,4 @@
 run:
-  - exec: echo "Enabling IPv6 listener"
-  - replace:
-      filename: "/etc/nginx/conf.d/discourse.conf"
-      from: listen 80;
-      to: |
-        listen 80;
-        listen [::]:80;
+  - exec: |-
+      echo "Deprecation warning: IPv6 is enabled by default when possible"
+      echo "Remove templates/web.ipv6.template.yml from your containers/*.yml files"
