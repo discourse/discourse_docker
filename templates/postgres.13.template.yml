@@ -17,7 +17,7 @@ hooks:
        to: sv start postgres || exit 1
 
 run:
-  - exec: sed "s/^# $LANG/$LANG/" /etc/locale.gen
+  - exec: sed -i "s/^# $LANG/$LANG/" /etc/locale.gen
   - exec: locale-gen && update-locale
   - exec: mkdir -p /shared/postgres_run
   - exec: chown postgres:postgres /shared/postgres_run
