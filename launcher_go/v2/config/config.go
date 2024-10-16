@@ -130,7 +130,10 @@ func (config *Config) Yaml() string {
 	return strings.Join(config.rawYaml, "_FILE_SEPERATOR_")
 }
 
-func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
+func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool, configFile string) string {
+	if configFile == "" {
+		configFile = "config.yaml"
+	}
 	builder := strings.Builder{}
 	builder.WriteString("ARG dockerfile_from_image=" + config.Base_Image + "\n")
 	builder.WriteString("FROM ${dockerfile_from_image}\n")
@@ -139,7 +142,7 @@ func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 		builder.WriteString(config.dockerfileEnvs() + "\n")
 	}
 	builder.WriteString(config.dockerfileExpose() + "\n")
-	builder.WriteString("COPY config.yaml /temp-config.yaml\n")
+	builder.WriteString("COPY " + configFile + " /temp-config.yaml\n")
 	builder.WriteString("RUN " +
 		"cat /temp-config.yaml | /usr/local/bin/pups " + pupsArgs + " --stdin " +
 		"&& rm /temp-config.yaml\n")
@@ -147,8 +150,11 @@ func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 	return builder.String()
 }
 
-func (config *Config) WriteYamlConfig(dir string) error {
-	file := strings.TrimRight(dir, "/") + "/config.yaml"
+func (config *Config) WriteYamlConfig(dir string, configFile string) error {
+	if configFile == "" {
+		configFile = "config.yaml"
+	}
+	file := strings.TrimRight(dir, "/") + "/" + configFile
 	if err := os.WriteFile(file, []byte(config.Yaml()), 0660); err != nil {
 		return errors.New("error writing config file " + file)
 	}
