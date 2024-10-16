@@ -16,6 +16,18 @@ import (
 
 const defaultBootCommand = "/sbin/boot"
 
+var defaultBakeEnv = []string{
+	"RAILS_ENV",
+	"UNICORN_WORKERS",
+	"UNICORN_SIDEKIQS",
+	"RUBY_GC_HEAP_GROWTH_MAX_SLOTS",
+	"RUBY_GC_HEAP_INIT_SLOTS",
+	"RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR",
+	"CREATE_DB_ON_BOOT",
+	"MIGRATE_ON_BOOT",
+	"PRECOMPILE_ON_BOOT",
+}
+
 type Config struct {
 	Name            string `yaml:-`
 	rawYaml         []string
@@ -137,6 +149,8 @@ func (config *Config) Dockerfile(pupsArgs string, bakeEnv bool) string {
 	builder.WriteString(config.dockerfileArgs() + "\n")
 	if bakeEnv {
 		builder.WriteString(config.dockerfileEnvs() + "\n")
+	} else {
+		builder.WriteString(config.dockerfileDefaultEnvs() + "\n")
 	}
 	builder.WriteString(config.dockerfileExpose() + "\n")
 	builder.WriteString("COPY config.yaml /temp-config.yaml\n")
@@ -185,6 +199,17 @@ func (config *Config) dockerfileEnvs() string {
 	builder := []string{}
 	for k, _ := range config.Env {
 		builder = append(builder, "ENV "+k+"=${"+k+"}")
+	}
+	slices.Sort(builder)
+	return strings.Join(builder, "\n")
+}
+
+func (config *Config) dockerfileDefaultEnvs() string {
+	builder := []string{}
+	for k, _ := range config.Env {
+		if slices.Contains(defaultBakeEnv, k) {
+			builder = append(builder, "ENV "+k+"=${"+k+"}")
+		}
 	}
 	slices.Sort(builder)
 	return strings.Join(builder, "\n")
