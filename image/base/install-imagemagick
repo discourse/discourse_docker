@@ -42,6 +42,8 @@ tar zxf $WDIR/ImageMagick.tar.gz -C $WDIR
 cd $IMDIR
 PKG_CONF_LIBDIR=$PREFIX/lib LDFLAGS=-L$PREFIX/lib CFLAGS='-O2 -I$PREFIX/include' ./configure \
           --prefix=$PREFIX \
+          --disable-shared \
+          --enable-delegate-build \
           --enable-static \
           --enable-bounds-checking \
           --enable-hdri \

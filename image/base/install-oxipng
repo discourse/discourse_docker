@@ -12,7 +12,11 @@ case "${dpkgArch##*-}" in
 esac
 
 # Install other deps
-apt -y -q install advancecomp jhead jpegoptim libjpeg-turbo-progs optipng
+apt -y -q install advancecomp jpegoptim libjpeg-turbo-progs
+
+git clone --depth 1 --branch "3.08" https://github.com/Matthias-Wandel/jhead.git /tmp/jhead
+cd /tmp/jhead && make && cp /tmp/jhead/jhead /usr/local/bin/jhead
+cd / && rm -rf /tmp/jhead
 
 mkdir /oxipng-install
 cd /oxipng-install

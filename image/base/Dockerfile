@@ -2,6 +2,24 @@
 # VERSION:  release
 
 ARG DEBIAN_RELEASE=bookworm
+FROM discourse/ruby:3.3.4-${DEBIAN_RELEASE}-slim AS builder
+ADD install-imagemagick /tmp/install-imagemagick
+# From https://nginx.org/en/pgp_keys.html
+ADD nginx_public_keys.key /tmp/nginx_public_keys.key
+ADD install-nginx /tmp/install-nginx
+RUN apt update && \
+DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
+    autoconf build-essential \
+    git \
+    cmake \
+    gnupg \
+    libpcre3-dev \
+    libbrotli-dev
+RUN /tmp/install-imagemagick
+RUN gpg --import /tmp/nginx_public_keys.key &&\
+    rm /tmp/nginx_public_keys.key &&\
+    /tmp/install-nginx
+
 FROM discourse/ruby:3.3.4-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
 ARG DEBIAN_RELEASE
@@ -38,8 +56,13 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libxml2-dev gawk parallel \
     libreadline-dev anacron wget \
     psmisc whois brotli libunwind-dev \
-    libtcmalloc-minimal4 cmake \
-    pngcrush pngquant ripgrep poppler-utils; \
+    libtcmalloc-minimal4 \
+    pngquant ripgrep poppler-utils \
+# imagemagick runtime dependencies
+    libheif1 libjbig0 libtiff6 libpng16-16 libfontconfig1 \
+    libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
+# nginx runtime dependencies
+    nginx-common; \
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less; \
@@ -60,7 +83,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
     libpq-dev postgresql-client \
-    postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
     nodejs yarn &&\
     mkdir -p /etc/runit/1.d
 
@@ -73,34 +95,34 @@ RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
 RUN --mount=type=tmpfs,target=/root/.npm \
     npm install -g terser uglify-js pnpm
 
-ADD install-imagemagick /tmp/install-imagemagick
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
-  --mount=type=cache,target=/var/lib/apt,sharing=locked \
-  /tmp/install-imagemagick
-
-ADD install-jemalloc /tmp/install-jemalloc
-RUN /tmp/install-jemalloc
-
-# From https://nginx.org/en/pgp_keys.html
-ADD nginx_public_keys.key /tmp/nginx_public_keys.key
-ADD install-nginx /tmp/install-nginx
-
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/cache/debconf,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    gpg --import /tmp/nginx_public_keys.key &&\
-    rm /tmp/nginx_public_keys.key &&\
-    /tmp/install-nginx
-
-ADD install-redis /tmp/install-redis
-RUN /tmp/install-redis
-
 ADD install-oxipng /tmp/install-oxipng
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/cache/debconf,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     /tmp/install-oxipng
+
+ADD install-jemalloc /tmp/install-jemalloc
+RUN /tmp/install-jemalloc
+
+# Copy binary and configuration files for magick
+COPY --from=builder /usr/local/bin/magick /usr/local/bin/magick
+COPY --from=builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
+# Create symlinks to imagemagick tools
+RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/compare &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/composite &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/conjure &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/convert &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/display &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/identify &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/import &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/magick-script &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/mogrify &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/montage &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/stream
+RUN test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
+
+COPY --from=builder /usr/sbin/nginx /usr/sbin/nginx
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     gem update --system
@@ -138,7 +160,7 @@ RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
     sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse &&\
     gem install bundler --conservative -v $(awk '/BUNDLED WITH/ { getline; gsub(/ /,""); print $0 }' /var/www/discourse/Gemfile.lock)
 
-FROM discourse_slim AS discourse_release
+FROM discourse_slim AS discourse_web
 ENV RAILS_ENV=production
 
 RUN cd /var/www/discourse &&\
@@ -151,3 +173,12 @@ RUN cd /var/www/discourse &&\
 
 RUN cd /var/www/discourse &&\
     sudo -u discourse /bin/bash -c 'if [ -f yarn.lock ]; then yarn install --frozen-lockfile && yarn cache clean; else pnpm install --frozen-lockfile; fi'
+
+FROM discourse_web AS discourse_release
+ADD install-redis /tmp/install-redis
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
+  --mount=type=cache,target=/var/lib/apt,sharing=locked \
+  --mount=type=tmpfs,target=/var/log \
+  apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector; \
+/tmp/install-redis
