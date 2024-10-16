@@ -36,7 +36,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     libssl-dev libyaml-dev libtool \
     libpcre3 libpcre3-dev zlib1g zlib1g-dev \
     libxml2-dev gawk parallel \
-    libpq-dev postgresql-client \
     libreadline-dev anacron wget \
     psmisc whois brotli libunwind-dev \
     libtcmalloc-minimal4 cmake \
@@ -61,6 +60,7 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     dpkg-divert --local --rename --add /sbin/initctl; \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
+    libpq-dev postgresql-client \
     postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
     nodejs yarn &&\
     mkdir -p /etc/runit/1.d
