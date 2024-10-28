@@ -100,7 +100,7 @@ hooks:
         cmd:
           - mkdir -p plugins
           - git clone https://github.com/discourse/docker_manager.git
-          - git clone https://gitee.com/opensourceway/discourse-easecheck.git
+          - git clone https://github.com/opensourceways/discourse-easecheck.git
           - git clone https://github.com/opensourceways/discourse-oauth2-basic.git
           - git clone https://github.com/opensourceways/discourse-formatting-toolbar.git
           - git clone https://github.com/opensourceways/discourse-translator.git
@@ -108,6 +108,7 @@ hooks:
           - git clone https://github.com/discourse/discourse-gamification.git
           - git clone https://github.com/discourse/discourse-reactions.git
           - git clone https://github.com/paviliondev/discourse-multilingual.git
+          - git clone https://github.com/discourse/discourse-ai.git
 
 ## Remember, this is YAML syntax - you can only have one block with a name
 run:
