@@ -344,15 +344,17 @@ check_port() {
 ## read a variable from the config file
 ##
 read_config() {
+  local config_line
   config_line=`grep -E "^  #?$1:" $web_file`
   read_config_result=`echo $config_line | awk  -F":" '{print $2}'`
   read_config_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
 }
 
 read_default() {
-  config_line=`grep -E "^  #?$1:" samples/standalone.yml`
-  read_default_result=`echo $config_line | awk  -F":" '{print $2}'`
-  read_default_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
+  local default_line
+  default_line=`grep -E "^  #?$1:" samples/standalone.yml`
+  read_default_result=`echo $default_line | awk  -F":" '{print $2}'`
+  read_default_result=`echo $read_default_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
 }
 
 assert_maxmind_envs() {
@@ -866,15 +868,9 @@ validate_config() {
 
     if [ ! -z "$result" ]
     then
-      if [[ "$config_line" = *"$default"* ]]
+      if [[ "$result" = "$default" ]]
       then
         echo "$x left at incorrect default of $default"
-        valid_config="n"
-      fi
-      config_val=`echo $config_line | awk '{print $2}'`
-      if [ -z $config_val ]
-      then
-        echo "$x was not configured"
         valid_config="n"
       fi
     else
