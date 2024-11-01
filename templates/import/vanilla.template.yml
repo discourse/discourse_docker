@@ -1,17 +1,13 @@
 # This template installs MariaDB and all dependencies needed for importing from vanilla.
+env:
+  UNICORN_SIDEKIQS: 0
+
 
 params:
   home: /var/www/discourse
 
 hooks:
   after_web_config:
-    - exec:
-        cd: /etc/service
-        cmd:
-          - rm -R unicorn
-          - rm -R nginx
-          - rm -R cron
-
     - exec:
         cd: /etc/runit/3.d
         cmd:
@@ -36,7 +32,7 @@ hooks:
     - exec:
         cmd:
           - mkdir -p /shared/import/mysql/data
-          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadbclient-dev mariadb-server
+          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y nano libmariadb-dev mariadb-server
           - sed -Ei 's/^log/#&/' /etc/mysql/my.cnf
 
     - file:
@@ -95,10 +91,7 @@ hooks:
             sv stop mysql
           fi
 
-          cd $home
-          echo "The Vanilla import is starting..."
-          echo
-          su discourse -c 'bundle exec ruby script/import_scripts/vanilla.rb'
+          echo "import_vanilla.sh completed"
 
     - exec:
         cd: $home
@@ -106,11 +99,22 @@ hooks:
           - mkdir -p /shared/import/data
           - chown discourse -R /shared/import
 
+  before_code:
+    - exec:
+        cd: $home
+        cmd:
+          # Add your discourse core fork and pull custom code
+          - su discourse -c 'git remote set-url origin https://github.com/{github_username}/discourse.git'
+
   after_bundle_exec:
     - exec:
         cd: $home
         cmd:
+          # Add the gems used in the script
           - echo "gem 'mysql2'" >> Gemfile
           - echo "gem 'ruby-bbcode-to-md', :github => 'nlalonde/ruby-bbcode-to-md'" >> Gemfile
           - su discourse -c 'bundle config unset deployment'
-          - su discourse -c 'bundle install --no-deployment --path vendor/bundle --jobs 4 --without test development'
+          - su discourse -c 'bundle install --no-deployment --path vendor/bundle --jobs $(($(nproc) - 1)) --without test development'
+          - service mariadb start
+          # imports the DB into mysql
+          - sh /usr/local/bin/import_flarum_test.sh

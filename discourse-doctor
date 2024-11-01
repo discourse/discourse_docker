@@ -209,7 +209,7 @@ dump_yaml() {
 ## read a variable from the config file and stick it in read_config_result
 ##
 read_config() {
-  config_line=$(egrep "^  #?$1:" $web_file)
+  config_line=$(grep -E "^  #?$1:" $web_file)
   read_config_result=$(echo $config_line | awk  -F ":" '{print $2}')
   read_config_result=$(echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g")
 }
@@ -314,18 +314,19 @@ print_done() {
   log "==================== DONE! ===================="
   DOCTOR_FILE=$(date +%s | sha256sum | base64 | head -c 20).txt
 
-  if [ $app_name == 'app' ] && [ "$NO_CONTAINER" != 'y' ]
-  then
-    read -p "Would you like to serve a publicly available version of this file? (Y/n)" serve
-    if [ $serve == 'Y' ]
-    then
+  if [ $app_name == 'app' ] && [ "$NO_CONTAINER" != 'y' ]; then
+    read -p "Would you like to serve a publicly available version of this file? (Y/n) " serve
+    case "${serve:-Y}" in
+      y*|Y*)
         cp $LOG_FILE shared/standalone/log/var-log/$DOCTOR_FILE
         sudo docker exec -w /var/www/discourse -i $app_name cp /var/log/$DOCTOR_FILE  public
         log "The output of this program may be available at http://$DISCOURSE_HOSTNAME/$DOCTOR_FILE"
         log "You should inspect that file carefully before sharing the URL."
-    else
+        ;;
+      *)
         log "Publicly available log not generated."
-    fi
+        ;;
+    esac
   fi
   # The following is not in the web log file since it was copied above, which seems correct
   log

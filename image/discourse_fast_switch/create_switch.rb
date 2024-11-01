@@ -1,13 +1,13 @@
-require 'fileutils'
+require "fileutils"
 
-puts "-"*100,"creating switch","-"*100
+puts "-" * 100, "creating switch", "-" * 100
 
 system("cd /var/www/discourse && git pull")
 
-['24', '25'].each do |v|
+%w[24 25].each do |v|
   bin = "/usr/local/bin/use_#{v}"
 
-File.write(bin, <<RUBY
+  File.write(bin, <<RUBY)
 #!/usr/ruby_24/bin/ruby
 
 Dir.glob('/usr/ruby_#{v}/bin/*').each do |file|
@@ -16,9 +16,10 @@ Dir.glob('/usr/ruby_#{v}/bin/*').each do |file|
 end
 
 RUBY
-)
 
   system("chmod +x #{bin}")
   system("use_#{v} && gem update --system && gem install bundler --force")
-  system("use_#{v} && cd /var/www/discourse && sudo -u discourse bundle install --deployment --jobs 4 --without test development")
+  system(
+    "use_#{v} && cd /var/www/discourse && sudo -u discourse bundle install --deployment --jobs $(($(nproc) - 1)) --without test development",
+  )
 end
