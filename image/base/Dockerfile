@@ -69,6 +69,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # imagemagick runtime dependencies
     libheif1 libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
+# font for letterbox avatar
+    fonts-urw-base35 \
 # nginx runtime dependencies
     nginx-common &&\
 # install these without recommends to avoid pulling in e.g.
