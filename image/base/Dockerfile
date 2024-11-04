@@ -69,13 +69,11 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
 # imagemagick runtime dependencies
     libheif1 libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
-# font for letterbox avatar
-    fonts-urw-base35 \
 # nginx runtime dependencies
     nginx-common &&\
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
-    DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less &&\
+    DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less fonts-urw-base35 &&\
 # postgres packages
     install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
