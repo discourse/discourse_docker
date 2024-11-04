@@ -24,12 +24,9 @@ RUN groupadd --gid 104 postgres &&\
 RUN echo 2.0.`date +%Y%m%d` > /VERSION
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
-  --mount=type=cache,target=/var/lib/apt,sharing=locked \
-  --mount=type=tmpfs,target=/var/log \
-  echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
-  apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping locales \
+RUN --mount=type=tmpfs,target=/var/log \
+    echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
+    apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping locales \
     ca-certificates rsync \
     cmake g++ pkg-config patch \
     libxslt-dev libcurl4-openssl-dev \
@@ -74,10 +71,7 @@ RUN --mount=type=tmpfs,target=/root/.npm \
     npm install -g terser uglify-js pnpm
 
 ADD install-imagemagick /tmp/install-imagemagick
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-  --mount=type=cache,target=/var/cache/debconf,sharing=locked \
-  --mount=type=cache,target=/var/lib/apt,sharing=locked \
-  /tmp/install-imagemagick
+RUN /tmp/install-imagemagick
 
 ADD install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
@@ -86,10 +80,7 @@ RUN /tmp/install-jemalloc
 ADD nginx_public_keys.key /tmp/nginx_public_keys.key
 ADD install-nginx /tmp/install-nginx
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/cache/debconf,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    gpg --import /tmp/nginx_public_keys.key &&\
+RUN gpg --import /tmp/nginx_public_keys.key &&\
     rm /tmp/nginx_public_keys.key &&\
     /tmp/install-nginx
 
@@ -97,10 +88,7 @@ ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
 
 ADD install-oxipng /tmp/install-oxipng
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/cache/debconf,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    /tmp/install-oxipng
+RUN /tmp/install-oxipng
 
 RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
     gem update --system
