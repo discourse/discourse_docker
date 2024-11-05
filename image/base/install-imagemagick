@@ -9,7 +9,7 @@ IMAGE_MAGICK_HASH="d282117bc6d0e91ad1ad685d096623b96ed8e229f911c891d83277b350ef8
 LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo libjpeg62-turbo-dev' || echo 'libjpeg-turbo8 libjpeg-turbo8-dev')
 
 # Ubuntu 22.04/22.10  doesn't have libwebp6
-LIBWEBP=$(cat /etc/issue | grep -qi 'Ubuntu 22' && echo 'libwebp7' || echo 'libwebp6')
+LIBWEBP=$(cat /etc/issue | grep -qiE 'Debian GNU/Linux 12|Ubuntu 22' && echo 'libwebp7' || echo 'libwebp6')
 
 PREFIX=/usr/local
 WDIR=/tmp/imagemagick
@@ -17,17 +17,17 @@ WDIR=/tmp/imagemagick
 # Install build deps
 apt -y -q remove imagemagick
 apt -y -q install git make gcc pkg-config autoconf curl g++ yasm cmake \
-    libde265-0 libde265-dev ${LIBJPEGTURBO} x265 libx265-dev libtool \
-    libpng16-16 libpng-dev ${LIBJPEGTURBO} ${LIBWEBP} libwebp-dev libgomp1 \
+    libde265-0 libde265-dev ${LIBJPEGTURBO} ${LIBWEBP} x265 libx265-dev libtool \
+    libpng16-16 libpng-dev libwebp-dev libgomp1 \
     libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils librsvg2-dev \
-    libltdl7-dev libbz2-dev gsfonts libtiff-dev libfreetype6-dev libjpeg-dev
+    libltdl7-dev libbz2-dev gsfonts libtiff-dev libfreetype6-dev libjpeg-dev libheif1 libheif-dev
 
-# Ubuntu doesn't like `bullseye-backports`
-if cat /etc/issue | grep -qi 'Ubuntu 22'; then
-  apt -y install libheif1 libaom-dev libheif-dev
+# Ubuntu doesn't like backports
+if cat /etc/issue | grep -qiE 'Debian GNU/Linux 12|Ubuntu 22'; then
+  apt -y install libaom-dev
 else
   # Use backports instead of compiling it
-  apt -y -q install -t bullseye-backports libheif1 libaom-dev libheif-dev
+  apt -y -q install -t bullseye-backports libaom-dev
 fi
 
 mkdir -p $WDIR
@@ -40,7 +40,7 @@ echo "$IMAGE_MAGICK_HASH $WDIR/ImageMagick.tar.gz" | sha256sum -c
 IMDIR=$WDIR/$(tar tzf $WDIR/ImageMagick.tar.gz --wildcards "ImageMagick-*/configure" |cut -d/ -f1)
 tar zxf $WDIR/ImageMagick.tar.gz -C $WDIR
 cd $IMDIR
-PKG_CONF_LIBDIR=$PREFIX/lib LDFLAGS=-L$PREFIX/lib CFLAGS=-I$PREFIX/include ./configure \
+PKG_CONF_LIBDIR=$PREFIX/lib LDFLAGS=-L$PREFIX/lib CFLAGS='-O2 -I$PREFIX/include' ./configure \
           --prefix=$PREFIX \
           --enable-static \
           --enable-bounds-checking \
@@ -62,11 +62,11 @@ PKG_CONF_LIBDIR=$PREFIX/lib LDFLAGS=-L$PREFIX/lib CFLAGS=-I$PREFIX/include ./con
           --with-heic \
           --with-rsvg \
           --with-webp
-make all && make install
+make all -j"$(nproc)" && make install
 
 cd $HOME
 rm -rf $WDIR
 ldconfig /usr/local/lib
 
 # Validate ImageMagick install
-test $(convert -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
+test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6

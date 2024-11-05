@@ -17,10 +17,11 @@ RUN chown -R discourse . &&\
 
 FROM base AS with_browsers
 
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo apt-key add - &&\
-    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
+ENV TESTEM_DEFAULT_BROWSER Chrome
+ADD install-chrome /tmp/install-chrome
+RUN /tmp/install-chrome &&\
     apt update &&\
-    apt install -y libgconf-2-4 libxss1 google-chrome-stable firefox-esr &&\
+    apt install -y libgconf-2-4 libxss1 firefox-esr &&\
     cd /tmp && wget -q "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US" -O firefox.tar.bz2 &&\
     tar xjvf firefox.tar.bz2 && mv /tmp/firefox /opt/firefox-evergreen &&\
     apt clean
@@ -28,11 +29,11 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | sudo ap
 FROM with_browsers AS release
 
 RUN cd /var/www/discourse &&\
-    sudo -u discourse bundle install --jobs=4 &&\
-    sudo -E -u discourse -H yarn install &&\
-    sudo -u discourse yarn cache clean
+    sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
+    sudo -E -u discourse -H /bin/bash -c 'if [ -f yarn.lock ]; then (yarn install && yarn cache clean); else CI=1 pnpm install; fi'
 
 RUN cd /var/www/discourse && sudo -E -u discourse -H bundle exec rake plugin:install_all_official &&\
-    sudo -E -u discourse -H bundle exec rake plugin:install_all_gems
+    LOAD_PLUGINS=1 sudo -E -u discourse -H bundle exec rake plugin:install_all_gems &&\
+    sudo -E -u discourse -H bundle exec ruby script/install_minio_binaries.rb
 
-ENTRYPOINT sudo -E -u discourse -H ruby script/docker_test.rb
+ENTRYPOINT ["sudo", "-E", "-u", "discourse", "-H", "ruby", "script/docker_test.rb"]

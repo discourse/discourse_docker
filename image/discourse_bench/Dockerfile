@@ -13,7 +13,7 @@ RUN git config --global user.email "you@example.com" &&\
     git config --global user.name "Your Name"
 
 RUN git pull &&\
-    sudo -u discourse bundle install --standalone
+    sudo -u discourse bundle install --jobs $(($(nproc) - 1)) --standalone
 
 RUN gem install facter &&\
     gem install mailcatcher

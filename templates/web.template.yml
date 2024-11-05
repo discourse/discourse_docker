@@ -12,19 +12,20 @@ env:
   DISCOURSE_DB_HOST:
   DISCOURSE_DB_PORT:
 
-
 params:
   version: tests-passed
-
   home: /var/www/discourse
   upload_size: 10m
   nginx_worker_connections: 4000
 
 run:
   - exec: thpoff echo "thpoff is installed!"
-  - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
-  - exec: /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
-  - exec: /usr/local/bin/ruby -e 'if (ENV["DISCOURSE_CDN_URL"] || "")[0..1] == "//"; puts "Aborting! CDN must have a protocol specified. Once fixed you should rebake your posts now to correct all posts."; exit 1; end'
+  - exec:
+      tag: precompile
+      cmd:
+        - /usr/local/bin/ruby -e 'if ENV["DISCOURSE_SMTP_ADDRESS"] == "smtp.example.com"; puts "Aborting! Mail is not configured!"; exit 1; end'
+        - /usr/local/bin/ruby -e 'if ENV["DISCOURSE_HOSTNAME"] == "discourse.example.com"; puts "Aborting! Domain is not configured!"; exit 1; end'
+        - /usr/local/bin/ruby -e 'if (ENV["DISCOURSE_CDN_URL"] || "")[0..1] == "//"; puts "Aborting! CDN must have a protocol specified. Once fixed you should rebake your posts now to correct all posts."; exit 1; end'
   # TODO: move to base image (anacron can not be fired up using rc.d)
   - exec: rm -f /etc/cron.d/anacron
   - file:
@@ -55,6 +56,13 @@ run:
         # postgres
         cd $home
         chown -R discourse:www-data /shared/log/rails
+        # before precompile
+        if [[ -z "$PRECOMPILE_ON_BOOT" ]]; then
+          PRECOMPILE_ON_BOOT=1
+        fi
+        if [ -f /usr/local/bin/create_db ] && [ "$CREATE_DB_ON_BOOT" = "1" ]; then /usr/local/bin/create_db; fi;
+        if [ "$MIGRATE_ON_BOOT" = "1" ]; then su discourse -c 'bundle exec rake db:migrate'; fi
+        if [ "$PRECOMPILE_ON_BOOT" = "1" ]; then SKIP_EMBER_CLI_COMPILE=1 su discourse -c 'bundle exec rake assets:precompile'; fi
         LD_PRELOAD=$RUBY_ALLOCATOR HOME=/home/discourse USER=discourse exec thpoff chpst -u discourse:www-data -U discourse:www-data bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
   - file:
@@ -170,29 +178,35 @@ run:
 
   - exec:
       cd: $home
+      hook: yarn
       cmd:
         - |-
-          if [ "$version" != "tests-passed" ]; then
-            rm -rf app/assets/javascripts/node_modules
+          if [ -f yarn.lock ]; then
+            if [ -d node_modules/.pnpm ]; then
+              echo "This version of Discourse uses yarn, but pnpm node_modules are preset. Cleaning up..."
+              find ./node_modules ./app/assets/javascripts/*/node_modules -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+            fi
+            su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
+          else
+            su discourse -c 'CI=1 pnpm install --frozen-lockfile'
           fi
-        - su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
 
   - exec:
       cd: $home
       hook: bundle_exec
       cmd:
-        - su discourse -c 'bundle config --local deployment true'
-        - su discourse -c 'bundle config --local without "development test"'
-        - su discourse -c 'bundle install --retry 3 --jobs 4'
+        - su discourse -c 'bundle install --jobs $(($(nproc) - 1)) --retry 3'
 
   - exec:
       cd: $home
       cmd:
         - su discourse -c 'LOAD_PLUGINS=0 bundle exec rake plugin:pull_compatible_all'
+      hook: plugin_compatibility
       raise_on_fail: false
 
   - exec:
       cd: $home
+      tag: migrate
       hook: db_migrate
       cmd:
         - su discourse -c 'bundle exec rake db:migrate'
@@ -202,18 +216,24 @@ run:
       hook: maxminddb_get
       cmd:
         - su discourse -c 'bundle exec rake maxminddb:get'
-      
-  - exec:
-      cd: $home
-      hook: assets_precompile
-      cmd:
-        - su discourse -c 'bundle exec rake themes:update assets:precompile'
 
   - exec:
       cd: $home
+      tag: build
+      hook: assets_precompile_build
       cmd:
-        - su discourse -c 'sed -i "s/timeout 30/timeout 60/" config/unicorn.conf.rb'
-        - echo "Unicorn timeout changed to 60 seconds"
+        - su discourse -c 'bundle exec rake assets:precompile:build'
+  - exec:
+      cd: $home
+      tag: precompile
+      hook: assets_precompile
+      cmd:
+        - su discourse -c 'SKIP_EMBER_CLI_COMPILE=1 bundle exec rake themes:update assets:precompile'
+  - replace:
+      tag: precompile
+      filename: /etc/service/unicorn/run
+      from: "# before precompile"
+      to: "PRECOMPILE_ON_BOOT=0"
 
   - file:
      path: /usr/local/bin/discourse
@@ -276,6 +296,7 @@ run:
                 missingok
                 delaycompress
                 compress
+                sharedscripts
                 postrotate
                 sv 1 unicorn
                 endscript
@@ -420,7 +441,7 @@ run:
           <!-- <policy domain="resource" name="throttle" value="0"/> -->
           <!-- <policy domain="resource" name="time" value="3600"/> -->
           <!-- <policy domain="coder" rights="none" pattern="MVG" /> -->
-          <policy domain="module" rights="none" pattern="{PS,PS2,PS3,EPS,PDF,XPS}" />
+          <policy domain="module" rights="none" pattern="{PS,PS2,PS3,EPS,XPS}" />
           <!-- <policy domain="delegate" rights="none" pattern="HTTPS" /> -->
           <!-- <policy domain="path" rights="none" pattern="@*" /> -->
           <!-- <policy domain="cache" name="memory-map" value="anonymous"/> -->

@@ -1,13 +1,90 @@
 # simple build file to be used locally by Sam
 #
-require 'pty'
-require 'optparse'
+require "pty"
+require "optparse"
 
 images = {
-  base_slim: { name: 'base', tag: "discourse/base:build_slim", squash: true, extra_args: '-f slim.Dockerfile' },
-  base: { name: 'base', tag: "discourse/base:build", extra_args: '-f release.Dockerfile' },
-  discourse_test_build: { name: 'discourse_test', tag: "discourse/discourse_test:build", squash: false},
-  discourse_dev: { name: 'discourse_dev', tag: "discourse/discourse_dev:build", squash: false },
+  base_deps_amd64: {
+    name: "base",
+    tag: "discourse/base:build_deps_amd64",
+    extra_args: "--target discourse_dependencies",
+  },
+  base_deps_arm64: {
+    name: "base",
+    tag: "discourse/base:build_deps_arm64",
+    extra_args: "--platform linux/arm64 --target discourse_dependencies",
+  },
+  base_slim_main_amd64: {
+    name: "base",
+    tag: "discourse/base:build_slim_main_amd64",
+    extra_args: "--target discourse_slim",
+    use_cache: true,
+  },
+  base_slim_stable_amd64: {
+    name: "base",
+    tag: "discourse/base:build_slim_main_amd64",
+    extra_args: "--target discourse_slim --build-arg=\"DISCOURSE_BRANCH=stable\"",
+    use_cache: true,
+  },
+  base_slim_main_arm64: {
+    name: "base",
+    tag: "discourse/base:build_slim_main_arm64",
+    extra_args: "--platform linux/arm64 --target discourse_slim",
+    use_cache: true,
+  },
+  base_slim_stable_arm64: {
+    name: "base",
+    tag: "discourse/base:build_slim_stable_arm64",
+    extra_args:
+      "--platform linux/arm64 --target discourse_slim --build-arg=\"DISCOURSE_BRANCH=stable\"",
+    use_cache: true,
+  },
+  base_release_main_amd64: {
+    name: "base",
+    tag: "discourse/base:build_release_main_amd64",
+    extra_args: "--build-arg=\"DISCOURSE_BRANCH=main\" --target discourse_release",
+    use_cache: true,
+  },
+  base_release_main_arm64: {
+    name: "base",
+    tag: "discourse/base:build_release_main_arm64",
+    extra_args:
+      "--platform linux/arm64 --build-arg=\"DISCOURSE_BRANCH=main\" --target discourse_release",
+    use_cache: true,
+  },
+  base_release_stable_amd64: {
+    name: "base",
+    tag: "discourse/base:build_release_stable_amd64",
+    extra_args: "--build-arg=\"DISCOURSE_BRANCH=stable\" --target discourse_release",
+    use_cache: true,
+  },
+  base_release_stable_arm64: {
+    name: "base",
+    tag: "discourse/base:build_release_stable_arm64",
+    extra_args:
+      "--platform linux/arm64 --build-arg=\"DISCOURSE_BRANCH=stable\" --target discourse_release",
+    use_cache: true,
+  },
+  discourse_test_build_amd64: {
+    name: "discourse_test",
+    tag: "discourse/discourse_test:build_amd64",
+    extra_args: "--build-arg=\"from_tag=build_release_main_amd64\"",
+  },
+  discourse_test_build_arm64: {
+    name: "discourse_test",
+    tag: "discourse/discourse_test:build_arm64",
+    extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_release_main_arm64\"",
+  },
+  discourse_dev_amd64: {
+    name: "discourse_dev",
+    tag: "discourse/discourse_dev:build_amd64",
+    extra_args: "--build-arg=\"from_tag=build_slim_main_amd64\"",
+  },
+  discourse_dev_arm64: {
+    name: "discourse_dev",
+    tag: "discourse/discourse_dev:build_arm64",
+    extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_slim_main_arm64\"",
+  },
 }
 
 def run(command)
@@ -29,17 +106,26 @@ def run(command)
   lines
 end
 
-def build(image)
-  lines = run("cd #{image[:name]} && docker build . --no-cache --tag #{image[:tag]} #{image[:squash] ? '--squash' : ''} #{image[:extra_args] ? image[:extra_args] : ''}")
-  raise "Error building the image for #{image[:name]}: #{lines[-1]}" if lines[-1] =~ /successfully built/
+def build(image, cli_args)
+  lines =
+    run(
+      "cd #{image[:name]} && docker buildx build . --load #{image[:use_cache] == true ? "" : "--no-cache"} --tag #{image[:tag]} #{image[:extra_args] ? image[:extra_args] : ""} #{cli_args}",
+    )
+
+  if lines[-1] =~ /successfully built/
+    raise "Error building the image for #{image[:name]}: #{lines[-1]}"
+  end
 end
 
 def dev_deps()
-  run("sed -e 's/\(db_name: discourse\)/\1_development/' ../templates/postgres.template.yml > discourse_dev/postgres.template.yml")
+  run(
+    "sed -e 's/\(db_name: discourse\)/\1_development/' ../templates/postgres.template.yml > discourse_dev/postgres.template.yml",
+  )
   run("cp ../templates/redis.template.yml discourse_dev/redis.template.yml")
+  run("cp base/install-rust discourse_dev/install-rust")
 end
 
-if ARGV.length != 1
+if ARGV.length == 0
   puts <<~TEXT
     Usage:
     ruby auto_build.rb IMAGE
@@ -57,7 +143,7 @@ else
   end
 
   puts "Building #{images[image]}"
-  dev_deps() if image == :discourse_dev
+  dev_deps() if image == :discourse_dev_amd64 || image == :discourse_dev_arm64
 
-  build(images[image])
+  build(images[image], ARGV[1..-1].join(" "))
 end

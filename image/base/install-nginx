@@ -2,13 +2,12 @@
 set -e
 
 # version check: https://nginx.org/en/download.html
-VERSION=1.23.3
-HASH="75cb5787dbb9fae18b14810f91cc4343f64ce4c24e27302136fb52498042ba54"
+VERSION=1.26.1
 
 cd /tmp
 wget -q https://nginx.org/download/nginx-$VERSION.tar.gz
-sha256sum nginx-$VERSION.tar.gz
-echo "$HASH nginx-$VERSION.tar.gz" | sha256sum -c
+wget -q https://nginx.org/download/nginx-$VERSION.tar.gz.asc
+gpg --verify nginx-$VERSION.tar.gz.asc nginx-$VERSION.tar.gz
 tar zxf nginx-$VERSION.tar.gz
 cd nginx-$VERSION
 
@@ -31,7 +30,9 @@ make install
 mv /usr/share/nginx/sbin/nginx /usr/sbin
 
 cd /
-rm -fr /tmp/nginx
+rm -fr /tmp/nginx-$VERSION
+rm -f /tmp/nginx-$VERSION.tar.gz
+rm -f /tmp/nginx-$VERSION.tar.gz.asc
 rm -fr /tmp/libbrotli
 rm -fr /tmp/ngx_brotli
 rm -fr /etc/nginx/modules-enabled/*
