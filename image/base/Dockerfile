@@ -2,6 +2,27 @@
 # VERSION:  release
 
 ARG DEBIAN_RELEASE=bookworm
+FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS builder
+ADD install-imagemagick /tmp/install-imagemagick
+# From https://nginx.org/en/pgp_keys.html
+ADD nginx_public_keys.key /tmp/nginx_public_keys.key
+ADD install-nginx /tmp/install-nginx
+RUN apt update && \
+DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
+    autoconf build-essential \
+    git \
+    cmake \
+    gnupg \
+    libpcre3-dev \
+    libbrotli-dev
+RUN /tmp/install-imagemagick
+RUN gpg --import /tmp/nginx_public_keys.key &&\
+    rm /tmp/nginx_public_keys.key &&\
+    /tmp/install-nginx
+
+ADD thpoff.c /src/thpoff.c
+RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
+
 FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
 ARG DEBIAN_RELEASE
