@@ -43,3 +43,37 @@ jobs:
       - name: Run tests
         working-directory: ./launcher_go/v2
         run: go test ./...
+
+  build_release:
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    needs: [lint, test]
+    strategy:
+      matrix:
+        goos: [linux, darwin]
+        goarch: ["386", amd64, arm64]
+        exclude:
+          - goarch: "386"
+            goos: darwin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ">=1.22.0"
+      - name: build and release
+        working-directory: ./launcher_go/v2
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          BIN_FILE: launcher2
+          ZIP_FILE: launcher2-${{ matrix.goos }}-${{ matrix.goarch }}.tar.gz
+        run: |
+          go build -o bin/${BIN_FILE}
+          cd bin
+          tar cvfz ${ZIP_FILE} ${BIN_FILE}
+          MD5_SUM=$(md5sum ${ZIP_FILE} | cut -d ' ' -f 1)
+          echo ${MD5_SUM} > ${ZIP_FILE}.md5
+          gh release upload --clobber launcher ${ZIP_FILE} ${ZIP_FILE}.md5
