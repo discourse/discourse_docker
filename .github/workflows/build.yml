@@ -22,7 +22,6 @@ env:
 
 jobs:
   timestamp:
-    if: (github.event_name != 'schedule' || github.repository == 'discourse/discourse_docker')
     runs-on: ubuntu-latest
     outputs:
       timestamp: ${{ steps.timestamp.outputs.timestamp }}
@@ -34,7 +33,6 @@ jobs:
           echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
 
   base:
-    if: (github.event_name != 'schedule' || github.repository == 'discourse/discourse_docker')
     # `unbuntu-22.04-8core` for arch amd64 non-scheduled builds
     # `unbuntu-22.04` for arch amd64 scheduled builds
     # `unbuntu-22.04-8core-arm` for arch arm64 non-scheduled builds
@@ -123,7 +121,7 @@ jobs:
           echo "current slim: ${CURRENT_SLIM} release: ${CURRENT_RELEASE}. new slim: ${NEW_SLIM} release: ${NEW_RELEASE}"
 
       - name: push to dockerhub
-        if: github.ref == 'refs/heads/main' && github.repository == 'discourse/discourse_docker'
+        if: github.ref == 'refs/heads/main'
         env:
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
@@ -134,7 +132,7 @@ jobs:
           docker push discourse/discourse_dev:${{ env.TIMESTAMP }}-${{ matrix.arch }}
 
       - name: Push discourse/base:aarch64 image for backwards compatibility
-        if: (github.ref == 'refs/heads/main') && (matrix.arch == 'arm64') && (github.repository == 'discourse/discourse_docker')
+        if: (github.ref == 'refs/heads/main') && (matrix.arch == 'arm64')
         run: |
           docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} discourse/base:aarch64
           docker push discourse/base:aarch64
@@ -144,7 +142,7 @@ jobs:
     needs: [base, timestamp]
     env:
       TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
-    if: github.ref == 'refs/heads/main' && github.repository == 'discourse/discourse_docker'
+    if: github.ref == 'refs/heads/main'
     steps:
       - name: create and push multiarch manifests
         run: |
@@ -231,7 +229,7 @@ jobs:
         run: |
           docker images discourse/discourse_test
       - name: push to dockerhub
-        if: success() && (github.ref == 'refs/heads/main') && (github.repository == 'discourse/discourse_docker')
+        if: success() && (github.ref == 'refs/heads/main')
         env:
           DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
