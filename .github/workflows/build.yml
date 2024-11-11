@@ -45,6 +45,11 @@ jobs:
     needs: timestamp
     env:
       TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
     steps:
       - uses: actions/checkout@v3
         with:
@@ -107,18 +112,16 @@ jobs:
         if: github.event_name == 'pull_request' && matrix.arch == 'amd64'
         run: |
           # Push to local repo to compare sizes
-          docker run --quiet -d --rm -p 5002:5000 registry:2
-          sleep 5
-          docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }} localhost:5002/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }}
-          docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} localhost:5002/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
-          docker push --quiet localhost:5002/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }}
-          docker push --quiet localhost:5002/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
+          docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }} localhost:5000/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }}
+          docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} localhost:5000/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
+          docker push --quiet localhost:5000/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }}
+          docker push --quiet localhost:5000/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
           # multiarch manifest is an array of schemas - [0] is amd64, [1] is arch64: Compare amd64.
           CURRENT_SLIM=$(docker manifest inspect -v discourse/base:slim | jq -r '.[0].SchemaV2Manifest.layers[] | .size / 1024 / 1024 | .*100 | round/100' | awk '{print $0; sum+= $0}; END {print sum}' | tail -n 1)
           CURRENT_RELEASE=$(docker manifest inspect -v discourse/base:release | jq -r '.[0].SchemaV2Manifest.layers[] | .size / 1024 / 1024 | .*100 | round/100' | awk '{print $0; sum+= $0}; END {print sum}' | tail -n 1)
-          NEW_SLIM=$(docker manifest inspect -v --insecure localhost:5002/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }} |  jq -r '.SchemaV2Manifest.layers[] | .size / 1024 / 1024 | .*100 | round/100' | awk '{print $0; sum+= $0}; END {print sum}' | tail -n 1)
-          NEW_RELEASE=$(docker manifest inspect -v --insecure localhost:5002/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} | jq -r '.SchemaV2Manifest.layers[] | .size / 1024 / 1024 | .*100 | round/100' | awk '{print $0; sum+= $0}; END {print sum}' | tail -n 1)
-          echo "current slim: ${CURRENT_SLIM} release: ${CURRENT_RELEASE}. new slim: ${NEW_SLIM} release: ${NEW_RELEASE}"
+          NEW_SLIM=$(docker manifest inspect -v --insecure localhost:5000/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }} |  jq -r '.SchemaV2Manifest.layers[] | .size / 1024 / 1024 | .*100 | round/100' | awk '{print $0; sum+= $0}; END {print sum}' | tail -n 1)
+          NEW_RELEASE=$(docker manifest inspect -v --insecure localhost:5000/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} | jq -r '.SchemaV2Manifest.layers[] | .size / 1024 / 1024 | .*100 | round/100' | awk '{print $0; sum+= $0}; END {print sum}' | tail -n 1)
+          echo "current slim: ${CURRENT_SLIM}MB release: ${CURRENT_RELEASE}MB. new slim: ${NEW_SLIM}MB release: ${NEW_RELEASE}MB"
 
       - name: push to dockerhub
         if: github.ref == 'refs/heads/main'
