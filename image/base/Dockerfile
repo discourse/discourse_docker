@@ -2,7 +2,7 @@
 # VERSION:  release
 
 ARG DEBIAN_RELEASE=bookworm
-FROM discourse/ruby:3.3.4-${DEBIAN_RELEASE}-slim AS discourse_dependencies
+FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
 ARG DEBIAN_RELEASE
 ENV PG_MAJOR=13 \
