@@ -2,13 +2,7 @@ on:
   push:
     branches:
       - main
-    paths-ignore:
-      - "launcher_go/**"
-      - ".github/workflows/launcher_go.yml"
   pull_request:
-    paths-ignore:
-      - "launcher_go/**"
-      - ".github/workflows/launcher_go.yml"
   schedule:
     - cron: "0 0 * * *"
 
