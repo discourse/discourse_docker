@@ -56,7 +56,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     dpkg-divert --local --rename --add /sbin/initctl; \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
-    libpq-dev postgresql-client \
+    libpq-dev postgresql-client-${PG_MAJOR} \
     postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
     nodejs yarn &&\
     mkdir -p /etc/runit/1.d
