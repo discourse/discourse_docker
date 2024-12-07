@@ -1,58 +1,51 @@
 run:
   - exec:
-     cmd:
-       - "mkdir -p /shared/ssl/"
-  - replace:
-     filename: "/etc/nginx/conf.d/discourse.conf"
-     from: /server.+{/
-     to: |
-       server {
-         listen 80;
-         return 301 https://$$ENV_DISCOURSE_HOSTNAME$request_uri;
-       }
-       server {
-  - replace:
-     filename: "/etc/nginx/conf.d/discourse.conf"
-     from: /listen 80;\s+gzip on;/m
-     to: |
-       listen 443 ssl;
-       http2 on;
-       SSL_TEMPLATE_SSL_BLOCK
-  - replace:
-     filename: "/etc/nginx/conf.d/discourse.conf"
-     from: /listen 80;\s+listen \[::\]:80;\s+gzip on;/m
-     to: |
-       listen 443 ssl;
-       listen [::]:443 ssl;
-       http2 on;
-       SSL_TEMPLATE_SSL_BLOCK
-  - replace:
-     hook: ssl
-     filename: "/etc/nginx/conf.d/discourse.conf"
-     from: /SSL_TEMPLATE_SSL_BLOCK/
-     to: |
+      cmd:
+        - "mkdir -p /shared/ssl/"
 
-       ssl_protocols TLSv1.2 TLSv1.3;
-       ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
-       ssl_prefer_server_ciphers off;
+  - file:
+      path: "/etc/nginx/conf.d/outlets/before-server/redirect-http-to-https.conf"
+      contents: |
+        server {
+          listen 80;
+          return 301 https://$$ENV_DISCOURSE_HOSTNAME$request_uri;
+        }
 
-       ssl_certificate /shared/ssl/ssl.crt;
-       ssl_certificate_key /shared/ssl/ssl.key;
+  - exec: rm /etc/nginx/conf.d/outlets/server/http.conf
 
-       ssl_session_tickets off;
-       ssl_session_timeout 1d;
-       ssl_session_cache shared:SSL:1m;
+  - file:
+      hook: ssl
+      path: "/etc/nginx/conf.d/outlets/server/https.conf"
+      contents: |
+        listen 443 ssl;
+        http2 on;
 
-       gzip on;
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+        ssl_prefer_server_ciphers off;
 
-       add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
+        ssl_certificate /shared/ssl/ssl.crt;
+        ssl_certificate_key /shared/ssl/ssl.key;
 
-       if ($http_host != $$ENV_DISCOURSE_HOSTNAME) {
-          rewrite (.*) https://$$ENV_DISCOURSE_HOSTNAME$1 permanent;
-       }
-  - replace:
-     filename: "/etc/nginx/conf.d/discourse.conf"
-     from: "location @discourse {"
-     to: |
-       location @discourse {
-       add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
+        ssl_session_tickets off;
+        ssl_session_timeout 1d;
+        ssl_session_cache shared:SSL:1m;
+
+        add_header Strict-Transport-Security 'max-age=31536000';
+
+        if ($http_host != $$ENV_DISCOURSE_HOSTNAME) {
+           rewrite (.*) https://$$ENV_DISCOURSE_HOSTNAME$1 permanent;
+        }
+
+  - file:
+      path: "/etc/nginx/conf.d/outlets/discourse/https.conf"
+      contents: |
+        add_header Strict-Transport-Security 'max-age=31536000';
+
+  - exec:
+      cmd:
+        - |-
+          if [ -f "/proc/net/if_inet6" ] ; then
+            sed -i 's/listen 80;/listen 80;\nlisten [::]:80;/g' /etc/nginx/conf.d/outlets/before-server/redirect-http-to-https.conf
+            sed -i 's/listen 443 ssl;/listen 443 ssl;\nlisten [::]:443 ssl;/g' /etc/nginx/conf.d/outlets/server/https.conf
+          fi
