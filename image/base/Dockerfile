@@ -2,6 +2,21 @@
 # VERSION:  release
 
 ARG DEBIAN_RELEASE=bookworm
+FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS builder
+RUN apt update && \
+DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
+    autoconf build-essential \
+    git \
+    cmake \
+    gnupg \
+    libpcre3-dev \
+    libfreetype6-dev \
+    libbrotli-dev
+
+FROM builder AS imagemagick_builder
+ADD install-imagemagick /tmp/install-imagemagick
+RUN /tmp/install-imagemagick
+
 FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
 ARG DEBIAN_RELEASE
@@ -36,7 +51,13 @@ RUN --mount=type=tmpfs,target=/var/log \
     libreadline-dev anacron wget \
     psmisc whois brotli libunwind-dev \
     libtcmalloc-minimal4 cmake \
-    pngcrush pngquant ripgrep poppler-utils; \
+    pngcrush pngquant ripgrep poppler-utils \
+# imagemagick runtime dependencies
+    libheif1 libjbig0 libtiff6 libpng16-16 libfontconfig1 \
+    libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
+    fonts-urw-base35 \
+# nginx compile dependencies \
+    libfreetype6-dev && \
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less; \
@@ -70,8 +91,24 @@ RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
 RUN --mount=type=tmpfs,target=/root/.npm \
     npm install -g terser uglify-js pnpm
 
-ADD install-imagemagick /tmp/install-imagemagick
-RUN /tmp/install-imagemagick
+# Copy binary and configuration files for magick
+COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
+COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
+COPY --from=imagemagick_builder /usr/local/share/ImageMagick-7 /usr/local/share/ImageMagick-7
+# Create symlinks to imagemagick tools
+RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/compare &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/composite &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/conjure &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/convert &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/display &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/identify &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/import &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/magick-script &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/mogrify &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/montage &&\
+  ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
+  test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
 ADD install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
