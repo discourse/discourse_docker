@@ -107,27 +107,21 @@ hooks:
         /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf -s stop
 
     - replace:
-       filename: "/etc/nginx/conf.d/discourse.conf"
-       from: /ssl_certificate.+/
-       to: |
-         ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer;
-         ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.cer;
-
-    - replace:
        filename: /shared/letsencrypt/account.conf
        from: /#?ACCOUNT_EMAIL=.+/
        to: |
          ACCOUNT_EMAIL=$$ENV_LETSENCRYPT_ACCOUNT_EMAIL
 
     - replace:
-       filename: "/etc/nginx/conf.d/discourse.conf"
+       filename: "/etc/nginx/conf.d/outlets/server/https.conf"
+       from: /ssl_certificate.+/
+       to: |
+         ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer;
+         ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.cer;
+
+    - replace:
+       filename: "/etc/nginx/conf.d/outlets/server/https.conf"
        from: /ssl_certificate_key.+/
        to: |
          ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key;
          ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.key;
-
-    - replace:
-       filename: "/etc/nginx/conf.d/discourse.conf"
-       from: /add_header.+/
-       to: |
-         add_header Strict-Transport-Security 'max-age=63072000';
