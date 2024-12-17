@@ -25,6 +25,14 @@ RUN gpg --import /tmp/nginx_public_keys.key &&\
     rm /tmp/nginx_public_keys.key &&\
     /tmp/install-nginx
 
+FROM builder AS thpfoff_builder
+
+# This tool allows us to disable huge page support for our current process
+# since the flag is preserved through forks and execs it can be used on any
+# process
+ADD thpoff.c /src/thpoff.c
+RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
+
 FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
 ARG DEBIAN_RELEASE
@@ -51,14 +59,14 @@ RUN --mount=type=tmpfs,target=/var/log \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping locales \
     ca-certificates rsync \
-    cmake g++ pkg-config patch \
-    libxslt-dev libcurl4-openssl-dev \
-    libssl-dev libyaml-dev libtool \
+    cmake g++ patch \
+    libcurl4-openssl-dev \
+    libssl-dev libyaml-dev \
     libpcre3 libpcre3-dev zlib1g zlib1g-dev \
-    libxml2-dev gawk parallel \
+    gawk \
     libreadline-dev anacron wget \
     psmisc whois brotli libunwind-dev \
-    libtcmalloc-minimal4 cmake \
+    libtcmalloc-minimal4 \
     pngcrush pngquant ripgrep poppler-utils \
 # imagemagick runtime dependencies
     libheif1 libjbig0 libtiff6 libpng16-16 libfontconfig1 \
@@ -133,11 +141,7 @@ RUN gem install pups --force &&\
     mkdir -p /pups/bin/ &&\
     ln -s /usr/local/bin/pups /pups/bin/pups
 
-# This tool allows us to disable huge page support for our current process
-# since the flag is preserved through forks and execs it can be used on any
-# process
-ADD thpoff.c /src/thpoff.c
-RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
+COPY --from=thpfoff_builder /usr/local/sbin/thpoff /usr/local/sbin/thpoff
 
 # clean up for docker squash
 RUN rm -fr /usr/local/share/doc &&\
