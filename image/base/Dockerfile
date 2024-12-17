@@ -127,9 +127,6 @@ RUN /tmp/install-redis
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
-RUN echo 'gem: --no-document' >> /usr/local/etc/gemrc &&\
-    gem update --system
-
 RUN gem install pups --force &&\
     mkdir -p /pups/bin/ &&\
     ln -s /usr/local/bin/pups /pups/bin/pups
