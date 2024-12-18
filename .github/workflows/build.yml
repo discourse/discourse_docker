@@ -102,6 +102,10 @@ jobs:
         run: |
           docker images discourse/base
 
+      - name: Print `docker history` summary for main branch image
+        run: |
+          docker history discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
+
       - name: Print compressed summary
         if: github.event_name == 'pull_request' && matrix.arch == 'amd64'
         run: |
