@@ -17,14 +17,6 @@ FROM builder AS imagemagick_builder
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
-FROM builder AS nginx_builder
-# From https://nginx.org/en/pgp_keys.html
-ADD nginx_public_keys.key /tmp/nginx_public_keys.key
-ADD install-nginx /tmp/install-nginx
-RUN gpg --import /tmp/nginx_public_keys.key &&\
-    rm /tmp/nginx_public_keys.key &&\
-    /tmp/install-nginx
-
 FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
 ARG DEBIAN_RELEASE
@@ -99,8 +91,6 @@ RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
 RUN --mount=type=tmpfs,target=/root/.npm \
     npm install -g terser uglify-js pnpm
 
-COPY --from=nginx_builder /usr/sbin/nginx /usr/sbin
-
 # Copy binary and configuration files for magick
 COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
 COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
@@ -122,6 +112,14 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
 
 ADD install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
+
+# From https://nginx.org/en/pgp_keys.html
+ADD nginx_public_keys.key /tmp/nginx_public_keys.key
+ADD install-nginx /tmp/install-nginx
+
+RUN gpg --import /tmp/nginx_public_keys.key &&\
+    rm /tmp/nginx_public_keys.key &&\
+    /tmp/install-nginx
 
 ADD install-redis /tmp/install-redis
 RUN /tmp/install-redis
