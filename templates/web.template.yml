@@ -146,6 +146,7 @@ run:
       filename: "/etc/nginx/conf.d/discourse.conf"
       from: /upstream[^\}]+\}/m
       to: "upstream discourse {
+        set_header Host $http_host;
         server 127.0.0.1:3000;
       }"
 
