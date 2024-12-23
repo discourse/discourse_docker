@@ -188,7 +188,7 @@ run:
             fi
             su discourse -c 'yarn install --frozen-lockfile && yarn cache clean'
           else
-            su discourse -c 'CI=1 pnpm install --frozen-lockfile'
+            su discourse -c 'CI=1 pnpm install --frozen-lockfile && pnpm prune'
           fi
 
   - exec:
@@ -196,6 +196,7 @@ run:
       hook: bundle_exec
       cmd:
         - su discourse -c 'bundle install --jobs $(($(nproc) - 1)) --retry 3'
+        - su discourse -c 'bundle clean'
 
   - exec:
       cd: $home
