@@ -24,7 +24,8 @@ RUN /tmp/install-chrome &&\
     apt install -y libgconf-2-4 libxss1 firefox-esr &&\
     cd /tmp && wget -q "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US" -O firefox.tar.bz2 &&\
     tar xjvf firefox.tar.bz2 && mv /tmp/firefox /opt/firefox-evergreen &&\
-    apt clean
+    apt clean &&\
+    rm /tmp/firefox.tar.bz2
 
 FROM with_browsers AS release
 
