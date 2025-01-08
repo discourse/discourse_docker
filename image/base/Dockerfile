@@ -64,8 +64,8 @@ RUN --mount=type=tmpfs,target=/var/log \
     libheif1 libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
     fonts-urw-base35 \
-# nginx compile dependencies \
-    libfreetype6-dev && \
+# nginx runtime dependencies \
+    nginx-common && \
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less; \
