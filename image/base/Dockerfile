@@ -69,7 +69,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -; \
     echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list; \
 # node packages
-    curl --silent --location https://deb.nodesource.com/setup_18.x | sudo bash -; \
+    curl --silent --location https://deb.nodesource.com/setup_22.x | sudo bash -; \
 # setup anacron, rsyslog, initctl
     sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron; \
     sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf; \
