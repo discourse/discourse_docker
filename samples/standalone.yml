@@ -11,8 +11,6 @@ templates:
   - "templates/postgres.template.yml"
   - "templates/redis.template.yml"
   - "templates/web.template.yml"
-  ## Uncomment the next line to enable the IPv6 listener
-  #- "templates/web.ipv6.template.yml"
   - "templates/web.ratelimited.template.yml"
   ## Uncomment these two lines if you wish to add Lets Encrypt (https)
   #- "templates/web.ssl.template.yml"

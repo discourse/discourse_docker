@@ -132,7 +132,6 @@ run:
 
   - exec:
       cmd:
-        - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
         - "rm /etc/nginx/sites-enabled/default"
         - "mkdir -p /var/nginx/cache"
 
@@ -142,26 +141,21 @@ run:
       to: daemon off;
 
   - replace:
-      filename: "/etc/nginx/conf.d/discourse.conf"
-      from: /upstream[^\}]+\}/m
-      to: "upstream discourse {
-        server 127.0.0.1:3000;
-      }"
-
-  - replace:
-      filename: "/etc/nginx/conf.d/discourse.conf"
-      from: /server_name.+$/
-      to: server_name _ ;
+      filename: "/etc/nginx/nginx.conf"
+      from: /worker_connections.+$/
+      to: worker_connections $nginx_worker_connections;
 
   - replace:
       filename: "/etc/nginx/conf.d/discourse.conf"
       from: /client_max_body_size.+$/
-      to: client_max_body_size $upload_size ;
+      to: client_max_body_size $upload_size;
 
-  - replace:
-      filename: "/etc/nginx/nginx.conf"
-      from: /worker_connections.+$/
-      to: worker_connections $nginx_worker_connections ;
+  - exec:
+      cmd:
+        - |-
+          if [ -f "/proc/net/if_inet6" ]; then
+            sed -i 's/listen 80;/listen 80;\nlisten [::]:80;/g' /etc/nginx/conf.d/outlets/server/http.conf
+          fi
 
   - exec:
       cmd: echo "done configuring web"
@@ -222,6 +216,7 @@ run:
       hook: assets_precompile
       cmd:
         - su discourse -c 'SKIP_EMBER_CLI_COMPILE=1 bundle exec rake themes:update assets:precompile'
+
   - replace:
       tag: precompile
       filename: /etc/service/unicorn/run
