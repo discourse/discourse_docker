@@ -29,13 +29,3 @@ Note that the discourse user is granted "sudo" permission without asking for a p
 ### discourse_test ([discourse/discourse_test](https://hub.docker.com/r/discourse/discourse_test/))
 
 Builds on the discourse image and adds testing tools and a default testing entrypoint.
-
-
-### discourse_bench ([discourse/discourse_bench](https://hub.docker.com/r/discourse/discourse_bench/))
-
-Builds on the discourse_test image and adds benchmark testing.
-
-
-### discourse_fast_switch ([discourse/discourse_fast_switch](https://hub.docker.com/r/discourse/discourse_fast_switch/))
-
-Builds on the discourse image and adds the ability to easily switch versions of Ruby.
