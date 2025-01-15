@@ -1,0 +1,19 @@
+name: PR Label Check
+
+on:
+  pull_request:
+    types: [labeled,unlabeled, opened, reopened, edited]
+
+jobs:
+  check-label:
+    runs-on: self-hosted
+    steps:
+      - name: Check PR Labels
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const requiredLabel = 'gate_check_pass'; // 替换为你的标签名称
+            const labels = context.payload.pull_request.labels.map(label => label.name);
+            if (!labels.includes(requiredLabel)) {
+              throw new Error(`PR 必须包含标签: ${requiredLabel}`);
+            }

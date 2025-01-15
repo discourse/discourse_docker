@@ -1,0 +1,40 @@
+name: Check PR Label Owner
+
+on:
+  pull_request:
+    types:
+      - labeled  # 当 PR 被添加标签时触发
+jobs:
+  verify-label-owner:
+    runs-on: self-hosted
+
+    steps:
+      - name: Check if the label was added by the bot
+        env:
+          LABEL_NAME: "gate_check_pass"  # 替换为需要检查的标签名称
+          GITHUB_TOKEN: ${{ secrets.OWNER_TOKEN }}
+          TARGET_LABEL: "gate_check_pass"  # 替换为需要检查的标签名称
+          AUTHORIZED_USER: "opensourceways-robot"  # 替换为允许添加标签的 bot 用户名
+        run: |
+          
+          LABEL_NAME=${{ github.event.label.name }}
+          LABEL_USER=${{ github.event.sender.login }}
+          
+          # 检查是否有相关事件
+               if [[ "$LABEL_NAME" != "$TARGET_LABEL"  ]]; then
+               echo "No labeled event found for the label '$TARGET_LABEL'. Exiting."
+               exit 0
+               fi
+          
+          # 检查最近的标签操作者是否为授权用户
+               if [[ "$LABEL_USER" != "$AUTHORIZED_USER" ]]; then
+                echo "Label '$LABEL_NAME' was added by '$LABEL_USER', not '$AUTHORIZED_USER'. Removing it."
+          
+          # 删除标签
+                curl -X DELETE \
+                -H "Authorization: token ${{ secrets.OWNER_TOKEN }}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/$TARGET_LABEL
+               else
+                echo "Label '$TARGET_LABEL' was added by the authorized user '$AUTHORIZED_USER'. No action needed."
+               fi

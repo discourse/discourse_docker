@@ -1,0 +1,43 @@
+name: Gate Check
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    # 在PR打开、同步、重新打开时触发
+    branches:
+      - main
+      - master
+      - release/*
+
+jobs:
+  codearts-check:
+    runs-on: self-hosted
+    steps:
+      - name: Check and Remove Label
+        run: |
+            # 定义需要移除的标签
+            TARGET_LABEL="gate_check_pass"
+                     
+            # 调用 GitHub API 删除标签
+            curl -X DELETE \
+              -H "Authorization: token ${{ secrets.OWNER_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/$TARGET_LABEL
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Make script executable
+        run: chmod +x ./.github/script/codearts_check.sh
+
+      - name: Post a comment to the PR
+        run: |
+            curl -X POST \
+              -H "Authorization: token ${{ secrets.OWNER_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+              -d '{"body": "开始门禁检查，等门禁检查通过后可以合入"}'
+
+      - name: RUN CodeArts Pipeline
+        env:
+          GIT_URL: ${{ github.server_url }}/${{ github.repository }}.git
+        run: ./.github/script/codearts_check.sh $GITHUB_HEAD_REF ${{ github.event.pull_request.number }}  ${{ secrets.CODEARTS_PASSWORD }} ${{ secrets.CODEARTS_PIPELINE }} ${{ secrets.CODEARTS_ENDPOINT_ID }} $GIT_URL ${GITHUB_REPOSITORY%/*} ${GITHUB_REPOSITORY##*/}

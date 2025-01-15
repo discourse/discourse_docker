@@ -1,0 +1,36 @@
+name: Check Branch Naming for PRs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check-branch-naming:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Check PR source branch against target branch
+        run: |
+          # 获取目标分支和源分支
+          TARGET_BRANCH="${{ github.base_ref }}"
+          SOURCE_BRANCH="${{ github.head_ref }}"
+          
+          echo "Target branch: $TARGET_BRANCH"
+          echo "Source branch: $SOURCE_BRANCH"
+          
+          # 检查目标分支是否是 default 分支 (main/master)
+          if [[ "$TARGET_BRANCH" == "${{ github.event.repository.default_branch }}" ]]; then
+            if [[ ! "$SOURCE_BRANCH" =~ ^release/.* ]]; then
+              echo "Error: The source branch must be of the form 'release/*' when merging into the default branch."
+              exit 1
+            fi
+          # 检查目标分支是否是 release/*
+          elif [[ "$TARGET_BRANCH" =~ ^release/.* ]]; then
+            if [[ ! "$SOURCE_BRANCH" =~ ^(feature|bugfix)/.* ]]; then
+              echo "Error: The source branch must be of the form 'feature/*' or 'bugfix/*' when merging into 'release/*'."
+              exit 1
+            fi
+          fi
