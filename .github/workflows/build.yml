@@ -27,10 +27,10 @@ jobs:
           echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
 
   base:
-    # `unbuntu-22.04-8core` for arch amd64 non-scheduled builds
-    # `unbuntu-22.04` for arch amd64 scheduled builds
-    # `unbuntu-22.04-8core-arm` for arch arm64 non-scheduled builds
-    # `unbuntu-22.04-2core-arm` for arch arm64 scheduled builds
+    # `ubuntu-22.04-8core` for arch amd64 non-scheduled builds
+    # `ubuntu-22.04` for arch amd64 scheduled builds
+    # `ubuntu-22.04-8core-arm` for arch arm64 non-scheduled builds
+    # `ubuntu-22.04-2core-arm` for arch arm64 scheduled builds
     runs-on: ubuntu-22.04${{ ((github.event_name != 'schedule') && '-8core') || (( matrix.arch == 'arm64' && '-2core' ) || '') }}${{ (matrix.arch == 'arm64') && '-arm' || '' }}
     strategy:
       matrix:
@@ -45,7 +45,7 @@ jobs:
         ports:
           - 5000:5000
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
@@ -114,7 +114,7 @@ jobs:
           docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} localhost:5000/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
           docker push --quiet localhost:5000/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }}
           docker push --quiet localhost:5000/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
-          # multiarch manifest is an array of schemas - [0] is amd64, [1] is arch64: Compare amd64.
+          # multi-arch manifest is an array of schemas - [0] is amd64, [1] is arch64: Compare amd64.
           CURRENT_SLIM=$(docker manifest inspect -v discourse/base:slim | jq -r '.[0].SchemaV2Manifest.layers[] | .size / 1024 / 1024 | .*100 | round/100' | awk '{print $0; sum+= $0}; END {print sum}' | tail -n 1)
           CURRENT_RELEASE=$(docker manifest inspect -v discourse/base:release | jq -r '.[0].SchemaV2Manifest.layers[] | .size / 1024 / 1024 | .*100 | round/100' | awk '{print $0; sum+= $0}; END {print sum}' | tail -n 1)
           NEW_SLIM=$(docker manifest inspect -v --insecure localhost:5000/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }} |  jq -r '.SchemaV2Manifest.layers[] | .size / 1024 / 1024 | .*100 | round/100' | awk '{print $0; sum+= $0}; END {print sum}' | tail -n 1)
@@ -138,14 +138,14 @@ jobs:
           docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} discourse/base:aarch64
           docker push discourse/base:aarch64
 
-  push_multiarch_manifests:
+  push_multi_arch_manifests:
     runs-on: ubuntu-latest
     needs: [base, timestamp]
     env:
       TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
     if: github.ref == 'refs/heads/main'
     steps:
-      - name: create and push multiarch manifests
+      - name: create and push multi-arch manifests
         run: |
           docker login --username discoursebuild --password ${{ secrets.DOCKERHUB_PASSWORD }}
 
@@ -205,7 +205,7 @@ jobs:
       run:
         working-directory: image/discourse_test
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 1
       - name: build discourse_test:slim
