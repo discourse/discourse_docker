@@ -1,5 +1,3 @@
-# simple build file to be used locally by Sam
-#
 require "pty"
 require "optparse"
 
