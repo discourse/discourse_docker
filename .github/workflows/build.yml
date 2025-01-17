@@ -73,6 +73,12 @@ jobs:
         run: |
           ruby auto_build.rb base_release_main_${{ matrix.arch }}
 
+      # Temporarily build images with PG 15 so that we can ship the changes to the postgres templates in the same PR.
+      - name: build release images for `main` branch with PG 15
+        working-directory: image
+        run: |
+          ruby auto_build.rb base_release_main_${{ matrix.arch }}_pg_15
+
       - name: build release images for `stable` branch
         working-directory: image
         run: |
@@ -81,6 +87,7 @@ jobs:
       - name: tag release images
         run: |
           docker tag discourse/base:build_release_main_${{ matrix.arch }} discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
+          docker tag discourse/base:build_release_main_${{ matrix.arch }}_pg_15 discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}-pg-15
           docker tag discourse/base:build_release_stable_${{ matrix.arch }} discourse/base:2.0.${{ env.TIMESTAMP }}-stable-${{ matrix.arch }}
 
       - name: build test_build image for `main` branch
@@ -129,6 +136,7 @@ jobs:
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }}
           docker push discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
+          docker push discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}-pg-15
           docker push discourse/base:2.0.${{ env.TIMESTAMP }}-stable-${{ matrix.arch }}
           docker push discourse/discourse_dev:${{ env.TIMESTAMP }}-${{ matrix.arch }}
 
@@ -137,7 +145,6 @@ jobs:
         run: |
           docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} discourse/base:aarch64
           docker push discourse/base:aarch64
-
   push_multi_arch_manifests:
     runs-on: ubuntu-latest
     needs: [base, timestamp]
@@ -163,6 +170,11 @@ jobs:
           docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }} \
             -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-amd64 \
             -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-arm64
+
+          # Full Discourse `main` branch timestamped with PG 15
+          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-15 \
+            -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-amd64-pg-15 \
+            -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-arm64-pg-15
 
           # Full Discourse `stable` branch timestamped
           docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-stable \

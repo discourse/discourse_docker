@@ -28,7 +28,8 @@ RUN gpg --import /tmp/nginx_public_keys.key &&\
 FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
 ARG DEBIAN_RELEASE
-ENV PG_MAJOR=13 \
+ARG PG_MAJOR=13
+ENV PG_MAJOR=${PG_MAJOR} \
     RUBY_ALLOCATOR=/usr/lib/libjemalloc.so \
     LEFTHOOK=0 \
     DEBIAN_RELEASE=${DEBIAN_RELEASE}
