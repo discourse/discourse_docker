@@ -172,7 +172,7 @@ jobs:
             -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-arm64
 
           # Full Discourse `main` branch timestamped with PG 15
-          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-15 \
+          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-pg-15 \
             -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-amd64-pg-15 \
             -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-arm64-pg-15
 
