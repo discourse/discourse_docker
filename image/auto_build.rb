@@ -43,11 +43,25 @@ images = {
     extra_args: "--build-arg=\"DISCOURSE_BRANCH=main\" --target discourse_release",
     use_cache: true,
   },
+  base_release_main_amd64_pg_15: {
+    name: "base",
+    tag: "discourse/base:build_release_main_amd64_pg_15",
+    extra_args:
+      "--build-arg=\"DISCOURSE_BRANCH=main\" --target discourse_release --build-arg PG_MAJOR=15",
+    use_cache: true,
+  },
   base_release_main_arm64: {
     name: "base",
     tag: "discourse/base:build_release_main_arm64",
     extra_args:
       "--platform linux/arm64 --build-arg=\"DISCOURSE_BRANCH=main\" --target discourse_release",
+    use_cache: true,
+  },
+  base_release_main_arm64_pg_15: {
+    name: "base",
+    tag: "discourse/base:build_release_main_arm64_pg_15",
+    extra_args:
+      "--build-arg=\"DISCOURSE_BRANCH=main\" --target discourse_release --build-arg PG_MAJOR=15",
     use_cache: true,
   },
   base_release_stable_amd64: {
