@@ -27,11 +27,9 @@ jobs:
           echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
 
   base:
-    # `ubuntu-22.04-8core` for arch amd64 non-scheduled builds
-    # `ubuntu-22.04` for arch amd64 scheduled builds
-    # `ubuntu-22.04-8core-arm` for arch arm64 non-scheduled builds
-    # `ubuntu-22.04-2core-arm` for arch arm64 scheduled builds
-    runs-on: ubuntu-22.04${{ ((github.event_name != 'schedule') && '-8core') || (( matrix.arch == 'arm64' && '-2core' ) || '') }}${{ (matrix.arch == 'arm64') && '-arm' || '' }}
+    # `debian-12` for amd64 builds
+    # `ubuntu-22.04-8core-arm` for arm64 builds
+    runs-on: ${{ (matrix.arch == 'amd64' && 'debian-12') || 'ubuntu-22.04-8core-arm' }}
     strategy:
       matrix:
         arch: [amd64, arm64]
@@ -210,7 +208,7 @@ jobs:
           docker manifest push discourse/discourse_dev:${{ env.TIMESTAMP }}
           docker manifest push discourse/discourse_dev:release
   test:
-    runs-on: ubuntu-22.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    runs-on: debian-12
     timeout-minutes: 30
     needs: base
     defaults:
