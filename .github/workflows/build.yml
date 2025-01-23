@@ -33,7 +33,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
-    timeout-minutes: ${{ (github.event_name == 'schedule' && 90) || ((matrix.arch == 'arm64' && 45) || 30) }}
+    timeout-minutes: ${{ (github.event_name == 'schedule' && 90) || 45 }}
     needs: timestamp
     env:
       TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
