@@ -204,6 +204,7 @@ jobs:
           docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-slim
           docker manifest push discourse/base:slim
           docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}
+          docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-15
           docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-stable
           docker manifest push discourse/base:release
           docker manifest push discourse/base:release-stable
