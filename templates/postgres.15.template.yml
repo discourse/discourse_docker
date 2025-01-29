@@ -22,8 +22,6 @@ hooks:
          sv start postgres || exit 1
 
 run:
-  - exec: DEBIAN_FRONTEND=noninteractive apt-get purge -y postgresql-13 postgresql-client-13 postgresql-contrib-13 postgresql-13-pgvector
-  - exec: apt-get update && apt-get install -y postgresql-15 postgresql-client-15 postgresql-contrib-15 postgresql-15-pgvector
   - file:
      path: /etc/service/postgres/run
      chmod: "+x"
@@ -67,12 +65,15 @@ run:
         mkdir -p /shared/postgres_run/15-main.pg_stat_tmp
         chown postgres:postgres /shared/postgres_run/15-main.pg_stat_tmp
         chown -R root /var/lib/postgresql/15/main
-        [ ! -e /shared/postgres_data ] && install -d -m 0755 -o postgres -g postgres /shared/postgres_data && sudo -E -u postgres /usr/lib/postgresql/15/bin/initdb -D /shared/postgres_data || exit 0
-        chown -R postgres:postgres /shared/postgres_data
-        chown -R postgres:postgres /var/run/postgresql
-        if [ -f /root/upgrade_postgres ]; then
-          /root/upgrade_postgres
-          rm /root/upgrade_postgres
+        if [ ! -e /shared/postgres_data ]; then
+          install -d -m 0755 -o postgres -g postgres /shared/postgres_data
+          sudo -E -u postgres /usr/lib/postgresql/15/bin/initdb -D /shared/postgres_data
+          chown -R postgres:postgres /shared/postgres_data
+          chown -R postgres:postgres /var/run/postgresql
+        elif [ -f /root/upgrade_postgres ]; then
+          unset RETCODE
+          /root/upgrade_postgres || RETCODE=$?
+          [ -z "${RETCODE}" ] && rm /root/upgrade_postgres || exit $RETCODE
         fi
         # Necessary to enable backups
         install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
@@ -90,11 +91,16 @@ run:
          required=$(($(du -sb /shared/postgres_data | awk '{print $1}') * 2))
 
          if [ "$free_disk" -lt "$required" ]; then
-          echo "WARNING: Upgrading PostgreSQL would require an additional $(numfmt --to=si $(($required - $free_disk))) of disk space"
-          echo "Please free up some space, or expand your disk, before continuing."
-          echo ''
-          echo 'To avoid upgrading change "templates/postgres.15.template.yml" TO "templates/postgres.template.yml" in containers/app.yml'
-          exit 1
+           echo
+           echo -------------------------------------------------------------------------------------
+           echo "WARNING: Upgrading PostgreSQL would require an additional $(numfmt --to=si $(($required - $free_disk))) of disk space"
+           echo "Please free up some space, or expand your disk, before continuing."
+           echo
+           echo 'To avoid upgrading change "templates/postgres.template.yml" TO "templates/postgres.13.template.yml" in containers/app.yml'
+           echo
+           echo 'You can run "./launcher start app" to restart your app in the meanwhile.'
+           echo -------------------------------------------------------------------------------------
+           exit 1
          fi
 
          if [ -d /shared/postgres_data_old ]; then
@@ -119,8 +125,10 @@ run:
            echo -------------------------------------------------------------------------------------
            echo UPGRADE OF POSTGRES FAILED
            echo
-           echo You can run "./launcher start app" to restart your app in the meanwhile
+           echo Please visit https://meta.discourse.org/t/postgresql-15-update/349515 for support.
            echo
+           echo You can run "./launcher start app" to restart your app in the meanwhile
+           echo -------------------------------------------------------------------------------------
            exit 1
          fi
 
@@ -206,18 +214,6 @@ run:
       filename: "/etc/postgresql/15/main/pg_hba.conf"
       from: /^host.*all.*all.*::1\/128.*$/
       to: "host all all ::/0 md5"
-
-  # allow replication to connect in with md5/scram auth
-  - replace:
-      filename: "/etc/postgresql/15/main/pg_hba.conf"
-      from: /^host.*replication.*all.*127.*$/
-      to: "host replication all 0.0.0.0/0 md5"
-
-  # allow replication to connect in with md5/scram auth (IPv6)
-  - replace:
-      filename: "/etc/postgresql/15/main/pg_hba.conf"
-      from: /^host.*replication.*all.*::1\/128.*$/
-      to: "host replication all ::/0 md5"
 
   - exec:
       tag: db

@@ -4,7 +4,7 @@
 
 To build a new image, just run `ruby auto_build.rb image-name`. The build process will build a local image with a predefined tag.
 
-Images and tag names are defined [here](https://github.com/discourse/discourse_docker/blob/master/image/auto_build.rb#L6-L11).
+Images and tag names are defined [here](https://github.com/discourse/discourse_docker/blob/main/image/auto_build.rb#L6-L88).
 
 > **A note about --squash**: By default we squash the images we serve on Docker Hub. You will need to [enable experimental features](https://github.com/docker/docker-ce/blob/master/components/cli/experimental/README.md) on your Docker daemon for that.
 
