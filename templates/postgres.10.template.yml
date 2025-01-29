@@ -17,7 +17,7 @@ hooks:
        to: sv start postgres || exit 1
 
 run:
-  - exec: DEBIAN_FRONTEND=noninteractive apt-get purge -y postgresql-13 postgresql-client-13 postgresql-contrib-13
+  - exec: DEBIAN_FRONTEND=noninteractive apt-get purge -y postgresql-15 postgresql-client-15 postgresql-contrib-15
   - exec: apt-get update && apt-get install -y postgresql-10 postgresql-client-10 postgresql-contrib-10
   - exec: mkdir -p /shared/postgres_run
   - exec: chown postgres:postgres /shared/postgres_run
@@ -141,6 +141,7 @@ run:
   - exec: su postgres -c 'psql template1 -c "create extension if not exists pg_trgm;"'
   - exec: su postgres -c 'psql $db_name -c "create extension if not exists hstore;"'
   - exec: su postgres -c 'psql $db_name -c "create extension if not exists pg_trgm;"'
+  - exec: su postgres -c 'psql $db_name -c "create extension if not exists unaccent;"'
   - exec:
       stdin: |
         update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = '$db_name' AND encoding = pg_char_to_encoding('SQL_ASCII');
