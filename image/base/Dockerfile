@@ -50,7 +50,7 @@ RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "
 
 RUN --mount=type=tmpfs,target=/var/log \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
-    apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping locales \
+    apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping locales locales-all \
     ca-certificates rsync \
     cmake g++ pkg-config patch \
     libxslt-dev libcurl4-openssl-dev \
@@ -94,8 +94,6 @@ RUN --mount=type=tmpfs,target=/var/log \
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US.UTF-8
-RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
-    locale-gen
 
 RUN --mount=type=tmpfs,target=/root/.npm \
     npm install -g terser uglify-js pnpm
