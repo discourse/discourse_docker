@@ -50,6 +50,14 @@ run:
       chmod: "+x"
       contents: |
         #!/bin/bash
+        run_upgrade_postgres() {
+          if [ -f /root/upgrade_postgres ]; then
+            unset RETCODE
+            /root/upgrade_postgres || RETCODE=$?
+            [ -z "${RETCODE}" ] && rm /root/upgrade_postgres || exit $RETCODE
+          fi
+          exit 0
+        }
         sed -i "s/^# $LANG/$LANG/" /etc/locale.gen
         locale-gen && update-locale
         mkdir -p /shared/postgres_run
@@ -58,7 +66,7 @@ run:
         rm -fr /var/run/postgresql
         ln -s /shared/postgres_run /var/run/postgresql
         if [ -e /shared/postgres_run/.s.PGSQL.5432 ]; then
-          socat /dev/null UNIX-CONNECT:/shared/postgres_run/.s.PGSQL.5432 || exit 0 && echo postgres already running stop container ; exit 1
+          socat /dev/null UNIX-CONNECT:/shared/postgres_run/.s.PGSQL.5432 || run_upgrade_postgres && echo postgres already running stop container ; exit 1
         fi
         rm -fr /shared/postgres_run/.s*
         rm -fr /shared/postgres_run/*.pid
@@ -70,11 +78,8 @@ run:
           sudo -E -u postgres /usr/lib/postgresql/15/bin/initdb -D /shared/postgres_data
           chown -R postgres:postgres /shared/postgres_data
           chown -R postgres:postgres /var/run/postgresql
-        elif [ -f /root/upgrade_postgres ]; then
-          unset RETCODE
-          /root/upgrade_postgres || RETCODE=$?
-          [ -z "${RETCODE}" ] && rm /root/upgrade_postgres || exit $RETCODE
         fi
+        run_upgrade_postgres
         # Necessary to enable backups
         install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
 
