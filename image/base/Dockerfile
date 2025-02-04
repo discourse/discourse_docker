@@ -4,7 +4,7 @@
 ARG DEBIAN_RELEASE=bookworm
 FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS builder
 RUN apt update && \
-DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     autoconf build-essential \
     git \
     cmake \
@@ -61,25 +61,25 @@ RUN --mount=type=tmpfs,target=/var/log \
     psmisc whois brotli libunwind-dev \
     libtcmalloc-minimal4 cmake \
     pngcrush pngquant ripgrep poppler-utils \
-# imagemagick runtime dependencies
+    # imagemagick runtime dependencies
     libheif1 libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
     fonts-urw-base35 \
-# nginx runtime dependencies \
+    # nginx runtime dependencies \
     nginx-common && \
-# install these without recommends to avoid pulling in e.g.
-# X11 libraries, mailutils
+    # install these without recommends to avoid pulling in e.g.
+    # X11 libraries, mailutils
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less; \
-# postgres packages
+    # postgres packages
     install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${DEBIAN_RELEASE}-pgdg main" > /etc/apt/sources.list.d/pgdg.list; \
-# yarn packages
+    # yarn packages
     curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -; \
     echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list; \
-# node packages
+    # node packages
     curl --silent --location https://deb.nodesource.com/setup_22.x | sudo bash -; \
-# setup anacron, rsyslog, initctl
+    # setup anacron, rsyslog, initctl
     sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron; \
     sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf; \
     sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf; \
@@ -108,18 +108,18 @@ COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/Imag
 COPY --from=imagemagick_builder /usr/local/share/ImageMagick-7 /usr/local/share/ImageMagick-7
 # Create symlinks to imagemagick tools
 RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/compare &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/composite &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/conjure &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/convert &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/display &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/identify &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/import &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/magick-script &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/mogrify &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/montage &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
-  test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
+    ln -s /usr/local/bin/magick /usr/local/bin/compare &&\
+    ln -s /usr/local/bin/magick /usr/local/bin/composite &&\
+    ln -s /usr/local/bin/magick /usr/local/bin/conjure &&\
+    ln -s /usr/local/bin/magick /usr/local/bin/convert &&\
+    ln -s /usr/local/bin/magick /usr/local/bin/display &&\
+    ln -s /usr/local/bin/magick /usr/local/bin/identify &&\
+    ln -s /usr/local/bin/magick /usr/local/bin/import &&\
+    ln -s /usr/local/bin/magick /usr/local/bin/magick-script &&\
+    ln -s /usr/local/bin/magick /usr/local/bin/mogrify &&\
+    ln -s /usr/local/bin/magick /usr/local/bin/montage &&\
+    ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
+    test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
 ADD install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
@@ -156,7 +156,7 @@ COPY etc/  /etc
 COPY sbin/ /sbin
 
 FROM discourse_dependencies AS discourse_slim
-ARG DISCOURSE_BRANCH=main
+ARG DISCOURSE_BRANCH=pento/dev-upgrade-pnpm-10
 
 # Discourse specific bits
 RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
