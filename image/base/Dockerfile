@@ -98,7 +98,7 @@ RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
     locale-gen
 
 RUN --mount=type=tmpfs,target=/root/.npm \
-    npm install -g terser uglify-js pnpm
+    npm install -g terser uglify-js pnpm@9
 
 COPY --from=nginx_builder /usr/sbin/nginx /usr/sbin
 
