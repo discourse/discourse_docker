@@ -4,26 +4,17 @@ run:
        - "mkdir -p /shared/ssl/"
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
-     from: /server.+{/
-     to: |
-       server {
-         listen 80;
-         return 301 https://$$ENV_DISCOURSE_HOSTNAME$request_uri;
-       }
-       server {
-  - replace:
-     filename: "/etc/nginx/conf.d/discourse.conf"
-     from: /listen 80;\s+gzip on;/m
+     from: /listen 80;\s+listen \[::\]:80;/m
      to: |
        listen 443 ssl;
+       listen [::]:443 ssl;
        http2 on;
        SSL_TEMPLATE_SSL_BLOCK
   - replace:
      filename: "/etc/nginx/conf.d/discourse.conf"
-     from: /listen 80;\s+listen \[::\]:80;\s+gzip on;/m
+     from: /listen 80;/
      to: |
        listen 443 ssl;
-       listen [::]:443 ssl;
        http2 on;
        SSL_TEMPLATE_SSL_BLOCK
   - replace:
@@ -43,8 +34,6 @@ run:
        ssl_session_timeout 1d;
        ssl_session_cache shared:SSL:1m;
 
-       gzip on;
-
        add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
 
        if ($http_host != $$ENV_DISCOURSE_HOSTNAME) {
@@ -56,3 +45,12 @@ run:
      to: |
        location @discourse {
        add_header Strict-Transport-Security 'max-age=31536000'; # remember the certificate for a year and automatically connect to HTTPS for this domain
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /server.+{/
+     to: |
+       server {
+         listen 80;
+         return 301 https://$$ENV_DISCOURSE_HOSTNAME$request_uri;
+       }
+       server {
