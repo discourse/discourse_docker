@@ -812,8 +812,39 @@ case "$command" in
 
       set_existing_container
 
+      # Workaround to inject SVWAIT in existing container and stop postgres cleanly
+      stop_services() {
+        set_volumes
+
+        shared_path="$(echo $volumes | sed -n 's/.*-v \([a-zA-Z/]*\):\/shared.*/\1/p')"
+        pg_socket="${shared_path}/postgres_run/.s.PGSQL.5432"
+        running=`$docker_path ps | awk '{ print $1, $(NF) }' | grep " $config$" | awk '{ print $1 }'`
+
+        if [ -z $running ] && [ -S "$pg_socket" ]
+          then
+            echo "Restarting old container to stop database cleanly"
+            (
+              set -x
+              $docker_path start $config
+              sleep 5
+            )
+        fi
+
+        if [ -S "$pg_socket" ]
+          then
+            echo "Stopping services in old container"
+            (
+              set -x
+              $docker_path exec -e SVWAIT=300 $config bash -c "[ -d /etc/service/nginx ] && sv stop nginx"
+              $docker_path exec -e SVWAIT=300 $config bash -c "[ -d /etc/service/unicorn ] && sv stop unicorn"
+              $docker_path exec -e SVWAIT=300 $config bash -c "[ -d /etc/service/postgres ] && sv stop postgres"
+            )
+        fi
+      }
+
       if [ ! -z $existing ]
         then
+          stop_services
           echo "Stopping old container"
           (
             set -x
