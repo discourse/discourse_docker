@@ -1,4 +1,5 @@
 env:
+  SVWAIT: 300
   # You can have redis on a different box
   RAILS_ENV: 'production'
   UNICORN_WORKERS: 3
