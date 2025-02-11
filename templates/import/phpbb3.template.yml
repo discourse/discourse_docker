@@ -8,7 +8,6 @@ hooks:
     - exec:
         cd: /etc/service
         cmd:
-          - rm -R unicorn
           - rm -R nginx
           - rm -R cron
 
