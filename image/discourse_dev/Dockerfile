@@ -7,7 +7,7 @@ FROM discourse/base:$from_tag AS repo-fetcher
 WORKDIR /repo
 RUN chown discourse .
 USER discourse
-RUN git clone https://github.com/discourse/discourse . --depth 1
+RUN git clone --branch pento/dev-upgrade-pnpm-10 https://github.com/discourse/discourse . --depth 1
 
 FROM discourse/base:$from_tag
 
