@@ -221,7 +221,10 @@ run:
       tag: precompile
       hook: assets_precompile
       cmd:
-        - su discourse -c 'SKIP_EMBER_CLI_COMPILE=1 bundle exec rake themes:update assets:precompile'
+        - su discourse -c 'bundle exec rake themes:update'
+        # `assets:precompile` may fail because of `Zlib::BufError`. This might be a sprockets/Zlib bug: https://github.com/ruby/zlib/issues/49
+        - su discourse -c 'n=0; until [ "$n" -ge 3 ]; do SKIP_EMBER_CLI_COMPILE=1 bundle exec rake assets:precompile && break; n=$((n+1)); done'
+
   - replace:
       tag: precompile
       filename: /etc/service/unicorn/run
