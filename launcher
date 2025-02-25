@@ -491,7 +491,7 @@ fi
 
   if [ -d /var/discourse/shared/standalone/postgres_data_old ]; then
     echo
-    echo "Old PostgreSQL backup data cluster detected taking up $(du -hs /var/discourse/shared/standalone/postgres_data_old | awk '{print $1}') detected"
+    echo "Old PostgreSQL backup data cluster detected taking up $(du -hs /var/discourse/shared/standalone/postgres_data_old | awk '{print $1}')"
     read -p "Would you like to remove it? (y/N): " -n 1 -r && echo
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
