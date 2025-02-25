@@ -1,6 +1,8 @@
 #!/bin/bash
 set -e
 
+cat /etc/apt/sources.list.d/bookworm-backports.list
+
 # version check: https://github.com/ImageMagick/ImageMagick/releases
 IMAGE_MAGICK_VERSION="7.1.1-43"
 IMAGE_MAGICK_HASH="ceb972266b23dc7c1cfce0da5a7f0c9acfb4dc81f40eb542a49476fedbc2618f"
@@ -16,14 +18,14 @@ apt -y -q install git make gcc pkg-config autoconf curl g++ yasm cmake \
     libde265-0 libde265-dev ${LIBJPEGTURBO} libwebp7 x265 libx265-dev libtool \
     libpng16-16 libpng-dev libwebp-dev libgomp1 \
     libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils librsvg2-dev \
-    libltdl7-dev libbz2-dev gsfonts libtiff-dev libfreetype6-dev libjpeg-dev libheif1 libheif-dev
+    libltdl7-dev libbz2-dev gsfonts libtiff-dev libfreetype6-dev libjpeg-dev
 
-# Ubuntu doesn't like backports
-if cat /etc/issue | grep -qiE 'Debian GNU/Linux 12|Ubuntu 22'; then
-  apt -y install libaom-dev
+if cat /etc/issue | grep -qi Debian; then
+  # Use backports
+  . /etc/os-release
+  apt -y -q install -t $VERSION_CODENAME-backports libaom-dev libheif1 libheif-dev
 else
-  # Use backports instead of compiling it
-  apt -y -q install -t bullseye-backports libaom-dev
+  apt -y -q install libaom-dev libheif1 libheif-dev
 fi
 
 mkdir -p $WDIR

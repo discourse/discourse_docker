@@ -14,7 +14,10 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     libbrotli-dev
 
 FROM builder AS imagemagick_builder
+ARG DEBIAN_RELEASE
+ENV DEBIAN_RELEASE=${DEBIAN_RELEASE}
 ADD install-imagemagick /tmp/install-imagemagick
+RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
 RUN /tmp/install-imagemagick
 
 FROM builder AS nginx_builder
@@ -67,11 +70,11 @@ RUN --mount=type=tmpfs,target=/var/log \
     fonts-urw-base35 \
 # nginx runtime dependencies \
     nginx-common && \
+# more recent libheif version
+    DEBIAN_FRONTEND=noninteractive apt-get -y install -t ${DEBIAN_RELEASE}-backports libheif1; \
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less; \
-# more recent libheif version
-    DEBIAN_FRONTEND=noninteractive apt-get -y install -t bullseye-backports libheif1; \
 # postgres packages
     install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
