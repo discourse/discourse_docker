@@ -62,7 +62,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     libtcmalloc-minimal4 cmake \
     pngcrush pngquant ripgrep poppler-utils \
 # imagemagick runtime dependencies
-    libheif1 libjbig0 libtiff6 libpng16-16 libfontconfig1 \
+    libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
     fonts-urw-base35 \
 # nginx runtime dependencies \
@@ -70,6 +70,8 @@ RUN --mount=type=tmpfs,target=/var/log \
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less; \
+# more recent libheif version
+    DEBIAN_FRONTEND=noninteractive apt-get -y install -t bullseye-backports libheif1; \
 # postgres packages
     install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
