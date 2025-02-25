@@ -68,8 +68,7 @@ RUN --mount=type=tmpfs,target=/var/log \
 # imagemagick runtime dependencies
     libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
-    fonts-urw-base35 \
-    libheif1/${DEBIAN_RELEASE}-backports \
+    fonts-urw-base35 libheif1/${DEBIAN_RELEASE}-backports \
 # nginx runtime dependencies \
     nginx-common && \
 # install these without recommends to avoid pulling in e.g.
