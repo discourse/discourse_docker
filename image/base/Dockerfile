@@ -2,7 +2,11 @@
 # VERSION:  release
 
 ARG DEBIAN_RELEASE=bookworm
+
 FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS builder
+ARG DEBIAN_RELEASE
+ENV DEBIAN_RELEASE=${DEBIAN_RELEASE}
+RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
 RUN apt update && \
 DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     autoconf build-essential \
@@ -14,10 +18,7 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     libbrotli-dev
 
 FROM builder AS imagemagick_builder
-ARG DEBIAN_RELEASE
-ENV DEBIAN_RELEASE=${DEBIAN_RELEASE}
 ADD install-imagemagick /tmp/install-imagemagick
-RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
 RUN /tmp/install-imagemagick
 
 FROM builder AS nginx_builder
