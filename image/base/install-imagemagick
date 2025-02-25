@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e
 
-cat /etc/apt/sources.list.d/bookworm-backports.list
-
 # version check: https://github.com/ImageMagick/ImageMagick/releases
 IMAGE_MAGICK_VERSION="7.1.1-43"
 IMAGE_MAGICK_HASH="ceb972266b23dc7c1cfce0da5a7f0c9acfb4dc81f40eb542a49476fedbc2618f"
