@@ -69,9 +69,9 @@ RUN --mount=type=tmpfs,target=/var/log \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
     fonts-urw-base35 \
 # nginx runtime dependencies \
-    nginx-common && \
+    nginx-common \
 # more recent libheif version
-    DEBIAN_FRONTEND=noninteractive apt-get -y install -t ${DEBIAN_RELEASE}-backports libheif1; \
+    libheif1/${DEBIAN_RELEASE}-backports && \
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less; \
