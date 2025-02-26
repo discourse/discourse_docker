@@ -14,16 +14,17 @@ WDIR=/tmp/imagemagick
 apt -y -q remove imagemagick
 apt -y -q install git make gcc pkg-config autoconf curl g++ yasm cmake \
     libde265-0 libde265-dev ${LIBJPEGTURBO} libwebp7 x265 libx265-dev libtool \
-    libpng16-16 libpng-dev libwebp-dev libgomp1 \
+    libpng16-16 libpng-dev libwebp-dev libgomp1 libaom-dev \
     libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils librsvg2-dev \
-    libltdl7-dev libbz2-dev gsfonts libtiff-dev libfreetype6-dev libjpeg-dev libheif1 libheif-dev
+    libltdl7-dev libbz2-dev gsfonts libtiff-dev libfreetype6-dev libjpeg-dev
 
-# Ubuntu doesn't like backports
-if cat /etc/issue | grep -qiE 'Debian GNU/Linux 12|Ubuntu 22'; then
-  apt -y install libaom-dev
+if cat /etc/issue | grep -qi Debian; then
+  # Get VERSION_CODENAME
+  . /etc/os-release
+  # Use backports
+  apt -y -q install libheif1/$VERSION_CODENAME-backports libheif-dev/$VERSION_CODENAME-backports
 else
-  # Use backports instead of compiling it
-  apt -y -q install -t bullseye-backports libaom-dev
+  apt -y -q install libheif1 libheif-dev
 fi
 
 mkdir -p $WDIR

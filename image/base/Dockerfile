@@ -2,7 +2,11 @@
 # VERSION:  release
 
 ARG DEBIAN_RELEASE=bookworm
+
 FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS builder
+ARG DEBIAN_RELEASE
+ENV DEBIAN_RELEASE=${DEBIAN_RELEASE}
+RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
 RUN apt update && \
 DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     autoconf build-essential \
@@ -62,9 +66,9 @@ RUN --mount=type=tmpfs,target=/var/log \
     libtcmalloc-minimal4 cmake \
     pngcrush pngquant ripgrep poppler-utils \
 # imagemagick runtime dependencies
-    libheif1 libjbig0 libtiff6 libpng16-16 libfontconfig1 \
+    libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
-    fonts-urw-base35 \
+    fonts-urw-base35 libheif1/${DEBIAN_RELEASE}-backports \
 # nginx runtime dependencies \
     nginx-common && \
 # install these without recommends to avoid pulling in e.g.
