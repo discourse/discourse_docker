@@ -1,5 +1,8 @@
 # This template installs MariaDB and all dependencies needed for importing from phpBB3.
 
+env:
+  UNICORN_SIDEKIQS: 0
+
 params:
   home: /var/www/discourse
 
@@ -8,7 +11,6 @@ hooks:
     - exec:
         cd: /etc/service
         cmd:
-          - rm -R unicorn
           - rm -R nginx
           - rm -R cron
 
@@ -16,7 +18,6 @@ hooks:
         cd: /etc/runit/3.d
         cmd:
           - rm 01-nginx
-          - rm 02-unicorn
 
     - file:
         path: /etc/mysql/conf.d/import.cnf
