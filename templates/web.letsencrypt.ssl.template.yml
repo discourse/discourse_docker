@@ -125,6 +125,10 @@ hooks:
        to: |
          ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key;
          ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.key;
+         ssl_stapling on;
+         ssl_stapling_verify on;
+         resolver 8.8.8.8 1.1.1.1;
+         resolver_timeout 5s;
 
     - replace:
        filename: "/etc/nginx/conf.d/discourse.conf"
