@@ -10,8 +10,13 @@
 
 ## Getting Started
 
-The simplest way to get started is via the **standalone** template, which can be installed in 30 minutes or less. For detailed install instructions, see
+> Did you know that Discourse also offers affordable hosting options? All of our hosting services directly support the development of Discourse.
+>
+> 👉 [Learn more about Discourse hosting](https://discourse.org/pricing)
 
+The easiest way to get started with self-hosting Discourse is via the standalone template, which can be installed in 30 minutes or less.
+
+For detailed install instructions, check out:
 https://github.com/discourse/discourse/blob/main/docs/INSTALL-cloud.md
 
 ## Directory Structure
