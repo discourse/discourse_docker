@@ -346,15 +346,17 @@ check_port() {
 ## read a variable from the config file
 ##
 read_config() {
+  local config_line
   config_line=`grep -E "^  #?$1:" $web_file`
   read_config_result=`echo $config_line | awk  -F":" '{print $2}'`
   read_config_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
 }
 
 read_default() {
-  config_line=`grep -E "^  #?$1:" samples/standalone.yml`
-  read_default_result=`echo $config_line | awk  -F":" '{print $2}'`
-  read_default_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
+  local default_line
+  default_line=`grep -E "^  #?$1:" samples/standalone.yml`
+  read_default_result=`echo $default_line | awk  -F":" '{print $2}'`
+  read_default_result=`echo $read_default_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
 }
 
 assert_maxmind_envs() {
@@ -447,6 +449,10 @@ ask_user_for_config() {
   local developer_emails=$read_config_result
   read_config "DISCOURSE_SMTP_PASSWORD"
   local smtp_password=$read_config_result
+  read_config "DISCOURSE_SMTP_ENABLE_START_TLS"
+  local smtp_enable_start_tls=$read_config_result
+  read_config "DISCOURSE_SMTP_FORCE_TLS"
+  local smtp_force_tls=$read_config_result
   read_config "DISCOURSE_SMTP_PORT"
   local smtp_port=$read_config_result
   read_config "DISCOURSE_SMTP_USER_NAME"
@@ -560,6 +566,46 @@ ask_user_for_config() {
     fi
 
     ##
+    ## automatically suggest TLS if port 465, otherwise keep STARTTLS
+    ##
+    if [ ! -z "$smtp_enable_start_tls" ]
+    then
+      if [ "$smtp_port" == 465 ]
+      then
+          smtp_protocol="TLS"
+      else
+          smtp_protocol="STARTTLS"
+      fi
+      local smtp_protocol_valid="n"
+      until [ "$smtp_protocol_valid" == "y" ]
+      do
+        read -p "SMTP protocol? [$smtp_protocol]: " new_value
+        if [ ! -z "$new_value" ]
+          then
+          if [ "$new_value" == 'TLS' ] || [ "$new_value" == 'STARTTLS' ]
+          then
+            smtp_protocol="$new_value"
+            smtp_protocol_valid="y"
+          else
+            echo
+            echo "[Error] Invalid SMTP protocol (TLS or STARTTLS)"
+            echo
+          fi
+        else
+          smtp_protocol_valid="y"
+        fi
+      done
+      if [ "$smtp_protocol" == "STARTTLS" ]
+      then
+        smtp_enable_start_tls='true'
+        smtp_force_tls='false'
+      else
+        smtp_enable_start_tls='false'
+        smtp_force_tls='true'
+      fi
+    fi
+
+    ##
     ## automatically set correct user name based on common mail providers unless it's been set
     ##
     if [ "$smtp_user_name" == "user@example.com" ]
@@ -646,6 +692,7 @@ ask_user_for_config() {
     echo "Email             : $developer_emails"
     echo "SMTP address      : $smtp_address"
     echo "SMTP port         : $smtp_port"
+    echo "SMTP protocol     : $smtp_protocol"
     echo "SMTP username     : $smtp_user_name"
     echo "SMTP password     : $smtp_password"
     echo "Notification email: $notification_email"
@@ -707,6 +754,28 @@ ask_user_for_config() {
   else
     echo "DISCOURSE_SMTP_PORT change failed."
     update_ok="n"
+  fi
+
+  sed -i -e "s/^  #\?DISCOURSE_SMTP_ENABLE_START_TLS:.*/  DISCOURSE_SMTP_ENABLE_START_TLS: $smtp_enable_start_tls/w $changelog" $web_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    echo "DISCOURSE_SMTP_ENABLE_START_TLS change failed."
+    update_ok="n"
+  fi
+
+  sed -i -e "s/^  #\?DISCOURSE_SMTP_FORCE_TLS:.*/  DISCOURSE_SMTP_FORCE_TLS: $smtp_force_tls/w $changelog" $web_file
+  if [ -s $changelog ]
+  then
+    rm $changelog
+  else
+    sed -i "/^.*DISCOURSE_SMTP_ENABLE_START_TLS:.*/a \ \ DISCOURSE_SMTP_FORCE_TLS: $smtp_force_tls" $web_file
+    if ! grep -q '^  DISCOURSE_SMTP_FORCE_TLS:' "$web_file"
+    then
+      echo "DISCOURSE_SMTP_FORCE_TLS change failed."
+      update_ok="n"
+    fi
   fi
 
   sed -i -e "s/^  #\?DISCOURSE_SMTP_USER_NAME:.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $web_file
@@ -868,15 +937,9 @@ validate_config() {
 
     if [ ! -z "$result" ]
     then
-      if [[ "$config_line" = *"$default"* ]]
+      if [[ "$result" = "$default" ]]
       then
         echo "$x left at incorrect default of $default"
-        valid_config="n"
-      fi
-      config_val=`echo $config_line | awk '{print $2}'`
-      if [ -z $config_val ]
-      then
-        echo "$x was not configured"
         valid_config="n"
       fi
     else
