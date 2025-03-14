@@ -1,4 +1,4 @@
-
+#!/bin/bash
 IAM_DATA=$(cat <<EOF
 {
     "auth": {

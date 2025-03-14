@@ -15,14 +15,14 @@ jobs:
     steps:
       - name: Check and Remove Label
         run: |
-            # 定义需要移除的标签
-            TARGET_LABEL="gate_check_pass"
-                     
-            # 调用 GitHub API 删除标签
-            curl -X DELETE \
-              -H "Authorization: token ${{ secrets.OWNER_TOKEN }}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/$TARGET_LABEL
+          # 定义需要移除的标签
+          TARGET_LABEL="gate_check_pass"
+          
+          # 调用 GitHub API 删除标签
+          curl -X DELETE \
+            -H "Authorization: token ${{ secrets.OWNER_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/labels/$TARGET_LABEL
       - name: Checkout repository
         uses: actions/checkout@v2
 
@@ -31,11 +31,11 @@ jobs:
 
       - name: Post a comment to the PR
         run: |
-            curl -X POST \
-              -H "Authorization: token ${{ secrets.OWNER_TOKEN }}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
-              -d '{"body": "开始门禁检查，等门禁检查通过后可以合入"}'
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.OWNER_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments \
+            -d '{"body": "开始门禁检查，等门禁检查通过后可以合入"}'
 
       - name: RUN CodeArts Pipeline
         env:

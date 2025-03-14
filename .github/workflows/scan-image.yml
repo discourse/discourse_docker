@@ -1,0 +1,33 @@
+name: Process PR Comment and Run Script
+
+on:
+  issue_comment:
+    types: [created]  # 仅当评论被创建时触发
+
+jobs:
+  process_comment:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Make script executable
+        run: chmod +x ./.github/script/scan_image.sh
+
+      - name: Check if comment has the specified prefix and run script
+        run: |
+          # 获取评论内容
+          COMMENT_BODY="${{ github.event.comment.body }}"
+          PREFIX="扫描镜像："
+
+          # 判断评论是否包含指定的前缀
+          if [[ "$COMMENT_BODY" == "$PREFIX"* ]]; then
+            # 去掉前缀并提取后面的内容
+            IMAGE_URL="${COMMENT_BODY#$PREFIX}"
+            echo "main" ${{ github.event.issue.number }}  ${{ secrets.CODEARTS_PASSWORD }} ${{ secrets.CODEARTS_SCAN_IMAGE_PIPELINE }} ${{ secrets.CODEARTS_ENDPOINT_ID }} "https://github.com/${GITHUB_REPOSITORY}.git" ${GITHUB_REPOSITORY%/*} ${GITHUB_REPOSITORY##*/} "$IMAGE_URL"
+
+            ./.github/script/scan_image.sh "main" ${{ github.event.issue.number }}  ${{ secrets.CODEARTS_PASSWORD }} ${{ secrets.CODEARTS_SCAN_IMAGE_PIPELINE }} ${{ secrets.CODEARTS_ENDPOINT_ID }} "https://github.com/${GITHUB_REPOSITORY}.git" ${GITHUB_REPOSITORY%/*} ${GITHUB_REPOSITORY##*/} "$IMAGE_URL"
+          else
+            echo "Comment does not match the prefix, skipping the script execution."
+          fi
