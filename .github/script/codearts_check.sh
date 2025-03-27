@@ -41,7 +41,7 @@ DATA=$(cat <<EOF
   "sources" : [ {
     "type" : "code",
     "params" : {
-      "git_type" : "github",
+      "git_type" : "git",
       "default_branch" : "main",
       "git_url" : "$6",
       "endpoint_id" : "$5",
