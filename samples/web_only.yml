@@ -65,6 +65,12 @@ env:
   ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
   #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
 
+  ## To use DNS verification with letsencrypt uncomment below and add the relevant environment variables from: https://github.com/acmesh-official/acme.sh/wiki/dnsapi
+  # (cloudflare example)
+  #DISCOURSE_ACME_DNS_MODE: dns_cf
+  #CF_Keys:  763eac4f1bcebd8b5c95e9fc50d010b4
+  #CF_EMAIL: user@example.com
+
   ## TODO: configure connectivity to the databases
   DISCOURSE_DB_SOCKET: ''
   #DISCOURSE_DB_USERNAME: discourse

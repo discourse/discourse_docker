@@ -59,7 +59,11 @@ hooks:
         /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf
 
         issue_cert() {
-          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue $2 -d $$ENV_DISCOURSE_HOSTNAME --keylength $1 -w /var/www/discourse/public
+          if [ -z $DISCOURSE_ACME_DNS_MODE ]; then
+            LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue $2 -d $$ENV_DISCOURSE_HOSTNAME --keylength $1 -w /var/www/discourse/public
+          else
+            LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --dns ${DISCOURSE_ACME_DNS_MODE} --issue $2 -d $$ENV_DISCOURSE_HOSTNAME --keylength $1 -w /var/www/discourse/public
+          fi
         }
 
         cert_exists() {
