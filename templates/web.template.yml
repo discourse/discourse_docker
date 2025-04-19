@@ -61,8 +61,8 @@ run:
           PRECOMPILE_ON_BOOT=1
         fi
         if [ -f /usr/local/bin/create_db ] && [ "$CREATE_DB_ON_BOOT" = "1" ]; then /usr/local/bin/create_db; fi;
-        if [ "$MIGRATE_ON_BOOT" = "1" ]; then su discourse -c 'bundle exec rake db:migrate'; fi
-        if [ "$PRECOMPILE_ON_BOOT" = "1" ]; then SKIP_EMBER_CLI_COMPILE=1 su discourse -c 'bundle exec rake assets:precompile'; fi
+        if [ "$MIGRATE_ON_BOOT" = "1" ]; then su discourse -c 'bundle exec rake db:migrate' || exit 1; fi
+        if [ "$PRECOMPILE_ON_BOOT" = "1" ]; then su discourse -c 'bundle exec rake maxminddb:refresh assets:precompile:css' || exit 1; fi
         LD_PRELOAD=$RUBY_ALLOCATOR HOME=/home/discourse USER=discourse exec thpoff chpst -u discourse:www-data -U discourse:www-data bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
   - file:
@@ -215,13 +215,13 @@ run:
       tag: build
       hook: assets_precompile_build
       cmd:
-        - su discourse -c 'bundle exec rake assets:precompile:build'
+        - su discourse -c 'SKIP_DB_AND_REDIS=1 bundle exec rake assets:precompile'
   - exec:
       cd: $home
       tag: precompile
       hook: assets_precompile
       cmd:
-        - su discourse -c 'SKIP_EMBER_CLI_COMPILE=1 bundle exec rake themes:update assets:precompile'
+        - su discourse -c 'bundle exec rake themes:update maxminddb:refresh assets:precompile:css'
   - replace:
       tag: precompile
       filename: /etc/service/unicorn/run
