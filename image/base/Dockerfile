@@ -2,8 +2,9 @@
 # VERSION:  release
 
 ARG DEBIAN_RELEASE=bookworm
+ARG RUBY_VERSION=3.3.7
 
-FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS builder
+FROM discourse/ruby:${RUBY_VERSION}-${DEBIAN_RELEASE}-slim AS builder
 ARG DEBIAN_RELEASE
 ENV DEBIAN_RELEASE=${DEBIAN_RELEASE}
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
@@ -29,7 +30,7 @@ RUN gpg --import /tmp/nginx_public_keys.key &&\
     rm /tmp/nginx_public_keys.key &&\
     /tmp/install-nginx
 
-FROM discourse/ruby:3.3.6-${DEBIAN_RELEASE}-slim AS discourse_dependencies
+FROM discourse/ruby:${RUBY_VERSION}-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
 ARG DEBIAN_RELEASE
 ARG PG_MAJOR=15
