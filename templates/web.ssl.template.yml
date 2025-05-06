@@ -3,16 +3,16 @@ run:
       cmd:
         - "mkdir -p /shared/ssl/"
   - file:
-      path: "/etc/nginx/conf.d/outlets/before-server/redirect-http-to-https.conf"
+      path: "/etc/nginx/conf.d/outlets/before-server/10-redirect-http-to-https.conf"
       contents: |
         server {
           listen 80;
           return 301 https://$$ENV_DISCOURSE_HOSTNAME$request_uri;
         }
-  - exec: rm /etc/nginx/conf.d/outlets/server/http.conf
+  - exec: rm /etc/nginx/conf.d/outlets/server/10-http.conf
   - file:
       hook: ssl
-      path: "/etc/nginx/conf.d/outlets/server/https.conf"
+      path: "/etc/nginx/conf.d/outlets/server/20-https.conf"
       contents: |
         listen 443 ssl;
         http2 on;
@@ -34,13 +34,13 @@ run:
           rewrite (.*) https://$$ENV_DISCOURSE_HOSTNAME$1 permanent;
         }
   - file:
-      path: "/etc/nginx/conf.d/outlets/discourse/https.conf"
+      path: "/etc/nginx/conf.d/outlets/discourse/20-https.conf"
       contents: |
         add_header Strict-Transport-Security 'max-age=31536000';
   - exec:
       cmd:
         - |-
           if [ -f "/proc/net/if_inet6" ] ; then
-            sed -i 's/listen 80;/listen 80;\nlisten [::]:80;/g' /etc/nginx/conf.d/outlets/before-server/redirect-http-to-https.conf
-            sed -i 's/listen 443 ssl;/listen 443 ssl;\nlisten [::]:443 ssl;/g' /etc/nginx/conf.d/outlets/server/https.conf
+            sed -i 's/listen 80;/listen 80;\nlisten [::]:80;/g' /etc/nginx/conf.d/outlets/before-server/10-redirect-http-to-https.conf
+            sed -i 's/listen 443 ssl;/listen 443 ssl;\nlisten [::]:443 ssl;/g' /etc/nginx/conf.d/outlets/server/20-https.conf
           fi

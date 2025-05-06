@@ -165,9 +165,9 @@ run:
         - sed -i 's#listen 80;##g' /etc/nginx/conf.d/discourse.conf
         - |-
           if [ -f "/proc/net/if_inet6" ]; then
-            echo "listen 80;\nlisten [::]:80;" > /etc/nginx/conf.d/outlets/server/http.conf
+            echo "listen 80;\nlisten [::]:80;" > /etc/nginx/conf.d/outlets/server/10-http.conf
           else
-            echo "listen 80;" > /etc/nginx/conf.d/outlets/server/http.conf
+            echo "listen 80;" > /etc/nginx/conf.d/outlets/server/10-http.conf
           fi
 
   - exec:

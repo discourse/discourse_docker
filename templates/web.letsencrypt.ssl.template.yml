@@ -113,14 +113,14 @@ hooks:
          ACCOUNT_EMAIL=$$ENV_LETSENCRYPT_ACCOUNT_EMAIL
 
     - replace:
-       filename: "/etc/nginx/conf.d/outlets/server/https.conf"
+       filename: "/etc/nginx/conf.d/outlets/server/20-https.conf"
        from: /ssl_certificate.+/
        to: |
          ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer;
          ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.cer;
 
     - replace:
-       filename: "/etc/nginx/conf.d/outlets/server/https.conf"
+       filename: "/etc/nginx/conf.d/outlets/server/20-https.conf"
        from: /ssl_certificate_key.+/
        to: |
          ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key;

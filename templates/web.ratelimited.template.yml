@@ -7,7 +7,7 @@ params:
 
 run:
   - file:
-     path: "/etc/nginx/conf.d/outlets/before-server/ratelimited.conf"
+     path: "/etc/nginx/conf.d/outlets/before-server/30-ratelimited.conf"
      contents: |
        limit_req_zone $binary_remote_addr zone=flood:10m rate=$reqs_per_secondr/s;
        limit_req_zone $binary_remote_addr zone=bot:10m rate=$reqs_per_minuter/m;
@@ -16,7 +16,7 @@ run:
        limit_conn_status 429;
 
   - file:
-     path: "/etc/nginx/conf.d/outlets/discourse/ratelimited.conf"
+     path: "/etc/nginx/conf.d/outlets/discourse/30-ratelimited.conf"
      contents: |
          limit_conn connperip $conn_per_ip;
          limit_req zone=flood burst=$burst_per_second nodelay;

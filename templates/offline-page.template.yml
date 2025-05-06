@@ -8,7 +8,7 @@ params:
 
 run:
   - file:
-     path: "/etc/nginx/conf.d/outlets/server/offline-page.conf"
+     path: "/etc/nginx/conf.d/outlets/server/30-offline-page.conf"
      contents: |
         error_page 502 /error_page.html;
         location /error_page.html {
