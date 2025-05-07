@@ -31,10 +31,13 @@ FROM with_browsers AS release
 
 RUN cd /var/www/discourse &&\
     sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
-    sudo -E -u discourse -H /bin/bash -c 'if [ -f yarn.lock ]; then (yarn install && yarn cache clean); else CI=1 pnpm install; fi'
+    sudo -E -u discourse -H /bin/bash -c 'CI=1 pnpm install'
 
 RUN cd /var/www/discourse && sudo -E -u discourse -H bundle exec rake plugin:install_all_official &&\
     LOAD_PLUGINS=1 sudo -E -u discourse -H bundle exec rake plugin:install_all_gems &&\
     sudo -E -u discourse -H bundle exec ruby script/install_minio_binaries.rb
+
+RUN cd /var/www/discourse && \
+    pnpm playwright install --with-deps --no-shell chromium
 
 ENTRYPOINT ["sudo", "-E", "-u", "discourse", "-H", "ruby", "script/docker_test.rb"]
