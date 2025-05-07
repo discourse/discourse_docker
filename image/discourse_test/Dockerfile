@@ -33,6 +33,7 @@ RUN cd /var/www/discourse &&\
     sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
     sudo -E -u discourse -H /bin/bash -c 'if [ -f yarn.lock ]; then (yarn install && yarn cache clean); else CI=1 pnpm install; fi'
 
+USER ROOT
 RUN cd /var/www/discourse &&\
     sudo -E -u discourse -H /bin/bash -c 'CI=1 pnpm playwright install --with-deps --no-shell chromium'
 
