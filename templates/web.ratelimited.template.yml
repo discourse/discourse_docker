@@ -6,18 +6,21 @@ params:
   conn_per_ip: 20
 
 run:
-  - file:
-     path: "/etc/nginx/conf.d/outlets/before-server/30-ratelimited.conf"
-     contents: |
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: /server.+{/
+     to: |
        limit_req_zone $binary_remote_addr zone=flood:10m rate=$reqs_per_secondr/s;
        limit_req_zone $binary_remote_addr zone=bot:10m rate=$reqs_per_minuter/m;
        limit_req_status 429;
        limit_conn_zone $binary_remote_addr zone=connperip:10m;
        limit_conn_status 429;
-
-  - file:
-     path: "/etc/nginx/conf.d/outlets/discourse/30-ratelimited.conf"
-     contents: |
+       server {
+  - replace:
+     filename: "/etc/nginx/conf.d/discourse.conf"
+     from: "/location @discourse {/"
+     to: |
+       location @discourse {
          limit_conn connperip $conn_per_ip;
          limit_req zone=flood burst=$burst_per_second nodelay;
          limit_req zone=bot burst=$burst_per_minute nodelay;
