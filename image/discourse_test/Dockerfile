@@ -37,6 +37,8 @@ RUN cd /var/www/discourse && sudo -E -u discourse -H bundle exec rake plugin:ins
     LOAD_PLUGINS=1 sudo -E -u discourse -H bundle exec rake plugin:install_all_gems &&\
     sudo -E -u discourse -H bundle exec ruby script/install_minio_binaries.rb
 
+ENV PLAYWRIGHT_BROWSERS_PATH /var/www/discourse/.playwright_browsers 
+
 RUN cd /var/www/discourse && \
     pnpm playwright install --with-deps --no-shell chromium
 
