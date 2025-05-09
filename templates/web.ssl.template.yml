@@ -9,7 +9,9 @@ run:
           listen 80;
           return 301 https://$$ENV_DISCOURSE_HOSTNAME$request_uri;
         }
-  - exec: rm /etc/nginx/conf.d/outlets/server/10-http.conf
+  - file:
+      path: "/etc/nginx/conf.d/outlets/server/10-http.conf"
+      contents: ""
   - file:
       hook: ssl
       path: "/etc/nginx/conf.d/outlets/server/20-https.conf"

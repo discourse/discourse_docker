@@ -135,14 +135,17 @@ run:
         - "cp $home/config/nginx.sample.conf /etc/nginx/conf.d/discourse.conf"
         - "rm /etc/nginx/sites-enabled/default"
         - "mkdir -p /var/nginx/cache"
-        - "mkdir -p /etc/nginx/conf.d/outlets/before-server"
-        - "mkdir -p /etc/nginx/conf.d/outlets/server"
-        - "mkdir -p /etc/nginx/conf.d/outlets/discourse"
 
         # Stop building the container if the Nginx outlets are missing
         - "grep -q 'outlets/before-server' /etc/nginx/conf.d/discourse.conf || ( >&2 echo 'The \"before-server\" Nginx outlet is missing. This version of discourse_docker is not compatible with the chosen Discourse version.' ; exit 1 )"
         - "grep -q 'outlets/server' /etc/nginx/conf.d/discourse.conf || ( >&2 echo 'The \"server\" Nginx outlet is missing. This version of discourse_docker is not compatible with the chosen Discourse version.' ; exit 1 )"
         - "grep -q 'outlets/discourse' /etc/nginx/conf.d/discourse.conf || ( >&2 echo 'The \"discourse\" Nginx outlet is missing. This version of discourse_docker is not compatible with the chosen Discourse version.' ; exit 1 )"
+
+        # Create placeholders for the Nginx outlets
+        - "mkdir -p /etc/nginx/conf.d/outlets/before-server"
+        - "mkdir -p /etc/nginx/conf.d/outlets/server"
+        - "mkdir -p /etc/nginx/conf.d/outlets/discourse"
+        - "touch /etc/nginx/conf.d/outlets/before-server/10-redirect-http-to-https.conf"
 
   - replace:
       filename: /etc/nginx/nginx.conf
