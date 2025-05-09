@@ -24,7 +24,7 @@ run:
        listen unix:/shared/nginx.https.sock ssl;
        set_real_ip_from unix:;
   - replace:
-     filename: "/etc/nginx/conf.d/outlets/before-server/10-redirect-http-to-https.conf"
+     filename: "/etc/nginx/conf.d/outlets/before-server/20-redirect-http-to-https.conf"
      from: /listen 80;(\nlisten \[::\]:80;)?/
      to: |
        listen unix:/shared/nginx.http.sock;

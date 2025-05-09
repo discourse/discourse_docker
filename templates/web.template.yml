@@ -143,9 +143,15 @@ run:
 
         # Create placeholders for the Nginx outlets
         - "mkdir -p /etc/nginx/conf.d/outlets/before-server"
+        - "touch /etc/nginx/conf.d/outlets/before-server/20-redirect-http-to-https.conf"
+        - "touch /etc/nginx/conf.d/outlets/before-server/30-ratelimited.conf"
         - "mkdir -p /etc/nginx/conf.d/outlets/server"
+        - "touch /etc/nginx/conf.d/outlets/server/10-http.conf"
+        - "touch /etc/nginx/conf.d/outlets/server/20-https.conf"
+        - "touch /etc/nginx/conf.d/outlets/server/30-offline-page.conf"
         - "mkdir -p /etc/nginx/conf.d/outlets/discourse"
-        - "touch /etc/nginx/conf.d/outlets/before-server/10-redirect-http-to-https.conf"
+        - "touch /etc/nginx/conf.d/outlets/discourse/20-https.conf"
+        - "touch /etc/nginx/conf.d/outlets/discourse/30-ratelimited.conf"
 
   - replace:
       filename: /etc/nginx/nginx.conf
