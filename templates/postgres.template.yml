@@ -1,3 +1,4 @@
+base_image: discourse/base:2.0.20250226-0128
 params:
   db_synchronous_commit: "off"
   db_shared_buffers: "256MB"
