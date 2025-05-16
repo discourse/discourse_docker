@@ -26,9 +26,9 @@ jobs:
           echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
 
   base:
-    # `debian-12` for amd64 builds
+    # `debian-12-8core` for amd64 builds
     # `ubuntu-24.04-8core-arm` for arm64 builds
-    runs-on: ${{ (matrix.arch == 'amd64' && 'debian-12') || 'ubuntu-24.04-8core-arm' }}
+    runs-on: ${{ (matrix.arch == 'amd64' && 'debian-12-8core') || 'ubuntu-24.04-8core-arm' }}
     strategy:
       matrix:
         arch: [amd64, arm64]
@@ -208,7 +208,7 @@ jobs:
           docker manifest push discourse/discourse_dev:${{ env.TIMESTAMP }}
           docker manifest push discourse/discourse_dev:release
   test:
-    runs-on: debian-12
+    runs-on: debian-12-8core
     timeout-minutes: 30
     needs: base
     defaults:
