@@ -7,17 +7,14 @@ params:
   offline_page_repository: https://github.com/discourse/discourse-offline-page.git
 
 run:
-  - replace:
-     filename: "/etc/nginx/conf.d/discourse.conf"
-     global: true
-     from: /server.+{/
-     to: |
-       server {
-         error_page 502 /error_page.html;
-         location /error_page.html {
-           root /var/www/discourse-offline-page/html;
-           internal;
-         }
+  - file:
+     path: "/etc/nginx/conf.d/outlets/server/30-offline-page.conf"
+     contents: |
+        error_page 502 /error_page.html;
+        location /error_page.html {
+          root /var/www/discourse-offline-page/html;
+          internal;
+        }
 
   - exec:
       cmd: git clone $offline_page_repository /var/www/discourse-offline-page
