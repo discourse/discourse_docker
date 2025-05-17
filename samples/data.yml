@@ -9,8 +9,10 @@ templates:
 # any extra arguments for Docker?
 # docker_args:
 
+# TODO: SOME_SECRET to a password for the discourse user
 params:
   db_default_text_search_config: "pg_catalog.english"
+  db_password: SOME_SECRET
 
   ## Set db_shared_buffers to a max of 25% of the total memory.
   ## will be set automatically by bootstrap based on detected RAM, or you can override
@@ -24,6 +26,7 @@ env:
   LC_ALL: en_US.UTF-8
   LANG: en_US.UTF-8
   LANGUAGE: en_US.UTF-8
+  DISCOURSE_DB_PASSWORD: $db_password
 
 volumes:
   - volume:
@@ -33,12 +36,11 @@ volumes:
         host: /var/discourse/shared/data/log/var-log
         guest: /var/log
 
-# TODO: SOME_SECRET to a password for the discourse user
 hooks:
   after_postgres:
     - exec:
         stdin: |
-          alter user discourse with password 'SOME_SECRET';
+          alter user discourse with password '$db_password';
         cmd: su - postgres -c 'psql discourse'
 
         raise_on_fail: false

@@ -14,20 +14,35 @@ hooks:
     - replace:
        filename: /etc/service/unicorn/run
        from: "# postgres"
-       to: |
-         if [ -f /root/install_postgres ]; then
-           /root/install_postgres
-           rm /root/install_postgres
-         fi
-         sv start postgres || exit 1
+       to: sv start postgres || exit 1
 
 run:
+  - file:
+     path: /etc/service/config-postgres/run
+     chmod: "+x"
+     contents: |
+       #!/bin/sh
+       if [ -f /usr/local/bin/create_db ] && [ "$CREATE_DB_ON_BOOT" = "1" ]; then
+         sleep 5
+         /usr/local/bin/create_db
+         if [ ! -z "$DISCOURSE_DB_PASSWORD" ]; then
+           echo "alter user discourse with password '$DISCOURSE_DB_PASSWORD';" | su - postgres -c 'psql $db_name'
+         fi
+       fi
+
   - file:
      path: /etc/service/postgres/run
      chmod: "+x"
      contents: |
         #!/bin/sh
         exec 2>&1
+        if [ -f /root/install_postgres ]; then
+          /root/install_postgres
+          rm /root/install_postgres
+        fi
+        if [ "$CREATE_DB_ON_BOOT" = "1" ]; then
+          sv once config-postgres
+        fi
         HOME=/var/lib/postgresql USER=postgres exec thpoff chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/15/bin/postmaster -D /etc/postgresql/15/main
 
   - file:
