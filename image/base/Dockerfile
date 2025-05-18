@@ -92,7 +92,6 @@ RUN --mount=type=tmpfs,target=/var/log \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
     libpq-dev postgresql-client-${PG_MAJOR} \
-    postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
     nodejs yarn &&\
     mkdir -p /etc/runit/1.d
 
@@ -130,7 +129,6 @@ ADD install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
 
 ADD install-redis /tmp/install-redis
-RUN /tmp/install-redis
 
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
@@ -144,14 +142,6 @@ RUN gem install pups --force &&\
 # process
 ADD thpoff.c /src/thpoff.c
 RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
-
-# clean up for docker squash
-RUN rm -fr /usr/local/share/doc &&\
-    rm -fr /usr/local/share/ri &&\
-    rm -fr /var/lib/apt/lists/* &&\
-    rm -fr /root/.gem &&\
-    rm -fr /root/.npm &&\
-    rm -fr /tmp/*
 
 # this is required for aarch64 which uses buildx
 # see https://github.com/docker/buildx/issues/150
@@ -168,7 +158,7 @@ RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
     sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse &&\
     gem install bundler --conservative -v $(awk '/BUNDLED WITH/ { getline; gsub(/ /,""); print $0 }' /var/www/discourse/Gemfile.lock)
 
-FROM discourse_slim AS discourse_release
+FROM discourse_slim AS discourse_web_only
 ENV RAILS_ENV=production
 
 RUN cd /var/www/discourse &&\
@@ -181,3 +171,9 @@ RUN cd /var/www/discourse &&\
 
 RUN cd /var/www/discourse &&\
     sudo -u discourse /bin/bash -c 'if [ -f yarn.lock ]; then yarn install --frozen-lockfile && yarn cache clean; else pnpm install --frozen-lockfile; fi'
+
+FROM discourse_web_only AS discourse_release
+RUN --mount=type=tmpfs,target=/var/log \
+  apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
+RUN /tmp/install-redis
