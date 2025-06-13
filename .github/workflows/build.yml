@@ -65,6 +65,16 @@ jobs:
         run: |
           ruby auto_build.rb base_slim_stable_${{ matrix.arch }}
 
+      - name: build web_only images for `main` branch
+        working-directory: image
+        run: |
+          ruby auto_build.rb base_web_only_main_${{ matrix.arch }}
+
+      - name: build web_only images for `stable` branch
+        working-directory: image
+        run: |
+          ruby auto_build.rb base_web_only_stable_${{ matrix.arch }}
+
       - name: build release images for `main` branch
         working-directory: image
         run: |
@@ -83,6 +93,8 @@ jobs:
 
       - name: tag release images
         run: |
+          docker tag discourse/base:build_web_only_main_${{ matrix.arch }} discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-${{ matrix.arch }}
+          docker tag discourse/base:build_web_only_stable_${{ matrix.arch }} discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-${{ matrix.arch }}
           docker tag discourse/base:build_release_main_${{ matrix.arch }} discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
           docker tag discourse/base:build_release_main_${{ matrix.arch }}_pg_15 discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}-pg-15
           docker tag discourse/base:build_release_stable_${{ matrix.arch }} discourse/base:2.0.${{ env.TIMESTAMP }}-stable-${{ matrix.arch }}
@@ -132,6 +144,8 @@ jobs:
         run: |
           docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }}
+          docker push discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-${{ matrix.arch }}
+          docker push discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-${{ matrix.arch }}
           docker push discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}
           docker push discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }}-pg-15
           docker push discourse/base:2.0.${{ env.TIMESTAMP }}-stable-${{ matrix.arch }}
@@ -162,6 +176,26 @@ jobs:
           docker manifest create discourse/base:slim \
             -a discourse/base:2.0.${{ env.TIMESTAMP }}-slim-amd64 \
             -a discourse/base:2.0.${{ env.TIMESTAMP }}-slim-arm64
+
+          # Web-Only `main` timestamped
+          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-web-only \
+            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-amd64 \
+            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-arm64
+
+          # Web-Only `main` release
+          docker manifest create discourse/base:web-only \
+            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-amd64 \
+            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-arm64
+
+          # Web-Only `stable` timestamped
+          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable \
+            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-amd64 \
+            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-arm64
+
+          # Web-Only `stable` release
+          docker manifest create discourse/base:web-only-stable \
+            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-amd64 \
+            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-arm64
 
           # Full Discourse `main` branch timestamped
           docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }} \
@@ -200,6 +234,10 @@ jobs:
 
           docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-slim
           docker manifest push discourse/base:slim
+          docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-web-only
+          docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable
+          docker manifest push discourse/base:web-only
+          docker manifest push discourse/base:web-only-stable
           docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}
           docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-pg-15
           docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-stable
