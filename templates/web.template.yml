@@ -213,6 +213,8 @@ run:
       cmd:
         - su discourse -c 'bundle install --jobs $(($(nproc) - 1)) --retry 3'
         - su discourse -c 'bundle clean'
+        - su discourse -c 'find /var/www/discourse/vendor/bundle -name cache -not -path "*/gems/*" -type d -exec rm -rf {} +'
+        - su discourse -c 'find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +'
 
   - exec:
       cd: $home
