@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# Initialize the container using `pups`.
+cat /init | /usr/local/bin/pups --stdin
+
+# Hand off control to the boot script.
+/sbin/boot
