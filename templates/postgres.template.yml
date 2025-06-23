@@ -266,6 +266,9 @@ run:
         su postgres -c 'psql $db_name -c "create extension if not exists vector;"'
         su postgres -c 'psql $db_name -c "alter extension vector update;"' || true
         sudo -u postgres psql $db_name <<< "update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = '$db_name' AND encoding = pg_char_to_encoding('SQL_ASCII');" || true
+        if [ ! -z "$DISCOURSE_DB_PASSWORD" ]; then
+          echo "alter user $db_user with password '$DISCOURSE_DB_PASSWORD';" | su - postgres -c 'psql $db_name'
+        fi
 
   - file:
      path: /var/lib/postgresql/take-database-backup
