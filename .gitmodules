@@ -1,0 +1,3 @@
+[submodule "discourse_config"]
+	path = discourse_config
+	url = https://github.com/opensourceways/discourse_config
