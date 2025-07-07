@@ -77,9 +77,9 @@ run:
         if [ ! -e /shared/postgres_data ]; then
           install -d -m 0755 -o postgres -g postgres /shared/postgres_data
           sudo -E -u postgres /usr/lib/postgresql/15/bin/initdb -D /shared/postgres_data
-          chown -R postgres:postgres /shared/postgres_data
-          chown -R postgres:postgres /var/run/postgresql
         fi
+        find /shared/postgres_data \! -user postgres -exec chown postgres '{}' +
+        find /var/run/postgresql \! -user postgres -exec chown postgres '{}' +
         run_upgrade_postgres
         # Necessary to enable backups
         install -d -m 0755 -o postgres -g postgres /shared/postgres_backup
