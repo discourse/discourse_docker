@@ -23,6 +23,10 @@ usage () {
   exit 1
 }
 
+BUNDLED_PLUGINS=(
+  "discourse-reactions"
+)
+
 # for potential re-exec later
 SAVED_ARGV=("$@")
 
@@ -481,6 +485,20 @@ RUBY
    merge_user_args
 }
 
+# Temporary helper to provide a more useful error message when a bundled plugin is still referenced in the config file.
+explain_bundled_plugin_error() {
+  config_data=$(cat $config_file)
+  for plugin in "${BUNDLED_PLUGINS[@]}"; do
+    if [[ $config_data =~ "git clone https://github.com/discourse/$plugin" ]]; then
+      echo "---"
+      echo "HINT: The plugin '$plugin' is now bundled with Discourse and should not be included in your container configuration."
+      echo "Remove the line 'git clone https://github.com/discourse/$plugin' from your $config_file file, then try again."
+      echo "For more information, see https://meta.discourse.org/t/373574"
+      echo "---"
+    fi
+  done
+}
+
 if [ -z $docker_path ]; then
   install_docker
 fi
@@ -706,6 +724,7 @@ run_bootstrap() {
     exit 77
   elif [[ $BOOTSTRAP_EXITCODE -gt 0 ]]; then
     echo "bootstrap failed with exit code $BOOTSTRAP_EXITCODE"
+    explain_bundled_plugin_error
     echo "** FAILED TO BOOTSTRAP ** please scroll up and look for earlier error messages, there may be more than one."
     echo "./discourse-doctor may help diagnose the problem."
 
