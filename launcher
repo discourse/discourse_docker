@@ -25,6 +25,26 @@ usage () {
 
 BUNDLED_PLUGINS=(
   "discourse-reactions"
+  "discourse-apple-auth"
+  "discourse-login-with-amazon"
+  "discourse-lti"
+  "discourse-microsoft-auth"
+  "discourse-oauth2-basic"
+  "discourse-openid-connect"
+  "discourse-zendesk-plugin"
+  "discourse-patreon"
+  "discourse-graphviz"
+  "discourse-rss-polling"
+  "discourse-math"
+  "discourse-chat-integration"
+  "discourse-data-explorer"
+  "discourse-post-voting"
+  "discourse-user-notes"
+  "discourse-assign"
+  "discourse-subscriptions"
+  "discourse-hcaptcha"
+  "discourse-gamification"
+  "discourse-calendar"
 )
 
 # for potential re-exec later
@@ -96,7 +116,7 @@ kernel_min_version='4.4.0'
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
 local_discourse=local_discourse
-image="discourse/base:2.0.20250710-0019"
+image="discourse/base:2.0.20250715-0020"
 docker_path=`which docker.io 2> /dev/null || which docker`
 git_path=`which git`
 
