@@ -40,6 +40,7 @@ BUNDLED_PLUGINS=(
   "discourse-data-explorer"
   "discourse-post-voting"
   "discourse-user-notes"
+  "discourse-staff-notes" # old name for discourse-user-notes
   "discourse-assign"
   "discourse-subscriptions"
   "discourse-hcaptcha"
