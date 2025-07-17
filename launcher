@@ -48,6 +48,10 @@ BUNDLED_PLUGINS=(
   "discourse-calendar"
 )
 
+COMPROMISED_ORGANIZATIONS=(
+  "github.com/discoursehosting"
+)
+
 # for potential re-exec later
 SAVED_ARGV=("$@")
 
@@ -357,6 +361,18 @@ set_template_info() {
 
     arrTemplates=(${templates// / })
     config_data=$(cat $config_file)
+
+    # if config data includes any compromised organizations, error out and print a message
+    for org in "${COMPROMISED_ORGANIZATIONS[@]}"; do
+      if [[ $config_data =~ $org ]]; then
+        echo "---"
+        echo "ERROR: The configuration file $config_file contains references to a compromised github organization: $org"
+        echo "Please remove any references to this organization from your configuration file."
+        echo "For more information, see https://meta.discourse.org/t/374703/6"
+        echo "---"
+        exit 1
+      fi
+    done
 
     input="hack: true"
 
