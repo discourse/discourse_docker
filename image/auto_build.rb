@@ -37,6 +37,31 @@ images = {
       "--platform linux/arm64 --target discourse_slim --build-arg=\"DISCOURSE_BRANCH=stable\"",
     use_cache: true,
   },
+  base_web_only_main_amd64: {
+    name: "base",
+    tag: "discourse/base:build_web_only_main_amd64",
+    extra_args: "--target discourse_web_only",
+    use_cache: true,
+  },
+  base_web_only_stable_amd64: {
+    name: "base",
+    tag: "discourse/base:build_web_only_stable_amd64",
+    extra_args: "--target discourse_web_only --build-arg=\"DISCOURSE_BRANCH=stable\"",
+    use_cache: true,
+  },
+  base_web_only_main_arm64: {
+    name: "base",
+    tag: "discourse/base:build_web_only_main_arm64",
+    extra_args: "--platform linux/arm64 --target discourse_web_only",
+    use_cache: true,
+  },
+  base_web_only_stable_arm64: {
+    name: "base",
+    tag: "discourse/base:build_web_only_stable_arm64",
+    extra_args:
+      "--platform linux/arm64 --target discourse_web_only --build-arg=\"DISCOURSE_BRANCH=stable\"",
+    use_cache: true,
+  },
   base_release_main_amd64: {
     name: "base",
     tag: "discourse/base:build_release_main_amd64",
