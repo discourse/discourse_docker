@@ -71,7 +71,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - name: build
         run: |
-          docker login --username ${{ vars.DOCKERHUB_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+          docker login --username ${{ vars.DOCKERHUB_USERNAME }} --password ${{ secrets.DOCKERHUB_PASSWORD }}
           # TODO: can we find a way to override or provide pups params at build time?
           # Then we can do something like:
           # bin/launcher build --params="version=stable" --conf-dir=./samples web_only
@@ -95,7 +95,7 @@ jobs:
       - uses: docker/setup-buildx-action@v3
       - name: update manifest
         run: |
-          docker login --username ${{ vars.DOCKERHUB_USERNAME }} --password ${{ secrets.DOCKER_PASSWORD }}
+          docker login --username ${{ vars.DOCKERHUB_USERNAME }} --password ${{ secrets.DOCKERHUB_PASSWORD }}
           docker manifest create \
             ${{ env.DOCKER_REPO }}:latest \
             --amend ${{ env.DOCKER_REPO }}:latest-amd64 \
