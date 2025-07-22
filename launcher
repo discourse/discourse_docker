@@ -46,6 +46,15 @@ BUNDLED_PLUGINS=(
   "discourse-hcaptcha"
   "discourse-gamification"
   "discourse-calendar"
+  "discourse-question-answer" # old name for discourse-post-voting
+  "discourse-adplugin"
+  "discourse-affiliate"
+  "discourse-github"
+  "discourse-templates"
+  "discourse-topic-voting"
+  "discourse-policy"
+  "discourse-solved"
+  "discourse-ai"
 )
 
 # for potential re-exec later
