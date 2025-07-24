@@ -4,7 +4,8 @@ env:
 run:
   - exec:
       cmd:
-        - cd /opt && git clone --branch 3.0.6 --depth 1 https://github.com/acmesh-official/acme.sh.git
+        - curl https://raw.githubusercontent.com/acmesh-official/acme.sh/3.0.6/acme.sh > /opt/acme.sh
+        - chmod +x /opt/acme.sh
   - file:
       path: "/usr/local/bin/configure-letsencrypt"
       chmod: "+x"
@@ -13,9 +14,10 @@ run:
         touch /var/spool/cron/crontabs/root
         LETSENCRYPT_DIR="/shared/letsencrypt"
         install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
-        cd /opt/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --install --log "${LETSENCRYPT_DIR}/acme.sh.log"
-        cd /opt/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --upgrade --auto-upgrade
-        cd /opt/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --set-default-ca  --server  letsencrypt
+        cd /opt
+        LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --install --log "${LETSENCRYPT_DIR}/acme.sh.log"
+        LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --upgrade --auto-upgrade
+        LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --set-default-ca  --server  letsencrypt
 
         cat << EOF > /etc/nginx/letsencrypt.conf
         user www-data;
