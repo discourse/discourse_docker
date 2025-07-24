@@ -124,8 +124,17 @@ hooks:
         chmod: "+x"
         contents: |
           #!/bin/bash
-          if [ -z "$DISCOURSE_HOSTNAME" ]; then echo "DISCOURSE_HOSTNAME expected"; exit 1; fi
-          if [ -z "$LETSENCRYPT_ACCOUNT_EMAIL" ]; then echo "LETSENCRYPT_ACCOUNT_EMAIL ENV not set. Skipping Let's Encrypt setup."; exit 0; fi
-          if [[ ! "$LETSENCRYPT_ACCOUNT_EMAIL" =~ ([^@]+)@([^\.]+) ]]; then echo "LETSENCRYPT_ACCOUNT_EMAIL is not a valid email address"; exit 1; fi
+          if [ -z "$DISCOURSE_HOSTNAME" ]; then
+            echo "DISCOURSE_HOSTNAME expected"
+            exit 1
+          fi
+          if [ -z "$LETSENCRYPT_ACCOUNT_EMAIL" ]; then
+            echo "LETSENCRYPT_ACCOUNT_EMAIL ENV not set. Skipping Let's Encrypt setup."
+            exit 0
+          fi
+          if [[ ! "$LETSENCRYPT_ACCOUNT_EMAIL" =~ ([^@]+)@([^\.]+) ]]; then
+            echo "LETSENCRYPT_ACCOUNT_EMAIL is not a valid email address"
+            exit 1
+          fi
           /usr/local/bin/configure-ssl
           exec /usr/local/bin/configure-letsencrypt

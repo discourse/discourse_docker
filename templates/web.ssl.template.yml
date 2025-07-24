@@ -5,8 +5,11 @@ run:
       chmod: "+x"
       contents: |
         #!/bin/bash
-        if [ -z "$DISCOURSE_HOSTNAME" ]; then echo "DISCOURSE_HOSTNAME expected"; exit 1; fi
-        if [ ! -z "$ENABLE_SSL" ]; then
+        if [ -z "$DISCOURSE_HOSTNAME" ]; then
+          echo "DISCOURSE_HOSTNAME expected"
+          exit 1
+        fi
+        if [ -n "$ENABLE_SSL" ]; then
           exec /usr/local/bin/configure-ssl
         fi
 
@@ -16,6 +19,7 @@ run:
       contents: |
         #!/bin/bash
         mkdir -p /shared/ssl/
+
         cat << EOF > /etc/nginx/conf.d/outlets/before-server/20-redirect-http-to-https.conf
         server {
           listen 80;
@@ -23,7 +27,7 @@ run:
         }
         EOF
 
-        > /etc/nginx/conf.d/outlets/server/10-http.conf
+        install /dev/null /etc/nginx/conf.d/outlets/server/10-http.conf
 
         cat << EOF > /etc/nginx/conf.d/outlets/server/20-https.conf
         listen 443 ssl;
@@ -50,6 +54,7 @@ run:
         cat << EOF > /etc/nginx/conf.d/outlets/discourse/20-https.conf
         add_header Strict-Transport-Security 'max-age=31536000';
         EOF
+
         if [ -f "/proc/net/if_inet6" ] ; then
           sed -i 's/listen 80;/listen 80;\nlisten [::]:80;/g' /etc/nginx/conf.d/outlets/before-server/20-redirect-http-to-https.conf
           sed -i 's/listen 443 ssl;/listen 443 ssl;\nlisten [::]:443 ssl;/g' /etc/nginx/conf.d/outlets/server/20-https.conf
