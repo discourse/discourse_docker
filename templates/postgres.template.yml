@@ -289,7 +289,7 @@ run:
       tag: db
       hook: postgres
       cmd:
-        # wait for postgres to start up...
-        - sleep 5
+        # give db a few secs to start up
+        - "sleep 5"
         - /usr/local/bin/create_db
         - "echo postgres installed!"
