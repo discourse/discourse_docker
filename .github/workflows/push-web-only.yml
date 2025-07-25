@@ -78,11 +78,8 @@ jobs:
           cp ./samples/web_only.yml ./containers/web_only.yml
           sed -Ei 's/^ *+#?version:.*/  version: ${{ matrix.version }}/' ./containers/web_only.yml
           sed -Ei '/^ *+- "templates\/web.template.yml"/a\  - "templates/offline-page.template.yml"' ./containers/web_only.yml
-          # TODO: enable lets encrypt build
-          # Once https://github.com/discourse/discourse_docker/pull/977 is merged
-          # uncomment the next two lines to apply the let's encrypt template to the base image
-          #sed -Ei 's/^ *+#- "templates\/web.ssl.template.yml"/  - "templates\/web.ssl.template.yml"/' ./containers/web_only.yml
-          #sed -Ei 's/^ *+#- "templates\/web.letsencrypt.ssl.template.yml"/  - "templates\/web.letsencrypt.ssl.template.yml"/' ./containers/web_only.yml
+          sed -Ei 's/^ *+#- "templates\/web.ssl.template.yml"/  - "templates\/web.ssl.template.yml"/' ./containers/web_only.yml
+          sed -Ei 's/^ *+#- "templates\/web.letsencrypt.ssl.template.yml"/  - "templates\/web.letsencrypt.ssl.template.yml"/' ./containers/web_only.yml
           bin/launcher build web_only \
             --tag ${{ env.DOCKER_REPO }}:${{ env.FLOATING_TAG }} \
             --tag ${{ env.DOCKER_REPO }}:${{ env.TAG }} \
