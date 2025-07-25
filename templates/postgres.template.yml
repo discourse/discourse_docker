@@ -30,7 +30,9 @@ run:
           rm /root/install_postgres
         fi
         if [ "$CREATE_DB_ON_BOOT" = "1" ]; then
-          /usr/local/bin/create_db&
+          sudo -E -u postgres /usr/lib/postgresql/15/bin/pg_ctl -D /etc/postgresql/15/main -o "-c listen_addresses='' -p 5432" -w start
+          /usr/local/bin/create_db
+          sudo -E -u postgres /usr/lib/postgresql/15/bin/pg_ctl -D /etc/postgresql/15/main -m fast -w stop
         fi
         HOME=/var/lib/postgresql USER=postgres exec thpoff chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/15/bin/postmaster -D /etc/postgresql/15/main
 
@@ -248,11 +250,6 @@ run:
       chmod: +x
       contents: |
         #!/bin/bash
-        # wait for postgres to start up...
-        for i in {1..5}; do
-          su postgres -c 'pg_isready -q' && break
-          sleep 1
-        done
         su postgres -c 'createdb $db_name' || true
         su postgres -c 'psql $db_name -c "create user $db_user;"' || true
         su postgres -c 'psql $db_name -c "grant all privileges on database $db_name to $db_user;"' || true
@@ -292,5 +289,7 @@ run:
       tag: db
       hook: postgres
       cmd:
+        # wait for postgres to start up...
+        - sleep 5
         - /usr/local/bin/create_db
         - "echo postgres installed!"
