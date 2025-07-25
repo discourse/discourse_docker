@@ -1,26 +1,25 @@
 env:
-  LETSENCRYPT_DIR: "/shared/letsencrypt"
   DISCOURSE_FORCE_HTTPS: true
 
-hooks:
-  after_ssl:
-    - exec:
-       cmd:
-         - if [ -z "$LETSENCRYPT_ACCOUNT_EMAIL" ]; then echo "LETSENCRYPT_ACCOUNT_EMAIL ENV variable is required and has not been set."; exit 1; fi
-         - /bin/bash -c "if [[ ! \"$LETSENCRYPT_ACCOUNT_EMAIL\" =~ ([^@]+)@([^\.]+) ]]; then echo \"LETSENCRYPT_ACCOUNT_EMAIL is not a valid email address\"; exit 1; fi"
+run:
+  - exec:
+      cmd:
+        - curl https://raw.githubusercontent.com/acmesh-official/acme.sh/3.0.6/acme.sh > /opt/acme.sh
+        - chmod +x /opt/acme.sh
+  - file:
+      path: "/usr/local/bin/configure-letsencrypt"
+      chmod: "+x"
+      contents: |
+        #!/bin/bash
+        touch /var/spool/cron/crontabs/root
+        LETSENCRYPT_DIR="/shared/letsencrypt"
+        install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
+        cd /opt
+        LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --install --log "${LETSENCRYPT_DIR}/acme.sh.log"
+        LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --upgrade --auto-upgrade
+        LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --set-default-ca  --server  letsencrypt
 
-    - exec:
-       cmd:
-         - cd /root && git clone --branch 3.0.6 --depth 1 https://github.com/acmesh-official/acme.sh.git && cd /root/acme.sh
-         - touch /var/spool/cron/crontabs/root
-         - install -d -m 0755 -g root -o root $LETSENCRYPT_DIR
-         - cd /root/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --install --log "${LETSENCRYPT_DIR}/acme.sh.log"
-         - cd /root/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --upgrade --auto-upgrade
-         - cd /root/acme.sh && LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --set-default-ca  --server  letsencrypt
-
-    - file:
-       path: "/etc/nginx/letsencrypt.conf"
-       contents: |
+        cat << EOF > /etc/nginx/letsencrypt.conf
         user www-data;
         worker_processes auto;
         daemon on;
@@ -50,20 +49,34 @@ hooks:
             }
           }
         }
+        EOF
 
-    - file:
-       path: /etc/runit/1.d/letsencrypt
-       chmod: "+x"
-       contents: |
+        sed -Ei "s/^#?ACCOUNT_EMAIL=.+/ACCOUNT_EMAIL=${LETSENCRYPT_ACCOUNT_EMAIL}/" \
+          /shared/letsencrypt/account.conf
+
+        sed -Ei "s/ssl_certificate .+/ssl_certificate \/shared\/ssl\/${DISCOURSE_HOSTNAME}.cer;\
+          ssl_certificate \/shared\/ssl\/${DISCOURSE_HOSTNAME}_ecc.cer;/" \
+          /etc/nginx/conf.d/outlets/server/20-https.conf
+        sed -Ei "s/ssl_certificate_key .+/ssl_certificate_key \/shared\/ssl\/${DISCOURSE_HOSTNAME}.key; \
+          ssl_certificate_key \/shared\/ssl\/${DISCOURSE_HOSTNAME}_ecc.key;/" \
+          /etc/nginx/conf.d/outlets/server/20-https.conf
+
+        exec /usr/local/bin/letsencrypt
+
+  - file:
+      path: /usr/local/bin/letsencrypt
+      chmod: "+x"
+      contents: |
         #!/bin/bash
+        LETSENCRYPT_DIR="/shared/letsencrypt"
         /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf
 
         issue_cert() {
-          LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh --issue $2 -d $$ENV_DISCOURSE_HOSTNAME --keylength $1 -w /var/www/discourse/public
+          LE_WORKING_DIR="${LETSENCRYPT_DIR}" ${LETSENCRYPT_DIR}/acme.sh --issue $2 -d ${DISCOURSE_HOSTNAME} --keylength $1 -w /var/www/discourse/public
         }
 
         cert_exists() {
-          [[ "$(cd $$ENV_LETSENCRYPT_DIR/$$ENV_DISCOURSE_HOSTNAME$1 && openssl verify -CAfile <(openssl x509 -in ca.cer) fullchain.cer | grep "OK")" ]]
+          [[ "$(cd ${LETSENCRYPT_DIR}/${DISCOURSE_HOSTNAME}$1 && openssl verify -CAfile <(openssl x509 -in ca.cer) fullchain.cer | grep "OK")" ]]
         }
 
         ########################################################
@@ -76,11 +89,11 @@ hooks:
           issue_cert "4096" "--force"
         fi
 
-        LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh \
+        LE_WORKING_DIR="${LETSENCRYPT_DIR}" ${LETSENCRYPT_DIR}/acme.sh \
           --installcert \
-          -d $$ENV_DISCOURSE_HOSTNAME \
-          --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer \
-          --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key \
+          -d ${DISCOURSE_HOSTNAME} \
+          --fullchainpath /shared/ssl/${DISCOURSE_HOSTNAME}.cer \
+          --keypath /shared/ssl/${DISCOURSE_HOSTNAME}.key \
           --reloadcmd "sv reload nginx"
 
         ########################################################
@@ -93,11 +106,11 @@ hooks:
           issue_cert "ec-256" "--force"
         fi
 
-        LE_WORKING_DIR="${LETSENCRYPT_DIR}" $$ENV_LETSENCRYPT_DIR/acme.sh \
+        LE_WORKING_DIR="${LETSENCRYPT_DIR}" ${LETSENCRYPT_DIR}/acme.sh \
           --installcert --ecc \
-          -d $$ENV_DISCOURSE_HOSTNAME \
-          --fullchainpath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.cer \
-          --keypath /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.key \
+          -d ${DISCOURSE_HOSTNAME} \
+          --fullchainpath /shared/ssl/${DISCOURSE_HOSTNAME}_ecc.cer \
+          --keypath /shared/ssl/${DISCOURSE_HOSTNAME}_ecc.key \
           --reloadcmd "sv reload nginx"
 
         if cert_exists "" || cert_exists "_ecc"; then
@@ -106,22 +119,24 @@ hooks:
 
         /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf -s stop
 
-    - replace:
-       filename: /shared/letsencrypt/account.conf
-       from: /#?ACCOUNT_EMAIL=.+/
-       to: |
-         ACCOUNT_EMAIL=$$ENV_LETSENCRYPT_ACCOUNT_EMAIL
-
-    - replace:
-       filename: "/etc/nginx/conf.d/outlets/server/20-https.conf"
-       from: /ssl_certificate.+/
-       to: |
-         ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.cer;
-         ssl_certificate /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.cer;
-
-    - replace:
-       filename: "/etc/nginx/conf.d/outlets/server/20-https.conf"
-       from: /ssl_certificate_key.+/
-       to: |
-         ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME.key;
-         ssl_certificate_key /shared/ssl/$$ENV_DISCOURSE_HOSTNAME_ecc.key;
+hooks:
+  after_ssl:
+    - file:
+        path: /etc/runit/1.d/install-ssl
+        chmod: "+x"
+        contents: |
+          #!/bin/bash
+          if [ -z "$DISCOURSE_HOSTNAME" ]; then
+            echo "DISCOURSE_HOSTNAME expected"
+            exit 1
+          fi
+          if [ -z "$LETSENCRYPT_ACCOUNT_EMAIL" ]; then
+            echo "LETSENCRYPT_ACCOUNT_EMAIL ENV not set. Skipping Let's Encrypt setup."
+            exit 0
+          fi
+          if [[ ! "$LETSENCRYPT_ACCOUNT_EMAIL" =~ ([^@]+)@([^\.]+) ]]; then
+            echo "LETSENCRYPT_ACCOUNT_EMAIL is not a valid email address"
+            exit 1
+          fi
+          /usr/local/bin/configure-ssl
+          exec /usr/local/bin/configure-letsencrypt
