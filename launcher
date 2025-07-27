@@ -35,10 +35,10 @@ download_binary() {
             ;;
     esac
 
-    curl -s -o ${package} -L https://get.discourse.org/launcher/latest/launcher-${os}-${arch}.tar.gz || (echo 'launcher download failed' >&2 && exit 1)
-    curl -s -o ${package_md5} -L https://get.discourse.org/launcher/latest/launcher-${os}-${arch}.tar.gz.md5 || (echo 'launcher download failed' >&2 && exit 1)
+    curl -s -o ${package} -L https://get.discourse.org/launcher/latest/launcher-${os}-${arch}.tar.gz || { echo 'launcher download failed' >&2 && exit 1; }
+    curl -s -o ${package_md5} -L https://get.discourse.org/launcher/latest/launcher-${os}-${arch}.tar.gz.md5 || { echo 'launcher download failed' >&2 && exit 1; }
 
-    echo "$(cat ${package_md5}) ${package}" | md5sum --status -c || (echo 'checksum failed' >&2 && exit 1)
+    echo "$(cat ${package_md5}) ${package}" | md5sum --status -c || { echo 'checksum failed' >&2 && exit 1; }
 
     tar -zxf ${package} -C ${BINDIR}
     rm ${package} ${package_md5}
@@ -176,12 +176,13 @@ check_prereqs() {
 }
 
 update() {
-	  rm ${BINDIR}/launcher
+	  rm ${BINDIR}/launcher 2>/dev/null
 	  download_binary
 }
 
 case "$1" in
 	  update)
+        echo "updating launcher..."
 		    update
 		    exit 0
 		    ;;
