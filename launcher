@@ -68,6 +68,8 @@ compare_version() {
 }
 
 check_prereqs() {
+    # If this command is run because of tab completion, ignore it
+    [ -n "$COMP_LINE" ] && return
     docker_path=`which docker.io 2> /dev/null || which docker`
     git_path=`which git`
     docker_min_version='20.10.0'
@@ -77,8 +79,8 @@ check_prereqs() {
     kernel_min_version='4.4.0'
 
     if [ -z $docker_path ]; then
-        echo "Docker is not installed, you will need to install Docker in order to run Launcher"
-        echo "See https://docs.docker.com/installation/"
+        echo "Docker is not installed, you will need to install Docker in order to run Launcher" >&2
+        echo "See https://docs.docker.com/installation/" >&2
         exit 1
     fi
 
@@ -87,19 +89,19 @@ check_prereqs() {
     # it usually complains about swap which does not matter
     test=`$docker_path info 2> /dev/null`
     if [[ $? -ne 0 ]] ; then
-        echo "Cannot connect to the docker daemon - verify it is running and you have access"
+        echo "Cannot connect to the docker daemon - verify it is running and you have access" >&2
         exit 1
     fi
 
     # 2. running an approved storage driver?
     if ! $docker_path info 2> /dev/null | grep -E -q 'Storage Driver: (btrfs|aufs|zfs|overlay2|overlayfs)$'; then
-        echo "Your Docker installation is not using a supported storage driver.  If we were to proceed you may have a broken install."
-        echo "overlay2 is the recommended storage driver, although zfs and aufs may work as well."
-        echo "Other storage drivers are known to be problematic."
-        echo "You can tell what filesystem you are using by running \"docker info\" and looking at the 'Storage Driver' line."
-        echo
-        echo "If you wish to continue anyway using your existing unsupported storage driver,"
-        echo "read the source code of launcher and figure out how to bypass this check."
+        echo "Your Docker installation is not using a supported storage driver.  If we were to proceed you may have a broken install." >&2
+        echo "overlay2 is the recommended storage driver, although zfs and aufs may work as well." >&2
+        echo "Other storage drivers are known to be problematic." >&2
+        echo "You can tell what filesystem you are using by running \"docker info\" and looking at the 'Storage Driver' line." >&2
+        echo >&2
+        echo "If you wish to continue anyway using your existing unsupported storage driver," >&2
+        echo "read the source code of launcher and figure out how to bypass this check." >&2
         exit 1
     fi
 
@@ -109,13 +111,13 @@ check_prereqs() {
 
     # At least minimum docker version
     if compare_version "${docker_min_version}" "${test}"; then
-        echo "ERROR: Docker version ${test} not supported, please upgrade to at least ${docker_min_version}, or recommended ${docker_rec_version}"
+        echo "ERROR: Docker version ${test} not supported, please upgrade to at least ${docker_min_version}, or recommended ${docker_rec_version}" >&2
         exit 1
     fi
 
     # Recommend newer docker version
     if compare_version "${docker_rec_version}" "${test}"; then
-        echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer."
+        echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer." >&2
     fi
 
     # 4. discourse docker image is downloaded
@@ -127,13 +129,13 @@ check_prereqs() {
 
     # At least minimum version
     if compare_version "${git_min_version}" "${test}"; then
-        echo "ERROR: Git version ${test} not supported, please upgrade to at least ${git_min_version}, or recommended ${git_rec_version}"
+        echo "ERROR: Git version ${test} not supported, please upgrade to at least ${git_min_version}, or recommended ${git_rec_version}" >&2
         exit 1
     fi
 
     # Recommend best version
     if compare_version "${git_rec_version}" "${test}"; then
-        echo "WARNING: Git version ${test} deprecated, recommend upgrade to ${git_rec_version} or newer."
+        echo "WARNING: Git version ${test} deprecated, recommend upgrade to ${git_rec_version} or newer." >&2
     fi
 
     # Check minimum kernel version due to https://bugs.ruby-lang.org/issues/13885
@@ -141,16 +143,16 @@ check_prereqs() {
 
     # At least minimum version
     if compare_version "${kernel_min_version}" "${test}"; then
-        echo "ERROR: Kernel version ${test} not supported, please upgrade to at least ${kernel_min_version}"
+        echo "ERROR: Kernel version ${test} not supported, please upgrade to at least ${kernel_min_version}" >&2
         exit 1
     fi
 
     # 6. able to attach stderr / out / tty
     test=`$docker_path run -i --rm -a stdout -a stderr hello-world`
     if [[ "$test" =~ "Hello from Docker" ]] ; then : ; else
-        echo "Your Docker installation is not working correctly"
-        echo
-        echo "See: https://meta.discourse.org/t/docker-error-on-bootstrap/13657/18?u=sam"
+        echo "Your Docker installation is not working correctly" >&2
+        echo >&2
+        echo "See: https://meta.discourse.org/t/docker-error-on-bootstrap/13657/18?u=sam" >&2
         exit 1
     fi
 
@@ -158,17 +160,17 @@ check_prereqs() {
     folder=`$docker_path info --format '{{.DockerRootDir}}'`
     safe_folder=${folder:-/var/lib/docker}
     if [[ -d $safe_folder && $(stat -f --format="%a*%S" $safe_folder)/1024**3 -lt 5 ]] ; then
-        echo "You have less than 5GB of free space on the disk where $safe_folder is located. You will need more space to continue"
+        echo "You have less than 5GB of free space on the disk where $safe_folder is located. You will need more space to continue" >&2
         df -h $safe_folder
-        echo
+        echo >&2
         if tty >/dev/null; then
-            read -p "Would you like to attempt to recover space by cleaning docker images and containers in the system? (y/N)" -n 1 -r
-            echo
+            read -p "Would you like to attempt to recover space by cleaning docker images and containers in the system? (y/N)" -n 1 -r >&2
+            echo >&2
             if [[ $REPLY =~ ^[Yy]$ ]]
             then
                 $docker_path container prune --force --filter until=24h >/dev/null
                 $docker_path image prune --all --force --filter until=24h >/dev/null
-                echo "If the cleanup was successful, you may try again now"
+                echo "If the cleanup was successful, you may try again now" >&2
             fi
         fi
         exit 1
@@ -188,6 +190,7 @@ case "$1" in
 		    ;;
 	  *)
 		    test -f "${BINDIR}/launcher" || update
+        echo "run ./launcher update to update launcher" >&2
         check_prereqs
 		    exec "${BINDIR}/launcher" "$@"
 esac
