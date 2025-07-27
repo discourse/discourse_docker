@@ -120,10 +120,7 @@ check_prereqs() {
         echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer." >&2
     fi
 
-    # 4. discourse docker image is downloaded
-    test=`$docker_path images | awk '{print $1 ":" $2 }' | grep "$image"`
-
-    # 5. running recommended git version
+    # 4. running recommended git version
     test=($($git_path --version))  # Get git version string
     test=${test[2]//,/}  # Get version alone and strip comma if exists
 
@@ -147,8 +144,8 @@ check_prereqs() {
         exit 1
     fi
 
-    # 6. able to attach stderr / out / tty
-    test=`$docker_path run -i --rm -a stdout -a stderr hello-world`
+    # 5. able to attach stderr / out / tty
+    test=`$docker_path run -i --rm -a stdout -a stderr hello-world </dev/null`
     if [[ "$test" =~ "Hello from Docker" ]] ; then : ; else
         echo "Your Docker installation is not working correctly" >&2
         echo >&2
@@ -156,7 +153,7 @@ check_prereqs() {
         exit 1
     fi
 
-    # 7. enough space for the bootstrap on docker folder
+    # 6. enough space for the bootstrap on docker folder
     folder=`$docker_path info --format '{{.DockerRootDir}}'`
     safe_folder=${folder:-/var/lib/docker}
     if [[ -d $safe_folder && $(stat -f --format="%a*%S" $safe_folder)/1024**3 -lt 5 ]] ; then
