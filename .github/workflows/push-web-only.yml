@@ -76,6 +76,10 @@ jobs:
           # Then we can do something like:
           # bin/launcher build --params="version=stable" --conf-dir=./samples web_only
           cp ./samples/web_only.yml ./containers/web_only.yml
+          # TODO: Uncomment when PR 966 is merged
+          # allowing us to build from web-only images
+          # https://github.com/discourse/discourse_docker/pull/966
+          #echo $(grep base_image: ./templates/web.template.yml)-web-only >> ./containers/web_only.yml
           sed -Ei 's/^ *+#?version:.*/  version: ${{ matrix.version }}/' ./containers/web_only.yml
           sed -Ei '/^ *+- "templates\/web.template.yml"/a\  - "templates/offline-page.template.yml"' ./containers/web_only.yml
           sed -Ei 's/^ *+#- "templates\/web.ssl.template.yml"/  - "templates\/web.ssl.template.yml"/' ./containers/web_only.yml
