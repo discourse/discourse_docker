@@ -181,7 +181,7 @@ update() {
 
 case "$1" in
 	  update)
-        echo "updating launcher..."
+        echo "updating launcher..." >&2
 		    update
 		    exit 0
 		    ;;
