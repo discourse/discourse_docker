@@ -4,7 +4,6 @@ DIRNAME=$(dirname "$0")
 BINDIR="${DIRNAME}/bin"
 
 download_binary() {
-    echo "downloading launcher..."
     package="${BINDIR}/launcher.tar.gz"
     package_md5="${BINDIR}/launcher.tar.gz.md5"
 
@@ -17,7 +16,7 @@ download_binary() {
             arch=amd64
             ;;
         *)
-            echo "ERROR: unsupported arch detected."
+            echo "ERROR: unsupported arch detected." >&2
             exit 1
             ;;
     esac
@@ -31,13 +30,15 @@ download_binary() {
             os=linux
             ;;
         *)
-            echo "ERROR: unsupported os detected."
+            echo "ERROR: unsupported os detected." >&2
             exit 1
             ;;
     esac
 
-    curl -s -o ${package} -L https://get.discourse.org/launcher/latest/launcher-${os}-${arch}.tar.gz
-    curl -s -o ${package_md5} -L https://get.discourse.org/launcher/latest/launcher-${os}-${arch}.tar.gz.md5
+    curl -s -o ${package} -L https://get.discourse.org/launcher/latest/launcher-${os}-${arch}.tar.gz || (echo 'launcher download failed' >&2 && exit 1)
+    curl -s -o ${package_md5} -L https://get.discourse.org/launcher/latest/launcher-${os}-${arch}.tar.gz.md5 || (echo 'launcher download failed' >&2 && exit 1)
+
+    echo "$(cat ${package_md5}) ${package}" | md5sum --status -c || (echo 'checksum failed' >&2 && exit 1)
 
     tar -zxf ${package} -C ${BINDIR}
     rm ${package} ${package_md5}
@@ -67,7 +68,6 @@ compare_version() {
 }
 
 check_prereqs() {
-
     docker_path=`which docker.io 2> /dev/null || which docker`
     git_path=`which git`
     docker_min_version='20.10.0'
@@ -117,24 +117,6 @@ check_prereqs() {
     if compare_version "${docker_rec_version}" "${test}"; then
         echo "WARNING: Docker version ${test} deprecated, recommend upgrade to ${docker_rec_version} or newer."
     fi
-
-    case $(uname -m) in
-        armv7l)
-            echo "ERROR: 32bit arm is not supported. Check if your hardware support arm64, which is supported in experimental capacity."
-            exit 1
-            ;;
-        aarch64 | arm64)
-            echo "WARNING: Support for aarch64 is experimental at the moment. Please report any problems at https://meta.discourse.org/tag/arm"
-            ;;
-        x86_64)
-            echo "x86_64 arch detected."
-            ;;
-        *)
-            echo "ERROR: unknown arch detected."
-            exit 1
-            ;;
-    esac
-
 
     # 4. discourse docker image is downloaded
     test=`$docker_path images | awk '{print $1 ":" $2 }' | grep "$image"`
@@ -193,23 +175,18 @@ check_prereqs() {
     fi
 }
 
-autocompletion=false
-if [[ $1 == "sh" ]] || [[ $1 == "install-completions" ]]; then
-    autocompletion=true
-fi
-if [[ autocompletion == false ]]; then
-    echo "run './launcher update' to update launcher"
-fi
-if [[ $1 == "update" ]]; then
-    rm ${BINDIR}/launcher
-    download_binary
-    echo "Launcher updated"
-    exit 0
-fi
-if [ ! -f "${BINDIR}/launcher" ]; then
-    download_binary
-    if [[ autocompletion == false ]]; then
-        echo "Launcher downloaded"
-    fi
-fi
-exec "${BINDIR}/launcher" "$@"
+update() {
+	  rm ${BINDIR}/launcher
+	  download_binary
+}
+
+case "$1" in
+	  update)
+		    update
+		    exit 0
+		    ;;
+	  *)
+		    test -f "${BINDIR}/launcher" || update
+        check_prereqs
+		    exec "${BINDIR}/launcher" "$@"
+esac
