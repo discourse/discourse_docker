@@ -1,3 +1,5 @@
+env:
+  ENABLE_SSL: 1
 run:
   - file:
       path: /etc/runit/1.d/install-ssl
