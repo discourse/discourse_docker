@@ -1,5 +1,3 @@
-env:
-  ENABLE_SSL: 1
 run:
   - file:
       path: /etc/runit/1.d/install-ssl
@@ -11,9 +9,13 @@ run:
           echo "DISCOURSE_HOSTNAME expected"
           exit 1
         fi
-        if [ -n "$ENABLE_SSL" ]; then
+        if [ -f /shared/ssl/ssl.crt ] && [ -f /shared/ssl/ssl.key ]; then
           exec /usr/local/bin/configure-ssl
+          exit 0
+        else
+          echo "Skipping ssl setup: missing /shared/ssl/ssl.crt or /shared/ssl/ssl.key"
         fi
+        # after ssl
 
   - file:
       path: "/usr/local/bin/configure-ssl"
