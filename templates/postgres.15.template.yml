@@ -132,8 +132,10 @@ run:
            exit 1
          fi
 
-         mv /shared/postgres_data /shared/postgres_data_old
-         mv /shared/postgres_data_new /shared/postgres_data
+         mkdir /shared/postgres_data_old
+         mv /shared/postgres_data/* /shared/postgres_data_old
+         mv /shared/postgres_data_new/* /shared/postgres_data
+         rmdir /shared/postgres_data_new
 
          echo -------------------------------------------------------------------------------------
          echo UPGRADE OF POSTGRES COMPLETE
