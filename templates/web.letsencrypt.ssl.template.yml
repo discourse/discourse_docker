@@ -7,6 +7,13 @@ run:
         - curl https://raw.githubusercontent.com/acmesh-official/acme.sh/3.0.6/acme.sh > /opt/acme.sh
         - chmod +x /opt/acme.sh
   - file:
+     path: "/etc/nginx/conf.d/outlets/server/20-well-known-location.conf"
+     contents: |
+       location ~ /.well-known {
+         root /var/www/discourse/public;
+         allow all;
+       }
+  - file:
       path: "/usr/local/bin/configure-letsencrypt"
       chmod: "+x"
       contents: |
