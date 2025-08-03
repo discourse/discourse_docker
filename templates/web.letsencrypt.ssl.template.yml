@@ -69,7 +69,6 @@ run:
           sed -i 's/listen 80;/listen 80;\nlisten [::]:80;/g' /etc/nginx/letsencrypt.conf
         fi
 
-
         sed -Ei "s/^#?ACCOUNT_EMAIL=.+/ACCOUNT_EMAIL=${LETSENCRYPT_ACCOUNT_EMAIL}/" \
           /shared/letsencrypt/account.conf
 
