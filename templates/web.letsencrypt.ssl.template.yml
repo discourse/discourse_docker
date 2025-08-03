@@ -90,10 +90,10 @@ run:
         /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf
 
         extra_domains() {
-        if [ -n "$DISCOURSE_HOSTNAME_ALIASES" ]; then
-          domains=$(echo $DISCOURSE_HOSTNAME_ALIASES | sed "s/,/ -d /g")
-          echo "-d $domains"
-        fi
+          if [ -n "$DISCOURSE_HOSTNAME_ALIASES" ]; then
+            domains=$(echo $DISCOURSE_HOSTNAME_ALIASES | sed "s/,/ -d /g")
+            echo "-d $domains"
+          fi
         }
 
         issue_cert() {
