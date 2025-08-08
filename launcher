@@ -180,14 +180,14 @@ update() {
 }
 
 case "$1" in
-	  update)
-        echo "updating launcher..." >&2
-		    update
-		    exit 0
-		    ;;
-	  *)
-		    test -f "${BINDIR}/launcher" || update
-        echo "run ./launcher update to update launcher" >&2
-        check_prereqs
-		    exec "${BINDIR}/launcher" "$@"
+  update)
+    echo "updating launcher..." >&2
+    update
+    exit 0
+    ;;
+  *)
+    test -f "${BINDIR}/launcher" || update
+    echo "run ./launcher update to update launcher" >&2
+    check_prereqs
+    exec "${BINDIR}/launcher" "$@"
 esac
