@@ -16,10 +16,6 @@ hooks:
        filename: /etc/service/unicorn/run
        from: "# postgres"
        to: |
-         if [ -f /root/install_postgres ]; then
-           /root/install_postgres
-           rm /root/install_postgres
-         fi
          sv start postgres || exit 1
 
 run:
@@ -29,6 +25,15 @@ run:
      contents: |
         #!/bin/sh
         exec 2>&1
+        if [ -f /root/install_postgres ]; then
+          /root/install_postgres
+          rm /root/install_postgres
+        fi
+        if [ "$CREATE_DB_ON_BOOT" = "1" ]; then
+          sudo -E -u postgres /usr/lib/postgresql/15/bin/pg_ctl -D /etc/postgresql/15/main -o "-c listen_addresses='' -p 5432" -w start
+          /usr/local/bin/create_db
+          sudo -E -u postgres /usr/lib/postgresql/15/bin/pg_ctl -D /etc/postgresql/15/main -m fast -w stop
+        fi
         HOME=/var/lib/postgresql USER=postgres exec thpoff chpst -u postgres:postgres:ssl-cert -U postgres:postgres:ssl-cert /usr/lib/postgresql/15/bin/postmaster -D /etc/postgresql/15/main
 
   - file:
@@ -258,6 +263,9 @@ run:
         su postgres -c 'psql $db_name -c "create extension if not exists vector;"'
         su postgres -c 'psql $db_name -c "alter extension vector update;"' || true
         sudo -u postgres psql $db_name <<< "update pg_database set encoding = pg_char_to_encoding('UTF8') where datname = '$db_name' AND encoding = pg_char_to_encoding('SQL_ASCII');" || true
+        if [ ! -z "$DISCOURSE_DB_PASSWORD" ]; then
+          echo "alter user $db_user with password '$DISCOURSE_DB_PASSWORD';" | su - postgres -c 'psql $db_name'
+        fi
 
   - file:
      path: /var/lib/postgresql/take-database-backup
