@@ -27,8 +27,23 @@ FROM builder AS nginx_builder
 ADD nginx_public_keys.key /tmp/nginx_public_keys.key
 ADD install-nginx /tmp/install-nginx
 RUN gpg --import /tmp/nginx_public_keys.key &&\
-    rm /tmp/nginx_public_keys.key &&\
-    /tmp/install-nginx
+  rm /tmp/nginx_public_keys.key &&\
+  /tmp/install-nginx
+
+FROM builder AS thpoff_builder
+# This tool allows us to disable huge page support for our current process
+# since the flag is preserved through forks and execs it can be used on any
+# process
+ADD thpoff.c /src/thpoff.c
+RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
+
+FROM builder AS jemalloc_builder
+ADD install-jemalloc /tmp/install-jemalloc
+RUN /tmp/install-jemalloc
+
+FROM builder AS oxipng_builder
+ADD install-oxipng /tmp/install-oxipng
+RUN /tmp/install-oxipng
 
 FROM discourse/ruby:${RUBY_VERSION}-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
@@ -70,6 +85,8 @@ RUN --mount=type=tmpfs,target=/var/log \
     ghostscript libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
     fonts-urw-base35 libheif1/${DEBIAN_RELEASE}-backports \
+# oxipng dependencies \
+    advancecomp jpegoptim libjpeg-turbo-progs \
 # nginx runtime dependencies \
     nginx-common && \
 # install these without recommends to avoid pulling in e.g.
@@ -125,23 +142,17 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
   test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
-ADD install-jemalloc /tmp/install-jemalloc
-RUN /tmp/install-jemalloc
+COPY --from=thpoff_builder /usr/local/sbin/thpoff /usr/local/sbin
+COPY --from=jemalloc_builder /usr/lib/libjemalloc.so.2 /usr/lib
+RUN ln -s /usr/lib/libjemalloc.so.2 /usr/lib/libjemalloc.so
+COPY --from=oxipng_builder /usr/local/bin/jhead /usr/local/bin
+COPY --from=oxipng_builder /usr/local/bin/oxipng /usr/local/bin
 
 ADD install-redis /tmp/install-redis
-
-ADD install-oxipng /tmp/install-oxipng
-RUN /tmp/install-oxipng
 
 RUN gem install pups --force &&\
     mkdir -p /pups/bin/ &&\
     ln -s /usr/local/bin/pups /pups/bin/pups
-
-# This tool allows us to disable huge page support for our current process
-# since the flag is preserved through forks and execs it can be used on any
-# process
-ADD thpoff.c /src/thpoff.c
-RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
 
 # this is required for aarch64 which uses buildx
 # see https://github.com/docker/buildx/issues/150
