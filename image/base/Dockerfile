@@ -76,7 +76,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     libxslt-dev libcurl4-openssl-dev \
     libssl-dev libyaml-dev libtool \
     libpcre3 libpcre3-dev zlib1g zlib1g-dev \
-    libxml2-dev gawk parallel \
+    libxml2-dev gawk \
     libreadline-dev anacron wget \
     psmisc whois brotli libunwind-dev \
     libtcmalloc-minimal4 cmake \
