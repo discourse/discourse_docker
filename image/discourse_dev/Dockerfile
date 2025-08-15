@@ -16,6 +16,7 @@ FROM discourse/base:$from_tag
 # Install Postgres and Redis
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+  cmake g++ \
   postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
 RUN /tmp/install-redis
 

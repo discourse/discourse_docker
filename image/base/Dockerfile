@@ -27,8 +27,23 @@ FROM builder AS nginx_builder
 ADD nginx_public_keys.key /tmp/nginx_public_keys.key
 ADD install-nginx /tmp/install-nginx
 RUN gpg --import /tmp/nginx_public_keys.key &&\
-    rm /tmp/nginx_public_keys.key &&\
-    /tmp/install-nginx
+  rm /tmp/nginx_public_keys.key &&\
+  /tmp/install-nginx
+
+FROM builder AS thpoff_builder
+# This tool allows us to disable huge page support for our current process
+# since the flag is preserved through forks and execs it can be used on any
+# process
+ADD thpoff.c /src/thpoff.c
+RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
+
+FROM builder AS jemalloc_builder
+ADD install-jemalloc /tmp/install-jemalloc
+RUN /tmp/install-jemalloc
+
+FROM builder AS oxipng_builder
+ADD install-oxipng /tmp/install-oxipng
+RUN /tmp/install-oxipng
 
 FROM discourse/ruby:${RUBY_VERSION}-${DEBIAN_RELEASE}-slim AS discourse_dependencies
 
@@ -54,22 +69,24 @@ RUN echo 2.0.`date +%Y%m%d` > /VERSION
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
 
 RUN --mount=type=tmpfs,target=/var/log \
+  --mount=type=tmpfs,target=/var/cache/apt \
+  --mount=type=tmpfs,target=/var/lib/apt \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping locales \
     ca-certificates rsync \
-    cmake g++ pkg-config patch \
-    libxslt-dev libcurl4-openssl-dev \
-    libssl-dev libyaml-dev libtool \
-    libpcre3 libpcre3-dev zlib1g zlib1g-dev \
-    libxml2-dev gawk parallel \
-    libreadline-dev anacron wget \
-    psmisc whois brotli libunwind-dev \
-    libtcmalloc-minimal4 cmake \
+    pkg-config patch \
+    gawk \
+    anacron wget \
+    psmisc whois brotli \
     pngcrush pngquant ripgrep poppler-utils \
+# nginx runtime dependencies
+    libpcre3 zlib1g \
 # imagemagick runtime dependencies
     ghostscript libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
     fonts-urw-base35 libheif1/${DEBIAN_RELEASE}-backports \
+# oxipng dependencies \
+    advancecomp jpegoptim libjpeg-turbo-progs \
 # nginx runtime dependencies \
     nginx-common && \
 # install these without recommends to avoid pulling in e.g.
@@ -91,7 +108,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     dpkg-divert --local --rename --add /sbin/initctl; \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
-    libpq-dev postgresql-client-${PG_MAJOR} \
+    postgresql-client-${PG_MAJOR} \
     nodejs yarn &&\
     mkdir -p /etc/runit/1.d
 
@@ -125,23 +142,16 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
   test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
-ADD install-jemalloc /tmp/install-jemalloc
-RUN /tmp/install-jemalloc
+COPY --from=thpoff_builder /usr/local/sbin/thpoff /usr/local/sbin
+COPY --from=jemalloc_builder /usr/lib/libjemalloc.so /usr/lib
+COPY --from=oxipng_builder /usr/local/bin/jhead /usr/local/bin
+COPY --from=oxipng_builder /usr/local/bin/oxipng /usr/local/bin
 
 ADD install-redis /tmp/install-redis
-
-ADD install-oxipng /tmp/install-oxipng
-RUN /tmp/install-oxipng
 
 RUN gem install pups --force &&\
     mkdir -p /pups/bin/ &&\
     ln -s /usr/local/bin/pups /pups/bin/pups
-
-# This tool allows us to disable huge page support for our current process
-# since the flag is preserved through forks and execs it can be used on any
-# process
-ADD thpoff.c /src/thpoff.c
-RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
 
 # this is required for aarch64 which uses buildx
 # see https://github.com/docker/buildx/issues/150
@@ -158,21 +168,51 @@ RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
     sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse &&\
     gem install bundler --conservative -v $(awk '/BUNDLED WITH/ { getline; gsub(/ /,""); print $0 }' /var/www/discourse/Gemfile.lock)
 
+FROM discourse_slim AS discourse_gem_builder
+RUN --mount=type=tmpfs,target=/var/log \
+    apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    cmake g++ \
+    libtool \
+    libxslt-dev libcurl4-openssl-dev \
+    libssl-dev libyaml-dev \
+    libxml2-dev \
+    libreadline-dev \
+    libunwind-dev \
+    libpq-dev
+RUN cd /var/www/discourse &&\
+  sudo -u discourse bundle config --local deployment true &&\
+  sudo -u discourse bundle config --local path ./vendor/bundle &&\
+  sudo -u discourse bundle config --local without test development &&\
+  sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
+  find /var/www/discourse/vendor/bundle -name cache -not -path '*/gems/*' -type d -exec rm -rf {} + &&\
+  find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} + &&\
+# Delete compile time libv8 library
+  find /var/www/discourse/vendor/bundle -wholename "*libv8-node*/vendor" -type d -exec rm -rf {} +
+
 FROM discourse_slim AS discourse_web_only
 ENV RAILS_ENV=production
 
 RUN cd /var/www/discourse &&\
-    sudo -u discourse bundle config --local deployment true &&\
-    sudo -u discourse bundle config --local path ./vendor/bundle &&\
-    sudo -u discourse bundle config --local without test development &&\
-    sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
-    find /var/www/discourse/vendor/bundle -name cache -not -path '*/gems/*' -type d -exec rm -rf {} + &&\
-    find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
+  sudo -u discourse bundle config --local deployment true &&\
+  sudo -u discourse bundle config --local path ./vendor/bundle &&\
+  sudo -u discourse bundle config --local without test development
+COPY --from=discourse_gem_builder /var/www/discourse/vendor/bundle /var/www/discourse/vendor/bundle
 
 RUN cd /var/www/discourse &&\
     sudo -u discourse /bin/bash -c 'if [ -f yarn.lock ]; then yarn install --frozen-lockfile && yarn cache clean; else pnpm install --frozen-lockfile; fi'
 
 FROM discourse_web_only AS discourse_release
+
+RUN --mount=type=tmpfs,target=/var/log \
+    apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    cmake g++ \
+    libtool \
+    libxslt-dev libcurl4-openssl-dev \
+    libssl-dev libyaml-dev \
+    libxml2-dev \
+    libreadline-dev \
+    libunwind-dev \
+    libpq-dev
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
   postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
