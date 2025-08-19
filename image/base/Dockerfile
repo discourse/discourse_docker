@@ -77,12 +77,13 @@ RUN --mount=type=tmpfs,target=/var/log \
     cmake g++ pkg-config patch \
     libxslt-dev libcurl4-openssl-dev \
     libssl-dev libyaml-dev libtool \
-    libpcre3 libpcre3-dev zlib1g zlib1g-dev \
     libxml2-dev gawk \
     libreadline-dev anacron wget \
     psmisc whois brotli libunwind-dev \
     libtcmalloc-minimal4 cmake \
     pngcrush pngquant ripgrep poppler-utils \
+# nginx runtime dependencies
+    libpcre3 zlib1g \
 # imagemagick runtime dependencies
     ghostscript libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
