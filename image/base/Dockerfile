@@ -152,8 +152,7 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
 COPY --from=thpoff_builder /usr/local/sbin/thpoff /usr/local/sbin
-COPY --from=jemalloc_builder /usr/lib/libjemalloc.so.2 /usr/lib
-RUN ln -s /usr/lib/libjemalloc.so.2 /usr/lib/libjemalloc.so
+COPY --from=jemalloc_builder /usr/lib/libjemalloc.so /usr/lib
 COPY --from=oxipng_builder /usr/local/bin/jhead /usr/local/bin
 COPY --from=oxipng_builder /usr/local/bin/oxipng /usr/local/bin
 
