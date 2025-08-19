@@ -72,15 +72,22 @@ RUN --mount=type=tmpfs,target=/var/log \
   --mount=type=tmpfs,target=/var/cache/apt \
   --mount=type=tmpfs,target=/var/lib/apt \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
-    apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping locales \
+    apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    gnupg sudo curl fping locales \
     ca-certificates rsync \
-    cmake g++ pkg-config patch \
-    libxslt-dev libcurl4-openssl-dev \
-    libssl-dev libyaml-dev libtool \
-    libxml2-dev gawk \
-    libreadline-dev anacron wget \
-    psmisc whois brotli libunwind-dev \
+    gawk anacron wget \
+    psmisc whois brotli \
     pngcrush pngquant ripgrep poppler-utils \
+# gem build dependencies
+    cmake g++ pkg-config patch \
+    libtool \
+    libxslt-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libyaml-dev \
+    libxml2-dev \
+    libreadline-dev \
+    libunwind-dev \
 # nginx runtime dependencies
     libpcre3 zlib1g \
 # imagemagick runtime dependencies
