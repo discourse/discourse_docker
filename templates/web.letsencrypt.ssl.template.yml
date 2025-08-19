@@ -26,7 +26,6 @@ run:
 
         events {
           worker_connections 768;
-          # multi_accept on;
         }
 
         http {
@@ -71,8 +70,15 @@ run:
         LETSENCRYPT_DIR="/shared/letsencrypt"
         /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf
 
+        extra_domains() {
+          if [ -n "$DISCOURSE_HOSTNAME_ALIASES" ]; then
+            domains=$(echo $DISCOURSE_HOSTNAME_ALIASES | sed "s/,/ -d /g")
+            echo "-d $domains"
+          fi
+        }
+
         issue_cert() {
-          LE_WORKING_DIR="${LETSENCRYPT_DIR}" ${LETSENCRYPT_DIR}/acme.sh --issue $2 -d ${DISCOURSE_HOSTNAME} --keylength $1 -w /var/www/discourse/public
+          LE_WORKING_DIR="${LETSENCRYPT_DIR}" ${LETSENCRYPT_DIR}/acme.sh --issue $2 -d ${DISCOURSE_HOSTNAME} $(extra_domains) --keylength $1 -w /var/www/discourse/public
         }
 
         cert_exists() {
