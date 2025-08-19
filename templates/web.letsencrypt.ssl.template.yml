@@ -19,20 +19,6 @@ run:
         LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --upgrade --auto-upgrade
         LE_WORKING_DIR="${LETSENCRYPT_DIR}" ./acme.sh --set-default-ca  --server  letsencrypt
 
-        cat << EOF > /etc/nginx/conf.d/outlets/before-server/20-redirect-http-to-https.conf
-        server {
-          listen 80;
-
-          location ~ /.well-known {
-            root /var/www/discourse/public;
-            allow all;
-          }
-          location / {
-            return 301 https://${DISCOURSE_HOSTNAME}$request_uri;
-          }
-        }
-        EOF
-
         cat << EOF > /etc/nginx/letsencrypt.conf
         user www-data;
         worker_processes auto;
@@ -54,6 +40,7 @@ run:
 
           server {
             listen 80;
+            listen [::]:80;
 
             location ~ /.well-known {
               root /var/www/discourse/public;
@@ -62,11 +49,6 @@ run:
           }
         }
         EOF
-
-        if [ -f "/proc/net/if_inet6" ] ; then
-          sed -i 's/listen 80;/listen 80;\nlisten [::]:80;/g' /etc/nginx/conf.d/outlets/before-server/20-redirect-http-to-https.conf
-          sed -i 's/listen 80;/listen 80;\nlisten [::]:80;/g' /etc/nginx/letsencrypt.conf
-        fi
 
         sed -Ei "s/^#?ACCOUNT_EMAIL=.+/ACCOUNT_EMAIL=${LETSENCRYPT_ACCOUNT_EMAIL}/" \
           /shared/letsencrypt/account.conf

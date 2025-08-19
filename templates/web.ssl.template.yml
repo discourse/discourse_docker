@@ -27,6 +27,13 @@ run:
         cat << EOF > /etc/nginx/conf.d/outlets/before-server/20-redirect-http-to-https.conf
         server {
           listen 80;
+          listen [::]:80;
+
+          location ~ /.well-known {
+            root /var/www/discourse/public;
+            allow all;
+          }
+
           return 301 https://${DISCOURSE_HOSTNAME}$request_uri;
         }
         EOF
@@ -35,6 +42,7 @@ run:
 
         cat << EOF > /etc/nginx/conf.d/outlets/server/20-https.conf
         listen 443 ssl;
+        listen [::]:443 ssl;
         http2 on;
 
         ssl_protocols TLSv1.2 TLSv1.3;
@@ -58,8 +66,3 @@ run:
         cat << EOF > /etc/nginx/conf.d/outlets/discourse/20-https.conf
         add_header Strict-Transport-Security 'max-age=31536000';
         EOF
-
-        if [ -f "/proc/net/if_inet6" ] ; then
-          sed -i 's/listen 80;/listen 80;\nlisten [::]:80;/g' /etc/nginx/conf.d/outlets/before-server/20-redirect-http-to-https.conf
-          sed -i 's/listen 443 ssl;/listen 443 ssl;\nlisten [::]:443 ssl;/g' /etc/nginx/conf.d/outlets/server/20-https.conf
-        fi
