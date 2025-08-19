@@ -80,7 +80,6 @@ RUN --mount=type=tmpfs,target=/var/log \
     libxml2-dev gawk \
     libreadline-dev anacron wget \
     psmisc whois brotli libunwind-dev \
-    libtcmalloc-minimal4 cmake \
     pngcrush pngquant ripgrep poppler-utils \
 # nginx runtime dependencies
     libpcre3 zlib1g \
