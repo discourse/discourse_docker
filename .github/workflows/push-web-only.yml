@@ -1,0 +1,122 @@
+on:
+#  push:
+#    branches:
+#      - main
+  schedule:
+    - cron: "0 0 * * *"
+
+env:
+  BUILDKIT_PROGRESS: plain
+  DOCKER_REPO: discourse/discourse
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      tests-passed: ${{ steps.latest.outputs.version }}
+      stable: ${{ steps.stable.outputs.version }}
+    steps:
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - name: checkout tests passed
+        uses: actions/checkout@v4
+        with:
+          repository: discourse/discourse
+          ref: tests-passed
+          fetch-depth: 1
+          path: 'tests-passed'
+      - name: checkout stable
+        uses: actions/checkout@v4
+        with:
+          repository: discourse/discourse
+          ref: stable
+          fetch-depth: 1
+          path: 'stable'
+      - id: latest
+        working-directory: tests-passed
+        run: |
+          version=$(ruby -r ./lib/version.rb -e "puts ::Discourse::VERSION::STRING")
+          echo "version=$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
+      - id: stable
+        working-directory: stable
+        run: |
+          version=$(ruby -r ./lib/version.rb -e "puts ::Discourse::VERSION::STRING")
+          echo "version=$version"
+          echo "version=$version" >> $GITHUB_OUTPUT
+
+  push:
+    strategy:
+      matrix:
+        version: [tests-passed,stable]
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.os }}
+    needs: version
+    env:
+      ARCH: ${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
+      FLOATING_TAG: ${{ matrix.version == 'tests-passed' && 'latest' || matrix.version }}-${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
+      TAG: ${{ matrix.version == 'stable' && needs.version.outputs.stable || needs.version.outputs.tests-passed }}-${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: download-launcher
+        run: |
+          BINDIR="bin"
+          package="${BINDIR}/launcher.tar.gz"
+          curl -s -o ${package} -L https://get.discourse.org/launcher/latest/launcher-linux-${{ env.ARCH }}.tar.gz
+          tar -zxf ${package} -C ${BINDIR}
+          rm ${package}
+      - uses: docker/setup-buildx-action@v3
+      - name: build
+        run: |
+          docker login --username ${{ vars.DOCKERHUB_USERNAME }} --password ${{ secrets.DOCKERHUB_PASSWORD }}
+          # TODO: can we find a way to override or provide pups params at build time?
+          # Then we can do something like:
+          # bin/launcher build --params="version=stable" --conf-dir=./samples web_only
+          cp ./samples/web_only.yml ./containers/web_only.yml
+          # TODO: Uncomment when PR 966 is merged
+          # allowing us to build from web-only images
+          # https://github.com/discourse/discourse_docker/pull/966
+          #echo $(grep base_image: ./templates/web.template.yml)-web-only >> ./containers/web_only.yml
+          sed -Ei 's/^ *+#?version:.*/  version: ${{ matrix.version }}/' ./containers/web_only.yml
+          sed -Ei '/^ *+- "templates\/web.template.yml"/a\  - "templates/offline-page.template.yml"' ./containers/web_only.yml
+          sed -Ei 's/^ *+#- "templates\/web.ssl.template.yml"/  - "templates\/web.ssl.template.yml"/' ./containers/web_only.yml
+          sed -Ei 's/^ *+#- "templates\/web.letsencrypt.ssl.template.yml"/  - "templates\/web.letsencrypt.ssl.template.yml"/' ./containers/web_only.yml
+          bin/launcher build web_only \
+            --tag ${{ env.DOCKER_REPO }}:${{ env.FLOATING_TAG }} \
+            --tag ${{ env.DOCKER_REPO }}:${{ env.TAG }} \
+            --push
+
+  manifest:
+    runs-on: ubuntu-latest
+    needs: [version, push]
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - name: update manifest
+        run: |
+          docker login --username ${{ vars.DOCKERHUB_USERNAME }} --password ${{ secrets.DOCKERHUB_PASSWORD }}
+          docker manifest create \
+            ${{ env.DOCKER_REPO }}:latest \
+            --amend ${{ env.DOCKER_REPO }}:latest-amd64 \
+            --amend ${{ env.DOCKER_REPO }}:latest-arm64
+          docker manifest push ${{ env.DOCKER_REPO }}:latest
+
+          docker manifest create \
+            ${{ env.DOCKER_REPO }}:stable \
+            --amend ${{ env.DOCKER_REPO }}:stable-amd64 \
+            --amend ${{ env.DOCKER_REPO }}:stable-arm64
+          docker manifest push ${{ env.DOCKER_REPO }}:stable
+
+          docker manifest create \
+            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.tests-passed }} \
+            --amend ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.tests-passed }}-amd64 \
+            --amend ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.tests-passed }}-arm64
+          docker manifest push ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.tests-passed }}
+
+          docker manifest create \
+            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.stable }} \
+            --amend ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.stable }}-amd64 \
+            --amend ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.stable }}-arm64
+          docker manifest push ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.stable }}
