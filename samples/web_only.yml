@@ -40,6 +40,8 @@ env:
 
   ## TODO: The domain name this Discourse instance will respond to
   DISCOURSE_HOSTNAME: 'discourse.example.com'
+  ## Other hostnames that should have a valid https certificate for (will redirect to hostname)
+  ## DISCOURSE_HOSTNAME_ALIASES: domain.com,other.domain.com
 
   ## Uncomment if you want the container to be started with the same
   ## hostname (-h option) as specified above (default "$hostname-$config")
