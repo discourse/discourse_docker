@@ -240,9 +240,8 @@ check_email() {
 get_yml_file() {
   if [ -n "$app_name" ] && [ -f "containers/$app_name.yml" ]
   then
-    log "Using app name '$app_name' from command argument"
     web_file="containers/$app_name.yml"
-    log "Found $web_file"
+    log "Found $web_file from command argument"
   elif [ -f containers/app.yml ]
   then
     app_name="app"
@@ -250,13 +249,12 @@ get_yml_file() {
     log "Found $web_file"
   elif [ -f containers/web_only.yml ]
   then
-    log "YML=web_only.yml"
     app_name="web_only"
     web_file=containers/$app_name.yml
     log "Found $web_file"
   else
-    log "Can't find app.yml or web_only.yml."
-    log "Giving up."
+    log There is no container definition.
+    log Unable to continue.
     exit
   fi
 }
