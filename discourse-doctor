@@ -312,6 +312,8 @@ clean_up_log_file() {
     echo "Replacing: $VAR"
     sed -i -e 's/'"$VAR"'\([=: ]\)\S*/'"$VAR"'\1REDACTED /g' $LOG_FILE
   done
+  # allow others to read the log for convenience, now that sensitive content has been redacted
+  chmod 0644 $LOG_FILE
 }
 
 print_done() {
@@ -352,7 +354,7 @@ print_done() {
 
 initialize_log_file() {
   rm -f $LOG_FILE
-  touch $LOG_FILE
+  install -m 0600 /dev/null $LOG_FILE
   log DISCOURSE DOCTOR $(date)
   log -e "OS: $(uname -a)\n\n"
 }
