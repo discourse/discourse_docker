@@ -96,21 +96,10 @@ run:
       hook: code
       cmd:
         - sudo -H -E -u discourse git clean -f
-        # TODO Remove the special handling of shallow clones when everyone uses images without that clone type
         - |-
           sudo -H -E -u discourse bash -c '
             set -o errexit
-            if [ $(git rev-parse --is-shallow-repository) == "true" ]; then
-                git remote set-branches --add origin main
-                git remote set-branches origin $version
-                git fetch --depth 1 origin $version
-            else
-                git fetch --tags --prune-tags --prune --force origin
-            fi
-          '
-        - |-
-          sudo -H -E -u discourse bash -c '
-            set -o errexit
+            git fetch --tags --prune-tags --prune --force origin
             if [[ $(git symbolic-ref --short HEAD) == $version ]] ; then
                 git pull
             else
