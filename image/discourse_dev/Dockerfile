@@ -37,10 +37,7 @@ RUN /pups/bin/pups /pups/redis.yml
 RUN locale-gen en_US.UTF-8
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
-    LC_ALL=en_US.UTF-8 \
-    RUSTUP_HOME=/usr/local/rustup \
-    CARGO_HOME=/usr/local/cargo \
-    PATH=/usr/local/cargo/bin:$PATH
+    LC_ALL=en_US.UTF-8
 
 # get postgres going
 ADD postgres.template.yml /pups/postgres.yml
@@ -56,10 +53,6 @@ RUN mv /shared/postgres_data /shared/postgres_data_orig
 # re-instantiate data on boot if needed (this will allow it to persist across
 # invocations when used with a mounted volume)
 ADD ensure-database /etc/runit/1.d/ensure-database
-
-ADD install-rust /tmp/install-rust
-ADD install-selenium /tmp/install-selenium
-RUN /tmp/install-selenium
 
 # Install & Configure MailHog (https://github.com/mailhog/MailHog)
 RUN wget -qO /tmp/mailhog https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64\

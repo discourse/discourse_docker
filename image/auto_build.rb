@@ -159,7 +159,6 @@ def dev_deps()
     "sed -e 's/\(db_name: discourse\)/\1_development/' ../templates/postgres.template.yml > discourse_dev/postgres.template.yml",
   )
   run("cp ../templates/redis.template.yml discourse_dev/redis.template.yml")
-  run("cp base/install-rust discourse_dev/install-rust")
 end
 
 if ARGV.length == 0
