@@ -55,6 +55,7 @@ BUNDLED_PLUGINS=(
   "discourse-policy"
   "discourse-solved"
   "discourse-ai"
+  "discourse-cakeday"
 )
 
 # for potential re-exec later
