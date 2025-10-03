@@ -58,8 +58,6 @@ RUN mv /shared/postgres_data /shared/postgres_data_orig
 ADD ensure-database /etc/runit/1.d/ensure-database
 
 ADD install-rust /tmp/install-rust
-ADD install-selenium /tmp/install-selenium
-RUN /tmp/install-selenium
 
 # Install & Configure MailHog (https://github.com/mailhog/MailHog)
 RUN wget -qO /tmp/mailhog https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64\
