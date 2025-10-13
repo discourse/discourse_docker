@@ -157,7 +157,7 @@ jobs:
           docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} discourse/base:aarch64
           docker push discourse/base:aarch64
   ruby_3_4:
-    runs-on: ubuntu-24.04${{ ((github.event_name != 'schedule') && '-8core') || '' }}
+    runs-on: debian-12-8core
     timeout-minutes: 30
     needs: base
     steps:
