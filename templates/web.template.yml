@@ -296,9 +296,7 @@ run:
                 delaycompress
                 compress
                 sharedscripts
-                postrotate
-                sv 1 unicorn
-                endscript
+                copytruncate
         }
 
   - file:
