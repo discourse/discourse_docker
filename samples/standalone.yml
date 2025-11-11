@@ -58,18 +58,27 @@ env:
   ## on initial signup example 'user1@example.com,user2@example.com'
   DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'
 
-  ## TODO: The SMTP mail server used to validate new accounts and send notifications
-  # SMTP ADDRESS is required
-  # WARNING: SMTP password should be wrapped in quotes to avoid problems
+  ## TODO: Configure the mail server
+  ##       (used for validation of new accounts, notifications, digests, etc.)
+  ## required: hostname of the SMTP mail server used to send mail
   DISCOURSE_SMTP_ADDRESS: smtp.example.com
+  ## uncomment to set the port to something other than the default (25)
   #DISCOURSE_SMTP_PORT: 587
+  ## USER_NAME / PASSWORD required if the SMTP provider needs authentication
+  ## WARNING: a '#' in the SMTP password can be misinterpreted; ensure it's inside string quotes, e.g.:
+  ##   DISCOURSE_SMTP_PASSWORD: "#pass#ord"
   DISCOURSE_SMTP_USER_NAME: user@example.com
   DISCOURSE_SMTP_PASSWORD: "pa$$word"
-  #DISCOURSE_SMTP_ENABLE_START_TLS: true           # (optional, default: true)
-  #DISCOURSE_SMTP_DOMAIN: discourse.example.com    # (required by some providers)
-  #DISCOURSE_NOTIFICATION_EMAIL: noreply@discourse.example.com    # (address to send notifications from)
-  #DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: peer        # (optional, default: peer, valid values: none, peer, client_once, fail_if_no_peer_cert)
-  #DISCOURSE_SMTP_AUTHENTICATION: plain            # (default: plain, valid values: plain, login, cram_md5)
+  ## uncomment to enable implicit TLS at connection time, probably needed for using port 465
+  #DISCOURSE_SMTP_FORCE_TLS: true
+  ## uncomment to set the HELO/EHLO domain, only set if required by provider
+  #DISCOURSE_SMTP_DOMAIN: discourse.example.com
+  ## the address from which notifications are sent
+  #DISCOURSE_NOTIFICATION_EMAIL: noreply@discourse.example.com
+  ## uncomment to change server certificate verification
+  #DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: peer # peer|none
+  ## uncomment to override the authentication method
+  #DISCOURSE_SMTP_AUTHENTICATION: plain # plain|login|cram_md5
 
   ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
   #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
