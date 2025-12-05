@@ -459,6 +459,8 @@ ask_user_for_config() {
   then
     smtp_password=""
   fi
+  read_config "DISCOURSE_SKIP_EMAIL_SETUP"
+  local skip_email_setup=$read_config_result
   read_config "DISCOURSE_NOTIFICATION_EMAIL"
   local notification_email=$read_config_result
   read_config "DISCOURSE_SMTP_DOMAIN"
@@ -790,7 +792,17 @@ ask_user_for_config() {
       fi
     fi
   else
-    echo "SMTP environment variables not updated (--skip-email-setup)."
+    echo "SMTP environment variables skipped (--skip-email-setup)."
+
+    sed -i -e "s/^  #\?DISCOURSE_SKIP_EMAIL_SETUP:.*/  DISCOURSE_SKIP_EMAIL_SETUP: $skip_email_setup/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "DISCOURSE_SKIP_EMAIL_SETUP change failed."
+      update_ok="n"
+    fi
+
   fi
 
   sed -i -e "s/^  #\?DISCOURSE_NOTIFICATION_EMAIL:.*/  DISCOURSE_NOTIFICATION_EMAIL: $notification_email/w $changelog" $web_file

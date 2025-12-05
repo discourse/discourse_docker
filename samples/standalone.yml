@@ -70,6 +70,7 @@ env:
   #DISCOURSE_NOTIFICATION_EMAIL: noreply@discourse.example.com    # (address to send notifications from)
   #DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: peer        # (optional, default: peer, valid values: none, peer, client_once, fail_if_no_peer_cert)
   #DISCOURSE_SMTP_AUTHENTICATION: plain            # (default: plain, valid values: plain, login, cram_md5)
+  #DISCOURSE_SKIP_EMAIL_SETUP: "1"                 # (optional), uncomment to skip email setup validation
 
   ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
   #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
