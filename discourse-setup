@@ -923,60 +923,6 @@ validate_config() {
   fi
 }
 
-
-##
-## Enable Discourse ID authentication when skipping email setup
-##
-enable_discourse_id() {
-  if [ "$SKIP_EMAIL_SETUP" != "1" ]
-  then
-    return
-  fi
-
-  echo ""
-  echo "Configuring Discourse ID authentication..."
-
-  local commands=(
-    "  - exec: rails r \"SiteSetting.enable_discourse_id = true\""
-    "  - exec: rails r \"SiteSetting.enable_local_logins = false\""
-  )
-
-  local added_any="0"
-  local failed_any="0"
-
-  for cmd in "${commands[@]}"
-  do
-    if grep -qF "$cmd" "$web_file"
-    then
-      continue
-    fi
-
-    local escaped_cmd=${cmd//\\/\\\\}
-    escaped_cmd=${escaped_cmd//&/\\&}
-    escaped_cmd=${escaped_cmd//\"/\\\"}
-
-    if sed -i -e "/exec: echo \"End of custom commands\"/i\\$escaped_cmd" "$web_file"
-    then
-      echo "Added: $cmd"
-      added_any="1"
-    else
-      echo "Warning: could not add '$cmd' to $web_file"
-      failed_any="1"
-    fi
-  done
-
-  if [ "$failed_any" == "1" ]
-  then
-    echo "Please ensure the commands above are present in $web_file before rebuilding."
-  elif [ "$added_any" != "1" ]
-  then
-    echo "Discourse ID commands already present in $web_file"
-  else
-    echo "Discourse ID will be enabled and local email logins disabled on first boot."
-  fi
-}
-
-
 ##
 ## template file names
 ##
@@ -1065,7 +1011,6 @@ fi
 scale_ram_and_cpu
 ask_user_for_config
 validate_config
-enable_discourse_id
 
 ##
 ## if we reach this point without exiting, OK to proceed
