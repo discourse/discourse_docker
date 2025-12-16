@@ -3,8 +3,9 @@
 
 ARG DEBIAN_RELEASE=bookworm
 ARG RUBY_VERSION=3.3.8
+ARG FROM_DOCKER_IMAGE_TAG=${RUBY_VERSION}-${DEBIAN_RELEASE}-slim
 
-FROM discourse/ruby:${RUBY_VERSION}-${DEBIAN_RELEASE}-slim AS builder
+FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS builder
 ARG DEBIAN_RELEASE
 ENV DEBIAN_RELEASE=${DEBIAN_RELEASE}
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
@@ -30,7 +31,7 @@ RUN gpg --import /tmp/nginx_public_keys.key &&\
     rm /tmp/nginx_public_keys.key &&\
     /tmp/install-nginx
 
-FROM discourse/ruby:${RUBY_VERSION}-${DEBIAN_RELEASE}-slim AS discourse_dependencies
+FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse_dependencies
 
 ARG DEBIAN_RELEASE
 ARG PG_MAJOR=15
@@ -102,7 +103,7 @@ RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
     locale-gen
 
 RUN --mount=type=tmpfs,target=/root/.npm \
-    npm install -g terser uglify-js pnpm@9
+    npm install -g pnpm@10
 
 COPY --from=nginx_builder /usr/sbin/nginx /usr/sbin
 
