@@ -34,7 +34,7 @@ run:
             allow all;
           }
 
-          return 301 https://${DISCOURSE_HOSTNAME}$request_uri;
+          return 301 https://${DISCOURSE_HOSTNAME}\$request_uri;
         }
         EOF
 
