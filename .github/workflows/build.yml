@@ -137,12 +137,16 @@ jobs:
           NEW_RELEASE=$(docker manifest inspect -v --insecure localhost:5000/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} | jq -r '.SchemaV2Manifest.layers[] | .size / 1024 / 1024 | .*100 | round/100' | awk '{print $0; sum+= $0}; END {print sum}' | tail -n 1)
           echo "current slim: ${CURRENT_SLIM}MB release: ${CURRENT_RELEASE}MB. new slim: ${NEW_SLIM}MB release: ${NEW_RELEASE}MB"
 
+      - name: Login to Docker Hub
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: discoursebuild
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
       - name: push to dockerhub
         if: github.ref == 'refs/heads/main'
-        env:
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
-          docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/base:2.0.${{ env.TIMESTAMP }}-slim-${{ matrix.arch }}
           docker push discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-${{ matrix.arch }}
           docker push discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-${{ matrix.arch }}
@@ -179,12 +183,16 @@ jobs:
       - name: Print summary
         run: |
           docker images discourse/base
+      - name: Login to Docker Hub
+        if: success() && (github.ref == 'refs/heads/main')
+        uses: docker/login-action@v3
+        with:
+          username: discoursebuild
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
       - name: push to dockerhub
         if: success() && (github.ref == 'refs/heads/main')
-        env:
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
-          docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker tag discourse/base:build_release_main_amd64 discourse/base:release-ruby-3.4.7
           docker push discourse/base:release-ruby-3.4.7
   multi_rubies:
@@ -210,12 +218,16 @@ jobs:
       - name: Print summary
         run: |
           docker images discourse/base
+      - name: Login to Docker Hub
+        if: success() && (github.ref == 'refs/heads/main')
+        uses: docker/login-action@v3
+        with:
+          username: discoursebuild
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
       - name: push to dockerhub
         if: success() && (github.ref == 'refs/heads/main')
-        env:
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
-          docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker tag discourse/base:build_release_main_amd64 discourse/base:release-ruby-3.3.8-and-3.4.7
           docker push discourse/base:release-ruby-3.3.8-and-3.4.7
   push_multi_arch_manifests:
@@ -225,88 +237,80 @@ jobs:
       TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
     if: github.ref == 'refs/heads/main'
     steps:
+      - uses: docker/setup-buildx-action@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: discoursebuild
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
       - name: create and push multi-arch manifests
         run: |
-          docker login --username discoursebuild --password ${{ secrets.DOCKERHUB_PASSWORD }}
-
           # Slim timestamped
-          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-slim \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-slim-amd64 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-slim-arm64
+          docker buildx imagetools create -t discourse/base:2.0.${{ env.TIMESTAMP }}-slim \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-slim-amd64 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-slim-arm64
 
           # Slim release
-          docker manifest create discourse/base:slim \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-slim-amd64 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-slim-arm64
+          docker buildx imagetools create -t discourse/base:slim \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-slim-amd64 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-slim-arm64
 
           # Web-Only `main` timestamped
-          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-web-only \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-amd64 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-arm64
+          docker buildx imagetools create -t discourse/base:2.0.${{ env.TIMESTAMP }}-web-only \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-amd64 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-arm64
 
           # Web-Only `main` release
-          docker manifest create discourse/base:web-only \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-amd64 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-arm64
+          docker buildx imagetools create -t discourse/base:web-only \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-amd64 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-main-arm64
 
           # Web-Only `stable` timestamped
-          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-amd64 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-arm64
+          docker buildx imagetools create -t discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-amd64 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-arm64
 
           # Web-Only `stable` release
-          docker manifest create discourse/base:web-only-stable \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-amd64 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-arm64
+          docker buildx imagetools create -t discourse/base:web-only-stable \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-amd64 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable-arm64
 
           # Full Discourse `main` branch timestamped
-          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }} \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-amd64 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-arm64
+          docker buildx imagetools create -t discourse/base:2.0.${{ env.TIMESTAMP }} \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-main-amd64 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-main-arm64
 
           # Full Discourse `main` branch timestamped with PG 15
-          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-pg-15 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-amd64-pg-15 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-arm64-pg-15
+          docker buildx imagetools create -t discourse/base:2.0.${{ env.TIMESTAMP }}-pg-15 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-main-amd64-pg-15 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-main-arm64-pg-15
 
           # Full Discourse `stable` branch timestamped
-          docker manifest create discourse/base:2.0.${{ env.TIMESTAMP }}-stable \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-stable-amd64 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-stable-arm64
+          docker buildx imagetools create -t discourse/base:2.0.${{ env.TIMESTAMP }}-stable \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-stable-amd64 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-stable-arm64
 
           # Full Discourse `main` branch release
-          docker manifest create discourse/base:release \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-amd64 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-main-arm64
+          docker buildx imagetools create -t discourse/base:release \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-main-amd64 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-main-arm64
 
           # Full Discourse `stable` branch release
-          docker manifest create discourse/base:release-stable \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-stable-amd64 \
-            -a discourse/base:2.0.${{ env.TIMESTAMP }}-stable-arm64
+          docker buildx imagetools create -t discourse/base:release-stable \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-stable-amd64 \
+            discourse/base:2.0.${{ env.TIMESTAMP }}-stable-arm64
 
           # Dev timestamped
-          docker manifest create discourse/discourse_dev:${{ env.TIMESTAMP }} \
-            -a discourse/discourse_dev:${{ env.TIMESTAMP }}-amd64 \
-            -a discourse/discourse_dev:${{ env.TIMESTAMP }}-arm64
+          docker buildx imagetools create -t discourse/discourse_dev:${{ env.TIMESTAMP }} \
+            discourse/discourse_dev:${{ env.TIMESTAMP }}-amd64 \
+            discourse/discourse_dev:${{ env.TIMESTAMP }}-arm64
 
           # Dev release
-          docker manifest create discourse/discourse_dev:release \
-            -a discourse/discourse_dev:${{ env.TIMESTAMP }}-amd64 \
-            -a discourse/discourse_dev:${{ env.TIMESTAMP }}-arm64
+          docker buildx imagetools create -t discourse/discourse_dev:release \
+            discourse/discourse_dev:${{ env.TIMESTAMP }}-amd64 \
+            discourse/discourse_dev:${{ env.TIMESTAMP }}-arm64
 
-          docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-slim
-          docker manifest push discourse/base:slim
-          docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-web-only
-          docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-web-only-stable
-          docker manifest push discourse/base:web-only
-          docker manifest push discourse/base:web-only-stable
-          docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}
-          docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-pg-15
-          docker manifest push discourse/base:2.0.${{ env.TIMESTAMP }}-stable
-          docker manifest push discourse/base:release
-          docker manifest push discourse/base:release-stable
-          docker manifest push discourse/discourse_dev:${{ env.TIMESTAMP }}
-          docker manifest push discourse/discourse_dev:release
   test:
     runs-on: debian-12-8core
     timeout-minutes: 30
@@ -339,12 +343,16 @@ jobs:
       - name: Print summary
         run: |
           docker images discourse/discourse_test
+      - name: Login to Docker Hub
+        if: success() && (github.ref == 'refs/heads/main')
+        uses: docker/login-action@v3
+        with:
+          username: discoursebuild
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
       - name: push to dockerhub
         if: success() && (github.ref == 'refs/heads/main')
-        env:
-          DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
         run: |
-          docker login --username discoursebuild --password $DOCKERHUB_PASSWORD
           docker push discourse/discourse_test:slim
           docker push discourse/discourse_test:slim-browsers
           docker push discourse/discourse_test:release
