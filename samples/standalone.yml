@@ -20,7 +20,7 @@ templates:
 ## If you want Discourse to share a port with another webserver like Apache or nginx,
 ## see https://meta.discourse.org/t/17247 for details
 expose:
-  - "80:80"   # http
+  - "80:80" # http
   - "443:443" # https
 
 params:
@@ -48,7 +48,7 @@ env:
 
   ## TODO: The domain name this Discourse instance will respond to
   ## Required. Discourse will not work with a bare IP number.
-  DISCOURSE_HOSTNAME: 'discourse.example.com'
+  DISCOURSE_HOSTNAME: "discourse.example.com"
 
   ## Uncomment if you want the container to be started with the same
   ## hostname (-h option) as specified above (default "$hostname-$config")
@@ -56,7 +56,7 @@ env:
 
   ## TODO: List of comma delimited emails that will be made admin and developer
   ## on initial signup example 'user1@example.com,user2@example.com'
-  DISCOURSE_DEVELOPER_EMAILS: 'me@example.com,you@example.com'
+  DISCOURSE_DEVELOPER_EMAILS: "me@example.com,you@example.com"
 
   ## TODO: Configure the mail server
   ##       (used for validation of new accounts, notifications, digests, etc.)
@@ -79,6 +79,8 @@ env:
   #DISCOURSE_SMTP_OPENSSL_VERIFY_MODE: peer # peer|none
   ## uncomment to override the authentication method
   #DISCOURSE_SMTP_AUTHENTICATION: plain # plain|login|cram_md5
+  # Optional email setup skip flag
+  #DISCOURSE_SKIP_EMAIL_SETUP: "1" # (optional), uncomment to skip email setup validation
 
   ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
   #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com

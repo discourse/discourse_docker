@@ -27,6 +27,10 @@ while [ ${#} -gt 0 ]; do
     SKIP_CONNECTION_TEST="1"
     echo "skipping connection test"
     ;;
+  --skip-email-setup)
+    SKIP_EMAIL_SETUP="1"
+    echo "Skipping email configuration; Discourse ID authentication will be enabled."
+    ;;
   esac
 
   shift 1
@@ -455,6 +459,8 @@ ask_user_for_config() {
   then
     smtp_password=""
   fi
+  read_config "DISCOURSE_SKIP_EMAIL_SETUP"
+  local skip_email_setup=$read_config_result
   read_config "DISCOURSE_NOTIFICATION_EMAIL"
   local notification_email=$read_config_result
   read_config "DISCOURSE_SMTP_DOMAIN"
@@ -541,67 +547,77 @@ ask_user_for_config() {
       done
     fi
 
-    if [ ! -z "$smtp_address" ]
+    if [ "$SKIP_EMAIL_SETUP" != "1" ]
     then
-      read -p "SMTP server address? [$smtp_address]: " new_value
+      if [ ! -z "$smtp_address" ]
+      then
+        read -p "SMTP server address? [$smtp_address]: " new_value
+        if [ ! -z "$new_value" ]
+        then
+          smtp_address="$new_value"
+        fi
+      fi
+
+      if [ ! -z "$smtp_port" ]
+      then
+        read -p "SMTP port? [$smtp_port]: " new_value
+        if [ ! -z "$new_value" ]
+        then
+          smtp_port="$new_value"
+        fi
+      fi
+
+      ##
+      ## automatically set correct user name based on common mail providers unless it's been set
+      ##
+      if [ "$smtp_user_name" == "user@example.com" ]
+      then
+        if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
+        then
+          smtp_user_name="SMTP_Injection"
+        fi
+        if [ "$smtp_address" == "smtp.sendgrid.net" ]
+        then
+          smtp_user_name="apikey"
+        fi
+        if [ "$smtp_address" == "smtp.mailgun.org" ]
+        then
+          smtp_user_name="postmaster@$hostname"
+        fi
+      fi
+
+      if [ ! -z "$smtp_user_name" ]
+      then
+        read -p "SMTP user name? [$smtp_user_name]: " new_value
+        if [ ! -z "$new_value" ]
+        then
+          smtp_user_name="$new_value"
+        fi
+      fi
+
+      read -p "SMTP password? [$smtp_password]: " new_value
       if [ ! -z "$new_value" ]
       then
-        smtp_address="$new_value"
+        smtp_password="$new_value"
       fi
-    fi
 
-    if [ ! -z "$smtp_port" ]
-    then
-      read -p "SMTP port? [$smtp_port]: " new_value
+      if [[ "$notification_email" == "noreply@discourse.example.com"* ]]
+      then
+        notification_email="noreply@$hostname"
+      fi
+
+      read -p "notification email address? [$notification_email]: " new_value
       if [ ! -z "$new_value" ]
       then
-        smtp_port="$new_value"
+        notification_email="$new_value"
       fi
-    fi
-
-    ##
-    ## automatically set correct user name based on common mail providers unless it's been set
-    ##
-    if [ "$smtp_user_name" == "user@example.com" ]
-    then
-      if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
+    else
+      echo ""
+      echo "Skipping SMTP configuration (--skip-email-setup enabled)"
+      if [[ "$notification_email" == "noreply@discourse.example.com"* ]]
       then
-        smtp_user_name="SMTP_Injection"
+        notification_email="noreply@$hostname"
       fi
-      if [ "$smtp_address" == "smtp.sendgrid.net" ]
-      then
-        smtp_user_name="apikey"
-      fi
-      if [ "$smtp_address" == "smtp.mailgun.org" ]
-      then
-        smtp_user_name="postmaster@$hostname"
-      fi
-    fi
-
-    if [ ! -z "$smtp_user_name" ]
-    then
-      read -p "SMTP user name? [$smtp_user_name]: " new_value
-      if [ ! -z "$new_value" ]
-      then
-        smtp_user_name="$new_value"
-      fi
-    fi
-
-    read -p "SMTP password? [$smtp_password]: " new_value
-    if [ ! -z "$new_value" ]
-    then
-      smtp_password="$new_value"
-    fi
-
-    if [[ "$notification_email" == "noreply@discourse.example.com"* ]]
-    then
-      notification_email="noreply@$hostname"
-    fi
-
-    read -p "notification email address? [$notification_email]: " new_value
-    if [ ! -z "$new_value" ]
-    then
-      notification_email="$new_value"
     fi
 
     # set smtp_domain default value here rather than use Rails default of localhost
@@ -644,10 +660,15 @@ ask_user_for_config() {
     echo -e "\nDoes this look right?\n"
     echo "Hostname          : $hostname"
     echo "Email             : $developer_emails"
-    echo "SMTP address      : $smtp_address"
-    echo "SMTP port         : $smtp_port"
-    echo "SMTP username     : $smtp_user_name"
-    echo "SMTP password     : $smtp_password"
+    if [ "$SKIP_EMAIL_SETUP" == "1" ]
+    then
+      echo "SMTP configuration: skipped (--skip-email-setup)"
+    else
+      echo "SMTP address      : $smtp_address"
+      echo "SMTP port         : $smtp_port"
+      echo "SMTP username     : $smtp_user_name"
+      echo "SMTP password     : $smtp_password"
+    fi
     echo "Notification email: $notification_email"
 
     if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
@@ -691,31 +712,97 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS:.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $web_file
-  if [ -s $changelog ]
+  if [ "$SKIP_EMAIL_SETUP" != "1" ]
   then
-    rm $changelog
-  else
-    echo "DISCOURSE_SMTP_ADDRESS change failed."
-    update_ok="n"
-  fi
+    sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS:.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "DISCOURSE_SMTP_ADDRESS change failed."
+      update_ok="n"
+    fi
 
-  sed -i -e "s/^  #\?DISCOURSE_SMTP_PORT:.*/  DISCOURSE_SMTP_PORT: $smtp_port/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    rm $changelog
-  else
-    echo "DISCOURSE_SMTP_PORT change failed."
-    update_ok="n"
-  fi
+    sed -i -e "s/^  #\?DISCOURSE_SMTP_PORT:.*/  DISCOURSE_SMTP_PORT: $smtp_port/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "DISCOURSE_SMTP_PORT change failed."
+      update_ok="n"
+    fi
 
-  sed -i -e "s/^  #\?DISCOURSE_SMTP_USER_NAME:.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    rm $changelog
+    sed -i -e "s/^  #\?DISCOURSE_SMTP_USER_NAME:.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "DISCOURSE_SMTP_USER_NAME change failed."
+      update_ok="n"
+    fi
+
+    sed -i -e "s/^  #\?DISCOURSE_SMTP_DOMAIN:.*/  DISCOURSE_SMTP_DOMAIN: $smtp_domain/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "DISCOURSE_SMTP_DOMAIN change failed."
+      update_ok="n"
+    fi
+
+    if [[ "$smtp_password" == *"\""* ]]
+    then
+      SLASH="BROKEN"
+      echo "========================================"
+      echo "WARNING!!!"
+      echo "Your password contains a quote (\")"
+      echo "Your SMTP Password will not be set. You will need to edit app.yml to enter it."
+      echo "========================================"
+      update_ok="n"
+    else
+      SLASH="|"
+      if [[ "$smtp_password" == *"$SLASH"* ]]
+      then SLASH="+"
+           if [[ "$smtp_password" == *"$SLASH"* ]]
+           then
+             SLASH="Q"
+             if [[ "$smtp_password" == *"$SLASH"* ]]
+             then
+               SLASH="BROKEN"
+               echo "========================================"
+               echo "WARNING!!!"
+               echo "Your password contains all available delimiters (+, |, and Q). "
+               echo "Your SMTP Password will not be set. You will need to edit app.yml to enter it."
+               echo "========================================"
+               update_ok="n"
+             fi
+           fi
+      fi
+    fi
+    if [[ "$SLASH" != "BROKEN" ]]
+    then
+      sed -i -e "s${SLASH}^  #\?DISCOURSE_SMTP_PASSWORD:.*${SLASH}  DISCOURSE_SMTP_PASSWORD: \"${smtp_password}\"${SLASH}w $changelog" $web_file
+
+      if [ -s $changelog ]
+      then
+        rm $changelog
+      else
+        echo "DISCOURSE_SMTP_PASSWORD change failed."
+        update_ok="n"
+      fi
+    fi
   else
-    echo "DISCOURSE_SMTP_USER_NAME change failed."
-    update_ok="n"
+    echo "SMTP environment variables skipped (--skip-email-setup)."
+
+    sed -i -e "s/^  #\?DISCOURSE_SKIP_EMAIL_SETUP:.*/  DISCOURSE_SKIP_EMAIL_SETUP: $skip_email_setup/w $changelog" $web_file
+    if [ -s $changelog ]
+    then
+      rm $changelog
+    else
+      echo "DISCOURSE_SKIP_EMAIL_SETUP change failed."
+      update_ok="n"
+    fi
+
   fi
 
   sed -i -e "s/^  #\?DISCOURSE_NOTIFICATION_EMAIL:.*/  DISCOURSE_NOTIFICATION_EMAIL: $notification_email/w $changelog" $web_file
@@ -725,57 +812,6 @@ ask_user_for_config() {
   else
     echo "DISCOURSE_NOTIFICATION_EMAIL change failed."
     update_ok="n"
-  fi
-
-  sed -i -e "s/^  #\?DISCOURSE_SMTP_DOMAIN:.*/  DISCOURSE_SMTP_DOMAIN: $smtp_domain/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    rm $changelog
-  else
-    echo "DISCOURSE_SMTP_DOMAIN change failed."
-    update_ok="n"
-  fi
-
-  if [[ "$smtp_password" == *"\""* ]]
-  then
-    SLASH="BROKEN"
-    echo "========================================"
-    echo "WARNING!!!"
-    echo "Your password contains a quote (\")"
-    echo "Your SMTP Password will not be set. You will need to edit app.yml to enter it."
-    echo "========================================"
-    update_ok="n"
-  else
-    SLASH="|"
-    if [[ "$smtp_password" == *"$SLASH"* ]]
-    then SLASH="+"
-         if [[ "$smtp_password" == *"$SLASH"* ]]
-         then
-           SLASH="Q"
-           if [[ "$smtp_password" == *"$SLASH"* ]]
-           then
-             SLASH="BROKEN"
-             echo "========================================"
-             echo "WARNING!!!"
-             echo "Your password contains all available delimiters (+, |, and Q). "
-             echo "Your SMTP Password will not be set. You will need to edit app.yml to enter it."
-             echo "========================================"
-             update_ok="n"
-           fi
-         fi
-    fi
-  fi
-  if [[ "$SLASH" != "BROKEN" ]]
-  then
-    sed -i -e "s${SLASH}^  #\?DISCOURSE_SMTP_PASSWORD:.*${SLASH}  DISCOURSE_SMTP_PASSWORD: \"${smtp_password}\"${SLASH}w $changelog" $web_file
-
-    if [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "DISCOURSE_SMTP_PASSWORD change failed."
-      update_ok="n"
-    fi
   fi
 
   if ! [ -z $DEBUG ]
@@ -858,8 +894,14 @@ validate_config() {
 
   valid_config="y"
 
-  for x in DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD \
-                                  DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME
+  if [ "$SKIP_EMAIL_SETUP" == "1" ]
+  then
+    required_fields="DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME"
+  else
+    required_fields="DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME"
+  fi
+
+  for x in $required_fields
   do
     read_config $x
     local result=$read_config_result
@@ -892,7 +934,6 @@ validate_config() {
     exit 1
   fi
 }
-
 
 ##
 ## template file names
