@@ -11,6 +11,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     coreutils \
     && rm -rf /var/lib/apt/lists/*
 
+# Install yq for YAML formatting (~5MB binary)
+RUN curl -fsSL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq \
+    && chmod +x /usr/local/bin/yq
+
+
 WORKDIR /wizard
 
 # Copy and install gems

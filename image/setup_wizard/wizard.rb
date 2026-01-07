@@ -132,17 +132,23 @@ module DiscourseSetup
       @ui.step(5, TOTAL_STEPS, "Writing configuration file")
 
       @ui.spin("Applying settings...") do
-        # Apply user settings
+        # Apply core user settings
         @config.update_config(
           "DISCOURSE_HOSTNAME" => @user_values[:hostname],
-          "DISCOURSE_DEVELOPER_EMAILS" => @user_values[:developer_emails],
-          "DISCOURSE_SMTP_ADDRESS" => @user_values[:smtp_address],
-          "DISCOURSE_SMTP_PORT" => @user_values[:smtp_port],
-          "DISCOURSE_SMTP_USER_NAME" => @user_values[:smtp_user_name],
-          "DISCOURSE_SMTP_PASSWORD" => @user_values[:smtp_password],
-          "DISCOURSE_NOTIFICATION_EMAIL" => @user_values[:notification_email],
-          "DISCOURSE_SMTP_DOMAIN" => @user_values[:smtp_domain]
+          "DISCOURSE_DEVELOPER_EMAILS" => @user_values[:developer_emails]
         )
+
+        # Apply SMTP settings only if configured
+        if @user_values[:smtp_enabled]
+          @config.update_config(
+            "DISCOURSE_SMTP_ADDRESS" => @user_values[:smtp_address],
+            "DISCOURSE_SMTP_PORT" => @user_values[:smtp_port],
+            "DISCOURSE_SMTP_USER_NAME" => @user_values[:smtp_user_name],
+            "DISCOURSE_SMTP_PASSWORD" => @user_values[:smtp_password],
+            "DISCOURSE_NOTIFICATION_EMAIL" => @user_values[:notification_email],
+            "DISCOURSE_SMTP_DOMAIN" => @user_values[:smtp_domain]
+          )
+        end
 
         # Apply MaxMind settings if provided
         if @user_values[:maxmind_account_id] && !@user_values[:maxmind_account_id].empty?
@@ -158,7 +164,7 @@ module DiscourseSetup
           "UNICORN_WORKERS" => @scaling_params.dig("env", "UNICORN_WORKERS")
         )
 
-        # Enable SSL if Let's Encrypt is configured
+        # Always enable Let's Encrypt SSL
         @config.enable_ssl(@user_values[:letsencrypt_email])
 
         @config.save

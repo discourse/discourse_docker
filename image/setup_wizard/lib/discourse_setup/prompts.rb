@@ -4,6 +4,25 @@ require "gum"
 
 module DiscourseSetup
   class Prompts
+    # Helper to call gum confirm with proper default handling
+    # The gum-ruby gem ignores `default: false`, so we call gum directly
+    def self.gum_confirm(prompt, default: true)
+      args = ["confirm", prompt, "--default=#{default}"]
+      result = system(Gum.executable, *args)
+
+      # Exit code 130 means user pressed Ctrl+C
+      raise Interrupt if $?.exitstatus == 130
+
+      result
+    end
+
+    # Helper to wrap Gum.input and handle Ctrl+C properly
+    def self.gum_input(**options)
+      result = Gum.input(**options)
+      raise Interrupt if result.nil?
+      result
+    end
+
     # Default placeholder values that indicate unconfigured settings
     PLACEHOLDER_VALUES = {
       "DISCOURSE_HOSTNAME" => "discourse.example.com",
@@ -32,8 +51,11 @@ module DiscourseSetup
       loop do
         collect_hostname
         collect_developer_emails
-        collect_smtp_settings
-        collect_notification_email
+        collect_smtp_enabled
+        if @values[:smtp_enabled]
+          collect_smtp_settings
+          collect_notification_email
+        end
         collect_letsencrypt
         collect_maxmind
 
@@ -50,13 +72,13 @@ module DiscourseSetup
       current = nil if current == PLACEHOLDER_VALUES["DISCOURSE_HOSTNAME"]
 
       loop do
-        hostname = Gum.input(
+        hostname = Prompts.gum_input(
           placeholder: "discourse.example.com",
           value: current || "",
           header: "Hostname for your Discourse?"
         )
 
-        if hostname.nil? || hostname.empty?
+        if hostname.empty?
           @ui.error("Hostname is required")
           next
         end
@@ -78,13 +100,13 @@ module DiscourseSetup
       current = nil if current == PLACEHOLDER_VALUES["DISCOURSE_DEVELOPER_EMAILS"]
 
       loop do
-        emails = Gum.input(
+        emails = Prompts.gum_input(
           placeholder: "admin@example.com",
           value: current || "",
           header: "Email address for admin account(s)?"
         )
 
-        if emails.nil? || emails.empty?
+        if emails.empty?
           @ui.error("Admin email is required")
           next
         end
@@ -100,6 +122,13 @@ module DiscourseSetup
       end
     end
 
+    def collect_smtp_enabled
+      @values[:smtp_enabled] = Prompts.gum_confirm(
+        "Configure SMTP for sending emails? (Requires SMTP credentials)",
+        default: false
+      )
+    end
+
     def collect_smtp_settings
       collect_smtp_address
       collect_smtp_port
@@ -111,7 +140,7 @@ module DiscourseSetup
       current = @config.read_value("DISCOURSE_SMTP_ADDRESS")
       current = nil if current == PLACEHOLDER_VALUES["DISCOURSE_SMTP_ADDRESS"]
 
-      @values[:smtp_address] = Gum.input(
+      @values[:smtp_address] = Prompts.gum_input(
         placeholder: "smtp.example.com",
         value: current || "",
         header: "SMTP server address?"
@@ -121,7 +150,7 @@ module DiscourseSetup
     def collect_smtp_port
       current = @config.read_value("DISCOURSE_SMTP_PORT") || "587"
 
-      @values[:smtp_port] = Gum.input(
+      @values[:smtp_port] = Prompts.gum_input(
         placeholder: "587",
         value: current,
         header: "SMTP port?"
@@ -140,7 +169,7 @@ module DiscourseSetup
         end
       end
 
-      @values[:smtp_user_name] = Gum.input(
+      @values[:smtp_user_name] = Prompts.gum_input(
         placeholder: "user@example.com",
         value: current || "",
         header: "SMTP user name?"
@@ -151,7 +180,7 @@ module DiscourseSetup
       current = @config.read_value("DISCOURSE_SMTP_PASSWORD")
       current = "" if current == PLACEHOLDER_VALUES["DISCOURSE_SMTP_PASSWORD"]
 
-      @values[:smtp_password] = Gum.input(
+      @values[:smtp_password] = Prompts.gum_input(
         placeholder: "Enter SMTP password",
         value: current || "",
         header: "SMTP password?",
@@ -167,7 +196,7 @@ module DiscourseSetup
         current = "noreply@#{@values[:hostname]}"
       end
 
-      @values[:notification_email] = Gum.input(
+      @values[:notification_email] = Prompts.gum_input(
         placeholder: "noreply@#{@values[:hostname]}",
         value: current,
         header: "Notification email address? (address to send notifications from)"
@@ -178,47 +207,41 @@ module DiscourseSetup
     end
 
     def collect_letsencrypt
-      current = @config.read_value("LETSENCRYPT_ACCOUNT_EMAIL")
+      # Let's Encrypt is always enabled - only ask about email notifications
+      admin_email = @values[:developer_emails].split(",").first.strip
 
-      if current == PLACEHOLDER_VALUES["LETSENCRYPT_ACCOUNT_EMAIL"] || current.nil?
-        status_hint = "ENTER to skip"
-        current = ""
-      else
-        status_hint = "Enter 'OFF' to disable"
-      end
-
-      @values[:letsencrypt_email] = Gum.input(
-        placeholder: "your-email@example.com (#{status_hint})",
-        value: current,
-        header: "Optional email address for Let's Encrypt warnings?"
+      wants_notifications = Prompts.gum_confirm(
+        "Receive Let's Encrypt certificate warnings at #{admin_email}?",
+        default: true
       )
+
+      @values[:letsencrypt_enabled] = true
+      @values[:letsencrypt_email] = wants_notifications ? admin_email : "off"
     end
 
     def collect_maxmind
-      current_id = @config.read_value("DISCOURSE_MAXMIND_ACCOUNT_ID")
-
-      if current_id == PLACEHOLDER_VALUES["DISCOURSE_MAXMIND_ACCOUNT_ID"] || current_id.nil?
-        status_hint = "ENTER to skip"
-        current_id = ""
-      else
-        status_hint = "Currently configured"
-      end
-
-      account_id = Gum.input(
-        placeholder: "Account ID (#{status_hint})",
-        value: current_id,
-        header: "Optional MaxMind Account ID for GeoLite2 geolocation?"
+      wants_maxmind = Prompts.gum_confirm(
+        "Configure MaxMind GeoLite2 for geolocation?",
+        default: false
       )
 
-      @values[:maxmind_account_id] = account_id
+      return unless wants_maxmind
 
-      # Only ask for license key if account ID was provided
-      return if account_id.nil? || account_id.empty?
+      current_id = @config.read_value("DISCOURSE_MAXMIND_ACCOUNT_ID")
+      current_id = "" if current_id == PLACEHOLDER_VALUES["DISCOURSE_MAXMIND_ACCOUNT_ID"]
+
+      @values[:maxmind_account_id] = Prompts.gum_input(
+        placeholder: "Account ID",
+        value: current_id || "",
+        header: "MaxMind Account ID?"
+      )
+
+      return if @values[:maxmind_account_id].empty?
 
       current_key = @config.read_value("DISCOURSE_MAXMIND_LICENSE_KEY")
       current_key = "" if current_key == PLACEHOLDER_VALUES["DISCOURSE_MAXMIND_LICENSE_KEY"]
 
-      @values[:maxmind_license_key] = Gum.input(
+      @values[:maxmind_license_key] = Prompts.gum_input(
         placeholder: "License key",
         value: current_key || "",
         header: "MaxMind License key?"
@@ -231,15 +254,23 @@ module DiscourseSetup
 
       summary_items = {
         "Hostname" => @values[:hostname],
-        "Admin Email" => @values[:developer_emails],
-        "SMTP Server" => @values[:smtp_address],
-        "SMTP Port" => @values[:smtp_port],
-        "SMTP Username" => @values[:smtp_user_name],
-        "SMTP Password" => mask_password(@values[:smtp_password]),
-        "From Address" => @values[:notification_email],
-        "Let's Encrypt" => letsencrypt_enabled? ? @values[:letsencrypt_email] : nil,
-        "MaxMind" => maxmind_enabled? ? @values[:maxmind_account_id] : nil
+        "Admin Email" => @values[:developer_emails]
       }
+
+      if @values[:smtp_enabled]
+        summary_items.merge!(
+          "SMTP Server" => @values[:smtp_address],
+          "SMTP Port" => @values[:smtp_port],
+          "SMTP Username" => @values[:smtp_user_name],
+          "SMTP Password" => mask_password(@values[:smtp_password]),
+          "From Address" => @values[:notification_email]
+        )
+      else
+        summary_items["SMTP"] = "(not configured)"
+      end
+
+      summary_items["Let's Encrypt"] = letsencrypt_enabled? ? @values[:letsencrypt_email] : nil
+      summary_items["MaxMind"] = maxmind_enabled? ? @values[:maxmind_account_id] : nil
 
       @ui.summary_box(summary_items)
 
@@ -253,8 +284,7 @@ module DiscourseSetup
     end
 
     def letsencrypt_enabled?
-      email = @values[:letsencrypt_email]
-      email && !email.empty? && email.downcase != "off"
+      @values[:letsencrypt_enabled]
     end
 
     def maxmind_enabled?
