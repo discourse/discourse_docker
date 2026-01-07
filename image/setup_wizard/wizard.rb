@@ -157,6 +157,7 @@ module DiscourseSetup
             "DISCOURSE_NOTIFICATION_EMAIL",
             "DISCOURSE_SMTP_DOMAIN"
           )
+          @config.update_config("DISCOURSE_SKIP_EMAIL_SETUP" => "1")
         end
 
         # Apply MaxMind settings if provided
