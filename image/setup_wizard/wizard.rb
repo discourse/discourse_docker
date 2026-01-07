@@ -138,7 +138,7 @@ module DiscourseSetup
           "DISCOURSE_DEVELOPER_EMAILS" => @user_values[:developer_emails]
         )
 
-        # Apply SMTP settings only if configured
+        # Apply SMTP settings only if configured, otherwise remove placeholders
         if @user_values[:smtp_enabled]
           @config.update_config(
             "DISCOURSE_SMTP_ADDRESS" => @user_values[:smtp_address],
@@ -147,6 +147,15 @@ module DiscourseSetup
             "DISCOURSE_SMTP_PASSWORD" => @user_values[:smtp_password],
             "DISCOURSE_NOTIFICATION_EMAIL" => @user_values[:notification_email],
             "DISCOURSE_SMTP_DOMAIN" => @user_values[:smtp_domain]
+          )
+        else
+          @config.remove_keys(
+            "DISCOURSE_SMTP_ADDRESS",
+            "DISCOURSE_SMTP_PORT",
+            "DISCOURSE_SMTP_USER_NAME",
+            "DISCOURSE_SMTP_PASSWORD",
+            "DISCOURSE_NOTIFICATION_EMAIL",
+            "DISCOURSE_SMTP_DOMAIN"
           )
         end
 

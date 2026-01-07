@@ -70,6 +70,13 @@ module DiscourseSetup
       end
     end
 
+    def remove_keys(*keys)
+      keys.each do |key|
+        @config["env"].delete(key)
+        @config["params"].delete(key)
+      end
+    end
+
     def enable_ssl(letsencrypt_email)
       @config["templates"] ||= []
 
