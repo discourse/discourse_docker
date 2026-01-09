@@ -23,6 +23,18 @@ module DiscourseSetup
       result
     end
 
+    # Helper to call gum choose for selection prompts
+    def self.gum_choose(items, header: nil)
+      args = ["choose"]
+      args += ["--header", header] if header
+      args += items
+
+      output = IO.popen([Gum.executable, *args], &:read)
+      raise Interrupt if $?.exitstatus == 130
+
+      output&.strip
+    end
+
     # Default placeholder values that indicate unconfigured settings
     PLACEHOLDER_VALUES = {
       "DISCOURSE_HOSTNAME" => "discourse.example.com",

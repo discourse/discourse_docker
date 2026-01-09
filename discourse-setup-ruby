@@ -11,8 +11,7 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DIR"
 
-IMAGE_NAME="discourse/setup-wizard"
-IMAGE_DIR="image/setup_wizard"
+IMAGE_NAME="discourse/setup-wizard:release"
 
 # Colors for output
 RED='\033[0;31m'
@@ -48,13 +47,13 @@ check_docker() {
     fi
 }
 
-# Build the setup wizard Docker image
-build_image() {
-    if [[ "$FORCE_BUILD" == "1" ]] || ! docker image inspect "$IMAGE_NAME" &> /dev/null; then
-        log_info "Building setup wizard image..."
-        docker build -t "$IMAGE_NAME" "$IMAGE_DIR"
+# Pull the setup wizard Docker image
+pull_image() {
+    if docker image inspect "$IMAGE_NAME" &> /dev/null; then
+        log_info "Using cached setup wizard image"
     else
-        log_info "Using existing setup wizard image (use --rebuild-image to force rebuild)"
+        log_info "Pulling setup wizard image..."
+        docker pull "$IMAGE_NAME"
     fi
 }
 
@@ -113,7 +112,6 @@ Options:
     --debug                 Enable debug mode (skips rebuild)
     --skip-rebuild          Skip the container rebuild after configuration
     --skip-connection-test  Skip DNS/port connectivity tests
-    --rebuild-image         Force rebuild of the setup wizard Docker image
     --help, -h              Show this help message
 
 This script runs the interactive setup wizard to configure your Discourse
@@ -130,15 +128,10 @@ EOF
 }
 
 # Parse arguments
-FORCE_BUILD=0
 WIZARD_ARGS=()
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --rebuild-image)
-            FORCE_BUILD=1
-            shift
-            ;;
         --help|-h)
             show_help
             exit 0
@@ -153,5 +146,5 @@ done
 # Main
 check_root
 check_docker
-build_image
+pull_image
 run_wizard "${WIZARD_ARGS[@]}"
