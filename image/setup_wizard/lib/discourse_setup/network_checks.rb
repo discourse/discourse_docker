@@ -16,10 +16,23 @@ module DiscourseSetup
     def check_hostname(hostname)
       return :skipped if @skip
 
-      # Network checks are unreliable from inside a container, skip for now
-      # TODO: Move network checks to run on the host via a mounted script
-      @ui.info("Skipping connection test (running inside container)")
-      :skipped
+      @ui.info("Checking your domain name...")
+
+      result = connect_to_port(hostname, 443)
+
+      case result
+      when :success
+        @ui.success("Connection to #{hostname} succeeded.")
+        :success
+      when :no_netcat
+        if @ui.confirm("netcat is not installed. Continue without connection check?", default: true)
+          :skipped
+        else
+          raise NetworkError, "Cannot verify connection without netcat. Please install netcat and try again."
+        end
+      when :failed
+        handle_connection_failure(hostname)
+      end
     end
 
     class NetworkError < StandardError; end
