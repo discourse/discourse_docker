@@ -69,10 +69,15 @@ module DiscourseSetup
       debug("Verification token: #{verify}")
 
       # Start a simple HTTP server on the port to receive the test connection
-      nc_cmd = "echo -e 'HTTP/1.1 200 OK\n\n#{verify}' | nc -w 4 -l -p #{port}"
+      # Use printf instead of echo -e for POSIX portability (echo -e doesn't work in dash)
+      # Use \r\n for proper HTTP line endings
+      # Debian uses netcat-openbsd which doesn't use -p with -l
+      nc_cmd = "printf 'HTTP/1.1 200 OK\\r\\n\\r\\n#{verify}' | nc -w 4 -l #{port}"
       debug("Starting listener: #{nc_cmd}")
 
-      server_pid = spawn(nc_cmd, [:out, :err] => "/dev/null")
+      # Capture stderr for debugging listener failures
+      nc_log = "/tmp/nc_debug_#{$$}_#{port}.log"
+      server_pid = spawn(nc_cmd, [:out, :err] => nc_log)
       Process.detach(server_pid)
       debug("Listener PID: #{server_pid}")
 
@@ -83,6 +88,11 @@ module DiscourseSetup
       listener_check = `lsof -i :#{port} -P 2>/dev/null | grep LISTEN`.strip
       if listener_check.empty?
         debug("WARNING: Listener does not appear to be running on port #{port}")
+        # Check the log for errors
+        if File.exist?(nc_log)
+          nc_errors = File.read(nc_log).strip
+          debug("netcat output: #{nc_errors}") unless nc_errors.empty?
+        end
       else
         debug("Listener status: #{listener_check}")
       end
@@ -110,6 +120,8 @@ module DiscourseSetup
       ensure
         # Ensure we kill the background nc process
         Process.kill("TERM", server_pid) rescue nil
+        # Clean up the log file
+        File.delete(nc_log) rescue nil
       end
     end
 
