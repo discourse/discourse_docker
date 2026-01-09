@@ -123,7 +123,7 @@ module DiscourseSetup
         return
       end
 
-      network = NetworkChecks.new(ui: @ui, skip: @cli.skip_connection_test)
+      network = NetworkChecks.new(ui: @ui, skip: @cli.skip_connection_test, debug: @cli.debug)
       network.check_hostname(@user_values[:hostname])
     end
 
