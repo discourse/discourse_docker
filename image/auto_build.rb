@@ -122,6 +122,16 @@ images = {
     tag: "discourse/discourse_dev:build_arm64",
     extra_args: "--platform linux/arm64 --build-arg=\"from_tag=build_slim_main_arm64\"",
   },
+  setup_wizard_amd64: {
+    name: "setup_wizard",
+    tag: "discourse/setup-wizard:build_amd64",
+    extra_args: "",
+  },
+  setup_wizard_arm64: {
+    name: "setup_wizard",
+    tag: "discourse/setup-wizard:build_arm64",
+    extra_args: "--platform linux/arm64",
+  },
 }
 
 def run(command)
