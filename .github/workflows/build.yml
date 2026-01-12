@@ -160,6 +160,36 @@ jobs:
         run: |
           docker tag discourse/base:2.0.${{ env.TIMESTAMP }}-main-${{ matrix.arch }} discourse/base:aarch64
           docker push discourse/base:aarch64
+
+  setup_wizard:
+    runs-on: ${{ (matrix.arch == 'amd64' && 'debian-12-8core') || 'ubuntu-24.04-8core-arm' }}
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: build setup-wizard image
+        working-directory: image
+        run: |
+          ruby auto_build.rb setup_wizard_${{ matrix.arch }}
+
+      - name: Login to Docker Hub
+        if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          username: discoursebuild
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: push to dockerhub
+        if: github.ref == 'refs/heads/main'
+        run: |
+          docker tag discourse/setup-wizard:build_${{ matrix.arch }} discourse/setup-wizard:release-${{ matrix.arch }}
+          docker push discourse/setup-wizard:release-${{ matrix.arch }}
+
   ruby_3_4:
     runs-on: debian-12-8core
     timeout-minutes: 30
@@ -232,7 +262,7 @@ jobs:
           docker push discourse/base:release-ruby-3.3.8-and-3.4.7
   push_multi_arch_manifests:
     runs-on: ubuntu-latest
-    needs: [base, timestamp]
+    needs: [base, setup_wizard, timestamp]
     env:
       TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
     if: github.ref == 'refs/heads/main'
@@ -310,6 +340,11 @@ jobs:
           docker buildx imagetools create -t discourse/discourse_dev:release \
             discourse/discourse_dev:${{ env.TIMESTAMP }}-amd64 \
             discourse/discourse_dev:${{ env.TIMESTAMP }}-arm64
+
+          # Setup wizard release
+          docker buildx imagetools create -t discourse/setup-wizard:release \
+            discourse/setup-wizard:release-amd64 \
+            discourse/setup-wizard:release-arm64
 
   test:
     runs-on: debian-12-8core
