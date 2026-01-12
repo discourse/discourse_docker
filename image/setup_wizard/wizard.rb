@@ -75,6 +75,9 @@ module DiscourseSetup
 
       @ui.spin("Checking memory and disk...") { @system_checks.check_disk_and_memory }
       @ui.success("Memory: #{@system_checks.available_memory_gb}GB, CPU: #{@system_checks.available_cpu_cores} cores")
+
+      # Prompt for swap creation outside spinner (interactive)
+      @system_checks.prompt_swap_creation
     end
 
     def setup_config
