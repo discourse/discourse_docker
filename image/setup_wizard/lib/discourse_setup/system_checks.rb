@@ -45,6 +45,27 @@ module DiscourseSetup
       check_disk
     end
 
+    def swap_needed?
+      available_memory_gb <= SWAP_THRESHOLD_GB && calculate_swap_gb < MIN_SWAP_GB
+    end
+
+    def prompt_swap_creation
+      return unless swap_needed?
+
+      @ui.warning(<<~MSG)
+        Discourse requires at least #{MIN_SWAP_GB}GB of swap when running with #{SWAP_THRESHOLD_GB}GB of RAM or less.
+        This system has #{calculate_swap_gb}GB of swap.
+
+        Without sufficient swap, your site may not work properly.
+      MSG
+
+      if @ui.confirm("Create a 2GB swapfile?", default: true)
+        signal_swap_creation
+      else
+        @ui.warning("Proceeding without swap. This may cause issues.")
+      end
+    end
+
     def check_ports(skip: false)
       return if skip
 
@@ -72,27 +93,6 @@ module DiscourseSetup
 
           Your site may not work properly, or future upgrades may not complete successfully.
         MSG
-      end
-
-      check_swap if mem_gb <= SWAP_THRESHOLD_GB
-    end
-
-    def check_swap
-      total_swap_gb = calculate_swap_gb
-
-      return if total_swap_gb >= MIN_SWAP_GB
-
-      @ui.warning(<<~MSG)
-        Discourse requires at least #{MIN_SWAP_GB}GB of swap when running with #{SWAP_THRESHOLD_GB}GB of RAM or less.
-        This system has #{total_swap_gb}GB of swap.
-
-        Without sufficient swap, your site may not work properly.
-      MSG
-
-      if @ui.confirm("Create a 2GB swapfile?", default: true)
-        signal_swap_creation
-      else
-        @ui.warning("Proceeding without swap. This may cause issues.")
       end
     end
 
