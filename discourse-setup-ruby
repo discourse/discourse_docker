@@ -66,6 +66,7 @@ run_wizard() {
     rm -f "$DIR/.wizard_rebuild_needed"
     rm -f "$DIR/.wizard_swap_needed"
 
+    local wizard_exit=0
     docker run -it --rm \
         --name discourse-setup-wizard \
         --network host \
@@ -73,9 +74,7 @@ run_wizard() {
         -v /var/run/docker.sock:/var/run/docker.sock \
         -e DISCOURSE_DOCKER_DIR=/discourse_docker \
         "$IMAGE_NAME" \
-        "$@" < /dev/tty
-
-    local wizard_exit=$?
+        "$@" < /dev/tty || wizard_exit=$?
 
     # Check if wizard signaled that swap creation is needed (exit code 42)
     if [[ $wizard_exit -eq 42 ]] && [[ -f "$DIR/.wizard_swap_needed" ]]; then
