@@ -11,8 +11,9 @@ module DiscourseSetup
 
     class CheckError < StandardError; end
 
-    def initialize(ui:)
+    def initialize(ui:, base_dir: "/discourse_docker")
       @ui = ui
+      @base_dir = base_dir
     end
 
     def run_all
@@ -89,44 +90,27 @@ module DiscourseSetup
       MSG
 
       if @ui.confirm("Create a 2GB swapfile?", default: true)
-        create_swap
+        signal_swap_creation
       else
         @ui.warning("Proceeding without swap. This may cause issues.")
       end
     end
 
-    def create_swap
-      @ui.info("Creating 2GB swapfile...")
+    def signal_swap_creation
+      # Signal the host wrapper script to create swap
+      # The wizard runs in a container, so swap must be created on the host
+      signal_file = File.join(@base_dir, ".wizard_swap_needed")
+      File.write(signal_file, "2G")
+      @ui.info("Swap creation requested. The host script will create the swapfile.")
 
-      commands = [
-        "install -o root -g root -m 0600 /dev/null /swapfile",
-        "fallocate -l 2G /swapfile",
-        "mkswap /swapfile",
-        "swapon /swapfile",
-        "echo '/swapfile swap swap auto 0 0' >> /etc/fstab",
-        "sysctl -w vm.swappiness=10",
-        "echo 'vm.swappiness = 10' > /etc/sysctl.d/30-discourse-swap.conf"
-      ]
-
-      commands.each do |cmd|
-        unless system(cmd)
-          raise CheckError, "Failed to create swap. Command failed: #{cmd}"
-        end
-      end
-
-      new_swap = calculate_swap_gb
-      if new_swap < MIN_SWAP_GB
-        raise CheckError, <<~MSG
-          Failed to create swap: are you root? Are you running on real hardware or a fully virtualized server?
-        MSG
-      end
-
-      @ui.success("Swap created successfully (#{new_swap}GB)")
+      # Exit with special code so host can create swap and re-run wizard
+      exit 42
     end
 
     def check_disk
-      # Get free disk space in KB for /var
-      free_disk_kb = `df /var 2>/dev/null | tail -n 1 | awk '{print $4}'`.to_i
+      # Get free disk space in KB for the mounted directory (host filesystem)
+      # Use -Pk for POSIX-portable output with 1K blocks
+      free_disk_kb = `df -Pk #{@base_dir} 2>/dev/null | tail -n 1 | awk '{print $4}'`.to_i
 
       return if free_disk_kb >= MIN_DISK_KB
 

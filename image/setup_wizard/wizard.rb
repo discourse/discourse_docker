@@ -65,7 +65,7 @@ module DiscourseSetup
       @ui.section("System Checks")
       @ui.step(1, TOTAL_STEPS, "Verifying system requirements")
 
-      @system_checks = SystemChecks.new(ui: @ui)
+      @system_checks = SystemChecks.new(ui: @ui, base_dir: BASE_DIR)
 
       @ui.spin("Checking root privileges...") { @system_checks.check_root }
       @ui.success("Running as root")

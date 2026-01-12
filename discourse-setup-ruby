@@ -62,8 +62,9 @@ run_wizard() {
     log_info "Starting Discourse Setup Wizard..."
     echo
 
-    # Clean up any previous signal file
+    # Clean up any previous signal files
     rm -f "$DIR/.wizard_rebuild_needed"
+    rm -f "$DIR/.wizard_swap_needed"
 
     docker run -it --rm \
         --name discourse-setup-wizard \
@@ -75,6 +76,21 @@ run_wizard() {
         "$@" < /dev/tty
 
     local wizard_exit=$?
+
+    # Check if wizard signaled that swap creation is needed (exit code 42)
+    if [[ $wizard_exit -eq 42 ]] && [[ -f "$DIR/.wizard_swap_needed" ]]; then
+        rm -f "$DIR/.wizard_swap_needed"
+        if create_swap; then
+            log_info "Resuming setup wizard..."
+            echo
+            # Re-run wizard after creating swap
+            run_wizard "$@"
+            return $?
+        else
+            log_error "Failed to create swap. Please create swap manually and re-run the wizard."
+            return 1
+        fi
+    fi
 
     # Check if wizard signaled that a rebuild is needed
     if [[ -f "$DIR/.wizard_rebuild_needed" ]]; then
@@ -99,6 +115,41 @@ run_rebuild() {
 
     log_info "Running: ./launcher rebuild $app_name"
     "$DIR/launcher" rebuild "$app_name"
+}
+
+# Create swap on the host system
+create_swap() {
+    log_info "Creating 2GB swapfile on host..."
+
+    if ! install -o root -g root -m 0600 /dev/null /swapfile; then
+        log_error "Failed to create swapfile"
+        return 1
+    fi
+
+    if ! fallocate -l 2G /swapfile; then
+        log_error "Failed to allocate swap space"
+        rm -f /swapfile
+        return 1
+    fi
+
+    if ! mkswap /swapfile; then
+        log_error "Failed to format swapfile"
+        rm -f /swapfile
+        return 1
+    fi
+
+    if ! swapon /swapfile; then
+        log_error "Failed to enable swap"
+        rm -f /swapfile
+        return 1
+    fi
+
+    echo '/swapfile swap swap auto 0 0' >> /etc/fstab
+    sysctl -w vm.swappiness=10
+    echo 'vm.swappiness = 10' > /etc/sysctl.d/30-discourse-swap.conf
+
+    log_info "Swap created successfully"
+    return 0
 }
 
 # Show help
