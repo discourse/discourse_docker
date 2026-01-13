@@ -49,11 +49,14 @@ check_docker() {
 
 # Pull the setup wizard Docker image
 pull_image() {
-    if docker image inspect "$IMAGE_NAME" &> /dev/null; then
-        log_info "Using cached setup wizard image"
-    else
-        log_info "Pulling setup wizard image..."
-        docker pull "$IMAGE_NAME"
+    log_info "Checking for setup wizard image updates..."
+    if ! docker pull "$IMAGE_NAME"; then
+        if docker image inspect "$IMAGE_NAME" &> /dev/null; then
+            log_warn "Could not check for updates, using cached image"
+        else
+            log_error "Failed to pull setup wizard image"
+            exit 1
+        fi
     fi
 }
 
