@@ -255,9 +255,9 @@ module DiscourseSetup
     # Get the server's public IP address
     def self.detect_public_ip
       ip_services = [
+        "https://ipv4.icanhazip.com",
         "https://api.ipify.org",
         "https://ifconfig.me/ip",
-        "https://ipv4.icanhazip.com",
         "https://checkip.amazonaws.com"
       ]
 
