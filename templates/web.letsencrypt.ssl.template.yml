@@ -50,9 +50,6 @@ run:
         }
         EOF
 
-        sed -Ei "s/^#?ACCOUNT_EMAIL=.+/ACCOUNT_EMAIL=${LETSENCRYPT_ACCOUNT_EMAIL}/" \
-          /shared/letsencrypt/account.conf
-
         sed -Ei "s/ssl_certificate .+/ssl_certificate \/shared\/ssl\/${DISCOURSE_HOSTNAME}.cer;\
           ssl_certificate \/shared\/ssl\/${DISCOURSE_HOSTNAME}_ecc.cer;/" \
           /etc/nginx/conf.d/outlets/server/20-https.conf
@@ -131,14 +128,6 @@ hooks:
        filename: /etc/runit/1.d/install-ssl
        from: "# after ssl"
        to: |
-          if [ -n "$LETSENCRYPT_ACCOUNT_EMAIL" ]; then
-            if [[ ! "$LETSENCRYPT_ACCOUNT_EMAIL" =~ ([^@]+)@([^\.]+) ]]; then
-              echo "LETSENCRYPT_ACCOUNT_EMAIL is not a valid email address"
-              exit 1
-            fi
-            /usr/local/bin/configure-ssl
-            exec /usr/local/bin/configure-letsencrypt
-          else
-            echo "LETSENCRYPT_ACCOUNT_EMAIL ENV not set. Skipping Let's Encrypt setup."
-          fi
+          /usr/local/bin/configure-ssl
+          exec /usr/local/bin/configure-letsencrypt
           # after ssl

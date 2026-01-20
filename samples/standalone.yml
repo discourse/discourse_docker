@@ -82,9 +82,6 @@ env:
   # Optional email setup skip flag
   #DISCOURSE_SKIP_EMAIL_SETUP: "1" # (optional), uncomment to skip email setup validation
 
-  ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
-  #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
-
   ## The http or https CDN address for this Discourse instance (configured to pull)
   ## see https://meta.discourse.org/t/14857 for details
   #DISCOURSE_CDN_URL: https://discourse-cdn.example.com

@@ -77,7 +77,7 @@ module DiscourseSetup
       end
     end
 
-    def enable_ssl(letsencrypt_email)
+    def enable_ssl
       @config["templates"] ||= []
 
       [SSL_TEMPLATE, LETSENCRYPT_TEMPLATE].each do |template|
@@ -85,11 +85,6 @@ module DiscourseSetup
           @config["templates"] << template
           @ui.info("Enabled #{File.basename(template)}")
         end
-      end
-
-      # Only set email if user wants notifications (not "off")
-      if letsencrypt_email && letsencrypt_email.downcase != "off"
-        @config["env"]["LETSENCRYPT_ACCOUNT_EMAIL"] = letsencrypt_email
       end
     end
 
