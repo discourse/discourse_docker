@@ -71,9 +71,6 @@ env:
   ## uncomment to override the authentication method
   #DISCOURSE_SMTP_AUTHENTICATION: plain # plain|login|cram_md5
 
-  ## If you added the Lets Encrypt template, uncomment below to get a free SSL certificate
-  #LETSENCRYPT_ACCOUNT_EMAIL: me@example.com
-
   ## TODO: configure connectivity to the databases
   DISCOURSE_DB_SOCKET: ''
   #DISCOURSE_DB_USERNAME: discourse

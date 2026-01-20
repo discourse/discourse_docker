@@ -44,10 +44,7 @@ module DiscourseSetup
       "DISCOURSE_DEVELOPER_EMAILS" => "me@example.com,you@example.com",
       "DISCOURSE_SMTP_ADDRESS" => "smtp.example.com",
       "DISCOURSE_SMTP_USER_NAME" => "user@example.com",
-      "DISCOURSE_SMTP_PASSWORD" => "pa$$word",
-      "LETSENCRYPT_ACCOUNT_EMAIL" => "me@example.com",
-      "DISCOURSE_MAXMIND_ACCOUNT_ID" => "123456",
-      "DISCOURSE_MAXMIND_LICENSE_KEY" => "1234567890123456"
+      "DISCOURSE_SMTP_PASSWORD" => "pa$$word"
     }.freeze
 
     # Known SMTP providers with special username requirements
@@ -76,8 +73,9 @@ module DiscourseSetup
           collect_smtp_settings
           collect_notification_email
         end
-        collect_letsencrypt
-        collect_maxmind
+
+        # Let's Encrypt is always enabled
+        @values[:letsencrypt_enabled] = true
 
         break if confirm_settings
       end
@@ -385,48 +383,6 @@ module DiscourseSetup
       @values[:smtp_domain] = @values[:notification_email].split("@").last
     end
 
-    def collect_letsencrypt
-      # Let's Encrypt is always enabled - only ask about email notifications
-      admin_email = @values[:developer_emails].split(",").first.strip
-
-      wants_notifications = Prompts.gum_confirm(
-        "Receive Let's Encrypt certificate warnings at #{admin_email}?",
-        default: true
-      )
-
-      @values[:letsencrypt_enabled] = true
-      @values[:letsencrypt_email] = wants_notifications ? admin_email : "off"
-    end
-
-    def collect_maxmind
-      wants_maxmind = Prompts.gum_confirm(
-        "Configure MaxMind GeoLite2 for geolocation?",
-        default: false
-      )
-
-      return unless wants_maxmind
-
-      current_id = @config.read_value("DISCOURSE_MAXMIND_ACCOUNT_ID")
-      current_id = "" if current_id == PLACEHOLDER_VALUES["DISCOURSE_MAXMIND_ACCOUNT_ID"]
-
-      @values[:maxmind_account_id] = Prompts.gum_input(
-        placeholder: "Account ID",
-        value: current_id || "",
-        header: "MaxMind Account ID?"
-      )
-
-      return if @values[:maxmind_account_id].empty?
-
-      current_key = @config.read_value("DISCOURSE_MAXMIND_LICENSE_KEY")
-      current_key = "" if current_key == PLACEHOLDER_VALUES["DISCOURSE_MAXMIND_LICENSE_KEY"]
-
-      @values[:maxmind_license_key] = Prompts.gum_input(
-        placeholder: "License key",
-        value: current_key || "",
-        header: "MaxMind License key?"
-      )
-    end
-
     def confirm_settings
       @ui.puts
       @ui.section("Review Configuration")
@@ -451,8 +407,7 @@ module DiscourseSetup
         summary_items["SMTP"] = "(not configured)"
       end
 
-      summary_items["Let's Encrypt"] = letsencrypt_enabled? ? @values[:letsencrypt_email] : nil
-      summary_items["MaxMind"] = maxmind_enabled? ? @values[:maxmind_account_id] : nil
+      summary_items["Let's Encrypt"] = "Enabled"
 
       @ui.summary_box(summary_items)
 
@@ -463,15 +418,6 @@ module DiscourseSetup
       return "(not set)" if password.nil? || password.empty?
 
       "*" * [password.length, 8].min
-    end
-
-    def letsencrypt_enabled?
-      @values[:letsencrypt_enabled]
-    end
-
-    def maxmind_enabled?
-      id = @values[:maxmind_account_id]
-      id && !id.empty? && id != PLACEHOLDER_VALUES["DISCOURSE_MAXMIND_ACCOUNT_ID"]
     end
   end
 end

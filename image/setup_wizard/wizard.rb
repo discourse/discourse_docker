@@ -163,14 +163,6 @@ module DiscourseSetup
           @config.update_config("DISCOURSE_SKIP_EMAIL_SETUP" => "1")
         end
 
-        # Apply MaxMind settings if provided
-        if @user_values[:maxmind_account_id] && !@user_values[:maxmind_account_id].empty?
-          @config.update_config(
-            "DISCOURSE_MAXMIND_ACCOUNT_ID" => @user_values[:maxmind_account_id],
-            "DISCOURSE_MAXMIND_LICENSE_KEY" => @user_values[:maxmind_license_key]
-          )
-        end
-
         # Apply resource scaling
         @config.update_config(
           "db_shared_buffers" => @scaling_params.dig("params", "db_shared_buffers"),
@@ -178,7 +170,7 @@ module DiscourseSetup
         )
 
         # Always enable Let's Encrypt SSL
-        @config.enable_ssl(@user_values[:letsencrypt_email])
+        @config.enable_ssl
 
         @config.save
       end

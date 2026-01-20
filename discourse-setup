@@ -365,13 +365,13 @@ assert_maxmind_envs() {
   if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file >/dev/null 2>&1
   then
     echo "Adding MAXMIND_LICENSE_KEY placeholder to $web_file"
-    sed -i '/^.*LETSENCRYPT_ACCOUNT_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' $web_file
+    sed -i '/^.*DISCOURSE_NOTIFICATION_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' $web_file
   fi
 
   if  ! grep DISCOURSE_MAXMIND_ACCOUNT_ID $web_file >/dev/null 2>&1
   then
     echo "Adding MAXMIND_ACCOUNT_ID placeholder to $web_file"
-    sed -i '/^.*LETSENCRYPT_ACCOUNT_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_ACCOUNT_ID: 123456' $web_file
+    sed -i '/^.*DISCOURSE_NOTIFICATION_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_ACCOUNT_ID: 123456' $web_file
   fi
 
 
@@ -465,19 +465,6 @@ ask_user_for_config() {
   local notification_email=$read_config_result
   read_config "DISCOURSE_SMTP_DOMAIN"
   local discourse_smtp_domain=$read_config_result
-
-  read_config "LETSENCRYPT_ACCOUNT_EMAIL"
-  local letsencrypt_account_email=$read_config_result
-  if [ -z $letsencrypt_account_email ]
-  then
-    letsencrypt_account_email="me@example.com"
-  fi
-  if [ "$letsencrypt_account_email" = "me@example.com" ]
-  then
-    local letsencrypt_status="ENTER to skip"
-  else
-    local letsencrypt_status="Enter 'OFF' to disable."
-  fi
 
   read_config "DISCOURSE_MAXMIND_ACCOUNT_ID"
   local maxmind_account_id=$read_config_result
@@ -625,21 +612,6 @@ ask_user_for_config() {
     # if DISCOURSE_SMTP_DOMAIN is in the config use that instead
     smtp_domain=${discourse_smtp_domain:-${default_smtp_domain}}
 
-    if [ ! -z $letsencrypt_account_email ]
-    then
-      read -p "Optional email address for Let's Encrypt warnings? ($letsencrypt_status) [$letsencrypt_account_email]: " new_value
-      if [ ! -z "$new_value" ]
-      then
-        letsencrypt_account_email="$new_value"
-        if [ "${new_value,,}" = "off" ]
-        then
-          letsencrypt_status="ENTER to skip"
-        else
-          letsencrypt_status="Enter 'OFF' to disable."
-        fi
-      fi
-    fi
-
     read_config "DISCOURSE_MAXMIND_ACCOUNT_ID"
     local maxmind_account_id=$read_config_result
     read -p "Optional MaxMind Account ID ($maxmind_status) [$maxmind_account_id]: " new_value
@@ -670,11 +642,6 @@ ask_user_for_config() {
       echo "SMTP password     : $smtp_password"
     fi
     echo "Notification email: $notification_email"
-
-    if [ "$letsencrypt_status" == "Enter 'OFF' to disable." ]
-    then
-      echo "Let's Encrypt : $letsencrypt_account_email"
-    fi
 
     if [ "$maxmind_account_id" != "123456" ]
     then
@@ -814,18 +781,6 @@ ask_user_for_config() {
     update_ok="n"
   fi
 
-  if ! [ -z $DEBUG ]
-  then
-    echo "Enabling Let's Encrypt"
-  fi
-  sed -i -e "s/^  #\?LETSENCRYPT_ACCOUNT_EMAIL:.*/  LETSENCRYPT_ACCOUNT_EMAIL: $letsencrypt_account_email/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    rm $changelog
-  else
-    echo "LETSENCRYPT_ACCOUNT_EMAIL change failed."
-    update_ok="n"
-  fi
   local src='^  #\?- "templates\/web.ssl.template.yml"'
   local dst='  \- "templates\/web.ssl.template.yml"'
   sed -i -e "s/$src/$dst/w $changelog" $web_file

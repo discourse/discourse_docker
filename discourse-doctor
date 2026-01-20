@@ -179,9 +179,6 @@ get_discourse_config() {
   read_config "DISCOURSE_SMTP_USER_NAME"
   SMTP_USER_NAME=$read_config_result
   log SMTP_USER_NAME=$read_config_result
-  read_config "LETSENCRYPT_ACCOUNT_EMAIL"
-  letsencrypt_account_email=$read_config_result
-  log "LETSENCRYPT_ACCOUNT_EMAIL=$letsencrypt_account_email"
 }
 
 check_plugins() {
