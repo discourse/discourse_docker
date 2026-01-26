@@ -1,41 +1,30 @@
 # frozen_string_literal: true
 
-require "gum"
 require "net/http"
 require "json"
 require_relative "constants"
+require_relative "tui_components"
 
 module DiscourseSetup
   class Prompts
-    # Helper to call gum confirm with proper default handling
-    # The gum-ruby gem ignores `default: false`, so we call gum directly
-    def self.gum_confirm(prompt, default: true)
-      args = ["confirm", prompt, "--default=#{default}"]
-      result = system(Gum.executable, *args)
-
-      # Exit code 130 means user pressed Ctrl+C
-      raise Interrupt if $?.exitstatus == 130
-
-      result
+    # Helper for confirm dialogs using ratatui
+    def self.ratatui_confirm(prompt, default: true)
+      TuiComponents::ConfirmDialog.new(prompt, default: default).run
     end
 
-    # Helper to wrap Gum.input and handle Ctrl+C properly
-    def self.gum_input(**options)
-      result = Gum.input(**options)
-      raise Interrupt if result.nil?
-      result
+    # Helper for text input using ratatui
+    def self.ratatui_input(placeholder:, value: "", header: "", password: false)
+      TuiComponents::TextInput.new(
+        placeholder: placeholder,
+        value: value,
+        header: header,
+        password: password
+      ).run
     end
 
-    # Helper to call gum choose for selection prompts
-    def self.gum_choose(items, header: nil)
-      args = ["choose"]
-      args += ["--header", header] if header
-      args += items
-
-      output = IO.popen([Gum.executable, *args], &:read)
-      raise Interrupt if $?.exitstatus == 130
-
-      output&.strip
+    # Helper for selection menu using ratatui
+    def self.ratatui_choose(items, header: nil)
+      TuiComponents::ChooseMenu.new(items, header: header).run
     end
 
     # Default placeholder values that indicate unconfigured settings
@@ -90,7 +79,7 @@ module DiscourseSetup
       current = nil if current == PLACEHOLDER_VALUES["DISCOURSE_HOSTNAME"]
 
       loop do
-        hostname = Prompts.gum_input(
+        hostname = Prompts.ratatui_input(
           placeholder: "discourse.example.com",
           value: current || "",
           header: "Hostname for your Discourse?"
@@ -114,7 +103,7 @@ module DiscourseSetup
     end
 
     def collect_has_domain
-      @values[:has_domain] = Prompts.gum_confirm(
+      @values[:has_domain] = Prompts.ratatui_confirm(
         "Do you have a domain name for your Discourse?",
         default: true
       )
@@ -135,14 +124,14 @@ module DiscourseSetup
       INSTRUCTIONS
 
       # Wait for user to be ready
-      Prompts.gum_input(
+      Prompts.ratatui_input(
         placeholder: "Press Enter when ready...",
         header: ""
       )
 
       loop do
         # Collect subdomain
-        subdomain = Prompts.gum_input(
+        subdomain = Prompts.ratatui_input(
           placeholder: "mysite",
           header: "Subdomain (without .#{FREE_DOMAIN_BASE})?"
         )
@@ -156,7 +145,7 @@ module DiscourseSetup
         subdomain = subdomain.sub(/\.#{Regexp.escape(FREE_DOMAIN_BASE)}$/i, "")
 
         # Collect verification code
-        code = Prompts.gum_input(
+        code = Prompts.ratatui_input(
           placeholder: "123456",
           header: "Verification code from Discourse ID?"
         )
@@ -277,7 +266,7 @@ module DiscourseSetup
       current = nil if current == PLACEHOLDER_VALUES["DISCOURSE_DEVELOPER_EMAILS"]
 
       loop do
-        emails = Prompts.gum_input(
+        emails = Prompts.ratatui_input(
           placeholder: "admin@example.com",
           value: current || "",
           header: "Email address for admin account(s)?"
@@ -300,7 +289,7 @@ module DiscourseSetup
     end
 
     def collect_smtp_enabled
-      @values[:smtp_enabled] = Prompts.gum_confirm(
+      @values[:smtp_enabled] = Prompts.ratatui_confirm(
         "Configure SMTP for sending emails? (Requires SMTP credentials)",
         default: false
       )
@@ -317,7 +306,7 @@ module DiscourseSetup
       current = @config.read_value("DISCOURSE_SMTP_ADDRESS")
       current = nil if current == PLACEHOLDER_VALUES["DISCOURSE_SMTP_ADDRESS"]
 
-      @values[:smtp_address] = Prompts.gum_input(
+      @values[:smtp_address] = Prompts.ratatui_input(
         placeholder: "smtp.example.com",
         value: current || "",
         header: "SMTP server address?"
@@ -327,7 +316,7 @@ module DiscourseSetup
     def collect_smtp_port
       current = @config.read_value("DISCOURSE_SMTP_PORT") || "587"
 
-      @values[:smtp_port] = Prompts.gum_input(
+      @values[:smtp_port] = Prompts.ratatui_input(
         placeholder: "587",
         value: current,
         header: "SMTP port?"
@@ -346,7 +335,7 @@ module DiscourseSetup
         end
       end
 
-      @values[:smtp_user_name] = Prompts.gum_input(
+      @values[:smtp_user_name] = Prompts.ratatui_input(
         placeholder: "user@example.com",
         value: current || "",
         header: "SMTP user name?"
@@ -357,7 +346,7 @@ module DiscourseSetup
       current = @config.read_value("DISCOURSE_SMTP_PASSWORD")
       current = "" if current == PLACEHOLDER_VALUES["DISCOURSE_SMTP_PASSWORD"]
 
-      @values[:smtp_password] = Prompts.gum_input(
+      @values[:smtp_password] = Prompts.ratatui_input(
         placeholder: "Enter SMTP password",
         value: current || "",
         header: "SMTP password?",
@@ -373,7 +362,7 @@ module DiscourseSetup
         current = "noreply@#{@values[:hostname]}"
       end
 
-      @values[:notification_email] = Prompts.gum_input(
+      @values[:notification_email] = Prompts.ratatui_input(
         placeholder: "noreply@#{@values[:hostname]}",
         value: current,
         header: "Notification email address? (address to send notifications from)"

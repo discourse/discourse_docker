@@ -4,7 +4,6 @@ source "https://rubygems.org"
 
 ruby ">= 3.2.0"
 
-gem "gum"        # Interactive terminal UI (Charm's gum wrapper)
-gem "glamour"    # Markdown rendering for terminal
-gem "docker-api" # Docker socket communication (no CLI needed)
-gem "base64"     # Required by docker-api, bundled gem in Ruby 3.4+
+gem "docker-api"     # Docker socket communication (no CLI needed)
+gem "base64"         # Required by docker-api, bundled gem in Ruby 3.4+
+gem "ratatui_ruby"   # Terminal UI framework for interactive components

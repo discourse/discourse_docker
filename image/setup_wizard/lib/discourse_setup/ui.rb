@@ -1,21 +1,23 @@
 # frozen_string_literal: true
 
-require "gum"
-require "glamour"
+require_relative "tui_components"
 
 module DiscourseSetup
   class UI
-    # Catppuccin Mocha-inspired colors
+    # ANSI color codes (Catppuccin Mocha-inspired)
     COLORS = {
-      success: "#a6e3a1",   # Green
-      error: "#f38ba8",     # Red
-      warning: "#f9e2af",   # Yellow
-      info: "#89b4fa",      # Blue
-      muted: "#6c7086",     # Gray
-      accent: "#cba6f7",    # Mauve
-      text: "#cdd6f4",      # Text
-      subtext: "#a6adc8"    # Subtext
+      success: "\e[38;2;166;227;161m",   # Green #a6e3a1
+      error: "\e[38;2;243;139;168m",     # Red #f38ba8
+      warning: "\e[38;2;249;226;175m",   # Yellow #f9e2af
+      info: "\e[38;2;137;180;250m",      # Blue #89b4fa
+      muted: "\e[38;2;108;112;134m",     # Gray #6c7086
+      accent: "\e[38;2;203;166;247m",    # Mauve #cba6f7
+      text: "\e[38;2;205;214;244m",      # Text #cdd6f4
+      subtext: "\e[38;2;166;173;200m"    # Subtext #a6adc8
     }.freeze
+
+    RESET = "\e[0m"
+    BOLD = "\e[1m"
 
     BANNER = <<~'BANNER'
        ___  _
@@ -61,95 +63,81 @@ module DiscourseSetup
 
     def banner
       puts
-      puts Gum.style(
-        BANNER,
-        foreground: COLORS[:accent],
-        bold: true
-      )
-      puts
-    end
-
-    def header(title)
-      puts
-      puts Gum.style(
-        " #{title} ",
-        foreground: "#1e1e2e",
-        background: COLORS[:accent],
-        bold: true,
-        padding: "0 2"
-      )
+      puts "#{COLORS[:accent]}#{BOLD}#{BANNER}#{RESET}"
       puts
     end
 
     def section(title)
       puts
-      puts Gum.style(
-        "── #{title} ──",
-        foreground: COLORS[:subtext],
-        bold: true
-      )
+      puts "#{COLORS[:subtext]}#{BOLD}── #{title} ──#{RESET}"
       puts
     end
 
     def confirm(prompt, default: true)
-      puts
-      Gum.confirm(prompt, default: default, affirmative: "Yes", negative: "No")
+      TuiComponents::ConfirmDialog.new(prompt, default: default).run
     end
 
     def spin(message, &block)
-      result = nil
-      Gum.spin(message, spinner: :dot) { result = block.call }
-      result
+      TuiComponents::Spinner.new(message).run(&block)
     end
 
     def box(content, title: nil, color: :info)
-      border_color = COLORS[color] || COLORS[:info]
+      color_code = COLORS[color] || COLORS[:info]
 
-      styled = Gum.style(
-        content,
-        border: :rounded,
-        padding: "1 2",
-        border_foreground: border_color
-      )
+      lines = content.split("\n")
+      max_width = lines.map(&:length).max || 0
+      max_width = [max_width, 40].max # Minimum width
+
+      # Box drawing characters
+      top = "#{color_code}╭#{"─" * (max_width + 4)}╮#{RESET}"
+      bottom = "#{color_code}╰#{"─" * (max_width + 4)}╯#{RESET}"
 
       if title
-        title_styled = Gum.style(" #{title} ", foreground: border_color, bold: true)
-        puts title_styled
+        puts "#{color_code}#{BOLD} #{title} #{RESET}"
       end
 
-      puts styled
+      puts top
+      lines.each do |line|
+        puts "#{color_code}│#{RESET}  #{line.ljust(max_width)}  #{color_code}│#{RESET}"
+      end
+      puts bottom
     end
 
     def summary_box(items)
       max_key_length = items.keys.map(&:length).max
 
       lines = items.map do |key, value|
-        key_styled = Gum.style(key.ljust(max_key_length), foreground: COLORS[:subtext])
-        value_display = value.to_s.empty? ? Gum.style("(not set)", foreground: COLORS[:muted]) : value
+        key_styled = "#{COLORS[:subtext]}#{key.ljust(max_key_length)}#{RESET}"
+        value_display = value.to_s.empty? ? "#{COLORS[:muted]}(not set)#{RESET}" : value
         "#{key_styled}  #{value_display}"
       end
 
+      max_width = lines.map { |l| strip_ansi(l).length }.max || 0
+      max_width = [max_width, 40].max
+
+      # Box drawing
+      top = "#{COLORS[:accent]}╭#{"─" * (max_width + 4)}╮#{RESET}"
+      bottom = "#{COLORS[:accent]}╰#{"─" * (max_width + 4)}╯#{RESET}"
+
       puts
-      puts Gum.style(
-        lines.join("\n"),
-        border: :rounded,
-        padding: "1 2",
-        border_foreground: COLORS[:accent]
-      )
+      puts top
+      puts "#{COLORS[:accent]}│#{RESET}  #{" " * max_width}  #{COLORS[:accent]}│#{RESET}"
+      lines.each do |line|
+        padding = max_width - strip_ansi(line).length
+        puts "#{COLORS[:accent]}│#{RESET}  #{line}#{" " * padding}  #{COLORS[:accent]}│#{RESET}"
+      end
+      puts "#{COLORS[:accent]}│#{RESET}  #{" " * max_width}  #{COLORS[:accent]}│#{RESET}"
+      puts bottom
       puts
     end
 
     def step(number, total, description)
-      progress = Gum.style("[#{number}/#{total}]", foreground: COLORS[:accent], bold: true)
+      progress = "#{COLORS[:accent]}#{BOLD}[#{number}/#{total}]#{RESET}"
       Kernel.puts "#{progress} #{description}"
     end
 
-    def markdown(text)
-      puts Glamour.render(text, style: "dark", width: 80)
-    end
-
     def divider
-      puts Gum.style("─" * 50, foreground: COLORS[:muted])
+      puts "#{COLORS[:muted]}#{"─" * 50}#{RESET}"
     end
 
     private
@@ -158,11 +146,15 @@ module DiscourseSetup
       color_code = COLORS[color] || COLORS[:text]
 
       if prefix
-        styled_prefix = Gum.style(prefix, foreground: color_code, bold: true)
+        styled_prefix = "#{color_code}#{BOLD}#{prefix}#{RESET}"
         Kernel.puts "#{styled_prefix} #{message}"
       else
-        Kernel.puts Gum.style(message, foreground: color_code)
+        Kernel.puts "#{color_code}#{message}#{RESET}"
       end
+    end
+
+    def strip_ansi(str)
+      str.gsub(/\e\[[0-9;]*m/, "")
     end
   end
 end

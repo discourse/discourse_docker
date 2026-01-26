@@ -13,9 +13,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /wizard
 
-# Copy and install gems
+# Copy and install gems (ratatui_ruby requires Rust and build tools to compile)
 COPY Gemfile Gemfile.lock* ./
-RUN bundle config set without 'development test' && bundle install
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    libclang-dev \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal \
+    && . "$HOME/.cargo/env" \
+    && bundle config set without 'development test' && bundle install \
+    && rustup self uninstall -y \
+    && apt-get purge -y build-essential libclang-dev \
+    && apt-get autoremove -y \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy the wizard logic
 COPY lib/ ./lib/
