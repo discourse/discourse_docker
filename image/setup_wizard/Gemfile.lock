@@ -10,7 +10,7 @@ GEM
     logger (1.7.0)
     multi_json (1.19.1)
     rake-compiler-dock (1.11.0)
-    ratatui_ruby (0.10.3)
+    ratatui_ruby (1.2.0)
       rb_sys (~> 0.9)
       rexml (~> 3.4)
     rb_sys (0.9.124)
@@ -33,7 +33,7 @@ CHECKSUMS
   logger (1.7.0) sha256=196edec7cc44b66cfb40f9755ce11b392f21f7967696af15d274dde7edff0203
   multi_json (1.19.1) sha256=7aefeff8f2c854bf739931a238e4aea64592845e0c0395c8a7d2eea7fdd631b7
   rake-compiler-dock (1.11.0) sha256=eab51f2cd533eb35cea6b624a75281f047123e70a64c58b607471bb49428f8c2
-  ratatui_ruby (0.10.3) sha256=638360fe7dc4a020192ceee394ff009c3d486b4930752474057b73223e7e0b06
+  ratatui_ruby (1.2.0) sha256=aabd35b5016744f805db6a1a71c1534caaf251a2dc6d3ebf234fb977e30181ef
   rb_sys (0.9.124) sha256=513476557b12eaf73764b3da9f8746024558fe8699bda785fb548c9aa3877ae7
   rexml (3.4.4) sha256=19e0a2c3425dfbf2d4fc1189747bdb2f849b6c5e74180401b15734bc97b5d142
 

@@ -11,6 +11,26 @@ module DiscourseSetup
     List = RatatuiRuby::Widgets::List
     ListItem = RatatuiRuby::Widgets::ListItem
 
+    # Disable mouse capture to allow text selection in terminal
+    # ratatui_ruby enables mouse capture by default, but we only use keyboard navigation
+    def self.disable_mouse_capture
+      # ANSI escape sequences to disable mouse tracking modes
+      # These correspond to what crossterm's EnableMouseCapture enables
+      print "\e[?1000l" # Disable normal tracking
+      print "\e[?1002l" # Disable button event tracking
+      print "\e[?1003l" # Disable any event tracking
+      print "\e[?1006l" # Disable SGR mouse mode
+      $stdout.flush
+    end
+
+    # Wrapper for RatatuiRuby.run that disables mouse capture
+    def self.run_without_mouse(**kwargs, &block)
+      RatatuiRuby.run(**kwargs) do |tui|
+        disable_mouse_capture
+        block.call(tui)
+      end
+    end
+
     # Text input component using Ratatui inline viewport
     class TextInput
       CURSOR = "▌"
@@ -28,7 +48,7 @@ module DiscourseSetup
           puts @header
         end
 
-        result = RatatuiRuby.run(viewport: :inline, height: 1) do |tui|
+        result = TuiComponents.run_without_mouse(viewport: :inline, height: 1) do |tui|
           loop do
             tui.draw do |frame|
               display = @password ? "*" * @value.length : @value
@@ -78,7 +98,7 @@ module DiscourseSetup
         puts
         puts @prompt
 
-        result = RatatuiRuby.run(viewport: :inline, height: 1) do |tui|
+        result = TuiComponents.run_without_mouse(viewport: :inline, height: 1) do |tui|
           loop do
             tui.draw do |frame|
               yes_span = if @selected == 0
@@ -133,7 +153,7 @@ module DiscourseSetup
       def run
         puts @header if @header
 
-        result = RatatuiRuby.run(viewport: :inline, height: @items.length) do |tui|
+        result = TuiComponents.run_without_mouse(viewport: :inline, height: @items.length) do |tui|
           loop do
             tui.draw do |frame|
               list_items = @items.map { |item| ListItem.new(content: item) }
@@ -191,7 +211,7 @@ module DiscourseSetup
         frame_idx = 0
         last_frame_time = Time.now
 
-        RatatuiRuby.run(viewport: :inline, height: 1) do |tui|
+        TuiComponents.run_without_mouse(viewport: :inline, height: 1) do |tui|
           until done
             now = Time.now
             if now - last_frame_time >= FRAME_DELAY
