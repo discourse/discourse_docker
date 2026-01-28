@@ -26,9 +26,9 @@ jobs:
           echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
 
   base:
-    # `debian-12-8core` for amd64 builds
+    # `cdck-linux-8-core` for amd64 builds
     # `ubuntu-24.04-8core-arm` for arm64 builds
-    runs-on: ${{ (matrix.arch == 'amd64' && 'debian-12-8core') || 'ubuntu-24.04-8core-arm' }}
+    runs-on: ${{ (matrix.arch == 'amd64' && 'cdck-linux-8-core') || 'ubuntu-24.04-8core-arm' }}
     strategy:
       matrix:
         arch: [amd64, arm64]
@@ -162,7 +162,7 @@ jobs:
           docker push discourse/base:aarch64
 
   setup_wizard:
-    runs-on: ${{ (matrix.arch == 'amd64' && 'debian-12-8core') || 'ubuntu-24.04-8core-arm' }}
+    runs-on: ${{ (matrix.arch == 'amd64' && 'cdck-linux-8-core') || 'ubuntu-24.04-8core-arm' }}
     strategy:
       matrix:
         arch: [amd64, arm64]
@@ -191,7 +191,7 @@ jobs:
           docker push discourse/setup-wizard:release-${{ matrix.arch }}
 
   ruby_3_4:
-    runs-on: debian-12-8core
+    runs-on: cdck-linux-8-core
     timeout-minutes: 30
     needs: base
     steps:
@@ -312,7 +312,7 @@ jobs:
             discourse/setup-wizard:release-arm64
 
   test:
-    runs-on: debian-12-8core
+    runs-on: cdck-linux-8-core
     timeout-minutes: 30
     needs: base
     defaults:
