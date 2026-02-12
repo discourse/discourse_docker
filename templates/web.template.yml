@@ -180,8 +180,6 @@ run:
       cd: $home
       hook: web
       cmd:
-        # install bundler version to match Gemfile.lock
-        - gem install bundler --conservative -v $(awk '/BUNDLED WITH/ { getline; gsub(/ /,""); print $0 }' Gemfile.lock)
         - find $home ! -user discourse -exec chown discourse {} \+
 
   - exec:
