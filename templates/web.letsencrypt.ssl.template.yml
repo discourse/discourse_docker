@@ -128,7 +128,7 @@ hooks:
        filename: /etc/runit/1.d/install-ssl
        from: "# after ssl"
        to: |
-          if [ -n "$ENABLE_LETSENCRYPT" ] || [ -n "$LETSENCRYPT_ACCOUNT_EMAIL" ]; then
+          if [ -z "$DISABLE_LETSENCRYPT" ] || [ -n "$ENABLE_LETSENCRYPT" ]; then
             /usr/local/bin/configure-ssl
             exec /usr/local/bin/configure-letsencrypt
           fi
