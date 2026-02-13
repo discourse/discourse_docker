@@ -128,7 +128,8 @@ hooks:
        filename: /etc/runit/1.d/install-ssl
        from: "# after ssl"
        to: |
-          # If a pups replace to entry starts with a `/` then it gets evaled, so this comment prevents it
-          /usr/local/bin/configure-ssl
-          exec /usr/local/bin/configure-letsencrypt
+          if [ -z "$DISABLE_LETSENCRYPT" ] || [ -n "$ENABLE_LETSENCRYPT" ]; then
+            /usr/local/bin/configure-ssl
+            exec /usr/local/bin/configure-letsencrypt
+          fi
           # after ssl
