@@ -86,7 +86,6 @@ module DiscourseSetup
           @ui.info("Enabled #{File.basename(template)}")
         end
       end
-      @config["env"]["ENABLE_LETSENCRYPT"] = 1
     end
 
     def save
