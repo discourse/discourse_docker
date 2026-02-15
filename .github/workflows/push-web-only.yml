@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       latest: ${{ steps.latest.outputs.version }}
-      stable: ${{ steps.stable.outputs.version }}
+      esr: ${{ steps.esr.outputs.version }}
     steps:
       - uses: ruby/setup-ruby@v1
         with:
@@ -26,21 +26,21 @@ jobs:
           ref: latest
           fetch-depth: 1
           path: 'latest'
-      - name: checkout stable
+      - name: checkout esr
         uses: actions/checkout@v4
         with:
           repository: discourse/discourse
-          ref: stable
+          ref: esr
           fetch-depth: 1
-          path: 'stable'
+          path: 'esr'
       - id: latest
         working-directory: latest
         run: |
           version=$(ruby -r ./lib/version.rb -e "puts ::Discourse::VERSION::STRING")
           echo "version=$version"
           echo "version=$version" >> $GITHUB_OUTPUT
-      - id: stable
-        working-directory: stable
+      - id: esr
+        working-directory: esr
         run: |
           version=$(ruby -r ./lib/version.rb -e "puts ::Discourse::VERSION::STRING")
           echo "version=$version"
@@ -49,14 +49,14 @@ jobs:
   push:
     strategy:
       matrix:
-        version: [latest,stable]
+        version: [latest,esr]
         os: [ubuntu-latest, ubuntu-24.04-arm]
     runs-on: ${{ matrix.os }}
     needs: version
     env:
       ARCH: ${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
       FLOATING_TAG: ${{ matrix.version == 'latest' && 'latest' || matrix.version }}-${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
-      TAG: ${{ matrix.version == 'stable' && needs.version.outputs.stable || needs.version.outputs.latest }}-${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
+      TAG: ${{ matrix.version == 'esr' && needs.version.outputs.esr || needs.version.outputs.latest }}-${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -78,7 +78,7 @@ jobs:
         run: |
           # TODO: can we find a way to override or provide pups params at build time?
           # Then we can do something like:
-          # bin/launcher build --params="version=stable" --conf-dir=./samples web_only
+          # bin/launcher build --params="version=esr" --conf-dir=./samples web_only
           cp ./samples/web_only.yml ./containers/web_only.yml
           echo $(grep base_image: ./templates/web.template.yml)-web-only >> ./containers/web_only.yml
           sed -Ei 's/^ *+#?version:.*/  version: ${{ matrix.version }}/' ./containers/web_only.yml
@@ -103,26 +103,19 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: update manifest
         run: |
-          docker manifest create \
-            ${{ env.DOCKER_REPO }}:latest \
-            --amend ${{ env.DOCKER_REPO }}:latest-amd64 \
-            --amend ${{ env.DOCKER_REPO }}:latest-arm64
-          docker manifest push ${{ env.DOCKER_REPO }}:latest
+          docker buildx imagetools create -t ${{ env.DOCKER_REPO }}:latest \
+            ${{ env.DOCKER_REPO }}:latest-amd64 \
+            ${{ env.DOCKER_REPO }}:latest-arm64
 
-          docker manifest create \
-            ${{ env.DOCKER_REPO }}:stable \
-            --amend ${{ env.DOCKER_REPO }}:stable-amd64 \
-            --amend ${{ env.DOCKER_REPO }}:stable-arm64
-          docker manifest push ${{ env.DOCKER_REPO }}:stable
+          docker buildx imagetools create -t ${{ env.DOCKER_REPO }}:esr \
+            ${{ env.DOCKER_REPO }}:esr-amd64 \
+            ${{ env.DOCKER_REPO }}:esr-arm64
 
-          docker manifest create \
-            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.latest }} \
-            --amend ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.latest }}-amd64 \
-            --amend ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.latest }}-arm64
-          docker manifest push ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.latest }}
+          docker buildx imagetools create -t ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.latest }} \
+            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.latest }}-amd64 \
+            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.latest }}-arm64
 
-          docker manifest create \
-            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.stable }} \
-            --amend ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.stable }}-amd64 \
-            --amend ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.stable }}-arm64
-          docker manifest push ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.stable }}
+
+          docker buildx imagetools create -t ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.esr }} \
+            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.esr }}-amd64 \
+            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.esr }}-arm64
