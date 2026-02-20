@@ -31,7 +31,7 @@ _launcher ()
 _discourse_setup()
 {
   local cur
-  switches='--debug --skip-rebuild --two-container --skip-connection-test'
+  switches='--debug --skip-rebuild --skip-connection-test'
 
   cur=${COMP_WORDS[COMP_CWORD]}
   COMPREPLY=( $(compgen -W "$switches" -- $cur ) )

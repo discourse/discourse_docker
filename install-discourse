@@ -131,10 +131,7 @@ run_wizard() {
 
     cd "$INSTALL_DIR"
 
-    if [[ -x "./discourse-setup-ruby" ]]; then
-        exec ./discourse-setup-ruby "$@"
-    elif [[ -x "./discourse-setup" ]]; then
-        log_warn "Ruby setup wizard not available, falling back to standard setup"
+    if [[ -x "./discourse-setup" ]]; then
         exec ./discourse-setup "$@"
     else
         log_error "Setup script not found in $INSTALL_DIR"

@@ -1,1004 +1,202 @@
 #!/usr/bin/env bash
-export LC_ALL=C  # lscpu output is localized.
+#
+# Discourse Setup Wizard
+#
+# This script runs the setup wizard inside a Docker container.
+#
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-cd $DIR
+set -e
 
-if [ "$1" == "2container" ]
-then
-  TWO_CONTAINER="1"
-  echo "2container argument is deprecated. Use --two-container"
-  shift 1
-fi
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$DIR"
 
-while [ ${#} -gt 0 ]; do
-  case "${1}" in
-  --debug)
-    DEBUG="1"
-    SKIP_REBUILD="1"
-    ;;
-  --skip-rebuild)
-    SKIP_REBUILD="1"
-    ;;
-  --two-container)
-    TWO_CONTAINER="1"
-    ;;
-  --skip-connection-test)
-    SKIP_CONNECTION_TEST="1"
-    echo "skipping connection test"
-    ;;
-  --skip-email-setup)
-    SKIP_EMAIL_SETUP="1"
-    echo "Skipping email configuration; Discourse ID authentication will be enabled."
-    ;;
-  esac
+IMAGE_NAME="discourse/setup-wizard:release"
 
-  shift 1
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+log_info() {
+    echo -e "${GREEN}→${NC} $1"
+}
+
+log_warn() {
+    echo -e "${YELLOW}!${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}✗${NC} $1"
+}
+
+# Check if running as root
+check_root() {
+    if [[ $EUID -ne 0 ]]; then
+        log_error "This script must be run as root. Please sudo or log in as root first."
+        exit 1
+    fi
+}
+
+# Check if Docker is available
+check_docker() {
+    if ! command -v docker &> /dev/null; then
+        log_error "Docker is not installed. Please install Docker first."
+        exit 1
+    fi
+}
+
+# Pull the setup wizard Docker image
+pull_image() {
+    log_info "Checking for setup wizard image updates..."
+    # if ! docker pull "$IMAGE_NAME"; then
+    #     if docker image inspect "$IMAGE_NAME" &> /dev/null; then
+    #         log_warn "Could not check for updates, using cached image"
+    #     else
+    #         log_error "Failed to pull setup wizard image"
+    #         exit 1
+    #     fi
+    # fi
+}
+
+# Run the setup wizard container
+run_wizard() {
+    log_info "Starting Discourse Setup Wizard..."
+    echo
+
+    # Clean up any previous signal files
+    rm -f "$DIR/.wizard_rebuild_needed"
+    rm -f "$DIR/.wizard_swap_needed"
+
+    local wizard_exit=0
+    docker run -it --rm \
+        --name discourse-setup-wizard \
+        --network host \
+        -v "$DIR:/discourse_docker" \
+        -v /var/run/docker.sock:/var/run/docker.sock \
+        -e DISCOURSE_DOCKER_DIR=/discourse_docker \
+        "$IMAGE_NAME" \
+        "$@" < /dev/tty || wizard_exit=$?
+
+    # Check if wizard signaled that swap creation is needed (exit code 42)
+    if [[ $wizard_exit -eq 42 ]] && [[ -f "$DIR/.wizard_swap_needed" ]]; then
+        rm -f "$DIR/.wizard_swap_needed"
+        if create_swap; then
+            log_info "Resuming setup wizard..."
+            echo
+            # Re-run wizard after creating swap
+            run_wizard "$@"
+            return $?
+        else
+            log_error "Failed to create swap. Please create swap manually and re-run the wizard."
+            return 1
+        fi
+    fi
+
+    # Check if wizard signaled that a rebuild is needed
+    if [[ -f "$DIR/.wizard_rebuild_needed" ]]; then
+        local app_name
+        app_name=$(cat "$DIR/.wizard_rebuild_needed")
+        rm -f "$DIR/.wizard_rebuild_needed"
+
+        if [[ $wizard_exit -eq 0 ]]; then
+            run_rebuild "$app_name"
+        fi
+    fi
+
+    return $wizard_exit
+}
+
+# Run the launcher rebuild on the host
+run_rebuild() {
+    local app_name="$1"
+
+    log_info "Rebuilding $app_name in 5 seconds (Ctrl+C to cancel)..."
+    sleep 5
+
+    log_info "Running: ./launcher rebuild $app_name"
+    "$DIR/launcher" rebuild "$app_name"
+}
+
+# Create swap on the host system
+create_swap() {
+    log_info "Creating 2GB swapfile on host..."
+
+    if ! install -o root -g root -m 0600 /dev/null /swapfile; then
+        log_error "Failed to create swapfile"
+        return 1
+    fi
+
+    if ! fallocate -l 2G /swapfile; then
+        log_error "Failed to allocate swap space"
+        rm -f /swapfile
+        return 1
+    fi
+
+    if ! mkswap /swapfile; then
+        log_error "Failed to format swapfile"
+        rm -f /swapfile
+        return 1
+    fi
+
+    if ! swapon /swapfile; then
+        log_error "Failed to enable swap"
+        rm -f /swapfile
+        return 1
+    fi
+
+    echo '/swapfile swap swap auto 0 0' >> /etc/fstab
+    sysctl -w vm.swappiness=10
+    echo 'vm.swappiness = 10' > /etc/sysctl.d/30-discourse-swap.conf
+
+    log_info "Swap created successfully"
+    return 0
+}
+
+# Show help
+show_help() {
+    cat <<EOF
+Discourse Setup Wizard
+
+Usage: $0 [OPTIONS]
+
+Options:
+    --debug                 Enable debug mode (skips rebuild)
+    --skip-rebuild          Skip the container rebuild after configuration
+    --skip-connection-test  Skip DNS/port connectivity tests
+    --help, -h              Show this help message
+
+This script runs the interactive setup wizard to configure your Discourse
+installation. It will:
+
+  1. Check system requirements (memory, disk space, Docker)
+  2. Prompt for configuration (hostname, email, SMTP settings)
+  3. Generate/update containers/app.yml
+  4. Optionally rebuild and start Discourse
+
+For more information, visit: https://github.com/discourse/discourse_docker
+
+EOF
+}
+
+# Parse arguments
+WIZARD_ARGS=()
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --help|-h)
+            show_help
+            exit 0
+            ;;
+        *)
+            WIZARD_ARGS+=("$1")
+            shift
+            ;;
+    esac
 done
 
-##
-## Make sure only root can run our script
-##
-check_root() {
-  if [[ $EUID -ne 0 ]]; then
-    echo "This script must be run as root. Please sudo or log in as root first." 1>&2
-    exit 1
-  fi
-}
-
-##
-## Check whether a connection to HOSTNAME ($1) on PORT ($2) is possible
-##
-connect_to_port () {
-  HOST="$1"
-  PORT="$2"
-  VERIFY=$(date +%s | sha256sum | base64 | head -c 20)
-  if ! [ -x "$(command -v nc)" ]; then
-    echo "In order to check the connection to $HOST:$PORT we need to open a socket using netcat."
-    echo However netcat is not installed on your system. You can continue without this check
-    echo or abort the setup, install netcat and try again.
-    while true; do
-      read -p "Would you like to continue without this check? [yn] " yn
-      case $yn in
-        [Yy]*) return 2 ;;
-        [Nn]*) exit ;;
-        *) echo "Please answer y or n." ;;
-      esac
-    done
-  else
-    echo -e "HTTP/1.1 200 OK\n\n $VERIFY" | nc -w 4 -l -p $PORT >/dev/null 2>&1 &
-    if curl --proto =http -s $HOST:$PORT --connect-timeout 3 | grep $VERIFY >/dev/null 2>&1; then
-      return 0
-    else
-      curl --proto =http -s localhost:$PORT >/dev/null 2>&1
-      return 1
-    fi
-  fi
-}
-
-check_IP_match() {
-  HOST="$1"
-  echo
-  if [ "$SKIP_CONNECTION_TEST" == 1 ]
-  then
-    echo "Setting EC to 2"
-    ec=2
-  else
-    echo Checking your domain name . . .
-    connect_to_port $HOST 443; ec=$?
-  fi
-  case $ec in
-    0)
-      echo "Connection to $HOST succeeded."
-      ;;
-    1)
-      echo "WARNING: Port 443 of computer does not appear to be accessible using hostname:  $HOST."
-      if connect_to_port $HOST 80; then
-        echo
-        echo SUCCESS: A connection to port 80 succeeds!
-        echo This suggests that your DNS settings are correct,
-        echo but something is keeping traffic to port 443 from getting to your server.
-        echo Check your networking configuration to see that connections to port 443 are allowed.
-      else
-        echo "WARNING: Connection to http://$HOST (port 80) also fails."
-        echo
-        echo "This suggests that $HOST resolves to some IP address that does not reach this "
-        echo machine where you are installing discourse.
-      fi
-      echo
-      echo "The first thing to do is confirm that $HOST resolves to the IP address of this server."
-      echo You usually do this at the same place you purchased the domain.
-      echo
-      echo If you are sure that the IP address resolves correctly, it could be a firewall issue.
-      echo A web search for  \"open ports YOUR CLOUD SERVICE\" might help.
-      echo
-      echo This tool is designed only for the most standard installations. If you cannot resolve
-      echo the issue above, you will need to edit containers/app.yml yourself and then type
-      echo
-      echo                   ./launcher rebuild app
-      echo
-      exit 1
-      ;;
-    2)
-      echo "Skipping port check."
-      ;;
-  esac
-}
-
-##
-## Do we have docker?
-##
-
-check_docker() {
-  (which docker || which docker.io) &>/dev/null
-}
-
-check_and_install_docker() {
-  if ! check_docker; then
-    echo Failed to find docker or docker.io on your PATH.
-    read -p "Enter to install Docker from https://get.docker.com/ or Ctrl+C to exit"
-    curl https://get.docker.com/ | sh
-
-    if ! check_docker; then
-      echo Still failed to find docker or docker.io on your PATH.
-      echo Docker install failed. Quitting.
-      exit
-    fi
-  fi
-}
-
-##
-## What are we running on
-##
-check_OS() {
-  echo `uname -s`
-}
-
-##
-## macOS available memory
-##
-check_macos_memory() {
-  echo $(($(memory_pressure | head -n 1 | awk '{ print $4 }') / 1024 / 1024 / 1024))
-}
-
-##
-## Linux available memory
-##
-check_linux_memory() {
-  ## some VMs report just under 1GB of RAM, so
-  ## make an exception and allow those with more
-  ## than 989MB
-  mem=`free -m --si | awk ' /Mem:/ {print $2}'`
-  if [ "$mem" -ge 990 -a "$mem" -lt 1000 ]; then
-    echo 1
-  else
-    echo `free -g --si | awk ' /Mem:/  {print $2} '`
-  fi
-}
-
-##
-## Do we have enough memory and disk space for Discourse?
-##
-check_disk_and_memory() {
-  os_type=$(check_OS)
-  avail_mem=0
-  if [ "$os_type" == "Darwin" ]; then
-    avail_mem=$(check_macos_memory)
-  else
-    avail_mem=$(check_linux_memory)
-  fi
-
-  if [ "$avail_mem" -lt 1 ]; then
-    echo "WARNING: Discourse requires 1GB RAM to run. This system does not appear"
-    echo "to have sufficient memory."
-    echo
-    echo "Your site may not work properly, or future upgrades of Discourse may not"
-    echo "complete successfully."
-    exit 1
-  fi
-
-  if [ "$avail_mem" -le 4 ]; then
-    total_swap=`free -g --si | awk ' /Swap:/  {print $2} '`
-
-    if [ "$total_swap" -lt 2 ]; then
-      echo "WARNING: Discourse requires at least 2GB of swap when running with 4GB of RAM"
-      echo "or less. This system does not appear to have sufficient swap space."
-      echo
-      echo "Without sufficient swap space, your site may not work properly, and future"
-      echo "upgrades of Discourse may not complete successfully."
-      echo
-      echo "Ctrl+C to exit or wait 5 seconds to have a 2GB swapfile created."
-      sleep 5
-
-      ##
-      ## derived from https://meta.discourse.org/t/13880
-      ##
-      install -o root -g root -m 0600 /dev/null /swapfile
-      fallocate -l 2G /swapfile
-      mkswap /swapfile
-      swapon /swapfile
-      echo "/swapfile       swap    swap    auto      0       0" | tee -a /etc/fstab
-      sysctl -w vm.swappiness=10
-      echo 'vm.swappiness = 10' > /etc/sysctl.d/30-discourse-swap.conf
-
-      total_swap=`free -g --si | awk ' /Swap:/ {print $2} '`
-      if [ "$total_swap" -lt 2 ]; then
-        echo "Failed to create swap: are you root? Are you running on real hardware, or a fully virtualized server?"
-        exit 1
-      fi
-
-    fi
-  fi
-
-  free_disk="$(df /var | tail -n 1 | awk '{print $4}')"
-  if [ "$free_disk" -lt 5000 ]; then
-    echo "WARNING: Discourse requires at least 5GB free disk space. This system"
-    echo "does not appear to have sufficient disk space."
-    echo
-    echo "Insufficient disk space may result in problems running your site, and"
-    echo "may not even allow Discourse installation to complete successfully."
-    echo
-    echo "Please free up some space, or expand your disk, before continuing."
-    echo
-    echo "Run \`apt-get autoremove && apt-get autoclean\` to clean up unused"
-    echo "packages and \`./launcher cleanup\` to remove stale Docker containers."
-    exit 1
-  fi
-
-}
-
-
-##
-## If we have lots of RAM or lots of CPUs, bump up the defaults to scale better
-##
-scale_ram_and_cpu() {
-
-  local changelog=/tmp/changelog.$PPID
-  # grab info about total system ram and physical (NOT LOGICAL!) CPU cores
-  avail_gb=0
-  avail_cores=0
-  os_type=$(check_OS)
-  if [ "$os_type" == "Darwin" ]; then
-    avail_gb=$(check_macos_memory)
-    avail_cores=`sysctl hw.ncpu | awk '/hw.ncpu:/ {print $2}'`
-  else
-    avail_gb=$(check_linux_memory)
-    threads_per_core=$(lscpu | awk 'BEGIN {FS=":"} /Thread\(s\) per core/ {print $2}')
-    avail_cores=$((`lscpu | awk '/^CPU\(s\):[[:blank:]]+[0-9]+[[:blank:]]*$/ {print $2; exit}'`*${threads_per_core}))
-  fi
-  echo "Found ${avail_gb}GB of memory and $avail_cores physical CPU cores"
-
-  # db_shared_buffers: 128MB for 1GB, 256MB for 2GB, or 256MB * GB, max 4096MB
-  if [ "$avail_gb" -eq "1" ]
-  then
-    db_shared_buffers=128
-  else
-    if [ "$avail_gb" -eq "2" ]
-    then
-      db_shared_buffers=256
-    else
-      db_shared_buffers=$(( 256 * $avail_gb ))
-    fi
-  fi
-  db_shared_buffers=$(( db_shared_buffers < 4096 ? db_shared_buffers : 4096 ))
-
-  sed -i -e "s/^  #\?db_shared_buffers:.*/  db_shared_buffers: \"${db_shared_buffers}MB\"/w $changelog" $data_file
-  if [ -s $changelog ]
-  then
-    echo "setting db_shared_buffers = ${db_shared_buffers}MB"
-    rm $changelog
-  fi
-
-  # UNICORN_WORKERS: 2 * GB for 2GB or less, or 2 * CPU, max 8
-  if [ "$avail_gb" -le "2" ]
-  then
-    unicorn_workers=$(( 2 * $avail_gb ))
-  else
-    unicorn_workers=$(( 2 * $avail_cores ))
-  fi
-  unicorn_workers=$(( unicorn_workers < 8 ? unicorn_workers : 8 ))
-
-  sed -i -e "s/^  #\?UNICORN_WORKERS:.*/  UNICORN_WORKERS: ${unicorn_workers}/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    echo "setting UNICORN_WORKERS = ${unicorn_workers}"
-    rm $changelog
-  fi
-
-  echo $data_file memory parameters updated.
-}
-
-
-##
-## standard http / https ports must not be occupied
-##
-check_ports() {
-  check_port "80"
-  check_port "443"
-  echo "Ports 80 and 443 are free for use"
-}
-
-
-##
-## check a port to see if it is already in use
-##
-check_port() {
-
-  local valid=$(lsof -i:${1} | grep "LISTEN")
-
-  if [ -n "$valid" ]; then
-    echo "Port ${1} appears to already be in use."
-    echo
-    echo "This will show you what command is using port ${1}"
-    lsof -i tcp:${1} -s tcp:listen
-    echo
-    echo "If you are trying to run Discourse simultaneously with another web"
-    echo "server like Apache or nginx, you will need to bind to a different port"
-    echo
-    echo "See https://meta.discourse.org/t/17247"
-    echo
-    echo "If you are reconfiguring an already-configured Discourse, use "
-    echo
-    echo "./launcher stop app"
-    echo
-    echo "to stop Discourse before you reconfigure it and try again."
-    exit 1
-  fi
-}
-
-##
-## read a variable from the config file
-##
-read_config() {
-  config_line=`grep -E "^  #?$1:" $web_file`
-  read_config_result=`echo $config_line | awk  -F":" '{print $2}'`
-  read_config_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
-}
-
-read_default() {
-  config_line=`grep -E "^  #?$1:" samples/standalone.yml`
-  read_default_result=`echo $config_line | awk  -F":" '{print $2}'`
-  read_default_result=`echo $read_config_result | sed "s/^\([\"']\)\(.*\)\1\$/\2/g"`
-}
-
-assert_maxmind_envs() {
-  if  ! grep DISCOURSE_MAXMIND_LICENSE_KEY $web_file >/dev/null 2>&1
-  then
-    echo "Adding MAXMIND_LICENSE_KEY placeholder to $web_file"
-    sed -i '/^.*DISCOURSE_NOTIFICATION_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_LICENSE_KEY: 1234567890123456' $web_file
-  fi
-
-  if  ! grep DISCOURSE_MAXMIND_ACCOUNT_ID $web_file >/dev/null 2>&1
-  then
-    echo "Adding MAXMIND_ACCOUNT_ID placeholder to $web_file"
-    sed -i '/^.*DISCOURSE_NOTIFICATION_EMAIL.*/a \ \ #DISCOURSE_MAXMIND_ACCOUNT_ID: 123456' $web_file
-  fi
-
-
-  if ! grep -e DISCOURSE_MAXMIND_LICENSE_KEY -e DISCOURSE_MAXMIND_ACCOUNT_ID $web_file >/dev/null 2>&1
-  then
-    cat <<EOF
-
-    Adding DISCOURSE_MAXMIND_ACCOUNT_ID and DISCOURSE_MAXMIND_LICENSE_KEY to
-    $web_file has failed! This indicates either that your $web_file is very
-    old or otherwise not what the script expects or that there is a bug in
-    this script. The best solution for a novice is to delete $web_file and
-    start over. An expert might prefer to edit $web_file by hand.
-
-EOF
-    read -p "Press return to continue or control-c to quit..."
-  fi
-}
-
-assert_smtp_domain() {
-  if  ! grep DISCOURSE_SMTP_DOMAIN $web_file >/dev/null 2>&1
-  then
-    echo "Adding SMTP_DOMAIN placeholder to $web_file"
-    sed -i '/^.*DISCOURSE_SMTP_PASSWORD.*/a \ \ #DISCOURSE_SMTP_DOMAIN: discourse.example.com    # (required by some providers)' $web_file
-  fi
-  if  ! grep DISCOURSE_SMTP_DOMAIN $web_file >/dev/null 2>&1
-  then
-    cat <<EOF
-
-    Adding DISCOURSE_SMTP_DOMAIN to $web_file has failed! This
-    indicates either that your $web_file is very old or otherwise not
-    what the script expects or that there is a bug in this script. The
-    best solution for a novice is to delete $web_file and start over.
-    An expert might prefer to edit $web_file by hand.
-
-EOF
-    read -p "Press return to continue or control-c to quit..."
-  fi
-}
-
-
-assert_notification_email() {
-  if  ! grep DISCOURSE_NOTIFICATION_EMAIL $web_file >/dev/null 2>&1
-  then
-    echo "Adding DISCOURSE_NOTIFICATION_EMAIL placeholder to $web_file"
-    sed -i '/^.*DISCOURSE_SMTP_PASSWORD.*/a \ \ #DISCOURSE_NOTIFICATION_EMAIL: nobody@discourse.example.com    # (address to send notifications from)' $web_file
-  fi
-  if  ! grep DISCOURSE_NOTIFICATION_EMAIL $web_file >/dev/null 2>&1
-  then
-    cat <<EOF
-
-    Adding DISCOURSE_NOTIFICATION_EMAIL to $web_file has failed! This
-    indicates either that your $web_file is very old or otherwise not
-    what the script expects or that there is a bug in this script. The
-    best solution for a novice is to delete $web_file and start over.
-    An expert might prefer to edit $web_file by hand.
-
-EOF
-    read -p "Press return to continue or control-c to quit..."
-  fi
-}
-
-
-##
-## prompt user for typical Discourse config file values
-##
-ask_user_for_config() {
-
-  # NOTE: Defaults now come from standalone.yml
-
-  read_config "DISCOURSE_HOSTNAME"
-  hostname=$read_config_result
-  local changelog=/tmp/changelog.$PPID
-  read_config "DISCOURSE_SMTP_ADDRESS"
-  local smtp_address=$read_config_result
-  # NOTE: if there are spaces between emails, this breaks, but a human should be paying attention
-  read_config "DISCOURSE_DEVELOPER_EMAILS"
-  local developer_emails=$read_config_result
-  read_config "DISCOURSE_SMTP_PASSWORD"
-  local smtp_password=$read_config_result
-  read_config "DISCOURSE_SMTP_PORT"
-  local smtp_port=$read_config_result
-  read_config "DISCOURSE_SMTP_USER_NAME"
-  local smtp_user_name=$read_config_result
-  if [ "$smtp_password" = "pa\$\$word" ]
-  then
-    smtp_password=""
-  fi
-  read_config "DISCOURSE_SKIP_EMAIL_SETUP"
-  local skip_email_setup=$read_config_result
-  read_config "DISCOURSE_NOTIFICATION_EMAIL"
-  local notification_email=$read_config_result
-  read_config "DISCOURSE_SMTP_DOMAIN"
-  local discourse_smtp_domain=$read_config_result
-
-  read_config "DISCOURSE_MAXMIND_ACCOUNT_ID"
-  local maxmind_account_id=$read_config_result
-  if [ -z $maxmind_account_id ]
-  then
-    maxmind_account_id="123456"
-  fi
-
-  if [ "$maxmind_account_id" == "123456" ]
-  then
-    local maxmind_status="ENTER to continue without MAXMIND GeoLite2 geolocation database"
-  fi
-
-  read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
-  local maxmind_license_key=$read_config_result
-  if [ -z $maxmind_license_key ]
-  then
-    maxmind_license_key="1234567890123456"
-  fi
-
-  local new_value=""
-  local config_ok="n"
-  local update_ok="y"
-
-  echo ""
-
-  while [[ "$config_ok" == "n" ]]
-  do
-    if [ ! -z "$hostname" ]
-    then
-      read -p "Hostname for your Discourse? [$hostname]: " new_value
-      if [ ! -z "$new_value" ]
-      then
-        hostname="$new_value"
-      fi
-      if [[ $hostname =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]
-      then
-        echo
-        echo "Discourse requires a DNS hostname. IP addresses are unsupported and will not work."
-        echo
-        hostname="discourse.example.com"
-      fi
-    fi
-
-    check_IP_match $hostname
-
-    if [ ! -z "$developer_emails" ]
-    then
-      local email_valid="n"
-      until [ "$email_valid" == "y" ]
-      do
-        read -p "Email address for admin account(s)? [$developer_emails]: " new_value
-        if [ ! -z "$new_value" ]
-        then
-          if [[ ${#new_value} -ge 7 && $new_value == *@* ]]
-          then
-            developer_emails="$new_value"
-            email_valid="y"
-          else
-            echo
-            echo "[Error] Invalid email address"
-            echo
-          fi
-        else
-          email_valid="y"
-        fi
-      done
-    fi
-
-    if [ "$SKIP_EMAIL_SETUP" != "1" ]
-    then
-      if [ ! -z "$smtp_address" ]
-      then
-        read -p "SMTP server address? [$smtp_address]: " new_value
-        if [ ! -z "$new_value" ]
-        then
-          smtp_address="$new_value"
-        fi
-      fi
-
-      if [ ! -z "$smtp_port" ]
-      then
-        read -p "SMTP port? [$smtp_port]: " new_value
-        if [ ! -z "$new_value" ]
-        then
-          smtp_port="$new_value"
-        fi
-      fi
-
-      ##
-      ## automatically set correct user name based on common mail providers unless it's been set
-      ##
-      if [ "$smtp_user_name" == "user@example.com" ]
-      then
-        if [ "$smtp_address" == "smtp.sparkpostmail.com" ]
-        then
-          smtp_user_name="SMTP_Injection"
-        fi
-        if [ "$smtp_address" == "smtp.sendgrid.net" ]
-        then
-          smtp_user_name="apikey"
-        fi
-        if [ "$smtp_address" == "smtp.mailgun.org" ]
-        then
-          smtp_user_name="postmaster@$hostname"
-        fi
-      fi
-
-      if [ ! -z "$smtp_user_name" ]
-      then
-        read -p "SMTP user name? [$smtp_user_name]: " new_value
-        if [ ! -z "$new_value" ]
-        then
-          smtp_user_name="$new_value"
-        fi
-      fi
-
-      read -p "SMTP password? [$smtp_password]: " new_value
-      if [ ! -z "$new_value" ]
-      then
-        smtp_password="$new_value"
-      fi
-
-      if [[ "$notification_email" == "noreply@discourse.example.com"* ]]
-      then
-        notification_email="noreply@$hostname"
-      fi
-
-      read -p "notification email address? [$notification_email]: " new_value
-      if [ ! -z "$new_value" ]
-      then
-        notification_email="$new_value"
-      fi
-    else
-      echo ""
-      echo "Skipping SMTP configuration (--skip-email-setup enabled)"
-      if [[ "$notification_email" == "noreply@discourse.example.com"* ]]
-      then
-        notification_email="noreply@$hostname"
-      fi
-    fi
-
-    # set smtp_domain default value here rather than use Rails default of localhost
-    default_smtp_domain=${notification_email#*@}
-    # if DISCOURSE_SMTP_DOMAIN is in the config use that instead
-    smtp_domain=${discourse_smtp_domain:-${default_smtp_domain}}
-
-    read_config "DISCOURSE_MAXMIND_ACCOUNT_ID"
-    local maxmind_account_id=$read_config_result
-    read -p "Optional MaxMind Account ID ($maxmind_status) [$maxmind_account_id]: " new_value
-    if [ ! -z "$new_value" ]
-    then
-      maxmind_account_id="$new_value"
-
-      read_config "DISCOURSE_MAXMIND_LICENSE_KEY"
-      local maxmind_license_key=$read_config_result
-      read -p "MaxMind License key [$maxmind_license_key]: " new_value
-
-      if [ ! -z "$new_value" ]
-      then
-        maxmind_license_key="$new_value"
-      fi
-    fi
-
-    echo -e "\nDoes this look right?\n"
-    echo "Hostname          : $hostname"
-    echo "Email             : $developer_emails"
-    if [ "$SKIP_EMAIL_SETUP" == "1" ]
-    then
-      echo "SMTP configuration: skipped (--skip-email-setup)"
-    else
-      echo "SMTP address      : $smtp_address"
-      echo "SMTP port         : $smtp_port"
-      echo "SMTP username     : $smtp_user_name"
-      echo "SMTP password     : $smtp_password"
-    fi
-    echo "Notification email: $notification_email"
-
-    if [ "$maxmind_account_id" != "123456" ]
-    then
-      echo "MaxMind account ID: $maxmind_account_id"
-    else
-      echo "MaxMind account ID: (unset)"
-    fi
-
-    if [ "$maxmind_license_key" != "1234567890123456" ]
-    then
-      echo "MaxMind license key: $maxmind_license_key"
-    else
-      echo "MaxMind license key: (unset)"
-    fi
-
-    echo ""
-    read -p "ENTER to continue, 'n' to try again, Ctrl+C to exit: " config_ok
-  done
-
-  sed -i -e "s/^  DISCOURSE_HOSTNAME:.*/  DISCOURSE_HOSTNAME: $hostname/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    rm $changelog
-  else
-    echo "DISCOURSE_HOSTNAME change failed."
-    update_ok="n"
-  fi
-
-  sed -i -e "s/^  DISCOURSE_DEVELOPER_EMAILS:.*/  DISCOURSE_DEVELOPER_EMAILS: \'$developer_emails\'/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    rm $changelog
-  else
-    echo "DISCOURSE_DEVELOPER_EMAILS change failed."
-    update_ok="n"
-  fi
-
-  if [ "$SKIP_EMAIL_SETUP" != "1" ]
-  then
-    sed -i -e "s/^  DISCOURSE_SMTP_ADDRESS:.*/  DISCOURSE_SMTP_ADDRESS: $smtp_address/w $changelog" $web_file
-    if [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "DISCOURSE_SMTP_ADDRESS change failed."
-      update_ok="n"
-    fi
-
-    sed -i -e "s/^  #\?DISCOURSE_SMTP_PORT:.*/  DISCOURSE_SMTP_PORT: $smtp_port/w $changelog" $web_file
-    if [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "DISCOURSE_SMTP_PORT change failed."
-      update_ok="n"
-    fi
-
-    sed -i -e "s/^  #\?DISCOURSE_SMTP_USER_NAME:.*/  DISCOURSE_SMTP_USER_NAME: $smtp_user_name/w $changelog" $web_file
-    if [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "DISCOURSE_SMTP_USER_NAME change failed."
-      update_ok="n"
-    fi
-
-    sed -i -e "s/^  #\?DISCOURSE_SMTP_DOMAIN:.*/  DISCOURSE_SMTP_DOMAIN: $smtp_domain/w $changelog" $web_file
-    if [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "DISCOURSE_SMTP_DOMAIN change failed."
-      update_ok="n"
-    fi
-
-    if [[ "$smtp_password" == *"\""* ]]
-    then
-      SLASH="BROKEN"
-      echo "========================================"
-      echo "WARNING!!!"
-      echo "Your password contains a quote (\")"
-      echo "Your SMTP Password will not be set. You will need to edit app.yml to enter it."
-      echo "========================================"
-      update_ok="n"
-    else
-      SLASH="|"
-      if [[ "$smtp_password" == *"$SLASH"* ]]
-      then SLASH="+"
-           if [[ "$smtp_password" == *"$SLASH"* ]]
-           then
-             SLASH="Q"
-             if [[ "$smtp_password" == *"$SLASH"* ]]
-             then
-               SLASH="BROKEN"
-               echo "========================================"
-               echo "WARNING!!!"
-               echo "Your password contains all available delimiters (+, |, and Q). "
-               echo "Your SMTP Password will not be set. You will need to edit app.yml to enter it."
-               echo "========================================"
-               update_ok="n"
-             fi
-           fi
-      fi
-    fi
-    if [[ "$SLASH" != "BROKEN" ]]
-    then
-      sed -i -e "s${SLASH}^  #\?DISCOURSE_SMTP_PASSWORD:.*${SLASH}  DISCOURSE_SMTP_PASSWORD: \"${smtp_password}\"${SLASH}w $changelog" $web_file
-
-      if [ -s $changelog ]
-      then
-        rm $changelog
-      else
-        echo "DISCOURSE_SMTP_PASSWORD change failed."
-        update_ok="n"
-      fi
-    fi
-  else
-    echo "SMTP environment variables skipped (--skip-email-setup)."
-
-    sed -i -e "s/^  #\?DISCOURSE_SKIP_EMAIL_SETUP:.*/  DISCOURSE_SKIP_EMAIL_SETUP: $skip_email_setup/w $changelog" $web_file
-    if [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "DISCOURSE_SKIP_EMAIL_SETUP change failed."
-      update_ok="n"
-    fi
-
-  fi
-
-  sed -i -e "s/^  #\?DISCOURSE_NOTIFICATION_EMAIL:.*/  DISCOURSE_NOTIFICATION_EMAIL: $notification_email/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    rm $changelog
-  else
-    echo "DISCOURSE_NOTIFICATION_EMAIL change failed."
-    update_ok="n"
-  fi
-
-  local src='^  #\?- "templates\/web.ssl.template.yml"'
-  local dst='  \- "templates\/web.ssl.template.yml"'
-  sed -i -e "s/$src/$dst/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-  if ! [ -z $DEBUG ]
-    then
-      echo "web.ssl.template.yml enabled"
-    fi
-  else
-    update_ok="n"
-    echo "web.ssl.template.yml NOT ENABLED--was it on already?"
-  fi
-  local src='^  #\?- "templates\/web.letsencrypt.ssl.template.yml"'
-  local dst='  - "templates\/web.letsencrypt.ssl.template.yml"'
-
-  sed -i -e "s/$src/$dst/w $changelog" $web_file
-  if [ -s $changelog ]
-  then
-    echo "letsencrypt.ssl.template.yml enabled"
-  else
-    update_ok="n"
-    echo "letsencrypt.ssl.template.yml NOT ENABLED -- was it on already?"
-  fi
-
-  echo
-
-  if [ $maxmind_account_id != "123456" ]
-  then
-    sed -i -e "s/^.*DISCOURSE_MAXMIND_ACCOUNT_ID:.*/  DISCOURSE_MAXMIND_ACCOUNT_ID: $maxmind_account_id/w $changelog" $web_file
-    if [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "DISCOURSE_MAXMIND_ACCOUNT_ID change failed."
-      update_ok="n"
-    fi
-  fi
-
-  if [ $maxmind_license_key != "1234567890123456" ]
-  then
-    sed -i -e "s/^.*DISCOURSE_MAXMIND_LICENSE_KEY:.*/  DISCOURSE_MAXMIND_LICENSE_KEY: $maxmind_license_key/w $changelog" $web_file
-    if [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "DISCOURSE_MAXMIND_LICENSE_KEY change failed."
-      update_ok="n"
-    fi
-  fi
-
-  if [ "$update_ok" == "y" ]
-  then
-    echo -e "\nConfiguration file at $web_file updated successfully!\n"
-  else
-    echo -e "\nUnfortunately, there was an error changing $web_file\n"
-    echo -e "This may happen if you have made unexpected changes."
-    exit 1
-  fi
-}
-
-##
-## is our config file valid? Does it have the required fields set?
-##
-validate_config() {
-
-  valid_config="y"
-
-  if [ "$SKIP_EMAIL_SETUP" == "1" ]
-  then
-    required_fields="DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME"
-  else
-    required_fields="DISCOURSE_SMTP_ADDRESS DISCOURSE_SMTP_USER_NAME DISCOURSE_SMTP_PASSWORD DISCOURSE_DEVELOPER_EMAILS DISCOURSE_HOSTNAME"
-  fi
-
-  for x in $required_fields
-  do
-    read_config $x
-    local result=$read_config_result
-    read_default $x
-    local default=$read_default_result
-
-    if [ ! -z "$result" ]
-    then
-      if [[ "$config_line" = *"$default"* ]]
-      then
-        echo "$x left at incorrect default of $default"
-        valid_config="n"
-      fi
-      config_val=`echo $config_line | awk '{print $2}'`
-      if [ -z $config_val ]
-      then
-        echo "$x was not configured"
-        valid_config="n"
-      fi
-    else
-      echo "$x not present"
-      valid_config="n"
-    fi
-  done
-
-  if [ "$valid_config" != "y" ]; then
-    echo -e "\nSorry, these $web_file settings aren't valid -- can't continue!"
-    echo "If you have unusual requirements, edit $web_file and then: "
-    echo "./launcher bootstrap $app_name"
-    exit 1
-  fi
-}
-
-##
-## template file names
-##
-
-if [ "$TWO_CONTAINER" ] || [ -f containers/web_only.yml ]
-then
-  app_name=web_only
-  data_name=data
-  web_template=samples/web_only.yml
-  data_template=samples/data.yml
-  web_file=containers/$app_name.yml
-  data_file=containers/$data_name.yml
-else
-  app_name=app
-  data_name=app
-  web_template=samples/standalone.yml
-  data_template=""
-  web_file=containers/$app_name.yml
-  data_file=containers/$app_name.yml
-fi
-changelog=/tmp/changelog
-
-##
-## Check requirements before creating a copy of a config file we won't edit
-##
+# Main
 check_root
-check_and_install_docker
-check_disk_and_memory
-
-if [ -a "$web_file" ]
-then
-  echo "The configuration file $web_file already exists!"
-  echo
-  echo ". . . reconfiguring . . ."
-  echo
-  echo
-  DATE=`date +"%Y-%m-%d-%H%M%S"`
-  BACKUP=$app_name.yml.$DATE.bak
-  echo Saving old file as $BACKUP
-  install -m0600 $web_file containers/$BACKUP
-  if [ "$DEBUG" != "1" ]
-  then
-    echo "Stopping existing container in 5 seconds or Control-C to cancel."
-    sleep 5
-    ./launcher stop $app_name
-  else
-    echo "DEBUG MODE ON. Not stopping the container."
-  fi
-  assert_maxmind_envs
-  assert_notification_email
-  assert_smtp_domain
-  echo
-else
-  if [ "$SKIP_CONNECTION_TEST" != 1 ]
-  then
-    check_ports
-  fi
-  install -v -m0600 $web_template $web_file
-  if [ "$data_name" == "data" ]
-  then
-    echo "--------------------------------------------------"
-    echo "This two container setup is currently unsupported. Use at your own risk!"
-    echo "--------------------------------------------------"
-    DISCOURSE_DB_PASSWORD=`date +%s | sha256sum | base64 | head -c 20`
-
-    sed -i -e "s/DISCOURSE_DB_PASSWORD: SOME_SECRET/DISCOURSE_DB_PASSWORD: $DISCOURSE_DB_PASSWORD/w $changelog" $web_file
-    if  [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "Problem changing DISCOURSE_DB_PASSWORD" in $web_file
-    fi
-
-    install -v -m0600 $data_template $data_file
-    quote=\'
-    sed -i -e "s/password ${quote}SOME_SECRET${quote}/password '$DISCOURSE_DB_PASSWORD'/w $changelog" $data_file
-    if  [ -s $changelog ]
-    then
-      rm $changelog
-    else
-      echo "Problem changing DISCOURSE_DB_PASSWORD" in $data_file
-    fi
-  fi
-fi
-
-scale_ram_and_cpu
-ask_user_for_config
-validate_config
-
-##
-## if we reach this point without exiting, OK to proceed
-## rebuild won't fail if there's nothing to rebuild and does the restart
-##
-if [ "$SKIP_REBUILD" ]
-then
-  echo "Updates successful. --skip-rebuild requested. Exiting."
-  exit
-fi
-
-echo "Updates successful. Rebuilding in 5 seconds."
-sleep 5 # Just a chance to ^C in case they were too fast on the draw
-
-if [ "$data_name" == "$app_name" ]
-then
-  echo Building $app_name
-  ./launcher rebuild $app_name
-else
-  echo Building $data_name now . . .
-  ./launcher rebuild $data_name
-  echo Building $app_name now . . .
-  ./launcher rebuild $app_name
-fi
+check_docker
+pull_image
+run_wizard "${WIZARD_ARGS[@]}"
