@@ -2,7 +2,7 @@
 set -e
 
 # version check: https://nginx.org/en/download.html
-VERSION=1.28.1
+VERSION=1.29.5
 
 cd /tmp
 wget -q https://nginx.org/download/nginx-$VERSION.tar.gz
