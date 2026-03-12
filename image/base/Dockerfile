@@ -80,9 +80,6 @@ RUN --mount=type=tmpfs,target=/var/log \
     install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${DEBIAN_RELEASE}-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
-# yarn packages
-    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list && \
 # node packages
     curl --silent --location https://deb.nodesource.com/setup_22.x | sudo bash - && \
 # setup anacron, rsyslog, initctl
