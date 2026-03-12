@@ -1,7 +1,7 @@
 # NAME:     discourse/base
 # VERSION:  release
 
-ARG DEBIAN_RELEASE=bookworm
+ARG DEBIAN_RELEASE=trixie
 ARG RUBY_VERSION=3.4.8
 ARG FROM_DOCKER_IMAGE_TAG=${RUBY_VERSION}-${DEBIAN_RELEASE}-slim
 
@@ -15,21 +15,13 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     git \
     cmake \
     gnupg \
-    libpcre3-dev \
-    libfreetype6-dev \
+    libpcre2-dev \
+    libfreetype-dev \
     libbrotli-dev
 
 FROM builder AS imagemagick_builder
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
-
-FROM builder AS nginx_builder
-# From https://nginx.org/en/pgp_keys.html
-ADD nginx_public_keys.key /tmp/nginx_public_keys.key
-ADD install-nginx /tmp/install-nginx
-RUN gpg --import /tmp/nginx_public_keys.key &&\
-    rm /tmp/nginx_public_keys.key &&\
-    /tmp/install-nginx
 
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse_dependencies
 
@@ -61,7 +53,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     cmake g++ pkg-config patch \
     libxslt-dev libcurl4-openssl-dev \
     libssl-dev libyaml-dev libtool \
-    libpcre3 libpcre3-dev zlib1g zlib1g-dev \
+    libpcre2-8-0 libpcre2-dev zlib1g zlib1g-dev \
     libxml2-dev gawk parallel \
     libreadline-dev anacron wget \
     psmisc whois brotli libunwind-dev \
@@ -70,7 +62,7 @@ RUN --mount=type=tmpfs,target=/var/log \
 # imagemagick runtime dependencies
     ghostscript libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
-    fonts-urw-base35 libheif1/${DEBIAN_RELEASE}-backports \
+    fonts-urw-base35 libheif1 \
 # nginx runtime dependencies \
     nginx-common &&\
 # install these without recommends to avoid pulling in e.g.
@@ -90,8 +82,15 @@ RUN --mount=type=tmpfs,target=/var/log \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl" &&\
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
     libpq-dev postgresql-client-${PG_MAJOR} \
-    nodejs yarn &&\
+    nodejs &&\
     mkdir -p /etc/runit/1.d
+
+# nginx
+RUN apt update &&\
+    DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    nginx-light \
+    libnginx-mod-http-brotli-filter \
+    libnginx-mod-http-brotli-static
 
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
@@ -101,8 +100,6 @@ RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen &&\
 
 RUN --mount=type=tmpfs,target=/root/.npm \
     npm install -g pnpm@10
-
-COPY --from=nginx_builder /usr/sbin/nginx /usr/sbin
 
 # Copy binary and configuration files for magick
 COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
