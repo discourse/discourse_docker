@@ -1,10 +1,10 @@
 ARG from_tag=build
 
 FROM discourse/base:$from_tag AS base
-ENV RAILS_ENV test
+ENV RAILS_ENV=test
 
 WORKDIR /var/www/discourse
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 # configure Git to suppress warnings
 RUN sudo -E -u discourse -H git config --global user.email "you@example.com" &&\
@@ -23,11 +23,11 @@ RUN chown -R discourse . &&\
 
 FROM base AS with_browsers
 
-ENV TESTEM_DEFAULT_BROWSER Chrome
+ENV TESTEM_DEFAULT_BROWSER=Chrome
 ADD install-chrome /tmp/install-chrome
 RUN /tmp/install-chrome &&\
     apt update &&\
-    apt install -y libgconf-2-4 libxss1 firefox-esr &&\
+    apt install -y libxss1 firefox-esr &&\
     cd /tmp && wget -q "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US" -O firefox.tar.xz &&\
     tar xJvf firefox.tar.xz && mv /tmp/firefox /opt/firefox-evergreen &&\
     apt clean &&\
