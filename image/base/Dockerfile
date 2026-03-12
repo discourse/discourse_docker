@@ -55,7 +55,7 @@ RUN echo 2.0.`date +%Y%m%d` > /VERSION
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
 
 RUN --mount=type=tmpfs,target=/var/log \
-    echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
+    echo "debconf debconf/frontend select Teletype" | debconf-set-selections && \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install gnupg sudo curl fping locales \
     ca-certificates rsync \
     cmake g++ pkg-config patch \
@@ -75,22 +75,22 @@ RUN --mount=type=tmpfs,target=/var/log \
     nginx-common && \
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
-    DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less; \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less && \
 # postgres packages
     install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
-    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${DEBIAN_RELEASE}-pgdg main" > /etc/apt/sources.list.d/pgdg.list; \
+    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${DEBIAN_RELEASE}-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
 # yarn packages
-    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -; \
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list; \
+    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - && \
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list && \
 # node packages
-    curl --silent --location https://deb.nodesource.com/setup_22.x | sudo bash -; \
+    curl --silent --location https://deb.nodesource.com/setup_22.x | sudo bash - && \
 # setup anacron, rsyslog, initctl
-    sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron; \
-    sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf; \
-    sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf; \
-    dpkg-divert --local --rename --add /sbin/initctl; \
-    sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
+    sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron && \
+    sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf && \
+    sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf && \
+    dpkg-divert --local --rename --add /sbin/initctl && \
+    sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl" && \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
     libpq-dev postgresql-client-${PG_MAJOR} \
     nodejs yarn &&\
@@ -99,7 +99,7 @@ RUN --mount=type=tmpfs,target=/var/log \
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US.UTF-8
-RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
+RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen && \
     locale-gen
 
 RUN --mount=type=tmpfs,target=/root/.npm \
