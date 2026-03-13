@@ -11,7 +11,7 @@ base_image: discourse/mail-receiver:release
 update_pups: false
 
 expose:
-  - "25:25"   # SMTP
+  - "25:25" # SMTP
 
 env:
   LC_ALL: en_US.UTF-8
@@ -21,17 +21,16 @@ env:
   ## Where e-mail to your forum should be sent.  In general, it's perfectly fine
   ## to use the same domain as the forum itself here.
   MAIL_DOMAIN: discourse.example.com
-# uncomment these (and the volume below!) to support TLS 
-#  POSTCONF_smtpd_tls_key_file:  /letsencrypt/discourse.example.com/discourse.example.com.key
-#  POSTCONF_smtpd_tls_cert_file:  /letsencrypt/discourse.example.com/fullchain.cer
-#  POSTCONF_smtpd_tls_security_level: may
-
+  # uncomment these (and the volume below!) to support TLS
+  #  POSTCONF_smtpd_tls_key_file:  /letsencrypt/discourse.example.com/discourse.example.com.key
+  #  POSTCONF_smtpd_tls_cert_file:  /letsencrypt/discourse.example.com/fullchain.cer
+  #  POSTCONF_smtpd_tls_security_level: may
 
   ## The base URL for this Discourse instance.
   ## This will be whatever your Discourse site URL is. For example,
   ## https://discourse.example.com. If you're running a subfolder setup,
   ## be sure to account for that (ie https://example.com/forum).
-  DISCOURSE_BASE_URL: 'https://discourse.example.com'
+  DISCOURSE_BASE_URL: https://discourse.example.com
 
   ## The master API key of your Discourse forum.  You can get this from
   ## the "API" tab of your admin panel.
@@ -49,5 +48,3 @@ volumes:
 #  - volume:
 #      host: /var/discourse/shared/standalone/letsencrypt
 #      guest: /letsencrypt
-
- 
