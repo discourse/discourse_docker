@@ -223,6 +223,15 @@ run:
         - su discourse -c 'bundle exec rake db:migrate'
   - exec:
       cd: $home
+      hook: clear_stuck_web_upgrades
+      raise_on_fail: false
+      cmd:
+        - |-
+          if [ -f plugins/docker_manager/lib/tasks/docker_manager.rake ]; then
+            su discourse -c 'bundle exec rake docker_manager:stop_all_upgrades'
+          fi
+  - exec:
+      cd: $home
       tag: build
       hook: assets_precompile_build
       cmd:
