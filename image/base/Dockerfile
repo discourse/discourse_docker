@@ -67,6 +67,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     psmisc whois brotli libunwind-dev \
     libtcmalloc-minimal4 cmake \
     pngcrush pngquant ripgrep poppler-utils \
+    catdoc antiword \
 # imagemagick runtime dependencies
     ghostscript libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
