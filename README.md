@@ -139,6 +139,25 @@ labels:
 Add labels to the current container. The above will add `--l monitor=true -l app_name=dev_discourse` to the options
 when running the container
 
+### hooks:
+
+Hooks allow you to run code before or after certain logic in the templates you're using. For example:
+
+```
+hooks:
+  after_code:
+    - exec:
+        cd: $home/plugins
+        cmd:
+          - git clone https://github.com/discourse/docker_manager
+```
+
+To find all the available hooks, search your templates for `hook:`. Running this command in the repository will list all available hooks:
+
+```
+grep -r "hook:" .
+```
+
 ## Upgrading Discourse
 
 The Docker setup gives you multiple upgrade options:
