@@ -224,6 +224,7 @@ run:
   - exec:
       cd: $home
       hook: clear_stuck_web_upgrades
+      tag: precompile
       raise_on_fail: false
       cmd:
         - |-
