@@ -1,0 +1,82 @@
+env:
+  DISCOURSE_FORCE_HTTPS: true
+  LETSENCRYPT_ACCOUNT_EMAIL: # optional: contact address for ACME account registration
+
+run:
+  - file:
+      path: "/usr/local/bin/configure-letsencrypt-nginx"
+      chmod: "+x"
+      contents: |
+        #!/bin/bash
+        set -e
+
+        STATE_DIR="/shared/letsencrypt-nginx"
+        install -d -m 0700 -g root -o root "$STATE_DIR"
+
+        if [ -n "$LETSENCRYPT_ACCOUNT_EMAIL" ]; then
+          CONTACT_LINE="contact mailto:${LETSENCRYPT_ACCOUNT_EMAIL};"
+        else
+          CONTACT_LINE=""
+        fi
+
+        # http {} level configuration for the nginx ACME module.
+        # /etc/nginx/conf.d/*.conf is included from the main http block.
+        cat << EOF > /etc/nginx/conf.d/letsencrypt-acme.conf
+        resolver 1.1.1.1 8.8.8.8 ipv6=off;
+
+        acme_issuer letsencrypt {
+          uri https://acme-v02.api.letsencrypt.org/directory;
+          ${CONTACT_LINE}
+          state_path ${STATE_DIR};
+          accept_terms_of_service;
+        }
+
+        acme_shared_zone zone=acme_shared:1M;
+        EOF
+
+        # server {} outlet — replace the static ssl_certificate paths written by
+        # web.ssl.template.yml with the ACME-managed variables and enable the
+        # issuer for this server.
+        cat << EOF > /etc/nginx/conf.d/outlets/server/20-https.conf
+        listen 443 ssl;
+        listen [::]:443 ssl;
+        http2 on;
+
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+        ssl_prefer_server_ciphers off;
+
+        acme_certificate letsencrypt;
+        ssl_certificate \$acme_certificate;
+        ssl_certificate_key \$acme_certificate_key;
+        ssl_certificate_cache max=2;
+
+        ssl_session_tickets off;
+        ssl_session_timeout 1d;
+        ssl_session_cache shared:SSL:1m;
+
+        add_header Strict-Transport-Security 'max-age=31536000';
+
+        if (\$http_host != ${DISCOURSE_HOSTNAME}) {
+          rewrite (.*) https://${DISCOURSE_HOSTNAME}\$1 permanent;
+        }
+        EOF
+
+        # The port 80 redirect server written by web.ssl.template.yml already
+        # serves /.well-known/* — the ACME module piggybacks on that location
+        # path for HTTP-01 challenges. No further changes needed there.
+
+        grep -q 'force_https' /var/www/discourse/config/discourse.conf \
+          || echo "force_https = 'true'" >> /var/www/discourse/config/discourse.conf
+
+hooks:
+  after_ssl:
+    - replace:
+        filename: /etc/runit/1.d/install-ssl
+        from: "# after ssl"
+        to: |
+          if [ -z "$DISABLE_LETSENCRYPT" ] || [ -n "$ENABLE_LETSENCRYPT" ]; then
+            /usr/local/bin/configure-ssl
+            /usr/local/bin/configure-letsencrypt-nginx
+          fi
+          # after ssl
