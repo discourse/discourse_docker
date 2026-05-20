@@ -66,7 +66,8 @@ USER discourse
 # Warm global bundle cache, then delete the compressed `cache/` versions (`/gem/` are enough)
 RUN --mount=type=bind,src=/repo,from=repo-fetcher,target=/tmp/discourse-clone,readwrite \
     cd /tmp/discourse-clone \
-    && bundle install --deployment \
+    && bundle config set deployment && \
+    && bundle install \
     && rm -rf /home/discourse/.bundle/gems/ruby/*/cache/*
 
 # Warm global yarn cache
