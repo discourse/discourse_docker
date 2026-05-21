@@ -35,12 +35,6 @@ RUN /tmp/install-chrome &&\
 
 FROM with_browsers AS release
 
-# Pin playwright's browser cache to a fixed path so consumers that run the
-# container as a different user (e.g. GitHub Actions runs as root with
-# HOME=/github/home) still find the pre-installed chromium binary instead
-# of re-downloading it.
-ENV PLAYWRIGHT_BROWSERS_PATH=/home/discourse/.cache/ms-playwright
-
 RUN cd /var/www/discourse &&\
     sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
     sudo -E -u discourse -H /bin/bash -c 'CI=1 pnpm install'
