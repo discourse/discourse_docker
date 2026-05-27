@@ -46,7 +46,7 @@ FROM builder AS oxipng-builder
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
-FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-dependencies
+FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-base
 
 ARG DEBIAN_RELEASE
 ARG PG_MAJOR=15
@@ -162,7 +162,7 @@ RUN rm -f /etc/service
 COPY etc/  /etc
 COPY sbin/ /sbin
 
-FROM discourse-runtime-dependencies AS discourse-dependencies
+FROM discourse-runtime-base AS discourse-build-base
 RUN --mount=type=tmpfs,target=/var/log \
   --mount=type=tmpfs,target=/var/cache/apt \
   --mount=type=tmpfs,target=/var/lib/apt \
@@ -179,7 +179,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     libreadline-dev \
     libunwind-dev
 
-FROM discourse-dependencies AS discourse-slim
+FROM discourse-build-base AS discourse-slim
 ARG DISCOURSE_BRANCH=main
 
 # Discourse specific bits
