@@ -46,7 +46,7 @@ FROM builder AS oxipng-builder
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
-FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse_dependencies
+FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-dependencies
 
 ARG DEBIAN_RELEASE
 ARG PG_MAJOR=15
@@ -172,14 +172,14 @@ RUN rm -f /etc/service
 COPY etc/  /etc
 COPY sbin/ /sbin
 
-FROM discourse_dependencies AS discourse_slim
+FROM discourse-dependencies AS discourse-slim
 ARG DISCOURSE_BRANCH=main
 
 # Discourse specific bits
 RUN install -dm 0755 -o discourse -g discourse /var/www/discourse &&\
     sudo -u discourse git clone --branch $DISCOURSE_BRANCH --filter=tree:0 https://github.com/discourse/discourse.git /var/www/discourse
 
-FROM discourse_slim AS discourse_web_only
+FROM discourse-slim AS discourse-web-only
 ENV RAILS_ENV=production
 
 RUN cd /var/www/discourse &&\
@@ -193,7 +193,7 @@ RUN cd /var/www/discourse &&\
 RUN cd /var/www/discourse &&\
     sudo -u discourse /bin/bash -c 'if [ -f yarn.lock ]; then yarn install --frozen-lockfile && yarn cache clean; else pnpm install --frozen-lockfile; fi'
 
-FROM discourse_web_only AS discourse_release
+FROM discourse-web-only AS discourse-release
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
   postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
