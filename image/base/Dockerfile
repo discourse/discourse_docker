@@ -80,7 +80,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     gawk anacron wget \
     psmisc whois brotli \
     pngcrush pngquant ripgrep poppler-utils \
-    catdoc antiword \
+    catdoc antiword parallel \
 # nginx runtime dependencies
     libpcre3 zlib1g \
 # imagemagick runtime dependencies
