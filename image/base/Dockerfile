@@ -46,7 +46,7 @@ FROM builder AS oxipng-builder
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
-FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-dependencies
+FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-dependencies
 
 ARG DEBIAN_RELEASE
 ARG PG_MAJOR=15
@@ -81,16 +81,6 @@ RUN --mount=type=tmpfs,target=/var/log \
     psmisc whois brotli \
     pngcrush pngquant ripgrep poppler-utils \
     catdoc antiword \
-# gem build dependencies
-    cmake g++ pkg-config patch \
-    libtool \
-    libxslt-dev \
-    libcurl4-openssl-dev \
-    libssl-dev \
-    libyaml-dev \
-    libxml2-dev \
-    libreadline-dev \
-    libunwind-dev \
 # nginx runtime dependencies
     libpcre3 zlib1g \
 # imagemagick runtime dependencies
@@ -171,6 +161,23 @@ RUN rm -f /etc/service
 
 COPY etc/  /etc
 COPY sbin/ /sbin
+
+FROM discourse-runtime-dependencies AS discourse-dependencies
+RUN --mount=type=tmpfs,target=/var/log \
+  --mount=type=tmpfs,target=/var/cache/apt \
+  --mount=type=tmpfs,target=/var/lib/apt \
+    echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
+    apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+# gem build dependencies
+    cmake g++ pkg-config patch \
+    libtool \
+    libxslt-dev \
+    libcurl4-openssl-dev \
+    libssl-dev \
+    libyaml-dev \
+    libxml2-dev \
+    libreadline-dev \
+    libunwind-dev
 
 FROM discourse-dependencies AS discourse-slim
 ARG DISCOURSE_BRANCH=main
