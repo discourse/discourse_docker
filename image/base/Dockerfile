@@ -23,7 +23,7 @@ FROM builder AS imagemagick_builder
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
-FROM builder AS nginx_builder
+FROM builder AS nginx-builder
 # From https://nginx.org/en/pgp_keys.html
 ADD nginx_public_keys.key /tmp/nginx_public_keys.key
 ADD install-nginx /tmp/install-nginx
@@ -31,18 +31,18 @@ RUN gpg --import /tmp/nginx_public_keys.key &&\
   rm /tmp/nginx_public_keys.key &&\
   /tmp/install-nginx
 
-FROM builder AS thpoff_builder
+FROM builder AS thpoff-builder
 # This tool allows us to disable huge page support for our current process
 # since the flag is preserved through forks and execs it can be used on any
 # process
 ADD thpoff.c /src/thpoff.c
 RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
 
-FROM builder AS jemalloc_builder
+FROM builder AS jemalloc-builder
 ADD install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
 
-FROM builder AS oxipng_builder
+FROM builder AS oxipng-builder
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
@@ -74,8 +74,9 @@ RUN --mount=type=tmpfs,target=/var/log \
   --mount=type=tmpfs,target=/var/lib/apt \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-    gnupg sudo curl fping locales \
-    ca-certificates rsync \
+# discourse runtime requirements
+  gnupg sudo curl fping locales \
+  ca-certificates rsync \
     gawk anacron wget \
     psmisc whois brotli \
     pngcrush pngquant ripgrep poppler-utils \
@@ -132,7 +133,7 @@ RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
 RUN --mount=type=tmpfs,target=/root/.npm \
     npm install -g pnpm@10
 
-COPY --from=nginx_builder /usr/sbin/nginx /usr/sbin
+COPY --from=nginx-builder /usr/sbin/nginx /usr/sbin
 
 # Copy binary and configuration files for magick
 COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
@@ -153,10 +154,10 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
   test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
-COPY --from=thpoff_builder /usr/local/sbin/thpoff /usr/local/sbin
-COPY --from=jemalloc_builder /usr/lib/libjemalloc.so /usr/lib
-COPY --from=oxipng_builder /usr/local/bin/jhead /usr/local/bin
-COPY --from=oxipng_builder /usr/local/bin/oxipng /usr/local/bin
+COPY --from=thpoff-builder /usr/local/sbin/thpoff /usr/local/sbin
+COPY --from=jemalloc-builder /usr/lib/libjemalloc.so /usr/lib
+COPY --from=oxipng-builder /usr/local/bin/jhead /usr/local/bin
+COPY --from=oxipng-builder /usr/local/bin/oxipng /usr/local/bin
 
 ADD install-redis /tmp/install-redis
 
