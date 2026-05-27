@@ -98,11 +98,6 @@ RUN --mount=type=tmpfs,target=/var/log \
     install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
     echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${DEBIAN_RELEASE}-pgdg main" > /etc/apt/sources.list.d/pgdg.list; \
-# yarn packages
-    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -; \
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list; \
-# node packages
-    curl --silent --location https://deb.nodesource.com/setup_22.x | sudo bash -; \
 # setup anacron, rsyslog, initctl
     sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron; \
     sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf; \
@@ -110,8 +105,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     dpkg-divert --local --rename --add /sbin/initctl; \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
-    libpq-dev postgresql-client-${PG_MAJOR} \
-    nodejs yarn &&\
+    libpq-dev postgresql-client-${PG_MAJOR} &&\
     mkdir -p /etc/runit/1.d
 
 ENV LC_ALL=en_US.UTF-8
@@ -119,9 +113,6 @@ ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US.UTF-8
 RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
     locale-gen
-
-RUN --mount=type=tmpfs,target=/root/.npm \
-    npm install -g pnpm@10
 
 COPY --from=nginx-builder /usr/sbin/nginx /usr/sbin
 
@@ -166,6 +157,11 @@ FROM discourse-runtime-base AS discourse-build-base
 RUN --mount=type=tmpfs,target=/var/log \
   --mount=type=tmpfs,target=/var/cache/apt \
   --mount=type=tmpfs,target=/var/lib/apt \
+# yarn packages
+    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -; \
+    echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list; \
+# node packages
+    curl --silent --location https://deb.nodesource.com/setup_22.x | sudo bash -; \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
 # gem build dependencies
@@ -177,7 +173,12 @@ RUN --mount=type=tmpfs,target=/var/log \
     libyaml-dev \
     libxml2-dev \
     libreadline-dev \
-    libunwind-dev
+    libunwind-dev \
+# node
+    nodejs yarn
+# pnpm
+RUN --mount=type=tmpfs,target=/root/.npm \
+    npm install -g pnpm@10
 
 FROM discourse-build-base AS discourse-slim
 ARG DISCOURSE_BRANCH=main
