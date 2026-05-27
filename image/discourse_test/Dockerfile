@@ -13,8 +13,7 @@ RUN sudo -E -u discourse -H git config --global user.email "you@example.com" &&\
 # Include postgres and redis on test images
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
-  parallel
+  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
 RUN /tmp/install-redis
 
 RUN chown -R discourse . &&\
