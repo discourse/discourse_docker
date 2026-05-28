@@ -95,6 +95,7 @@ run:
 
   - exec:
       cd: $home
+      tag: build
       hook: code
       cmd:
         - sudo -H -E -u discourse git clean -f
@@ -186,6 +187,7 @@ run:
 
   - exec:
       cd: $home
+      tag: build
       hook: yarn
       cmd:
         - |-
@@ -201,6 +203,7 @@ run:
 
   - exec:
       cd: $home
+      tag: build
       hook: bundle_exec
       cmd:
         - su discourse -c 'bundle install --jobs $(($(nproc) - 1)) --retry 3'
