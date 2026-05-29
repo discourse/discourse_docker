@@ -2,15 +2,27 @@ require 'pty'
 require 'optparse'
 
 images = {
-  base_deps_amd64: {
+  base_runtime_deps_amd64: {
+    name: 'base',
+    tag: 'discourse/base:build_runtime_deps_amd64',
+    extra_args: '--target discourse-runtime-base'
+  },
+  base_runtime_deps_arm64: {
+    name: 'base',
+    tag: 'discourse/base:build_runtime_deps_arm64',
+    extra_args: '--platform linux/arm64 --target discourse-runtime-base'
+  },
+  base_build_deps_amd64: {
     name: 'base',
     tag: 'discourse/base:build_deps_amd64',
-    extra_args: '--target discourse-build-base'
+    extra_args: '--target discourse-build-base',
+    use_cache: true
   },
-  base_deps_arm64: {
+  base_build_deps_arm64: {
     name: 'base',
     tag: 'discourse/base:build_deps_arm64',
-    extra_args: '--platform linux/arm64 --target discourse-build-base'
+    extra_args: '--platform linux/arm64 --target discourse-build-base',
+    use_cache: true
   },
   base_slim_main_amd64: {
     name: 'base',
@@ -20,7 +32,7 @@ images = {
   },
   base_slim_stable_amd64: {
     name: 'base',
-    tag: 'discourse/base:build_slim_main_amd64',
+    tag: 'discourse/base:build_slim_stable_amd64',
     extra_args: '--target discourse-slim --build-arg="DISCOURSE_BRANCH=stable"',
     use_cache: true
   },
