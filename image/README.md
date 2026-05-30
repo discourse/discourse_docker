@@ -2,22 +2,45 @@
 
 ## Building new images
 
-To build a new image, just run `ruby auto_build.rb image-name`. The build process will build a local image with a predefined tag.
+To build a new image, just run `docker bake target`. The build process will build a local image with predefined tags.
 
-Images and tag names are defined [here](https://github.com/discourse/discourse_docker/blob/main/image/auto_build.rb#L6-L88).
+See [docker bake](docs.docker.com/build/bake) for more details.
 
-> **A note about --squash**: By default we squash the images we serve on Docker Hub. You will need to [enable experimental features](https://github.com/docker/docker-ce/blob/master/components/cli/experimental/README.md) on your Docker daemon for that.
+Images and tag names are defined in docker-bake.hcl in this repository.
 
+### Docker bake environment variables
+
+`TIMESTAMP` - timestamp in `YYYYMMDD-HHmm` (RFC 3339) format.
+`ARCH` - image architecture. arm64 or amd64.
+`BASE_REPO` - base image repository. `discourse/base`
+`TEST_REPO` - test image repository. `discourse/discourse_test`
+`SETUP_WIZARD_REPO` - setup wizard image repository. `discourse/setup-wizard`
+`DEV_REPO` - dev image repository. `discourse/discourse_dev`
 
 ## More about the images
 
-See both `auto_build.rb` and the respective `Dockerfile`s for details on _how_ all of this happens.
-
+See both `docker-bake.hcl` and the respective `Dockerfile`s for details on _how_ all of this happens.
 
 ### base ([discourse/base](https://hub.docker.com/r/discourse/base/))
 
 All of the dependencies for running Discourse.  This includes runit, postgres, nginx, ruby, imagemagick, etc.  It also includes the creation of the "discourse" user and `/var/www` directory.
 
+This image has the following tag varieties:
+
+#### runtime-deps
+Runtime dependencies only.
+
+#### build-deps
+Everything above, plus build tools to build Discourse. Includes compiling tools for gems, node, and pnpm.
+
+#### slim
+Everything above, plus Discourse clone. Includes both main and esr varieties.
+
+#### web-only
+Everything above, plus gems and node modules.
+
+#### release
+Everything above, plus redis and postgres.
 
 ### discourse_dev ([discourse/discourse_dev](https://hub.docker.com/r/discourse/discourse_dev/))
 
@@ -29,3 +52,18 @@ Note that the discourse user is granted "sudo" permission without asking for a p
 ### discourse_test ([discourse/discourse_test](https://hub.docker.com/r/discourse/discourse_test/))
 
 Builds on the discourse image and adds testing tools and a default testing entrypoint.
+
+## Github actions variables
+
+The following environment variables are necessary to run the github actions for image builds
+
+`AMD64_RUNNER` - Github actions runner for AMD64 image versions
+`ARM64_RUNNER` - Github actions runner for ARM64 image versions
+`BASE_REPO` - Docker repository for discourse base image builds
+`DEV_REPO` - Docker repository for discourse dev image builds
+`TEST_REPO` - Docker repository for discourse test image builds
+`SETUP_WIZARD_REPO` - Docker repository for discourse setup wizard image builds
+`WEB_ONLY_REPO` - Docker repository for discourse web-only image builds
+`DOCKERHUB_USERNAME` - docker registry username
+`DOCKERHUB_PASSWORD` - docker registry password
+`SKIP_TESTS` - Flag to skip tests. Set to 1 to skip full tests before images pushes.

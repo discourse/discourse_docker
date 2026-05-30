@@ -1,6 +1,6 @@
-ARG from_tag=build
+ARG from_tag=discourse/base:build
 
-FROM discourse/base:$from_tag AS base
+FROM $from_tag AS base
 ENV RAILS_ENV test
 
 WORKDIR /var/www/discourse

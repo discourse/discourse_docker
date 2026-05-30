@@ -7,7 +7,7 @@ on:
 
 env:
   BUILDKIT_PROGRESS: plain
-  DOCKER_REPO: discourse/discourse
+  DOCKER_REPO: ${{ vars.WEB_ONLY_REPO }}
 
 jobs:
   version:
