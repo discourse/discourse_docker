@@ -30,7 +30,7 @@ variable "VERSION" {
   default = "2.0"
 }
 
-group "base-push-tags" {
+group "base" {
   targets = ["base-slim", "base-web-only", "base-release"]
 }
 

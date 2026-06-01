@@ -96,7 +96,7 @@ jobs:
       - name: push to dockerhub
         if: github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)
         run: |
-          docker buildx bake base-push-tags --push
+          docker buildx bake base --push
 
       - name: Push discourse_base:aarch64 image for backwards compatibility
         if: (github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)) && (matrix.arch == 'arm64')
