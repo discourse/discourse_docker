@@ -1,5 +1,5 @@
 variable "TIMESTAMP" {
-  default = "${formatdate("YYYYMMDD-HHmm", timestamp())}"
+  default = ""
 }
 
 variable "ARCH" {
@@ -40,7 +40,9 @@ target "base-runtime-deps" {
     arch = ARCH_ARRAY
   }
   context = "./base"
-  tags = ["${BASE_REPO}:runtime-deps-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-runtime-deps-${arch}"]
+  tags = (notequal("", TIMESTAMP) ?
+    ["${BASE_REPO}:runtime-deps-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-runtime-deps-${arch}"] :
+    ["${BASE_REPO}:runtime-deps-${arch}"])
   target = "discourse-runtime-base"
   platforms = ["linux/${arch}"]
 }
@@ -51,7 +53,9 @@ target "base-build-deps" {
     arch = ARCH_ARRAY
   }
   context = "./base"
-  tags = ["${BASE_REPO}:build-deps-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-build-deps-${arch}"]
+  tags = (notequal("", TIMESTAMP) ?
+    ["${BASE_REPO}:build-deps-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-build-deps-${arch}"]
+    ["${BASE_REPO}:build-deps-${arch}"])
   target = "discourse-build-base"
   platforms = ["linux/${arch}"]
 }
@@ -63,7 +67,9 @@ target "base-slim" {
     branch = ["main", "esr"]
   }
   context = "./base"
-  tags = ["${BASE_REPO}:slim-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-slim-${branch}-${arch}"]
+  tags = (notequal("", TIMESTAMP) ?
+    ["${BASE_REPO}:slim-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-slim-${branch}-${arch}"]
+    ["${BASE_REPO}:slim-${branch}-${arch}"])
   target = "discourse-slim"
   platforms = ["linux/${arch}"]
   args = {
@@ -78,7 +84,9 @@ target "base-web-only" {
     branch = ["main", "esr"]
   }
   context = "./base"
-  tags = ["${BASE_REPO}:web-only-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-web-only-${branch}-${arch}"]
+  tags = (notequal("", TIMESTAMP) ?
+    ["${BASE_REPO}:web-only-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-web-only-${branch}-${arch}"]
+    ["${BASE_REPO}:web-only-${branch}-${arch}"])
   target = "discourse-web-only"
   platforms = ["linux/${arch}"]
   args = {
@@ -93,7 +101,9 @@ target "base-release" {
     branch = ["main", "esr"]
   }
   context = "./base"
-  tags = ["${BASE_REPO}:release-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-${branch}-${arch}"]
+  tags = (notequal("", TIMESTAMP) ?
+    ["${BASE_REPO}:release-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-${branch}-${arch}"]
+    ["${BASE_REPO}:release-${branch}-${arch}"])
   target = "discourse-release"
   platforms = ["linux/${arch}"]
   args = {
@@ -126,7 +136,9 @@ target "dev" {
     branch = ["main"]
   }
   context = "./discourse_dev"
-  tags = ["${DEV_REPO}:release-${arch}", "${DEV_REPO}:${TIMESTAMP}-${arch}"]
+  tags = (notequal("", TIMESTAMP) ?
+    ["${DEV_REPO}:release-${arch}", "${DEV_REPO}:${TIMESTAMP}-${arch}"]
+    ["${DEV_REPO}:release-${arch}"])
   platforms = ["linux/${arch}"]
   args = {
     "from_tag" = "from"
