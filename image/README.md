@@ -59,16 +59,14 @@ Builds on the discourse image and adds testing tools and a default testing entry
 
 ## Github actions variables
 
-The following environment variables are necessary to run the github actions for image builds
-
-`AMD64_RUNNER` - Github actions runner for AMD64 image versions
-`ARM64_RUNNER` - Github actions runner for ARM64 image versions
-`BASE_REPO` - Docker repository for discourse base image builds
-`DEV_REPO` - Docker repository for discourse dev image builds
-`TEST_REPO` - Docker repository for discourse test image builds
-`SETUP_WIZARD_REPO` - Docker repository for discourse setup wizard image builds
-`WEB_ONLY_REPO` - Docker repository for discourse web-only image builds
-`DOCKERHUB_USERNAME` - docker registry username
-`DOCKERHUB_PASSWORD` - docker registry password
-`SKIP_TESTS` - Flag to skip tests. Set to 1 to skip full tests before images pushes.
-`IMAGE_PUSH_BRANCH` - the environment branch to trigger image pushes for (eg, `main`).
+* `AMD64_RUNNER` - Github actions runner for AMD64 image versions
+* `ARM64_RUNNER` - Github actions runner for ARM64 image versions
+* `BASE_REPO` - Docker repository for discourse base image builds
+* `DEV_REPO` - Docker repository for discourse dev image builds
+* `TEST_REPO` - Docker repository for discourse test image builds
+* `SETUP_WIZARD_REPO` - Docker repository for discourse setup wizard image builds
+* `WEB_ONLY_REPO` - Docker repository for discourse web-only image builds
+* `DOCKERHUB_USERNAME` - docker registry username
+* `DOCKERHUB_PASSWORD` - docker registry password
+* `SKIP_TESTS` - Flag to skip tests. Set to 1 to skip full tests before images pushes.
+* `IMAGE_PUSH_BRANCH` - the environment branch to trigger image pushes for (eg, `main`).
