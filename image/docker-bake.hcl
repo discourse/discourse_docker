@@ -54,7 +54,7 @@ target "base-build-deps" {
   }
   context = "./base"
   tags = (notequal("", TIMESTAMP) ?
-    ["${BASE_REPO}:build-deps-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-build-deps-${arch}"]
+    ["${BASE_REPO}:build-deps-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-build-deps-${arch}"] :
     ["${BASE_REPO}:build-deps-${arch}"])
   target = "discourse-build-base"
   platforms = ["linux/${arch}"]
@@ -68,7 +68,7 @@ target "base-slim" {
   }
   context = "./base"
   tags = (notequal("", TIMESTAMP) ?
-    ["${BASE_REPO}:slim-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-slim-${branch}-${arch}"]
+    ["${BASE_REPO}:slim-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-slim-${branch}-${arch}"] :
     ["${BASE_REPO}:slim-${branch}-${arch}"])
   target = "discourse-slim"
   platforms = ["linux/${arch}"]
@@ -85,7 +85,7 @@ target "base-web-only" {
   }
   context = "./base"
   tags = (notequal("", TIMESTAMP) ?
-    ["${BASE_REPO}:web-only-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-web-only-${branch}-${arch}"]
+    ["${BASE_REPO}:web-only-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-web-only-${branch}-${arch}"] :
     ["${BASE_REPO}:web-only-${branch}-${arch}"])
   target = "discourse-web-only"
   platforms = ["linux/${arch}"]
@@ -102,7 +102,7 @@ target "base-release" {
   }
   context = "./base"
   tags = (notequal("", TIMESTAMP) ?
-    ["${BASE_REPO}:release-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-${branch}-${arch}"]
+    ["${BASE_REPO}:release-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-${branch}-${arch}"] :
     ["${BASE_REPO}:release-${branch}-${arch}"])
   target = "discourse-release"
   platforms = ["linux/${arch}"]
@@ -137,7 +137,7 @@ target "dev" {
   }
   context = "./discourse_dev"
   tags = (notequal("", TIMESTAMP) ?
-    ["${DEV_REPO}:release-${arch}", "${DEV_REPO}:${TIMESTAMP}-${arch}"]
+    ["${DEV_REPO}:release-${arch}", "${DEV_REPO}:${TIMESTAMP}-${arch}"] :
     ["${DEV_REPO}:release-${arch}"])
   platforms = ["linux/${arch}"]
   args = {
