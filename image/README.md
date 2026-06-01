@@ -2,7 +2,9 @@
 
 ## Building new images
 
-To build a new image, just run `docker bake target`. The build process will build a local image with predefined tags.
+To build a new image, just run `docker bake {target}`. The build process will build a local image with predefined tags.
+
+Run `docker bake --list targets` to see the list of valid targets.
 
 See [docker bake](docs.docker.com/build/bake) for more details.
 
@@ -10,12 +12,14 @@ Images and tag names are defined in docker-bake.hcl in this repository.
 
 ### Docker bake environment variables
 
-`TIMESTAMP` - timestamp in `YYYYMMDD-HHmm` (RFC 3339) format.
-`ARCH` - image architecture. arm64 or amd64.
-`BASE_REPO` - base image repository. `discourse/base`
-`TEST_REPO` - test image repository. `discourse/discourse_test`
-`SETUP_WIZARD_REPO` - setup wizard image repository. `discourse/setup-wizard`
-`DEV_REPO` - dev image repository. `discourse/discourse_dev`
+| Variable | description | default |
+|---|---|---|
+| `TIMESTAMP` | timestamp in `YYYYMMDD-HHmm` (RFC 3339) format for timestamp tagged images. Omits timestamped images if unset. ||
+| `ARCH` | image architecture | `amd64,arm64` |
+| `BASE_REPO` | base image repository | `local_discourse/base` |
+| `TEST_REPO` | test image repository | `local_discourse/discourse_test` |
+| `SETUP_WIZARD_REPO` | setup wizard image repository | `local_discourse/setup-wizard` |
+| `DEV_REPO` | dev image repository | `local_discourse/discourse_dev` |
 
 ## More about the images
 
