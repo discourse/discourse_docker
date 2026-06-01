@@ -3,35 +3,27 @@ variable "TIMESTAMP" {
 }
 
 variable "ARCH" {
-  default = "arm64"
+  default = "amd64,arm64"
+}
+
+variable "ARCH_ARRAY" {
+  default = split(",", ARCH)
 }
 
 variable "BASE_REPO" {
-  validation {
-    condition = BASE_REPO != ""
-    error_message = "BASE_REPO not set!"
-  }
+  default = "local_discourse/base"
 }
 
 variable "TEST_REPO" {
-  validation {
-    condition = TEST_REPO != ""
-    error_message = "TEST_REPO not set!"
-  }
+  default = "local_discourse/discourse_test"
 }
 
 variable "SETUP_WIZARD_REPO" {
-  validation {
-    condition = SETUP_WIZARD_REPO != ""
-    error_message = "SETUP_WIZARD_REPO not set!"
-  }
+  default = "local_discourse/setup-wizard"
 }
 
 variable "DEV_REPO" {
-  validation {
-    condition = DEV_REPO != ""
-    error_message = "DEV_REPO not set!"
-  }
+  default = "local_discourse/discourse_dev"
 }
 
 variable "VERSION" {
@@ -45,7 +37,7 @@ group "base-push-tags" {
 target "base-runtime-deps" {
   name = "base-runtime-deps-${arch}"
   matrix = {
-    arch = [ARCH]
+    arch = ARCH_ARRAY
   }
   context = "./base"
   tags = ["${BASE_REPO}:runtime-deps-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-runtime-deps-${arch}"]
@@ -56,7 +48,7 @@ target "base-runtime-deps" {
 target "base-build-deps" {
   name = "base-build-deps-${arch}"
   matrix = {
-    arch = [ARCH]
+    arch = ARCH_ARRAY
   }
   context = "./base"
   tags = ["${BASE_REPO}:build-deps-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-build-deps-${arch}"]
@@ -67,7 +59,7 @@ target "base-build-deps" {
 target "base-slim" {
   name = "base-slim-${branch}-${arch}"
   matrix = {
-    arch = [ARCH]
+    arch = ARCH_ARRAY
     branch = ["main", "esr"]
   }
   context = "./base"
@@ -82,7 +74,7 @@ target "base-slim" {
 target "base-web-only" {
   name = "base-web-only-${branch}-${arch}"
   matrix = {
-    arch = [ARCH]
+    arch = ARCH_ARRAY
     branch = ["main", "esr"]
   }
   context = "./base"
@@ -97,7 +89,7 @@ target "base-web-only" {
 target "base-release" {
   name = "base-release-${branch}-${arch}"
   matrix = {
-    arch = [ARCH]
+    arch = ARCH_ARRAY
     branch = ["main", "esr"]
   }
   context = "./base"
@@ -113,7 +105,7 @@ target "base-release" {
 target "base-test" {
   name = "base-test-${arch}"
   matrix = {
-    arch = [ARCH]
+    arch = ARCH_ARRAY
     branch = ["main"]
   }
   context = "./discourse_test"
@@ -130,7 +122,7 @@ target "base-test" {
 target "dev" {
   name = "dev-${arch}"
   matrix = {
-    arch = [ARCH]
+    arch = ARCH_ARRAY
     branch = ["main"]
   }
   context = "./discourse_dev"
@@ -148,7 +140,7 @@ target "dev" {
 target "setup-wizard" {
   name = "setup-wizard-${arch}"
   matrix = {
-    arch = [ARCH]
+    arch = ARCH_ARRAY
   }
   context = "./setup_wizard"
   tags = ["${SETUP_WIZARD_REPO}:release-${arch}"]
