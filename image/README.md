@@ -6,7 +6,7 @@ To build a new image, just run `docker bake {target}`. The build process will bu
 
 Run `docker bake --list targets` to see the list of valid targets.
 
-See [docker bake](docs.docker.com/build/bake) for more details.
+See [docker bake](https://docs.docker.com/build/bake) for more details.
 
 Images and tag names are defined in docker-bake.hcl in this repository.
 
