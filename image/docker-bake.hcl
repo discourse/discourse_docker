@@ -64,7 +64,7 @@ target "base-slim" {
   name = "base-slim-${branch}-${arch}"
   matrix = {
     arch = ARCH_ARRAY
-    branch = ["main", "esr"]
+    branch = ["main", "stable"]
   }
   context = "./base"
   tags = (notequal("", TIMESTAMP) ?
@@ -81,7 +81,7 @@ target "base-web-only" {
   name = "base-web-only-${branch}-${arch}"
   matrix = {
     arch = ARCH_ARRAY
-    branch = ["main", "esr"]
+    branch = ["main", "stable"]
   }
   context = "./base"
   tags = (notequal("", TIMESTAMP) ?
@@ -98,7 +98,7 @@ target "base-release" {
   name = "base-release-${branch}-${arch}"
   matrix = {
     arch = ARCH_ARRAY
-    branch = ["main", "esr"]
+    branch = ["main", "stable"]
   }
   context = "./base"
   tags = (notequal("", TIMESTAMP) ?

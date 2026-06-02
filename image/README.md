@@ -38,7 +38,7 @@ Runtime dependencies only.
 Everything above, plus build tools to build Discourse. Includes compiling tools for gems, node, and pnpm.
 
 #### slim
-Everything above, plus Discourse clone. Includes both main and esr varieties.
+Everything above, plus Discourse clone. Includes both main and stable/esr varieties.
 
 #### web-only
 Everything above, plus gems and node modules.

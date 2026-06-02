@@ -167,35 +167,35 @@ jobs:
             ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-main-amd64 \
             ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-main-arm64
 
-          # Web-Only `esr` timestamped
-          docker buildx imagetools create -t ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-esr \
-            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-esr-amd64 \
-            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-esr-arm64
+          # Web-Only `stable` timestamped
+          docker buildx imagetools create -t ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-stable \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-stable-amd64 \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-stable-arm64
 
-          # Web-Only `esr` release
-          docker buildx imagetools create -t ${BASE_REPO}:web-only-esr \
-            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-esr-amd64 \
-            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-esr-arm64
+          # Web-Only `stable` release
+          docker buildx imagetools create -t ${BASE_REPO}:web-only-stable \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-stable-amd64 \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-web-only-stable-arm64
 
           # Full Discourse `main` branch timestamped
           docker buildx imagetools create -t ${BASE_REPO}:2.0.${{ env.TIMESTAMP }} \
             ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-main-amd64 \
             ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-main-arm64
 
-          # Full Discourse `esr` branch timestamped
-          docker buildx imagetools create -t ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-esr \
-            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-esr-amd64 \
-            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-esr-arm64
+          # Full Discourse `stable` branch timestamped
+          docker buildx imagetools create -t ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-stable \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-stable-amd64 \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-stable-arm64
 
           # Full Discourse `main` branch release
           docker buildx imagetools create -t ${BASE_REPO}:release \
             ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-main-amd64 \
             ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-main-arm64
 
-          # Full Discourse `esr` branch release
-          docker buildx imagetools create -t ${BASE_REPO}:release-esr \
-            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-esr-amd64 \
-            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-esr-arm64
+          # Full Discourse `stable` branch release
+          docker buildx imagetools create -t ${BASE_REPO}:release-stable \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-stable-amd64 \
+            ${BASE_REPO}:2.0.${{ env.TIMESTAMP }}-stable-arm64
 
           # Dev timestamped
           docker buildx imagetools create -t ${DEV_REPO}:${{ env.TIMESTAMP }} \
