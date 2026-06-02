@@ -82,6 +82,7 @@ jobs:
           docker run --rm -e RUBY_ONLY=1 -e USE_TURBO=1 -e SKIP_PLUGINS=1 -e SKIP_LINT=1 -e DISCOURSE_TURBO_RSPEC_RETRY_AND_LOG_FLAKY_TESTS=1 ${TEST_REPO}:build-${{ matrix.arch }}
 
       - name: Build and push dev image
+        if: github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)
         run: |
           docker buildx bake dev --push --allow=fs.read=../templates
 
