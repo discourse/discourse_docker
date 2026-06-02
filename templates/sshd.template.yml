@@ -1,6 +1,0 @@
-# This file is deprecated; you can remove it from your app.yml
-# TODO(2026-01-01): Remove this file
-run: 
-  - exec: |-
-      echo "Deprecation warning: sshd is no longer supported"
-      echo "Remove templates/sshd.template.yml from your containers/*.yml files"
