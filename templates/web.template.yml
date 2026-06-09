@@ -1,4 +1,4 @@
-base_image: discourse/base:2.0.20260521-0047
+base_image: discourse/base:2.0.20260609-1222
 env:
   # You can have redis on a different box
   RAILS_ENV: 'production'
@@ -32,16 +32,16 @@ run:
   # TODO: move to base image (anacron can not be fired up using rc.d)
   - exec: rm -f /etc/cron.d/anacron
   - file:
-     path: /etc/cron.d/anacron
-     contents: |
+      path: /etc/cron.d/anacron
+      contents: |
         SHELL=/bin/sh
         PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
         30 7    * * *   root	/usr/sbin/anacron -s >/dev/null
   - file:
-     path: /etc/runit/1.d/copy-env
-     chmod: "+x"
-     contents: |
+      path: /etc/runit/1.d/copy-env
+      chmod: "+x"
+      contents: |
         #!/bin/bash
         env > ~/boot_env
         conf=/var/www/discourse/config/discourse.conf
@@ -50,9 +50,9 @@ run:
         /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = '\''#{v}'\''" if k =~ /^DISCOURSE_(.*)/}' | install -m 600 -o discourse /dev/stdin ${conf}
 
   - file:
-     path: /etc/service/unicorn/run
-     chmod: "+x"
-     contents: |
+      path: /etc/service/unicorn/run
+      chmod: "+x"
+      contents: |
         #!/bin/bash
         exec 2>&1
         # redis
@@ -72,26 +72,26 @@ run:
         LD_PRELOAD=$RUBY_ALLOCATOR HOME=/home/discourse USER=discourse exec thpoff chpst -u discourse:www-data -U discourse:www-data bundle exec config/unicorn_launcher -E production -c config/unicorn.conf.rb
 
   - file:
-     path: /etc/service/nginx/run
-     chmod: "+x"
-     contents: |
+      path: /etc/service/nginx/run
+      chmod: "+x"
+      contents: |
         #!/bin/sh
         exec 2>&1
         exec /usr/sbin/nginx
 
   - file:
-     path: /etc/runit/3.d/01-nginx
-     chmod: "+x"
-     contents: |
-       #!/bin/bash
-       sv stop nginx
+      path: /etc/runit/3.d/01-nginx
+      chmod: "+x"
+      contents: |
+        #!/bin/bash
+        sv stop nginx
 
   - file:
-     path: /etc/runit/3.d/02-unicorn
-     chmod: "+x"
-     contents: |
-       #!/bin/bash
-       sv stop unicorn
+      path: /etc/runit/3.d/02-unicorn
+      chmod: "+x"
+      contents: |
+        #!/bin/bash
+        sv stop unicorn
 
   - exec:
       cd: $home
@@ -254,52 +254,52 @@ run:
       to: "PRECOMPILE_ON_BOOT=0"
 
   - file:
-     path: /usr/local/bin/discourse
-     chmod: +x
-     contents: |
-       #!/bin/bash
-       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/discourse "$@")
+      path: /usr/local/bin/discourse
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/discourse "$@")
 
   - file:
-     path: /usr/local/bin/rails
-     chmod: +x
-     contents: |
-       #!/bin/bash
-       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/rails "$@")
+      path: /usr/local/bin/rails
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec script/rails "$@")
 
   - file:
-     path: /usr/local/bin/rake
-     chmod: +x
-     contents: |
-       #!/bin/bash
-       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec bin/rake "$@")
+      path: /usr/local/bin/rake
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec bin/rake "$@")
 
   - file:
-     path: /usr/local/bin/rbtrace
-     chmod: +x
-     contents: |
-       #!/bin/bash
-       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec rbtrace "$@")
+      path: /usr/local/bin/rbtrace
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec rbtrace "$@")
 
   - file:
-     path: /usr/local/bin/stackprof
-     chmod: +x
-     contents: |
-       #!/bin/bash
-       (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec stackprof "$@")
+      path: /usr/local/bin/stackprof
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        (cd /var/www/discourse && RAILS_ENV=production sudo -H -E -u discourse bundle exec stackprof "$@")
 
   - file:
-     path: /etc/update-motd.d/10-web
-     chmod: +x
-     contents: |
-       #!/bin/bash
-       echo
-       echo Use: rails, rake or discourse to execute commands in production
-       echo
+      path: /etc/update-motd.d/10-web
+      chmod: +x
+      contents: |
+        #!/bin/bash
+        echo
+        echo Use: rails, rake or discourse to execute commands in production
+        echo
 
   - file:
-     path: /etc/logrotate.d/rails
-     contents: |
+      path: /etc/logrotate.d/rails
+      contents: |
         /shared/log/rails/*.log
         {
                 rotate 7
@@ -313,8 +313,8 @@ run:
         }
 
   - file:
-     path: /etc/logrotate.d/nginx
-     contents: |
+      path: /etc/logrotate.d/nginx
+      contents: |
         /var/log/nginx/*.log {
           daily
           missingok
@@ -372,14 +372,14 @@ run:
         /bin/rm -f /var/www/discourse/tmp/pids/*.pid
   # change login directory to Discourse home
   - file:
-     path: /root/.bash_profile
-     chmod: 644
-     contents: |
+      path: /root/.bash_profile
+      chmod: 644
+      contents: |
         cd $home
 
   - file:
-     path: /usr/local/etc/ImageMagick-7/policy.xml
-     contents: |
+      path: /usr/local/etc/ImageMagick-7/policy.xml
+      contents: |
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE policymap [
           <!ELEMENT policymap (policy)+>
