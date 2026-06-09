@@ -15,7 +15,7 @@ apt -y -q remove imagemagick
 apt -y -q install git make gcc pkg-config autoconf curl g++ yasm cmake \
     libde265-0 libde265-dev ${LIBJPEGTURBO} libwebp7 x265 libx265-dev libtool \
     libpng16-16 libpng-dev libwebp-dev libgomp1 libaom-dev \
-    libwebpmux3 libwebpdemux2 ghostscript libxml2-dev libxml2-utils librsvg2-dev \
+    libwebpmux3 libwebpdemux2 libxml2-dev libxml2-utils librsvg2-dev \
     libltdl7-dev libbz2-dev gsfonts libtiff-dev libfreetype6-dev libjpeg-dev
 
 if cat /etc/issue | grep -qi Debian; then
