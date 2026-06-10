@@ -1,16 +1,15 @@
 on:
-#  push:
-#    branches:
-#      - main
+  push:
   schedule:
     - cron: "0 0 * * *"
 
 env:
   BUILDKIT_PROGRESS: plain
-  DOCKER_REPO: ${{ vars.WEB_ONLY_REPO }}
+  DOCKER_IMAGE: ${{ vars.WEB_ONLY_IMAGE }}
 
 jobs:
   version:
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)) }}
     runs-on: ubuntu-latest
     outputs:
       latest: ${{ steps.latest.outputs.version }}
@@ -47,6 +46,7 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
 
   push:
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)) }}
     strategy:
       matrix:
         version: [latest,esr]
@@ -55,8 +55,6 @@ jobs:
     needs: version
     env:
       ARCH: ${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
-      FLOATING_TAG: ${{ matrix.version == 'latest' && 'latest' || matrix.version }}-${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
-      TAG: ${{ matrix.version == 'esr' && needs.version.outputs.esr || needs.version.outputs.latest }}-${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,11 +85,23 @@ jobs:
           sed -Ei 's/^ *+#- "templates\/web.ssl.template.yml"/  - "templates\/web.ssl.template.yml"/' ./containers/web_only.yml
           sed -Ei 's/^ *+#- "templates\/web.letsencrypt.ssl.template.yml"/  - "templates\/web.letsencrypt.ssl.template.yml"/' ./containers/web_only.yml
           bin/launcher build web_only \
-            --tag ${{ env.DOCKER_REPO }}:${{ env.FLOATING_TAG }} \
-            --tag ${{ env.DOCKER_REPO }}:${{ env.TAG }} \
-            --push
+            --tag ${{ env.DOCKER_IMAGE }} \
+            --output=type=registry,push-by-digest=true \
+            --metadata-file=/tmp/out.json
+      - name: save image digests
+        id: metadata
+        run: |
+          ${{ matrix.version }}_${{ env.ARCH }}=$(jq -r '."containerimage.digest"' /tmp/out.json)
+          echo "${{ matrix.version }}_${{ env.ARCH }}=$${{ matrix.version }}_${{ env.ARCH }}"
+          echo "${{ matrix.version }}_${{ env.ARCH }}=$${{ matrix.version }}_${{ env.ARCH }}" >> $GITHUB_OUTPUT
+    outputs:
+      latest_amd64: ${{ steps.metadata.outputs.latest_amd64 }}
+      latest_arm64: ${{ steps.metadata.outputs.latest_arm64 }}
+      esr_amd64: ${{ steps.metadata.outputs.esr_amd64 }}
+      esr_arm64: ${{ steps.metadata.outputs.esr_arm64 }}
 
   manifest:
+    if: ${{ github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)) }}
     runs-on: ubuntu-latest
     needs: [version, push]
     steps:
@@ -103,19 +113,18 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: update manifest
         run: |
-          docker buildx imagetools create -t ${{ env.DOCKER_REPO }}:latest \
-            ${{ env.DOCKER_REPO }}:latest-amd64 \
-            ${{ env.DOCKER_REPO }}:latest-arm64
+          docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:latest \
+            ${{ needs.push.outputs.latest_amd64 }} \
+            ${{ needs.push.outputs.latest_arm64 }}
 
-          docker buildx imagetools create -t ${{ env.DOCKER_REPO }}:esr \
-            ${{ env.DOCKER_REPO }}:esr-amd64 \
-            ${{ env.DOCKER_REPO }}:esr-arm64
+          docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:esr \
+            ${{ needs.push.outputs.esr_amd64 }} \
+            ${{ needs.push.outputs.esr_arm64 }}
 
-          docker buildx imagetools create -t ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.latest }} \
-            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.latest }}-amd64 \
-            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.latest }}-arm64
+          docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:${{ needs.version.outputs.latest }} \
+            ${{ needs.push.outputs.latest_amd64 }} \
+            ${{ needs.push.outputs.latest_arm64 }}
 
-
-          docker buildx imagetools create -t ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.esr }} \
-            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.esr }}-amd64 \
-            ${{ env.DOCKER_REPO }}:${{ needs.version.outputs.esr }}-arm64
+          docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:${{ needs.version.outputs.esr }} \
+            ${{ needs.push.outputs.esr_amd64 }} \
+            ${{ needs.push.outputs.esr_arm64 }}

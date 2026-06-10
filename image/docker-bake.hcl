@@ -1,7 +1,3 @@
-variable "TIMESTAMP" {
-  default = ""
-}
-
 variable "ARCH" {
   default = "amd64,arm64"
 }
@@ -10,24 +6,20 @@ variable "ARCH_ARRAY" {
   default = split(",", ARCH)
 }
 
-variable "BASE_REPO" {
+variable "BASE_IMAGE" {
   default = "local_discourse/base"
 }
 
-variable "TEST_REPO" {
+variable "TEST_IMAGE" {
   default = "local_discourse/discourse_test"
 }
 
-variable "SETUP_WIZARD_REPO" {
+variable "SETUP_WIZARD_IMAGE" {
   default = "local_discourse/setup-wizard"
 }
 
-variable "DEV_REPO" {
+variable "DEV_IMAGE" {
   default = "local_discourse/discourse_dev"
-}
-
-variable "VERSION" {
-  default = "2.0"
 }
 
 group "base" {
@@ -40,9 +32,7 @@ target "base-runtime-deps" {
     arch = ARCH_ARRAY
   }
   context = "./base"
-  tags = (notequal("", TIMESTAMP) ?
-    ["${BASE_REPO}:runtime-deps-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-runtime-deps-${arch}"] :
-    ["${BASE_REPO}:runtime-deps-${arch}"])
+  tags = ["${BASE_IMAGE}:runtime-deps-${arch}"]
   target = "discourse-runtime-base"
   platforms = ["linux/${arch}"]
 }
@@ -53,9 +43,7 @@ target "base-build-deps" {
     arch = ARCH_ARRAY
   }
   context = "./base"
-  tags = (notequal("", TIMESTAMP) ?
-    ["${BASE_REPO}:build-deps-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-build-deps-${arch}"] :
-    ["${BASE_REPO}:build-deps-${arch}"])
+  tags = ["${BASE_IMAGE}:build-deps-${arch}"]
   target = "discourse-build-base"
   platforms = ["linux/${arch}"]
 }
@@ -67,9 +55,7 @@ target "base-slim" {
     branch = ["main", "stable"]
   }
   context = "./base"
-  tags = (notequal("", TIMESTAMP) ?
-    ["${BASE_REPO}:slim-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-slim-${branch}-${arch}"] :
-    ["${BASE_REPO}:slim-${branch}-${arch}"])
+  tags = ["${BASE_IMAGE}:slim-${branch}-${arch}"]
   target = "discourse-slim"
   platforms = ["linux/${arch}"]
   args = {
@@ -84,9 +70,7 @@ target "base-web-only" {
     branch = ["main", "stable"]
   }
   context = "./base"
-  tags = (notequal("", TIMESTAMP) ?
-    ["${BASE_REPO}:web-only-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-web-only-${branch}-${arch}"] :
-    ["${BASE_REPO}:web-only-${branch}-${arch}"])
+  tags = ["${BASE_IMAGE}:web-only-${branch}-${arch}"]
   target = "discourse-web-only"
   platforms = ["linux/${arch}"]
   args = {
@@ -101,9 +85,7 @@ target "base-release" {
     branch = ["main", "stable"]
   }
   context = "./base"
-  tags = (notequal("", TIMESTAMP) ?
-    ["${BASE_REPO}:release-${branch}-${arch}", "${BASE_REPO}:${VERSION}.${TIMESTAMP}-${branch}-${arch}"] :
-    ["${BASE_REPO}:release-${branch}-${arch}"])
+  tags = ["${BASE_IMAGE}:release-${branch}-${arch}"]
   target = "discourse-release"
   platforms = ["linux/${arch}"]
   args = {
@@ -112,57 +94,11 @@ target "base-release" {
 }
 
 # depends on raw arch image, canary build for test images when building base images
-target "base-test" {
-  name = "base-test-${arch}"
-  matrix = {
-    arch = ARCH_ARRAY
-    branch = ["main"]
-  }
-  context = "./discourse_test"
-  platforms = ["linux/${arch}"]
-  tags = ["${TEST_REPO}:build-${arch}"]
-  args = {
-    "from_tag" = "from"
-  }
-  contexts = {
-    from = "target:base-release-${branch}-${arch}"
-  }
-}
-
-target "dev" {
-  name = "dev-${arch}"
-  matrix = {
-    arch = ARCH_ARRAY
-    branch = ["main"]
-  }
-  context = "./discourse_dev"
-  tags = (notequal("", TIMESTAMP) ?
-    ["${DEV_REPO}:release-${arch}", "${DEV_REPO}:${TIMESTAMP}-${arch}"] :
-    ["${DEV_REPO}:release-${arch}"])
-  platforms = ["linux/${arch}"]
-  args = {
-    "from_tag" = "from"
-  }
-  contexts = {
-    from = "target:base-slim-${branch}-${arch}"
-    templates = "../templates"
-  }
-}
-
-target "setup-wizard" {
-  name = "setup-wizard-${arch}"
-  matrix = {
-    arch = ARCH_ARRAY
-  }
-  context = "./setup_wizard"
-  tags = ["${SETUP_WIZARD_REPO}:release-${arch}"]
-  platforms = ["linux/${arch}"]
-}
-
-# expects images with multiplatform manifests to already be tagged/pushed
 target "test" {
-  name = "test-${build_target.tag}"
+  name = "test-${build_target.tag}-${arch}"
   matrix = {
+    arch = ARCH_ARRAY
+    branch = ["main"]
     build_target = [
       {
         from_tag = "slim"
@@ -181,10 +117,42 @@ target "test" {
       }
     ]
   }
-  context = "./discourse_test"
-  tags = ["${TEST_REPO}:${build_target.tag}"]
   target = build_target.target_name
+  context = "./discourse_test"
+  platforms = ["linux/${arch}"]
+  tags = ["${TEST_IMAGE}:${build_target.tag}-${arch}"]
   args = {
-    "from_tag" = "${BASE_REPO}:${build_target.from_tag}"
+    "from_tag" = "from"
   }
+  contexts = {
+    from = "target:base-${build_target.from_tag}-${branch}-${arch}"
+  }
+}
+
+target "dev" {
+  name = "dev-${arch}"
+  matrix = {
+    arch = ARCH_ARRAY
+    branch = ["main"]
+  }
+  context = "./discourse_dev"
+  tags = ["${DEV_IMAGE}:release-${arch}"]
+  platforms = ["linux/${arch}"]
+  args = {
+    "from_tag" = "from"
+  }
+  contexts = {
+    from = "target:base-slim-${branch}-${arch}"
+    templates = "../templates"
+  }
+}
+
+target "setup-wizard" {
+  name = "setup-wizard-${arch}"
+  matrix = {
+    arch = ARCH_ARRAY
+  }
+  context = "./setup_wizard"
+  tags = ["${SETUP_WIZARD_IMAGE}:release-${arch}"]
+  platforms = ["linux/${arch}"]
 }
