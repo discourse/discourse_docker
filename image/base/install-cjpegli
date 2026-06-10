@@ -1,0 +1,51 @@
+#!/bin/bash
+set -e
+
+# cjpegli is safe_image's preferred encoder for generated JPEGs. It ships
+# with libjxl >= 0.9, which has no bookworm package, so build just the tool
+# from source with vendored dependencies (the binary stays self-contained;
+# no libjxl shared libraries are installed).
+# version check: https://github.com/libjxl/libjxl/releases
+LIBJXL_VERSION="0.11.2"
+LIBJXL_HASH="ab38928f7f6248e2a98cc184956021acb927b16a0dee71b4d260dc040a4320ea"
+
+WDIR=/tmp/libjxl
+
+# Install build deps (deps.sh fetches the pinned third_party trees via curl)
+apt -y -q install git cmake build-essential pkg-config wget curl ca-certificates
+
+mkdir -p $WDIR
+cd $WDIR
+
+wget -q -O $WDIR/libjxl.tar.gz "https://github.com/libjxl/libjxl/archive/refs/tags/v$LIBJXL_VERSION.tar.gz"
+sha256sum $WDIR/libjxl.tar.gz
+echo "$LIBJXL_HASH $WDIR/libjxl.tar.gz" | sha256sum -c
+tar zxf $WDIR/libjxl.tar.gz -C $WDIR
+cd $WDIR/libjxl-$LIBJXL_VERSION
+
+# Third-party deps (highway, brotli, skcms, libjpeg-turbo headers) are
+# fetched by deps.sh at the exact commit hashes recorded inside the
+# checksum-verified tarball, so the whole tree is integrity-pinned.
+./deps.sh
+
+cmake -B build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DBUILD_SHARED_LIBS=OFF \
+  -DBUILD_TESTING=OFF \
+  -DJPEGXL_ENABLE_BENCHMARK=OFF \
+  -DJPEGXL_ENABLE_EXAMPLES=OFF \
+  -DJPEGXL_ENABLE_MANPAGES=OFF \
+  -DJPEGXL_ENABLE_DOXYGEN=OFF \
+  -DJPEGXL_ENABLE_JNI=OFF \
+  -DJPEGXL_ENABLE_SJPEG=OFF \
+  -DJPEGXL_ENABLE_OPENEXR=OFF \
+  -DJPEGXL_ENABLE_PLUGINS=OFF
+cmake --build build -j"$(nproc)" --target cjpegli
+
+cp build/tools/cjpegli /usr/local/bin/cjpegli
+
+cd $HOME
+rm -rf $WDIR
+
+# Validate (cjpegli has no --version flag)
+cjpegli -h 2>&1 | grep -q "Usage: cjpegli"

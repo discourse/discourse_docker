@@ -46,6 +46,10 @@ FROM builder AS oxipng-builder
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
+FROM builder AS cjpegli-builder
+ADD install-cjpegli /tmp/install-cjpegli
+RUN /tmp/install-cjpegli
+
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-base
 
 ARG DEBIAN_RELEASE
@@ -54,8 +58,6 @@ ENV PG_MAJOR=${PG_MAJOR} \
     RUBY_ALLOCATOR=/usr/lib/libjemalloc.so \
     LEFTHOOK=0 \
     DEBIAN_RELEASE=${DEBIAN_RELEASE}
-
-#LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
 # Ensures that the gid and uid of the following users are consistent to avoid permission issues on directories in the
 # mounted volumes.
@@ -89,6 +91,8 @@ RUN --mount=type=tmpfs,target=/var/log \
     fonts-urw-base35 libheif1/${DEBIAN_RELEASE}-backports \
 # oxipng dependencies \
     advancecomp jpegoptim libjpeg-turbo-progs \
+# safe_image dependency
+    libvips42 \
 # nginx runtime dependencies \
     nginx-common && \
 # install these without recommends to avoid pulling in e.g.
@@ -139,6 +143,7 @@ COPY --from=thpoff-builder /usr/local/sbin/thpoff /usr/local/sbin
 COPY --from=jemalloc-builder /usr/lib/libjemalloc.so /usr/lib
 COPY --from=oxipng-builder /usr/local/bin/jhead /usr/local/bin
 COPY --from=oxipng-builder /usr/local/bin/oxipng /usr/local/bin
+COPY --from=cjpegli-builder /usr/local/bin/cjpegli /usr/local/bin
 
 ADD install-redis /tmp/install-redis
 
