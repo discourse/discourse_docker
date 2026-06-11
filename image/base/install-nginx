@@ -16,7 +16,11 @@ apt install -y nginx-common
 
 cd /tmp
 # this is the reason we are compiling by hand...
-git clone https://github.com/google/ngx_brotli.git
+# master commit, pinned; it also pins the brotli submodule (v1.1.0)
+NGX_BROTLI_COMMIT="a71f9312c2deb28875acc7bacfdd5695a111aa53"
+git init -q /tmp/ngx_brotli
+git -C /tmp/ngx_brotli fetch -q --depth 1 https://github.com/google/ngx_brotli.git "$NGX_BROTLI_COMMIT"
+git -C /tmp/ngx_brotli checkout -q "$NGX_BROTLI_COMMIT"
 # now ngx_brotli has brotli as a submodule
 cd /tmp/ngx_brotli
 git submodule update --init

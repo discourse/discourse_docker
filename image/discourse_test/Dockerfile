@@ -24,14 +24,19 @@ RUN chown -R discourse . &&\
 FROM base AS with_browsers
 
 ENV TESTEM_DEFAULT_BROWSER Chrome
+# From https://dl.google.com/linux/linux_signing_key.pub
+# fingerprint: EB4C 1BFD 4F04 2F6D DDCC EC91 7721 F63B D38B 4796
+ADD google-linux-signing-key.pub /usr/share/keyrings/google-chrome.asc
 ADD install-chrome /tmp/install-chrome
+# From https://archive.mozilla.org/pub/firefox/releases/<any version>/KEY
+# fingerprint: 14F2 6682 D091 6CDD 81E3 7B6D 61B7 B526 D98F 0353
+ADD mozilla-release-key.asc /tmp/mozilla-release-key.asc
+ADD install-firefox /tmp/install-firefox
 RUN /tmp/install-chrome &&\
     apt update &&\
     apt install -y libgconf-2-4 libxss1 firefox-esr &&\
-    cd /tmp && wget -q "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US" -O firefox.tar.xz &&\
-    tar xJvf firefox.tar.xz && mv /tmp/firefox /opt/firefox-evergreen &&\
-    apt clean &&\
-    rm /tmp/firefox.tar.xz
+    /tmp/install-firefox &&\
+    apt clean
 
 FROM with_browsers AS release
 
