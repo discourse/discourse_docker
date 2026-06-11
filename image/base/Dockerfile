@@ -147,7 +147,12 @@ COPY --from=cjpegli-builder /usr/local/bin/cjpegli /usr/local/bin
 
 ADD install-redis /tmp/install-redis
 
-RUN gem install pups --force &&\
+# version check: https://rubygems.org/gems/pups
+RUN cd /tmp &&\
+    gem fetch pups --version 1.4.0 &&\
+    echo "5809731d6f4819defe1aac694e614c4b3d9958b5f378a70edf761f3808877052 pups-1.4.0.gem" | sha256sum -c &&\
+    gem install --local --force pups-1.4.0.gem &&\
+    rm pups-1.4.0.gem &&\
     mkdir -p /pups/bin/ &&\
     ln -s /usr/local/bin/pups /pups/bin/pups
 
@@ -159,14 +164,20 @@ COPY etc/  /etc
 COPY sbin/ /sbin
 
 FROM discourse-runtime-base AS discourse-build-base
+# From https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
+# fingerprint: 6F71 F525 2828 41EE DAF8 51B4 2F59 B5F9 9B1B E0B4
+ADD nodesource-repo.gpg.key /usr/share/keyrings/nodesource.asc
+# From https://dl.yarnpkg.com/debian/pubkey.gpg
+# fingerprint: 72EC F46A 56B4 AD39 C907 BBB7 1646 B01B 86E5 0310
+ADD yarn-pubkey.gpg.key /usr/share/keyrings/yarn.asc
 RUN --mount=type=tmpfs,target=/var/log \
   --mount=type=tmpfs,target=/var/cache/apt \
   --mount=type=tmpfs,target=/var/lib/apt \
 # yarn packages
-    curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -; \
-    echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list; \
+    echo "deb [signed-by=/usr/share/keyrings/yarn.asc] https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list; \
 # node packages
-    curl --silent --location https://deb.nodesource.com/setup_22.x | sudo bash -; \
+    printf 'Types: deb\nURIs: https://deb.nodesource.com/node_22.x\nSuites: nodistro\nComponents: main\nSigned-By: /usr/share/keyrings/nodesource.asc\n' > /etc/apt/sources.list.d/nodesource.sources; \
+    printf 'Package: nodejs\nPin: origin deb.nodesource.com\nPin-Priority: 600\n' > /etc/apt/preferences.d/nodejs; \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
 # gem build dependencies

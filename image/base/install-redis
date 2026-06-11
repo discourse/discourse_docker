@@ -2,12 +2,12 @@
 set -e
 
 # version check: https://redis.io/
-REDIS_VERSION=7.4.7
-REDIS_HASH="c97e57b0df330a9e091cacff012bebe763c275398cf36ff44cdba876814b595b"
+REDIS_VERSION=7.4.9
+REDIS_HASH="a71a67b47b2705d3448f0400573e3ad5c4c9f8c18236f426dc6acc7284bf42ad"
 
 cd /tmp
 # Prepare Redis source.
-wget -q http://download.redis.io/releases/redis-$REDIS_VERSION.tar.gz
+wget -q https://download.redis.io/releases/redis-$REDIS_VERSION.tar.gz
 sha256sum redis-$REDIS_VERSION.tar.gz
 echo "$REDIS_HASH redis-$REDIS_VERSION.tar.gz" | sha256sum -c
 
