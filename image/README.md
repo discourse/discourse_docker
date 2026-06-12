@@ -68,4 +68,3 @@ Builds on the discourse image and adds testing tools and a default testing entry
 * `DOCKERHUB_USERNAME` - docker registry username
 * `DOCKERHUB_PASSWORD` - docker registry password
 * `SKIP_TESTS` - Flag to skip tests. Set to 1 to skip full tests before images pushes.
-* `IMAGE_PUSH_BRANCH` - the environment branch to trigger image pushes for (eg, `main`).

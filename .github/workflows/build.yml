@@ -1,5 +1,7 @@
 on:
   push:
+    branches:
+      - main
   pull_request:
   schedule:
     - cron: "0 0 * * *"
@@ -17,7 +19,6 @@ env:
 
 jobs:
   timestamp:
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)) }}
     runs-on: ubuntu-latest
     outputs:
       timestamp: ${{ steps.timestamp.outputs.timestamp }}
@@ -29,7 +30,6 @@ jobs:
           echo "timestamp=$timestamp" >> $GITHUB_OUTPUT
 
   base:
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)) }}
     # `cdck-linux-8-core` for amd64 builds
     # `ubuntu-24.04-8core-arm` for arm64 builds
     runs-on: ${{ (matrix.arch == 'amd64' && vars.AMD64_RUNNER) || vars.ARM64_RUNNER }}
@@ -51,7 +51,7 @@ jobs:
 
       - uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
-        if: github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
@@ -82,12 +82,12 @@ jobs:
           docker run --rm -e RUBY_ONLY=1 -e USE_TURBO=1 -e SKIP_PLUGINS=1 -e SKIP_LINT=1 -e DISCOURSE_TURBO_RSPEC_RETRY_AND_LOG_FLAKY_TESTS=1 ${TEST_IMAGE}:release-${{ matrix.arch }}
 
       - name: Build and push test image
-        if: github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
         run: |
           docker buildx bake test --set="*.tags=${TEST_IMAGE}" --set="*.output=type=registry,push-by-digest=true" --metadata-file=/tmp/test.json
 
       - name: Build and push dev image
-        if: github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
         run: |
           docker buildx bake dev --set="*.tags=${DEV_IMAGE}" --set="*.output=type=registry,push-by-digest=true" --allow=fs.read=../templates --metadata-file=/tmp/dev.json
 
@@ -100,11 +100,12 @@ jobs:
           docker history ${BASE_IMAGE}:release-main-${{ matrix.arch }}
 
       - name: push to dockerhub
-        if: github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
         run: |
           docker buildx bake base --set="*.tags=${BASE_IMAGE}" --set="*.output=type=registry,push-by-digest=true" --metadata-file=/tmp/base.json
 
       - name: save image digests
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
         id: metadata
         run: |
           test_slim_${{ matrix.arch }}=$(jq -r '."test-slim-${{ matrix.arch }}"["containerimage.digest"]' /tmp/test.json)
@@ -169,7 +170,7 @@ jobs:
       test_release_arm64: ${{ steps.metadata.outputs.test_release_arm64 }}
 
   setup_wizard:
-    if: github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
     runs-on: ${{ (matrix.arch == 'amd64' && vars.AMD64_RUNNER) || vars.ARM64_RUNNER }}
     strategy:
       matrix:
@@ -210,7 +211,7 @@ jobs:
     needs: [base, setup_wizard, timestamp]
     env:
       TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
-    if: github.ref == format('refs/heads/{0}', vars.IMAGE_PUSH_BRANCH)
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
     steps:
       - uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
