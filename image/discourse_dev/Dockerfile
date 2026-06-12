@@ -1,15 +1,15 @@
 # NAME:     discourse/discourse_dev
 # VERSION:  release
 
-ARG from_tag=slim
+ARG from_tag=discourse/base:slim
 
-FROM discourse/base:$from_tag AS repo-fetcher
+FROM $from_tag AS repo-fetcher
 WORKDIR /repo
 RUN chown discourse .
 USER discourse
 RUN git clone https://github.com/discourse/discourse . --depth 1
 
-FROM discourse/base:$from_tag
+FROM $from_tag
 
 #LABEL maintainer="Sam Saffron \"https://twitter.com/samsaffron\""
 
@@ -31,7 +31,7 @@ RUN sudo -u discourse bundle config set --global path /home/discourse/.bundle/ge
 RUN echo 'PATH="$(ruby -r rubygems -e "puts Gem.user_dir")/bin:$PATH"' >> /home/discourse/.profile
 
 # get redis going
-ADD redis.template.yml /pups/redis.yml
+COPY --from=templates /redis.template.yml /pups/redis.yml
 RUN /pups/bin/pups /pups/redis.yml
 
 RUN locale-gen en_US.UTF-8
@@ -40,7 +40,8 @@ ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
 # get postgres going
-ADD postgres.template.yml /pups/postgres.yml
+COPY --from=templates /postgres.template.yml /pups/postgres.template.yml
+RUN sed -e 's/\(db_name: discourse\)/\1_development/' /pups/postgres.template.yml > /pups/postgres.yml
 RUN LANG=en_US.UTF-8 /pups/bin/pups /pups/postgres.yml
 
 # add dev databases
