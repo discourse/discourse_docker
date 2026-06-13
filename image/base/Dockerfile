@@ -4,8 +4,10 @@
 ARG DEBIAN_RELEASE=bookworm
 ARG RUBY_VERSION=3.4.9
 ARG FROM_DOCKER_IMAGE_TAG=${RUBY_VERSION}-${DEBIAN_RELEASE}-slim
+ARG DATESTAMP=0
 
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS builder
+ARG DATESTAMP
 ARG DEBIAN_RELEASE
 ENV DEBIAN_RELEASE=${DEBIAN_RELEASE}
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
@@ -20,17 +22,17 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     libbrotli-dev
 
 FROM builder AS imagemagick_builder
-ADD install-imagemagick /tmp/install-imagemagick
+COPY install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
 FROM builder AS vips-builder
-ADD install-vips /tmp/install-vips
+COPY install-vips /tmp/install-vips
 RUN /tmp/install-vips
 
 FROM builder AS nginx-builder
 # From https://nginx.org/en/pgp_keys.html
-ADD nginx_public_keys.key /tmp/nginx_public_keys.key
-ADD install-nginx /tmp/install-nginx
+COPY nginx_public_keys.key /tmp/nginx_public_keys.key
+COPY install-nginx /tmp/install-nginx
 RUN gpg --import /tmp/nginx_public_keys.key &&\
   rm /tmp/nginx_public_keys.key &&\
   /tmp/install-nginx
@@ -39,23 +41,23 @@ FROM builder AS thpoff-builder
 # This tool allows us to disable huge page support for our current process
 # since the flag is preserved through forks and execs it can be used on any
 # process
-ADD thpoff.c /src/thpoff.c
+COPY thpoff.c /src/thpoff.c
 RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
 
 FROM builder AS jemalloc-builder
-ADD install-jemalloc /tmp/install-jemalloc
+COPY install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
 
 FROM builder AS oxipng-builder
-ADD install-oxipng /tmp/install-oxipng
+COPY install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
 FROM builder AS cjpegli-builder
-ADD install-cjpegli /tmp/install-cjpegli
+COPY install-cjpegli /tmp/install-cjpegli
 RUN /tmp/install-cjpegli
 
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-base
-
+ARG DATESTAMP
 ARG DEBIAN_RELEASE
 ARG PG_MAJOR=15
 ENV PG_MAJOR=${PG_MAJOR} \
@@ -158,7 +160,7 @@ COPY --from=oxipng-builder /usr/local/bin/jhead /usr/local/bin
 COPY --from=oxipng-builder /usr/local/bin/oxipng /usr/local/bin
 COPY --from=cjpegli-builder /usr/local/bin/cjpegli /usr/local/bin
 
-ADD install-redis /tmp/install-redis
+COPY install-redis /tmp/install-redis
 
 # version check: https://rubygems.org/gems/pups
 RUN cd /tmp &&\
@@ -179,10 +181,10 @@ COPY sbin/ /sbin
 FROM discourse-runtime-base AS discourse-build-base
 # From https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
 # fingerprint: 6F71 F525 2828 41EE DAF8 51B4 2F59 B5F9 9B1B E0B4
-ADD nodesource-repo.gpg.key /usr/share/keyrings/nodesource.asc
+COPY nodesource-repo.gpg.key /usr/share/keyrings/nodesource.asc
 # From https://dl.yarnpkg.com/debian/pubkey.gpg
 # fingerprint: 72EC F46A 56B4 AD39 C907 BBB7 1646 B01B 86E5 0310
-ADD yarn-pubkey.gpg.key /usr/share/keyrings/yarn.asc
+COPY yarn-pubkey.gpg.key /usr/share/keyrings/yarn.asc
 RUN --mount=type=tmpfs,target=/var/log \
   --mount=type=tmpfs,target=/var/cache/apt \
   --mount=type=tmpfs,target=/var/lib/apt \
