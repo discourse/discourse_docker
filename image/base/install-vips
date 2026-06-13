@@ -1,0 +1,113 @@
+#!/bin/bash
+set -e
+
+# version check: https://github.com/libvips/libvips/releases
+# The hash is pinned and must be updated together with the version: it is
+# cross-checked against the vips-VERSION.tar.xz.sha256sum release asset.
+VIPS_VERSION="8.18.2"
+VIPS_HASH="a30d4aede16f1c2899c1a2241870f8a7409feafa38484bcdcdac113d6d6f8ff5"
+
+# version check: https://github.com/google/highway/releases
+# vips needs libhwy >= 1.0.5 for SIMD resize paths; bookworm only packages
+# 1.0.3, so build it from source and link it statically into libvips.
+HIGHWAY_VERSION="1.4.0"
+HIGHWAY_HASH="e72241ac9524bb653ae52ced768b508045d4438726a303f10181a38f764a453c"
+
+LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo-dev' || echo 'libjpeg-turbo8-dev')
+
+PREFIX=/usr/local
+WDIR=/tmp/vips
+
+# Install build deps (meson pulls in python3/tzdata, whose postinst prompts
+# without a noninteractive frontend and hangs the build)
+export DEBIAN_FRONTEND=noninteractive
+apt -y -q install meson ninja-build pkg-config \
+    libglib2.0-dev libexpat1-dev ${LIBJPEGTURBO} \
+    libpng-dev libwebp-dev libtiff-dev libjxl-dev librsvg2-dev \
+    libcgif-dev libexif-dev liblcms2-dev liborc-0.4-dev \
+    libimagequant-dev libpango1.0-dev
+
+if cat /etc/issue | grep -qi Debian; then
+  # Get VERSION_CODENAME
+  . /etc/os-release
+  # Use backports
+  apt -y -q install libheif1/$VERSION_CODENAME-backports libheif-dev/$VERSION_CODENAME-backports
+else
+  apt -y -q install libheif1 libheif-dev
+fi
+
+mkdir -p $WDIR
+cd $WDIR
+
+# Build highway as a static, PIC library so it ends up inside libvips.so and
+# needs no runtime package.
+fetch-asset "https://github.com/google/highway/archive/refs/tags/$HIGHWAY_VERSION.tar.gz" "$HIGHWAY_HASH" $WDIR/highway.tar.gz
+tar zxf $WDIR/highway.tar.gz -C $WDIR
+cmake -S $WDIR/highway-$HIGHWAY_VERSION -B $WDIR/highway-build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX=$PREFIX \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+  -DBUILD_SHARED_LIBS=OFF \
+  -DBUILD_TESTING=OFF \
+  -DHWY_ENABLE_EXAMPLES=OFF \
+  -DHWY_ENABLE_CONTRIB=OFF \
+  -DHWY_ENABLE_TESTS=OFF
+cmake --build $WDIR/highway-build -j"$(nproc)"
+cmake --install $WDIR/highway-build
+
+fetch-asset "https://github.com/libvips/libvips/releases/download/v$VIPS_VERSION/vips-$VIPS_VERSION.tar.xz" "$VIPS_HASH" $WDIR/vips.tar.xz
+tar xf $WDIR/vips.tar.xz -C $WDIR
+cd $WDIR/vips-$VIPS_VERSION
+
+# auto_features=disabled pins the feature set: a stray -dev package present in
+# the build environment can never grow the decode surface. Every loader we
+# want is 'enabled' explicitly, which fails the build loudly if its dependency
+# goes missing. The ImageMagick fallback loader stays out on purpose: the
+# Debian libvips42 package hard-depends on libmagickcore, which drags
+# ghostscript into the image via apt recommends.
+meson setup build \
+  --prefix=$PREFIX \
+  --libdir=lib \
+  --buildtype=release \
+  --auto-features=disabled \
+  -Ddeprecated=false \
+  -Dexamples=false \
+  -Dcplusplus=false \
+  -Dppm=false \
+  -Danalyze=false \
+  -Dradiance=false \
+  -Dmodules=disabled \
+  -Dmagick=disabled \
+  -Dzlib=enabled \
+  -Djpeg=enabled \
+  -Dpng=enabled \
+  -Dwebp=enabled \
+  -Dtiff=enabled \
+  -Dheif=enabled \
+  -Djpeg-xl=enabled \
+  -Drsvg=enabled \
+  -Dcgif=enabled \
+  -Dexif=enabled \
+  -Dlcms=enabled \
+  -Dorc=enabled \
+  -Dhighway=enabled \
+  -Dimagequant=enabled \
+  -Dfontconfig=enabled \
+  -Dpangocairo=enabled
+
+ninja -C build -j"$(nproc)"
+ninja -C build install
+
+cd $HOME
+rm -rf $WDIR
+ldconfig $PREFIX/lib
+
+# Validate the build: every loader Discourse relies on is present, and the
+# ImageMagick fallback loader did not sneak in.
+for op in jpegload pngload gifload webpload tiffload heifload jxlload svgload text; do
+  vips -l | grep -q "$op" || { echo "ERROR: vips is missing operation: $op"; exit 1; }
+done
+if vips -l | grep -qi magick; then
+  echo "ERROR: vips was built with the ImageMagick loader"
+  exit 1
+fi
