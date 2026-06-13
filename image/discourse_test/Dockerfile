@@ -14,7 +14,7 @@ RUN sudo -E -u discourse -H git config --global user.email "you@example.com" &&\
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
   postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
-RUN /tmp/install-redis
+RUN --mount=type=cache,target=/var/cache/assets /tmp/install-redis
 
 RUN chown -R discourse . &&\
     chown -R discourse /var/run/postgresql &&\
