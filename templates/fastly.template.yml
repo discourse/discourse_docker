@@ -1,6 +1,11 @@
 run:
-  - replace:
-     filename: "/etc/nginx/conf.d/discourse.conf"
-     from: "$proxy_add_x_forwarded_for"
-     to: "$http_fastly_client_ip"
-     global: true
+  - file:
+      path: /etc/nginx/conf.d/outlets/server/real-ip-header.conf
+      chmod: 644
+      contents: |
+        real_ip_header fastly-client-ip;
+  - exec:
+      cmd:
+        - apt-get update && apt-get install -y jq && apt-get clean
+        # print sprintf looks dubious at first, but avoids the problem of "how many times do you backslash a \\\\n"
+        - curl -s https://api.fastly.com/public-ip-list | jq -r '.addresses[], .ipv6_addresses[]' | awk '{print sprintf("set_real_ip_from %s;", $0)}' > /etc/nginx/conf.d/outlets/server/real-ip-fastly.conf
