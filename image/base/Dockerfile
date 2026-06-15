@@ -8,6 +8,9 @@ ARG FROM_DOCKER_IMAGE_TAG=${RUBY_VERSION}-${DEBIAN_RELEASE}-slim
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS builder
 ARG DEBIAN_RELEASE
 ENV DEBIAN_RELEASE=${DEBIAN_RELEASE}
+
+RUN echo "no op to see if cache is working"
+
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list" &&\
 # keep downloaded .debs so the apt cache mounts below survive across builds;
 # builder stages are throwaway, so the retained archives never ship anywhere
