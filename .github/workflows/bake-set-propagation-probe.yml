@@ -1,0 +1,60 @@
+name: bake-set-propagation-probe
+
+# Throwaway experiment. Question: when you run `bake B --set="*.output=..."` and
+# B depends on A via `contexts = { from = "target:A" }`, does the `*` override
+# also hit the linked dependency A?
+#
+# In the PR this is `test`/`dev` depending on `base-*`. If `*` propagates, then
+# `bake test --set="*.output=type=registry,push-by-digest=true"` would also push
+# the base images into the test/dev repos.
+#
+# Uses `docker buildx bake --print` only — it resolves and dumps the graph as
+# JSON without building or pushing anything. Runs only on pushes to this branch.
+on:
+  push:
+    branches:
+      - matrix-output-probe
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-buildx-action@v3
+
+      - name: set up minimal bake graph
+        run: |
+          mkdir -p a b
+          echo "FROM busybox" > a/Dockerfile
+          echo "FROM from"     > b/Dockerfile
+          cat > docker-bake.hcl <<'HCL'
+          target "a" {
+            context = "./a"
+            tags    = ["local/a:orig"]
+          }
+          target "b" {
+            context  = "./b"
+            tags     = ["local/b:orig"]
+            contexts = {
+              from = "target:a"
+            }
+          }
+          HCL
+
+      - name: print resolved graph with wildcard override
+        run: |
+          docker buildx bake b \
+            --set="*.output=type=registry,push-by-digest=true" \
+            --set="*.tags=fake/override" \
+            --print | tee out.json
+
+          echo "=================================================="
+          a_out=$(jq -c '.target.a.output // empty' out.json)
+          a_tags=$(jq -c '.target.a.tags // empty' out.json)
+          echo "dependency target 'a' output: ${a_out:-<none>}"
+          echo "dependency target 'a' tags:   ${a_tags:-<none>}"
+
+          if printf '%s' "$a_out" | grep -q registry || printf '%s' "$a_tags" | grep -q fake/override; then
+            echo "VERDICT: '*' override DOES propagate to dependency 'a' — pushing B would also push A"
+          else
+            echo "VERDICT: '*' override does NOT reach dependency 'a' — the concern is unfounded"
+          fi
