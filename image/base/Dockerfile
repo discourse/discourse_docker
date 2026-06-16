@@ -23,6 +23,10 @@ FROM builder AS imagemagick_builder
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
+FROM builder AS vips-builder
+ADD install-vips /tmp/install-vips
+RUN /tmp/install-vips
+
 FROM builder AS nginx-builder
 # From https://nginx.org/en/pgp_keys.html
 ADD nginx_public_keys.key /tmp/nginx_public_keys.key
@@ -91,8 +95,10 @@ RUN --mount=type=tmpfs,target=/var/log \
     fonts-urw-base35 libheif1/${DEBIAN_RELEASE}-backports \
 # oxipng dependencies \
     advancecomp jpegoptim libjpeg-turbo-progs \
-# safe_image dependency
-    libvips42 \
+# libvips runtime dependencies (safe_image; vips itself is built from source)
+    libglib2.0-0 libexpat1 libjpeg62-turbo libexif12 liblcms2-2 \
+    liborc-0.4-0 libcgif0 libimagequant0 libjxl0.7 libwebp7 \
+    libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
 # nginx runtime dependencies \
     nginx-common && \
 # install these without recommends to avoid pulling in e.g.
@@ -138,6 +144,13 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   ln -s /usr/local/bin/magick /usr/local/bin/montage &&\
   ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
   test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
+
+COPY --from=vips-builder /usr/local/lib/libvips.so.42 /usr/local/lib/libvips.so.42
+RUN ldconfig &&\
+  ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\
+  if dpkg-query -W -f '${Package} ${db:Status-Status}\n' ghostscript libgs10 libgs-common libgs10-common 2>/dev/null | grep -q ' installed$' || command -v gs >/dev/null; then \
+    echo "ERROR: ghostscript must not be present in this image"; exit 1; \
+  fi
 
 COPY --from=thpoff-builder /usr/local/sbin/thpoff /usr/local/sbin
 COPY --from=jemalloc-builder /usr/lib/libjemalloc.so /usr/lib
