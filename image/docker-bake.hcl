@@ -26,6 +26,10 @@ group "base" {
   targets = ["base-slim", "base-web-only", "base-release"]
 }
 
+group "all" {
+  targets = ["base", "test", "dev"]
+}
+
 target "base-runtime-deps" {
   name = "base-runtime-deps-${arch}"
   matrix = {
