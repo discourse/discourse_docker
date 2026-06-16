@@ -3,14 +3,10 @@ set -e
 
 # version check: https://nginx.org/en/download.html
 VERSION=1.30.2
-# sha pins are for the asset cache; the GPG signature below remains the
-# authoritative integrity check
-NGINX_HASH="7df3090907fca3cc0e456d6dc00ceb230da74ea88026ceff0affc29dbbd9ac4c"
-NGINX_ASC_HASH="f9f8dbd223c3eb81fd4e1df79f79559ee2a9929a2c73dde762c87055c650b6ef"
 
 cd /tmp
-fetch-asset "https://nginx.org/download/nginx-$VERSION.tar.gz" "$NGINX_HASH" /tmp/nginx-$VERSION.tar.gz
-fetch-asset "https://nginx.org/download/nginx-$VERSION.tar.gz.asc" "$NGINX_ASC_HASH" /tmp/nginx-$VERSION.tar.gz.asc
+wget -q https://nginx.org/download/nginx-$VERSION.tar.gz
+wget -q https://nginx.org/download/nginx-$VERSION.tar.gz.asc
 gpg --verify nginx-$VERSION.tar.gz.asc nginx-$VERSION.tar.gz
 tar zxf nginx-$VERSION.tar.gz
 cd nginx-$VERSION

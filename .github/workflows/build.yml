@@ -34,19 +34,8 @@ jobs:
         arch: [amd64, arm64]
     timeout-minutes: ${{ (github.event_name == 'schedule' && 90) || 45 }}
     needs: timestamp
-    permissions:
-      contents: read
-      packages: write
     env:
       TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
-      # Registry-backed compile cache (see image/auto_build.rb). PRs read the
-      # cache written by main; pushes read and refresh it; the nightly
-      # scheduled run stays a full cold rebuild (so published images always
-      # carry that day's apt security updates) and only writes a fresh cache.
-      # NOTE: the buildcache package on GHCR must be set to public visibility
-      # once, or fork PRs cannot read it (builds still work, just uncached).
-      DISCOURSE_BUILD_CACHE_FROM_REF: ${{ github.event_name != 'schedule' && format('ghcr.io/{0}/buildcache:base-{1}', github.repository, matrix.arch) || '' }}
-      DISCOURSE_BUILD_CACHE_TO_REF: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && format('ghcr.io/{0}/buildcache:base-{1}', github.repository, matrix.arch) || '' }}
     services:
       registry:
         image: registry:2
@@ -56,14 +45,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
-
-      - name: Login to GHCR for build cache
-        if: github.event_name == 'push' || github.event_name == 'schedule'
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: build deps image
         working-directory: image

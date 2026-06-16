@@ -144,37 +144,10 @@ def run(command)
   lines
 end
 
-# Registry-backed BuildKit layer cache, so cold builders (fresh CI runners)
-# reuse compiled artifacts (imagemagick, vips, nginx, ...) instead of
-# recompiling them. mode=max exports intermediate stages too; entries are
-# content-addressed so integrity comes with the digest.
-#
-# DISCOURSE_BUILD_CACHE_FROM_REF: registry ref to read cache from
-# DISCOURSE_BUILD_CACHE_TO_REF:   registry ref to write cache to (needs push
-#                                 access; pushing replaces the tag, so use one
-#                                 ref per platform or amd64/arm64 evict each
-#                                 other)
-# Typical CI shape: PRs read only, pushes read+write, the nightly scheduled
-# build writes only — keeping the nightly a full cold rebuild so published
-# images always carry that day's apt security updates.
-def cache_args(image)
-  return '' if image[:use_cache] != true
-
-  args = []
-  from_ref = ENV['DISCOURSE_BUILD_CACHE_FROM_REF']
-  to_ref = ENV['DISCOURSE_BUILD_CACHE_TO_REF']
-  args << "--cache-from type=registry,ref=#{from_ref}" if from_ref && !from_ref.empty?
-  args << "--cache-to type=registry,ref=#{to_ref},mode=max" if to_ref && !to_ref.empty?
-  args.join(' ')
-end
-
 def build(image, cli_args)
-  # /VERSION must reflect the build date even when the layer comes from
-  # cache, so the date is passed in as a cache-busting build-arg
-  version_date_arg = "--build-arg VERSION_DATE=#{Time.now.strftime('%Y%m%d')}"
   lines =
     run(
-      "cd #{image[:name]} && docker buildx build . --load #{image[:use_cache] == true ? '' : '--no-cache'} #{cache_args(image)} #{version_date_arg} --tag #{image[:tag]} #{image[:extra_args] || ''} #{cli_args}"
+      "cd #{image[:name]} && docker buildx build . --load #{image[:use_cache] == true ? '' : '--no-cache'} --tag #{image[:tag]} #{image[:extra_args] || ''} #{cli_args}"
     )
 
   return unless lines[-1] =~ /successfully built/

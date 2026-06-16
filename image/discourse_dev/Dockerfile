@@ -17,7 +17,7 @@ FROM discourse/base:$from_tag
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
   postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
-RUN --mount=type=cache,target=/var/cache/assets /tmp/install-redis
+RUN /tmp/install-redis
 
 # Remove the code added on base image
 RUN rm -rf /var/www/*

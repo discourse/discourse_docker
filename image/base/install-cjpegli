@@ -17,7 +17,9 @@ apt -y -q install git cmake build-essential pkg-config wget curl ca-certificates
 mkdir -p $WDIR
 cd $WDIR
 
-fetch-asset "https://github.com/libjxl/libjxl/archive/refs/tags/v$LIBJXL_VERSION.tar.gz" "$LIBJXL_HASH" $WDIR/libjxl.tar.gz
+wget -q -O $WDIR/libjxl.tar.gz "https://github.com/libjxl/libjxl/archive/refs/tags/v$LIBJXL_VERSION.tar.gz"
+sha256sum $WDIR/libjxl.tar.gz
+echo "$LIBJXL_HASH $WDIR/libjxl.tar.gz" | sha256sum -c
 tar zxf $WDIR/libjxl.tar.gz -C $WDIR
 cd $WDIR/libjxl-$LIBJXL_VERSION
 

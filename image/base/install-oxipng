@@ -25,7 +25,9 @@ cd / && rm -rf /tmp/jhead
 mkdir /oxipng-install
 cd /oxipng-install
 
-fetch-asset "https://github.com/oxipng/oxipng/releases/download/v${OXIPNG_VERSION}/${OXIPNG_FILE}" "${OXIPNG_HASH}" ${OXIPNG_FILE}
+wget -q https://github.com/oxipng/oxipng/releases/download/v${OXIPNG_VERSION}/${OXIPNG_FILE}
+sha256sum ${OXIPNG_FILE}
+echo "${OXIPNG_HASH} ${OXIPNG_FILE}" | sha256sum -c
 tar --strip-components=1 -xzf $OXIPNG_FILE
 cp -v ./oxipng /usr/local/bin
 cd / && rm -fr /oxipng-install

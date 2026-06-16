@@ -12,7 +12,9 @@ if uname -m | grep -qi 'aarch64'; then
   mkdir /jemalloc-new
   cd /jemalloc-new
 
-  fetch-asset "https://github.com/jemalloc/jemalloc/releases/download/5.3.1/jemalloc-5.3.1.tar.bz2" "3826bc80232f22ed5c4662f3034f799ca316e819103bdc7bb99018a421706f92" jemalloc-5.3.1.tar.bz2
+  wget -q https://github.com/jemalloc/jemalloc/releases/download/5.3.1/jemalloc-5.3.1.tar.bz2
+  sha256sum jemalloc-5.3.1.tar.bz2
+  echo "3826bc80232f22ed5c4662f3034f799ca316e819103bdc7bb99018a421706f92 jemalloc-5.3.1.tar.bz2" | sha256sum -c
   tar --strip-components=1 -xjf jemalloc-5.3.1.tar.bz2
   ./configure --prefix=/usr --with-lg-page=16 && make build_lib -j"$(nproc)" && make install_lib_shared
   cd / && rm -rf /jemalloc-new
@@ -21,7 +23,9 @@ else
   mkdir /jemalloc-stable
   cd /jemalloc-stable
 
-  fetch-asset "https://github.com/jemalloc/jemalloc/releases/download/3.6.0/jemalloc-3.6.0.tar.bz2" "e16c2159dd3c81ca2dc3b5c9ef0d43e1f2f45b04548f42db12e7c12d7bdf84fe" jemalloc-3.6.0.tar.bz2
+  wget -q https://github.com/jemalloc/jemalloc/releases/download/3.6.0/jemalloc-3.6.0.tar.bz2
+  sha256sum jemalloc-3.6.0.tar.bz2
+  echo "e16c2159dd3c81ca2dc3b5c9ef0d43e1f2f45b04548f42db12e7c12d7bdf84fe jemalloc-3.6.0.tar.bz2" | sha256sum -c
   tar --strip-components=1 -xjf jemalloc-3.6.0.tar.bz2
   ./configure --prefix=/usr $EXTRA_CONF && make -j"$(nproc)" && make install_lib_shared
   cd / && rm -rf /jemalloc-stable
