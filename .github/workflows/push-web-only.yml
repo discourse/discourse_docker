@@ -116,10 +116,6 @@ jobs:
             ${{ needs.push.outputs.latest_amd64 }} \
             ${{ needs.push.outputs.latest_arm64 }}
 
-          docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:esr \
-            ${{ needs.push.outputs.esr_amd64 }} \
-            ${{ needs.push.outputs.esr_arm64 }}
-
           docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:${{ needs.version.outputs.latest }} \
             ${{ needs.push.outputs.latest_amd64 }} \
             ${{ needs.push.outputs.latest_arm64 }}
