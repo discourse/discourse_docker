@@ -88,17 +88,19 @@ jobs:
             --tag ${{ env.DOCKER_IMAGE }} \
             --output=type=registry,push-by-digest=true \
             --metadata-file=/tmp/out.json
-      - name: save image digests
-        id: metadata
+      - name: collect image digest
+        id: digests
         run: |
-          ${{ matrix.version }}_${{ env.ARCH }}=$(jq -r '."containerimage.digest"' /tmp/out.json)
-          echo "${{ matrix.version }}_${{ env.ARCH }}=$${{ matrix.version }}_${{ env.ARCH }}"
-          echo "${{ matrix.version }}_${{ env.ARCH }}=$${{ matrix.version }}_${{ env.ARCH }}" >> $GITHUB_OUTPUT
+          # Emit this leg's { "<version>-<arch>": "<digest>" } map as a per-leg job output.
+          map=$(jq -c --arg k "${{ matrix.version }}-${ARCH}" \
+            '{($k): .["containerimage.digest"]}' /tmp/out.json)
+          echo "$map"
+          echo "map_${{ matrix.version }}_${ARCH}=${map}" >> "$GITHUB_OUTPUT"
     outputs:
-      latest_amd64: ${{ steps.metadata.outputs.latest_amd64 }}
-      latest_arm64: ${{ steps.metadata.outputs.latest_arm64 }}
-      esr_amd64: ${{ steps.metadata.outputs.esr_amd64 }}
-      esr_arm64: ${{ steps.metadata.outputs.esr_arm64 }}
+      map_latest_amd64: ${{ steps.digests.outputs.map_latest_amd64 }}
+      map_latest_arm64: ${{ steps.digests.outputs.map_latest_arm64 }}
+      map_esr_amd64: ${{ steps.digests.outputs.map_esr_amd64 }}
+      map_esr_arm64: ${{ steps.digests.outputs.map_esr_arm64 }}
 
   manifest:
     runs-on: ubuntu-latest
@@ -111,15 +113,39 @@ jobs:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: update manifest
+        env:
+          DIGESTS_LATEST_AMD64: ${{ needs.push.outputs.map_latest_amd64 }}
+          DIGESTS_LATEST_ARM64: ${{ needs.push.outputs.map_latest_arm64 }}
+          DIGESTS_ESR_AMD64: ${{ needs.push.outputs.map_esr_amd64 }}
+          DIGESTS_ESR_ARM64: ${{ needs.push.outputs.map_esr_arm64 }}
+          LATEST_VERSION: ${{ needs.version.outputs.latest }}
+          ESR_VERSION: ${{ needs.version.outputs.esr }}
         run: |
-          docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:latest \
-            ${{ needs.push.outputs.latest_amd64 }} \
-            ${{ needs.push.outputs.latest_arm64 }}
+          # Merge the per-leg digest maps into one { "<version>-<arch>": "<digest>" }.
+          jq -s 'add' \
+            <(printf '%s' "$DIGESTS_LATEST_AMD64") \
+            <(printf '%s' "$DIGESTS_LATEST_ARM64") \
+            <(printf '%s' "$DIGESTS_ESR_AMD64") \
+            <(printf '%s' "$DIGESTS_ESR_ARM64") > /tmp/map.json
+          echo "resolved digests:"; jq -S . /tmp/map.json
 
-          docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:${{ needs.version.outputs.latest }} \
-            ${{ needs.push.outputs.latest_amd64 }} \
-            ${{ needs.push.outputs.latest_arm64 }}
+          ref() {
+            local repo=$1 target=$2 digest
+            digest=$(jq -er --arg k "$target" '.[$k]' /tmp/map.json) || {
+              echo "::error::no digest for '$target' (is it built/pushed?)" >&2; exit 1
+            }
+            echo "${repo}@${digest}"
+          }
 
-          docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:${{ needs.version.outputs.esr }} \
-            ${{ needs.push.outputs.esr_amd64 }} \
-            ${{ needs.push.outputs.esr_arm64 }}
+          # manifest <repo> <version-prefix> <tag>...
+          manifest() {
+            local repo=$1 pfx=$2; shift 2
+            local tags=() t
+            for t in "$@"; do tags+=(-t "${repo}:${t}"); done
+            docker buildx imagetools create "${tags[@]}" \
+              "$(ref "$repo" "${pfx}-amd64")" \
+              "$(ref "$repo" "${pfx}-arm64")"
+          }
+
+          manifest "$DOCKER_IMAGE" latest latest "$LATEST_VERSION"
+          manifest "$DOCKER_IMAGE" esr    "$ESR_VERSION"

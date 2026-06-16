@@ -104,70 +104,22 @@ jobs:
         run: |
           docker buildx bake base --set="*.tags=${BASE_IMAGE}" --set="*.output=type=registry,push-by-digest=true" --metadata-file=/tmp/base.json
 
-      - name: save image digests
+      - name: collect image digests
         if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
-        id: metadata
+        id: digests
         run: |
-          test_slim_${{ matrix.arch }}=$(jq -r '."test-slim-${{ matrix.arch }}"["containerimage.digest"]' /tmp/test.json)
-          echo "test_slim_${{ matrix.arch }}=$test_slim_${{ matrix.arch }}"
-          echo "test_slim_${{ matrix.arch }}=$test_slim_${{ matrix.arch }}" >> $GITHUB_OUTPUT
-
-          test_slim_browsers_${{ matrix.arch }}=$(jq -r '."test-slim-browsers-${{ matrix.arch }}"["containerimage.digest"]' /tmp/test.json)
-          echo "test_slim_browsers_${{ matrix.arch }}=$test_slim_browsers_${{ matrix.arch }}"
-          echo "test_slim_browsers_${{ matrix.arch }}=$test_slim_browsers_${{ matrix.arch }}" >> $GITHUB_OUTPUT
-
-          test_release_${{ matrix.arch }}=$(jq -r '."test-release-${{ matrix.arch }}"["containerimage.digest"]' /tmp/test.json)
-          echo "test_release_${{ matrix.arch }}=$test_release_${{ matrix.arch }}"
-          echo "test_release_${{ matrix.arch }}=$test_release_${{ matrix.arch }}" >> $GITHUB_OUTPUT
-
-          dev_${{ matrix.arch }}=$(jq -r '."dev-${{ matrix.arch }}"["containerimage.digest"]' /tmp/dev.json)
-          echo "dev_${{ matrix.arch }}=$dev_${{ matrix.arch }}"
-          echo "dev_${{ matrix.arch }}=$dev_${{ matrix.arch }}" >> $GITHUB_OUTPUT
-
-          base_slim_main_${{ matrix.arch }}=$(jq -r '."base-slim-main-${{ matrix.arch }}"["containerimage.digest"]' /tmp/base.json)
-          echo "base_slim_main_${{ matrix.arch }}=$base_slim_main_${{ matrix.arch }}"
-          echo "base_slim_main_${{ matrix.arch }}=$base_slim_main_${{ matrix.arch }}" >> $GITHUB_OUTPUT
-
-          base_slim_stable_${{ matrix.arch }}=$(jq -r '."base-slim-stable-${{ matrix.arch }}"["containerimage.digest"]' /tmp/base.json)
-          echo "base_slim_stable_${{ matrix.arch }}=$base_slim_stable_${{ matrix.arch }}"
-          echo "base_slim_stable_${{ matrix.arch }}=$base_slim_stable_${{ matrix.arch }}" >> $GITHUB_OUTPUT
-
-          base_web_only_main_${{ matrix.arch }}=$(jq -r '."base-web-only-main-${{ matrix.arch }}"["containerimage.digest"]' /tmp/base.json)
-          echo "base_web_only_main_${{ matrix.arch }}=$base_web_only_main_${{ matrix.arch }}"
-          echo "base_web_only_main_${{ matrix.arch }}=$base_web_only_main_${{ matrix.arch }}" >> $GITHUB_OUTPUT
-
-          base_web_only_stable_${{ matrix.arch }}=$(jq -r '."base-web-only-stable-${{ matrix.arch }}"["containerimage.digest"]' /tmp/base.json)
-          echo "base_web_only_stable_${{ matrix.arch }}=$base_web_only_stable_${{ matrix.arch }}"
-          echo "base_web_only_stable_${{ matrix.arch }}=$base_web_only_stable_${{ matrix.arch }}" >> $GITHUB_OUTPUT
-
-          base_release_main_${{ matrix.arch }}=$(jq -r '."base-release-main-${{ matrix.arch }}"["containerimage.digest"]' /tmp/base.json)
-          echo "base_release_main_${{ matrix.arch }}=$base_release_main_${{ matrix.arch }}"
-          echo "base_release_main_${{ matrix.arch }}=$base_release_main_${{ matrix.arch }}" >> $GITHUB_OUTPUT
-
-          base_release_stable_${{ matrix.arch }}=$(jq -r '."base-release-stable-${{ matrix.arch }}"["containerimage.digest"]' /tmp/base.json)
-          echo "base_release_stable_${{ matrix.arch }}=$base_release_stable_${{ matrix.arch }}"
-          echo "base_release_stable_${{ matrix.arch }}=$base_release_stable_${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          # Emit this arch's { "<bake-target>": "<digest>" } map as a per-arch job output.
+          map=$(jq -sc '
+            add
+            | to_entries
+            | map(select(.value["containerimage.digest"]) | {key: .key, value: .value["containerimage.digest"]})
+            | from_entries
+          ' /tmp/base.json /tmp/test.json /tmp/dev.json)
+          echo "$map"
+          echo "map_${ARCH}=${map}" >> "$GITHUB_OUTPUT"
     outputs:
-      base_slim_main_amd64: ${{ steps.metadata.outputs.base_slim_main_amd64 }}
-      base_slim_main_arm64: ${{ steps.metadata.outputs.base_slim_main_arm64 }}
-      base_slim_stable_amd64: ${{ steps.metadata.outputs.base_slim_stable_amd64 }}
-      base_slim_stable_arm64: ${{ steps.metadata.outputs.base_slim_stable_arm64 }}
-      base_web_only_main_amd64: ${{ steps.metadata.outputs.base_web_only_main_amd64 }}
-      base_web_only_main_arm64: ${{ steps.metadata.outputs.base_web_only_main_arm64 }}
-      base_web_only_stable_amd64: ${{ steps.metadata.outputs.base_web_only_stable_amd64 }}
-      base_web_only_stable_arm64: ${{ steps.metadata.outputs.base_web_only_stable_arm64 }}
-      base_release_main_amd64: ${{ steps.metadata.outputs.base_release_main_amd64 }}
-      base_release_main_arm64: ${{ steps.metadata.outputs.base_release_main_arm64 }}
-      base_release_stable_amd64: ${{ steps.metadata.outputs.base_release_stable_amd64 }}
-      base_release_stable_arm64: ${{ steps.metadata.outputs.base_release_stable_arm64 }}
-      dev_amd64: ${{ steps.metadata.outputs.dev_amd64 }}
-      dev_arm64: ${{ steps.metadata.outputs.dev_arm64 }}
-      test_slim_amd64: ${{ steps.metadata.outputs.test_slim_amd64 }}
-      test_slim_arm64: ${{ steps.metadata.outputs.test_slim_arm64 }}
-      test_slim_browsers_amd64: ${{ steps.metadata.outputs.test_slim_browsers_amd64 }}
-      test_slim_browsers_arm64: ${{ steps.metadata.outputs.test_slim_browsers_arm64 }}
-      test_release_amd64: ${{ steps.metadata.outputs.test_release_amd64 }}
-      test_release_arm64: ${{ steps.metadata.outputs.test_release_arm64 }}
+      map_amd64: ${{ steps.digests.outputs.map_amd64 }}
+      map_arm64: ${{ steps.digests.outputs.map_arm64 }}
 
   setup_wizard:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
@@ -196,15 +148,17 @@ jobs:
       - name: build and push to dockerhub
         run: |
           docker buildx bake setup-wizard --set="*.tags=${SETUP_WIZARD_IMAGE}" --set="*.output=type=registry,push-by-digest=true" --metadata-file=/tmp/setup-wizard.json
-      - name: save image digests
-        id: metadata
+      - name: collect image digest
+        id: digests
         run: |
-          ${{ matrix.arch }}=$(jq -r '."setup-wizard-${{ matrix.arch }}"["containerimage.digest"]' /tmp/setup-wizard.json)
-          echo "${{ matrix.arch }}=$${{ matrix.arch }}"
-          echo "${{ matrix.arch }}=$${{ matrix.arch }}" >> $GITHUB_OUTPUT
+          # Same per-arch map shape as the base job.
+          map=$(jq -c --arg k "setup-wizard-${ARCH}" \
+            '{($k): .[$k]["containerimage.digest"]}' /tmp/setup-wizard.json)
+          echo "$map"
+          echo "map_${ARCH}=${map}" >> "$GITHUB_OUTPUT"
     outputs:
-      amd64: ${{ steps.metadata.outputs.amd64 }}
-      arm64: ${{ steps.metadata.outputs.arm64 }}
+      map_amd64: ${{ steps.digests.outputs.map_amd64 }}
+      map_arm64: ${{ steps.digests.outputs.map_arm64 }}
 
   push_multi_arch_manifests:
     runs-on: ubuntu-latest
@@ -221,87 +175,49 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
       - name: create and push multi-arch manifests
+        env:
+          DIGESTS_BASE_AMD64: ${{ needs.base.outputs.map_amd64 }}
+          DIGESTS_BASE_ARM64: ${{ needs.base.outputs.map_arm64 }}
+          DIGESTS_SETUP_WIZARD_AMD64: ${{ needs.setup_wizard.outputs.map_amd64 }}
+          DIGESTS_SETUP_WIZARD_ARM64: ${{ needs.setup_wizard.outputs.map_arm64 }}
         run: |
-          # Slim timestamped
-          docker buildx imagetools create -t ${BASE_IMAGE}:2.0.${{ env.TIMESTAMP }}-slim \
-            ${{ needs.base.outputs.base_slim_main_amd64 }} \
-            ${{ needs.base.outputs.base_slim_main_arm64 }}
+          # Merge the per-arch digest maps into one { "<bake-target>": "<digest>" }.
+          jq -s 'add' \
+            <(printf '%s' "$DIGESTS_BASE_AMD64") \
+            <(printf '%s' "$DIGESTS_BASE_ARM64") \
+            <(printf '%s' "$DIGESTS_SETUP_WIZARD_AMD64") \
+            <(printf '%s' "$DIGESTS_SETUP_WIZARD_ARM64") > /tmp/map.json
+          echo "resolved digests:"; jq -S . /tmp/map.json
 
-          # Slim release
-          docker buildx imagetools create -t ${BASE_IMAGE}:slim \
-            ${{ needs.base.outputs.base_slim_main_amd64 }} \
-            ${{ needs.base.outputs.base_slim_main_arm64 }}
+          ref() {
+            local repo=$1 target=$2 digest
+            digest=$(jq -er --arg k "$target" '.[$k]' /tmp/map.json) || {
+              echo "::error::no digest for bake target '$target' (is it built/pushed?)" >&2; exit 1
+            }
+            echo "${repo}@${digest}"
+          }
 
-          # Web-Only `main` timestamped
-          docker buildx imagetools create -t ${BASE_IMAGE}:2.0.${{ env.TIMESTAMP }}-web-only \
-            ${{ needs.base.outputs.base_web_only_main_amd64 }} \
-            ${{ needs.base.outputs.base_web_only_main_arm64 }}
+          # manifest <repo> <target-prefix> <tag>...
+          manifest() {
+            local repo=$1 pfx=$2; shift 2
+            local tags=() t
+            for t in "$@"; do tags+=(-t "${repo}:${t}"); done
+            docker buildx imagetools create "${tags[@]}" \
+              "$(ref "$repo" "${pfx}-amd64")" \
+              "$(ref "$repo" "${pfx}-arm64")"
+          }
 
-          # Web-Only `main` release
-          docker buildx imagetools create -t ${BASE_IMAGE}:web-only \
-            ${{ needs.base.outputs.base_web_only_main_amd64 }} \
-            ${{ needs.base.outputs.base_web_only_main_arm64 }}
+          manifest "$BASE_IMAGE"         base-slim-main        slim            "2.0.${TIMESTAMP}-slim"
+          manifest "$BASE_IMAGE"         base-web-only-main    web-only        "2.0.${TIMESTAMP}-web-only"
+          manifest "$BASE_IMAGE"         base-web-only-stable  web-only-stable "2.0.${TIMESTAMP}-web-only-stable"
+          manifest "$BASE_IMAGE"         base-release-main     release         "2.0.${TIMESTAMP}"
+          manifest "$BASE_IMAGE"         base-release-stable   release-stable  "2.0.${TIMESTAMP}-stable"
+          manifest "$DEV_IMAGE"          dev                   release         "${TIMESTAMP}"
+          manifest "$TEST_IMAGE"         test-slim             slim
+          manifest "$TEST_IMAGE"         test-slim-browsers    slim-browsers
+          manifest "$TEST_IMAGE"         test-release          release
+          manifest "$SETUP_WIZARD_IMAGE" setup-wizard          release
 
-          # Web-Only `stable` timestamped
-          docker buildx imagetools create -t ${BASE_IMAGE}:2.0.${{ env.TIMESTAMP }}-web-only-stable \
-            ${{ needs.base.outputs.base_web_only_stable_amd64 }} \
-            ${{ needs.base.outputs.base_web_only_stable_arm64 }}
-
-          # Web-Only `stable` release
-          docker buildx imagetools create -t ${BASE_IMAGE}:web-only-stable \
-            ${{ needs.base.outputs.base_web_only_stable_amd64 }} \
-            ${{ needs.base.outputs.base_web_only_stable_arm64 }}
-
-          # Full Discourse `main` branch timestamped
-          docker buildx imagetools create -t ${BASE_IMAGE}:2.0.${{ env.TIMESTAMP }} \
-            ${{ needs.base.outputs.base_release_main_amd64 }} \
-            ${{ needs.base.outputs.base_release_main_arm64 }}
-
-          # Full Discourse `stable` branch timestamped
-          docker buildx imagetools create -t ${BASE_IMAGE}:2.0.${{ env.TIMESTAMP }}-stable \
-            ${{ needs.base.outputs.base_release_stable_amd64 }} \
-            ${{ needs.base.outputs.base_release_stable_arm64 }}
-
-          # Full Discourse `main` branch release
-          docker buildx imagetools create -t ${BASE_IMAGE}:release \
-            ${{ needs.base.outputs.base_release_main_amd64 }} \
-            ${{ needs.base.outputs.base_release_main_arm64 }}
-
-          # Full Discourse `stable` branch release
-          docker buildx imagetools create -t ${BASE_IMAGE}:release-stable \
-            ${{ needs.base.outputs.base_release_stable_amd64 }} \
-            ${{ needs.base.outputs.base_release_stable_arm64 }}
-
-          # Dev timestamped
-          docker buildx imagetools create -t ${DEV_IMAGE}:${{ env.TIMESTAMP }} \
-            ${{ needs.base.outputs.dev_amd64 }} \
-            ${{ needs.base.outputs.dev_arm64 }}
-
-          # Dev release
-          docker buildx imagetools create -t ${DEV_IMAGE}:release \
-            ${{ needs.base.outputs.dev_amd64 }} \
-            ${{ needs.base.outputs.dev_arm64 }}
-
-          # Setup wizard release
-          docker buildx imagetools create -t ${SETUP_WIZARD_IMAGE}:release \
-            ${{ needs.setup_wizard.outputs.amd64 }} \
-            ${{ needs.setup_wizard.outputs.arm64 }}
-
-          # Discourse aarch64 for backwards compatibility
-          docker buildx imagetools create -t ${BASE_IMAGE}:aarch64 \
-            ${{ needs.base.outputs.base_release_main_arm64 }}
-
-          # Test slim
-          docker buildx imagetools create -t ${TEST_IMAGE}:slim \
-            ${{ needs.base.outputs.test_slim_amd64 }} \
-            ${{ needs.base.outputs.test_slim_arm64 }}
-
-          # Test slim-browsers
-          docker buildx imagetools create -t ${TEST_IMAGE}:slim-browsers \
-            ${{ needs.base.outputs.test_slim_browsers_amd64 }} \
-            ${{ needs.base.outputs.test_slim_browsers_arm64 }}
-
-          # Test release
-          docker buildx imagetools create -t ${TEST_IMAGE}:release \
-            ${{ needs.base.outputs.test_release_amd64 }} \
-            ${{ needs.base.outputs.test_release_arm64 }}
+          # aarch64: single-arch (arm64) image kept for backwards compatibility
+          docker buildx imagetools create -t "${BASE_IMAGE}:aarch64" \
+            "$(ref "$BASE_IMAGE" base-release-main-arm64)"
