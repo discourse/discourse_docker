@@ -1,0 +1,65 @@
+name: imagetools-digest-ref-probe
+
+# Throwaway experiment. Question: the PR's manifest job feeds `imagetools create`
+# the bare `containerimage.digest` (`sha256:...`) captured from the bake metadata
+# file. Does `imagetools create` accept a bare digest, or does it need a full
+# `repo@sha256:...` reference?
+#
+# Pushes a by-digest image to a local `registry:2` (no Docker Hub, no secrets),
+# then tries both forms and reports which works. Runs only on pushes to this
+# branch.
+on:
+  push:
+    branches:
+      - matrix-output-probe
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+    steps:
+      - uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+          buildkitd-config-inline: |
+            [registry."localhost:5000"]
+              http = true
+
+      - name: build & push by digest to the local registry
+        run: |
+          mkdir -p ctx
+          echo "FROM busybox" > ctx/Dockerfile
+          docker buildx build ctx \
+            --output type=registry,push-by-digest=true \
+            --tag localhost:5000/probe \
+            --metadata-file /tmp/meta.json
+          cat /tmp/meta.json
+          DIGEST=$(jq -r '.["containerimage.digest"]' /tmp/meta.json)
+          echo "captured digest: $DIGEST"
+          echo "DIGEST=$DIGEST" >> "$GITHUB_ENV"
+
+      - name: compare bare digest vs full repo@digest reference
+        run: |
+          set +e
+          echo "== BARE (current workflow form): imagetools create ... '$DIGEST'"
+          docker buildx imagetools create -t localhost:5000/probe:bare "$DIGEST"
+          bare=$?
+          echo "== FULL: imagetools create ... 'localhost:5000/probe@$DIGEST'"
+          docker buildx imagetools create -t localhost:5000/probe:full "localhost:5000/probe@$DIGEST"
+          full=$?
+          echo "=================================================="
+          echo "bare-digest exit code : $bare"
+          echo "full-ref    exit code : $full"
+          if [ "$bare" -ne 0 ] && [ "$full" -eq 0 ]; then
+            echo "VERDICT: bare digest FAILS, repo@digest works — the workflow must reference \${REPO}@\${digest}, not the bare digest"
+            exit 1
+          elif [ "$bare" -eq 0 ]; then
+            echo "VERDICT: bare digest WORKS — the current workflow form is fine"
+          else
+            echo "VERDICT: inconclusive — full ref also failed; inspect logs above"
+            exit 1
+          fi
