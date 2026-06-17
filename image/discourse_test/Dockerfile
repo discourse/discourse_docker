@@ -1,10 +1,10 @@
-ARG from_tag=build
+ARG from_tag=discourse/base:build
 
-FROM discourse/base:$from_tag AS base
-ENV RAILS_ENV test
+FROM $from_tag AS base
+ENV RAILS_ENV=test
 
 WORKDIR /var/www/discourse
-ENV LANG en_US.UTF-8
+ENV LANG=en_US.UTF-8
 
 # configure Git to suppress warnings
 RUN sudo -E -u discourse -H git config --global user.email "you@example.com" &&\
@@ -23,7 +23,7 @@ RUN chown -R discourse . &&\
 
 FROM base AS with_browsers
 
-ENV TESTEM_DEFAULT_BROWSER Chrome
+ENV TESTEM_DEFAULT_BROWSER=Chrome
 # From https://dl.google.com/linux/linux_signing_key.pub
 # fingerprint: EB4C 1BFD 4F04 2F6D DDCC EC91 7721 F63B D38B 4796
 ADD google-linux-signing-key.pub /usr/share/keyrings/google-chrome.asc
