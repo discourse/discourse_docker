@@ -115,7 +115,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     dpkg-divert --local --rename --add /sbin/initctl; \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
-    libpq-dev postgresql-client-${PG_MAJOR} &&\
+    libpq-dev postgresql-client-${PG_MAJOR} postgresql-client-18 &&\
     mkdir -p /etc/runit/1.d
 
 ENV LC_ALL=en_US.UTF-8
