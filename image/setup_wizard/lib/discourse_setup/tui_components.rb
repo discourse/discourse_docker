@@ -75,6 +75,9 @@ module DiscourseSetup
               break @value
             elsif event.backspace?
               @value = @value.chop
+            elsif event.paste?
+              # Bracketed paste arrives as one atomic event, not per-key events
+              @value += event.content.gsub(/[^[:print:]]/, "")
             elsif event.key?
               char = event.to_s
               @value += char if char.length == 1 && char.match?(/[[:print:]]/)
