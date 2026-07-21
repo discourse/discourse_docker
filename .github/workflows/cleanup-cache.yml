@@ -1,0 +1,39 @@
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * *"
+
+jobs:
+  cleanup_cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: cleanup cache
+        env:
+          GH_TOKEN: ${{ secrets.GH_CLEANUP_CACHE_TOKEN }}
+          PACKAGE_NAME: discourse_docker
+        run: |
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "no cleanup token set, set cleanup token by setting an access token for secrets.GH_CLEANUP_CACHE_TOKEN with delete:packages, read:org permissions"
+            exit 0
+          fi
+          # figure out if this is a user or organization repository
+          OWNER_TYPE=$(gh api /users/${{ github.repository_owner }} --jq '.type')
+          if [[ "$OWNER_TYPE" == "User" ]]; then
+            OWNER_TYPE="users"
+          else
+            OWNER_TYPE="orgs"
+          fi
+          gh api /${OWNER_TYPE}/${{ github.repository_owner }}/packages/container/discourse_docker/versions --paginate > /tmp/dangling_ids.txt
+          ids_to_delete=$(cat /tmp/dangling_ids.txt | jq -r '.[] | select(.metadata.container.tags==[]) | .id')
+          if [ "${ids_to_delete}" = "" ]
+          then
+            echo "There are no dangling images to remove for this package"
+            exit 0
+          fi
+          echo "Deleting dangling ids..."
+          while read -r id; do
+            gh api --method DELETE /${OWNER_TYPE}/${{ github.repository_owner }}/packages/container/${PACKAGE_NAME}/versions/${id}
+            echo Dangling image with ID $id deleted successfully
+          done <<< $ids_to_delete
