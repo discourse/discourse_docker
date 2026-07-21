@@ -34,7 +34,7 @@ jobs:
           echo "datestamp=$datestamp" >> $GITHUB_OUTPUT
 
   # run all targets individually for cache, otherwise this may break caching
-  # possibley related to https://github.com/docker/buildx/issues/414
+  # possibly related to https://github.com/docker/buildx/issues/414
   base:
     # `cdck-linux-8-core` for amd64 builds
     # `ubuntu-24.04-8core-arm` for arm64 builds
