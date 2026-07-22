@@ -23,7 +23,7 @@ RUN /tmp/install-redis
 RUN rm -rf /var/www/*
 
 # Give discourse user no-passwd sudo permissions (for bundle install)
-ADD sudoers.discourse /etc/sudoers.d/discourse
+COPY sudoers.discourse /etc/sudoers.d/discourse
 
 RUN sudo -u discourse bundle config set --global path /home/discourse/.bundle/gems
 
@@ -45,7 +45,7 @@ RUN sed -e 's/\(db_name: discourse\)/\1_development/' /pups/postgres.template.ym
 RUN LANG=en_US.UTF-8 /pups/bin/pups /pups/postgres.yml
 
 # add dev databases
-ADD postgres_dev.template.yml /pups/postgres_dev.yml
+COPY postgres_dev.template.yml /pups/postgres_dev.yml
 RUN /pups/bin/pups /pups/postgres_dev.yml
 
 # move default postgres_data out of the way
@@ -53,7 +53,7 @@ RUN mv /shared/postgres_data /shared/postgres_data_orig
 
 # re-instantiate data on boot if needed (this will allow it to persist across
 # invocations when used with a mounted volume)
-ADD ensure-database /etc/runit/1.d/ensure-database
+COPY ensure-database /etc/runit/1.d/ensure-database
 
 # Install & Configure MailHog (https://github.com/mailhog/MailHog)
 RUN wget -qO /tmp/mailhog https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64\
