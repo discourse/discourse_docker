@@ -2,8 +2,8 @@
 set -e
 
 # version check: https://github.com/libvips/libvips/releases
-VIPS_VERSION="8.18.3"
-VIPS_HASH="f41285b61bfb495605494f074ca341f7791a1d406e2f157dcea606ef1ae1b146"
+VIPS_VERSION="8.18.4"
+VIPS_HASH="2677bad6c422617fd1172d359c16af34e736965d042c214203a87187d26ff037"
 
 LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo-dev' || echo 'libjpeg-turbo8-dev')
 
@@ -16,13 +16,6 @@ apt -y -q install meson ninja-build pkg-config xz-utils \
     libpng-dev libwebp-dev libtiff-dev libjxl-dev librsvg2-dev \
     libcgif-dev libexif-dev liblcms2-dev liborc-0.4-dev \
     libimagequant-dev libpango1.0-dev
-
-if cat /etc/issue | grep -qi Debian; then
-  . /etc/os-release
-  apt -y -q install libheif1/$VERSION_CODENAME-backports libheif-dev/$VERSION_CODENAME-backports
-else
-  apt -y -q install libheif1 libheif-dev
-fi
 
 mkdir -p $WDIR
 cd $WDIR

@@ -19,11 +19,15 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     libfreetype6-dev \
     libbrotli-dev
 
-FROM builder AS imagemagick_builder
+FROM builder AS libheif-builder
+ADD install-libheif /tmp/install-libheif
+RUN /tmp/install-libheif
+
+FROM libheif-builder AS imagemagick_builder
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
-FROM builder AS vips-builder
+FROM libheif-builder AS vips-builder
 ADD install-vips /tmp/install-vips
 RUN /tmp/install-vips
 
@@ -75,11 +79,15 @@ RUN groupadd --gid 104 postgres &&\
 RUN echo 2.0.`date +%Y%m%d` > /VERSION
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
 
+COPY --from=libheif-builder /tmp/libheif-packages/libheif1.deb /tmp/libheif1.deb
+COPY --from=libheif-builder /tmp/libheif-packages/discourse-libheif-guard.deb /tmp/discourse-libheif-guard.deb
+
 RUN --mount=type=tmpfs,target=/var/log \
   --mount=type=tmpfs,target=/var/cache/apt \
   --mount=type=tmpfs,target=/var/lib/apt \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb \
 # discourse runtime requirements
   gnupg sudo curl fping locales \
   ca-certificates rsync \
@@ -92,7 +100,7 @@ RUN --mount=type=tmpfs,target=/var/log \
 # imagemagick runtime dependencies
     libjbig0 libtiff6 libpng16-16 libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
-    fonts-urw-base35 libheif1/${DEBIAN_RELEASE}-backports \
+    fonts-urw-base35 \
 # oxipng dependencies \
     advancecomp jpegoptim libjpeg-turbo-progs \
 # libvips runtime dependencies (safe_image; vips itself is built from source)
@@ -116,7 +124,10 @@ RUN --mount=type=tmpfs,target=/var/log \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
     libpq-dev postgresql-client-${PG_MAJOR} postgresql-client-18 &&\
-    mkdir -p /etc/runit/1.d
+    mkdir -p /etc/runit/1.d &&\
+    apt-mark hold libheif1 discourse-libheif-guard &&\
+    rm /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb &&\
+    test "$(dpkg-query -W -f='${Version}' libheif1)" = "1.23.1-1discourse1"
 
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
@@ -147,6 +158,7 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
 
 COPY --from=vips-builder /usr/local/lib/libvips.so.42 /usr/local/lib/libvips.so.42
 RUN ldconfig &&\
+  ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.1"' &&\
   ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\
   if dpkg-query -W -f '${Package} ${db:Status-Status}\n' ghostscript libgs10 libgs-common libgs10-common 2>/dev/null | grep -q ' installed$' || command -v gs >/dev/null; then \
     echo "ERROR: ghostscript must not be present in this image"; exit 1; \
