@@ -208,6 +208,7 @@ RUN --mount=type=tmpfs,target=/var/log \
 # gem build dependencies
     cmake g++ pkg-config patch \
     libtool \
+    libglib2.0-dev \
     libxslt-dev \
     libcurl4-openssl-dev \
     libssl-dev \
@@ -217,6 +218,14 @@ RUN --mount=type=tmpfs,target=/var/log \
     libunwind-dev \
 # node
     nodejs yarn
+
+# safe_image gem build dependencies
+COPY --from=vips-builder /usr/local/include/vips /usr/local/include/vips
+COPY --from=vips-builder /usr/local/lib/pkgconfig/vips.pc /usr/local/lib/pkgconfig/vips.pc
+# Dynamic consumers need the linker name but not metadata for private codec dependencies.
+RUN ln -s libvips.so.42 /usr/local/lib/libvips.so &&\
+    sed -i '/^Requires.private:/d' /usr/local/lib/pkgconfig/vips.pc
+
 # pnpm
 RUN --mount=type=tmpfs,target=/root/.npm \
     npm install -g pnpm@10
