@@ -40,7 +40,7 @@ ENV LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
 # get postgres going
-COPY --from=templates /postgres.template.yml /pups/postgres.template.yml
+COPY --from=templates /postgres.${PG_MAJOR}.template.yml /pups/postgres.template.yml
 RUN sed -e 's/\(db_name: discourse\)/\1_development/' /pups/postgres.template.yml > /pups/postgres.yml
 RUN LANG=en_US.UTF-8 /pups/bin/pups /pups/postgres.yml
 

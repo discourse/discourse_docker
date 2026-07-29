@@ -61,7 +61,8 @@ RUN /tmp/install-cjpegli
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-base
 
 ARG DEBIAN_RELEASE
-ARG PG_MAJOR=15
+ARG PG_MAJOR=18
+ARG PG_MAJOR_OLD=15
 ENV PG_MAJOR=${PG_MAJOR} \
     RUBY_ALLOCATOR=/usr/lib/libjemalloc.so \
     LEFTHOOK=0 \
@@ -123,7 +124,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     dpkg-divert --local --rename --add /sbin/initctl; \
     sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
-    libpq-dev postgresql-client-${PG_MAJOR} postgresql-client-18 &&\
+    libpq-dev postgresql-client-${PG_MAJOR} postgresql-client-${PG_MAJOR_OLD} &&\
     mkdir -p /etc/runit/1.d &&\
     apt-mark hold libheif1 discourse-libheif-guard &&\
     rm /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb &&\
