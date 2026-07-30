@@ -54,10 +54,6 @@ FROM builder AS oxipng-builder
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
-FROM builder AS cjpegli-builder
-ADD install-cjpegli /tmp/install-cjpegli
-RUN /tmp/install-cjpegli
-
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-base
 
 ARG DEBIAN_RELEASE
@@ -104,7 +100,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     fonts-urw-base35 \
 # oxipng dependencies \
     advancecomp jpegoptim libjpeg-turbo-progs \
-# libvips runtime dependencies (safe_image; vips itself is built from source)
+# libvips runtime dependencies
     libglib2.0-0 libexpat1 libjpeg62-turbo libexif12 liblcms2-2 \
     liborc-0.4-0 libcgif0 libimagequant0 libjxl0.7 libwebp7 \
     libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
@@ -178,7 +174,6 @@ COPY --from=thpoff-builder /usr/local/sbin/thpoff /usr/local/sbin
 COPY --from=jemalloc-builder /usr/lib/libjemalloc.so /usr/lib
 COPY --from=oxipng-builder /usr/local/bin/jhead /usr/local/bin
 COPY --from=oxipng-builder /usr/local/bin/oxipng /usr/local/bin
-COPY --from=cjpegli-builder /usr/local/bin/cjpegli /usr/local/bin
 
 ADD install-redis /tmp/install-redis
 
@@ -218,7 +213,6 @@ RUN --mount=type=tmpfs,target=/var/log \
 # gem build dependencies
     cmake g++ pkg-config patch \
     libtool \
-    libglib2.0-dev \
     libxslt-dev \
     libcurl4-openssl-dev \
     libssl-dev \
@@ -228,13 +222,6 @@ RUN --mount=type=tmpfs,target=/var/log \
     libunwind-dev \
 # node
     nodejs yarn
-
-# safe_image gem build dependencies
-COPY --from=vips-builder /usr/local/include/vips /usr/local/include/vips
-COPY --from=vips-builder /usr/local/lib/pkgconfig/vips.pc /usr/local/lib/pkgconfig/vips.pc
-# Dynamic consumers need the linker name but not metadata for private codec dependencies.
-RUN ln -s libvips.so.42 /usr/local/lib/libvips.so &&\
-    sed -i '/^Requires.private:/d' /usr/local/lib/pkgconfig/vips.pc
 
 # pnpm
 RUN --mount=type=tmpfs,target=/root/.npm \
