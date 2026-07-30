@@ -3,6 +3,8 @@
 
 ARG from_tag=discourse/base:slim
 
+FROM axllent/mailpit:v1.30.6@sha256:7f33095f80e901f6ad08028f06ca284aa58fe84942be5496008d041d3b9f4d4d AS mailpit
+
 FROM $from_tag AS repo-fetcher
 WORKDIR /repo
 RUN chown discourse .
@@ -55,12 +57,9 @@ RUN mv /shared/postgres_data /shared/postgres_data_orig
 # invocations when used with a mounted volume)
 ADD ensure-database /etc/runit/1.d/ensure-database
 
-# Install & Configure MailHog (https://github.com/mailhog/MailHog)
-RUN wget -qO /tmp/mailhog https://github.com/mailhog/MailHog/releases/download/v1.0.1/MailHog_linux_amd64\
-    && echo "e2ed634ded49929f089b20045581955ed217672078fd86082dd7a6c67c5d09c7 /tmp/mailhog" | sha256sum -c -\
-    && mv /tmp/mailhog /usr/local/bin/mailhog\
-    && chmod +x /usr/local/bin/mailhog\
-    && rm -rf /tmp/*
+# Install Mailpit, retaining the old binary name for discourse/bin/docker compatibility
+COPY --from=mailpit --chmod=0755 /mailpit /usr/local/bin/mailpit
+RUN ln -s mailpit /usr/local/bin/mailhog
 
 USER discourse
 
