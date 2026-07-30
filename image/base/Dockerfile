@@ -157,10 +157,19 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
   test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
+COPY --from=vips-builder /usr/local/bin/vips /usr/local/bin/vips
+COPY --from=vips-builder /usr/local/bin/vipsheader /usr/local/bin/vipsheader
 COPY --from=vips-builder /usr/local/lib/libvips.so.42 /usr/local/lib/libvips.so.42
 RUN ldconfig &&\
   ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.1"' &&\
   ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\
+  sudo -u discourse vips --version &&\
+  sudo -u discourse vipsheader --version &&\
+  ldd /usr/local/bin/vips | grep -q '/usr/local/lib/libvips.so.42' &&\
+  ldd /usr/local/bin/vipsheader | grep -q '/usr/local/lib/libvips.so.42' &&\
+  for op in jpegload pngload gifload webpload tiffload heifload jxlload svgload text thumbnail autorot gravity flatten; do \
+    sudo -u discourse vips -l "$op" >/dev/null || { echo "ERROR: vips is missing operation: $op"; exit 1; }; \
+  done &&\
   if dpkg-query -W -f '${Package} ${db:Status-Status}\n' ghostscript libgs10 libgs-common libgs10-common 2>/dev/null | grep -q ' installed$' || command -v gs >/dev/null; then \
     echo "ERROR: ghostscript must not be present in this image"; exit 1; \
   fi
