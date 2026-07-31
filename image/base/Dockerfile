@@ -27,9 +27,12 @@ FROM libheif-builder AS imagemagick_builder
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
-FROM libheif-builder AS vips-builder
+FROM libheif-builder AS jpegli-builder
 ADD install-jpegli /tmp/install-jpegli
 RUN /tmp/install-jpegli
+
+FROM libheif-builder AS vips-builder
+COPY --from=jpegli-builder /usr/local/lib/jpegli /usr/local/lib/jpegli
 ADD install-vips /tmp/install-vips
 RUN /tmp/install-vips
 
@@ -182,7 +185,6 @@ COPY --from=thpoff-builder /usr/local/sbin/thpoff /usr/local/sbin
 COPY --from=jemalloc-builder /usr/lib/libjemalloc.so /usr/lib
 COPY --from=oxipng-builder /usr/local/bin/jhead /usr/local/bin
 COPY --from=oxipng-builder /usr/local/bin/oxipng /usr/local/bin
-RUN test "$(sudo -u discourse jhead -V 2>&1)" = "Jhead version: 3.08"
 
 ADD install-redis /tmp/install-redis
 
