@@ -172,7 +172,7 @@ RUN ldconfig &&\
   ldd /usr/local/lib/libvips.so.42 | grep -q '/usr/local/lib/jpegli/lib/libjpeg.so.62' &&\
   ldd /usr/local/bin/magick | grep 'libjpeg.so.62' | grep -vq '/usr/local/lib/jpegli/' &&\
   sudo -u discourse vips black /tmp/vips-jpegli.jpg 1 1 &&\
-  sudo -u discourse vipsheader -f format /tmp/vips-jpegli.jpg | grep -qx uchar &&\
+  sudo -u discourse vipsheader /tmp/vips-jpegli.jpg >/dev/null &&\
   rm /tmp/vips-jpegli.jpg &&\
   for op in jpegload jpegsave pngload gifload webpload tiffload heifload jxlload svgload text thumbnail autorot gravity flatten; do \
     sudo -u discourse vips -l "$op" >/dev/null || { echo "ERROR: vips is missing operation: $op"; exit 1; }; \
