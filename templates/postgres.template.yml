@@ -132,6 +132,13 @@ run:
           echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
         
           rm -fr /shared/postgres_dump
+          if [ -d /shared/postgres_dump ]; then
+            echo -------------------------------------------------------------------------------------
+            echo FATAL: lingering /shared/postgres_dump directory
+            echo Remove and retry
+            echo -------------------------------------------------------------------------------------
+            exit 1
+          fi
           install -d -m 0755 -o postgres -g postgres /shared/postgres_dump
         
           su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl start -D /shared/postgres_data -o '-p 5432'"
