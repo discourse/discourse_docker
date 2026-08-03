@@ -175,9 +175,12 @@ RUN ldconfig &&\
   sudo -u discourse vips black /tmp/vips-jpegli.jpg 1 1 &&\
   sudo -u discourse vipsheader /tmp/vips-jpegli.jpg >/dev/null &&\
   rm /tmp/vips-jpegli.jpg &&\
-  for op in jpegload jpegsave pngload gifload webpload tiffload heifload jxlload svgload text thumbnail autorot gravity flatten; do \
+  for op in jpegload jpegsave pngload gifload webpload heifload jxlload svgload text thumbnail autorot gravity flatten; do \
     sudo -u discourse vips -l "$op" >/dev/null || { echo "ERROR: vips is missing operation: $op"; exit 1; }; \
   done &&\
+  if sudo -u discourse vips -l tiffload >/dev/null 2>&1; then \
+    echo "ERROR: vips must not include the unsupported TIFF loader"; exit 1; \
+  fi &&\
   if dpkg-query -W -f '${Package} ${db:Status-Status}\n' ghostscript libgs10 libgs-common libgs10-common 2>/dev/null | grep -q ' installed$' || command -v gs >/dev/null; then \
     echo "ERROR: ghostscript must not be present in this image"; exit 1; \
   fi
