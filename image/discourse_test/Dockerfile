@@ -42,7 +42,7 @@ RUN /tmp/install-chrome &&\
 FROM with_browsers AS release
 
 RUN cd /var/www/discourse &&\
-    sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
+    sudo -u discourse bundle install --jobs $(nproc --ignore=1) &&\
     sudo -E -u discourse -H /bin/bash -c 'CI=1 pnpm install'
 
 RUN cd /var/www/discourse && sudo -E -u discourse -H bundle exec rake plugin:install_all_official &&\
