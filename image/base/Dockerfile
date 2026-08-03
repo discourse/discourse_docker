@@ -2,7 +2,7 @@
 # VERSION:  release
 
 ARG DEBIAN_RELEASE=bookworm
-ARG RUBY_VERSION=3.4.9
+ARG RUBY_VERSION=3.4.10
 ARG FROM_DOCKER_IMAGE_TAG=${RUBY_VERSION}-${DEBIAN_RELEASE}-slim
 
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS builder
@@ -27,7 +27,12 @@ FROM libheif-builder AS imagemagick_builder
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
+FROM libheif-builder AS jpegli-builder
+ADD install-jpegli /tmp/install-jpegli
+RUN /tmp/install-jpegli
+
 FROM libheif-builder AS vips-builder
+COPY --from=jpegli-builder /usr/local/lib/jpegli /usr/local/lib/jpegli
 ADD install-vips /tmp/install-vips
 RUN /tmp/install-vips
 
@@ -53,10 +58,6 @@ RUN /tmp/install-jemalloc
 FROM builder AS oxipng-builder
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
-
-FROM builder AS cjpegli-builder
-ADD install-cjpegli /tmp/install-cjpegli
-RUN /tmp/install-cjpegli
 
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-base
 
@@ -100,13 +101,13 @@ RUN --mount=type=tmpfs,target=/var/log \
 # nginx runtime dependencies
     libpcre3 zlib1g \
 # imagemagick runtime dependencies
-    libjbig0 libtiff6 libpng16-16 libfontconfig1 \
+    libjbig0 libtiff6 libpng16-16 libjpeg62-turbo libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
     fonts-urw-base35 \
 # oxipng dependencies \
     advancecomp jpegoptim libjpeg-turbo-progs \
-# libvips runtime dependencies (safe_image; vips itself is built from source)
-    libglib2.0-0 libexpat1 libjpeg62-turbo libexif12 liblcms2-2 \
+# libvips runtime dependencies
+    libglib2.0-0 libexpat1 libexif12 liblcms2-2 \
     liborc-0.4-0 libcgif0 libimagequant0 libjxl0.7 libwebp7 \
     libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
 # nginx runtime dependencies \
@@ -158,10 +159,25 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
   test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
+COPY --from=vips-builder /usr/local/bin/vips /usr/local/bin/vips
+COPY --from=vips-builder /usr/local/bin/vipsheader /usr/local/bin/vipsheader
 COPY --from=vips-builder /usr/local/lib/libvips.so.42 /usr/local/lib/libvips.so.42
+COPY --from=vips-builder /usr/local/lib/jpegli/lib/libjpeg.so.62.3.0 /usr/local/lib/jpegli/lib/libjpeg.so.62
 RUN ldconfig &&\
   ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.1"' &&\
   ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\
+  sudo -u discourse vips --version &&\
+  sudo -u discourse vipsheader --version &&\
+  ldd /usr/local/bin/vips | grep -q '/usr/local/lib/libvips.so.42' &&\
+  ldd /usr/local/bin/vipsheader | grep -q '/usr/local/lib/libvips.so.42' &&\
+  ldd /usr/local/lib/libvips.so.42 | grep -q '/usr/local/lib/jpegli/lib/libjpeg.so.62' &&\
+  ldd /usr/local/bin/magick | grep 'libjpeg.so.62' | grep -vq '/usr/local/lib/jpegli/' &&\
+  sudo -u discourse vips black /tmp/vips-jpegli.jpg 1 1 &&\
+  sudo -u discourse vipsheader /tmp/vips-jpegli.jpg >/dev/null &&\
+  rm /tmp/vips-jpegli.jpg &&\
+  for op in jpegload jpegsave pngload gifload webpload tiffload heifload jxlload svgload text thumbnail autorot gravity flatten; do \
+    sudo -u discourse vips -l "$op" >/dev/null || { echo "ERROR: vips is missing operation: $op"; exit 1; }; \
+  done &&\
   if dpkg-query -W -f '${Package} ${db:Status-Status}\n' ghostscript libgs10 libgs-common libgs10-common 2>/dev/null | grep -q ' installed$' || command -v gs >/dev/null; then \
     echo "ERROR: ghostscript must not be present in this image"; exit 1; \
   fi
@@ -170,7 +186,6 @@ COPY --from=thpoff-builder /usr/local/sbin/thpoff /usr/local/sbin
 COPY --from=jemalloc-builder /usr/lib/libjemalloc.so /usr/lib
 COPY --from=oxipng-builder /usr/local/bin/jhead /usr/local/bin
 COPY --from=oxipng-builder /usr/local/bin/oxipng /usr/local/bin
-COPY --from=cjpegli-builder /usr/local/bin/cjpegli /usr/local/bin
 
 ADD install-redis /tmp/install-redis
 
@@ -210,7 +225,6 @@ RUN --mount=type=tmpfs,target=/var/log \
 # gem build dependencies
     cmake g++ pkg-config patch \
     libtool \
-    libglib2.0-dev \
     libxslt-dev \
     libcurl4-openssl-dev \
     libssl-dev \
@@ -220,13 +234,6 @@ RUN --mount=type=tmpfs,target=/var/log \
     libunwind-dev \
 # node
     nodejs yarn
-
-# safe_image gem build dependencies
-COPY --from=vips-builder /usr/local/include/vips /usr/local/include/vips
-COPY --from=vips-builder /usr/local/lib/pkgconfig/vips.pc /usr/local/lib/pkgconfig/vips.pc
-# Dynamic consumers need the linker name but not metadata for private codec dependencies.
-RUN ln -s libvips.so.42 /usr/local/lib/libvips.so &&\
-    sed -i '/^Requires.private:/d' /usr/local/lib/pkgconfig/vips.pc
 
 # pnpm
 RUN --mount=type=tmpfs,target=/root/.npm \
