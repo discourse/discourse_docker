@@ -96,9 +96,24 @@ run:
         PG_MAJOR_OLD=`cat /shared/postgres_data/PG_VERSION`
 
         if [ ! "18" = "$PG_MAJOR_OLD" ]; then
+          set -o errtrace
+          set -o pipefail
+          fail_upgrade() {
+            echo -------------------------------------------------------------------------------------
+            echo UPGRADE OF POSTGRES FAILED
+            echo Failed on: $1
+            echo
+            echo Please visit https://meta.discourse.org/t/postgresql-18-update/406194 for support.
+            echo
+            echo You can run "./launcher start app" to restart your app in the meantime
+            echo -------------------------------------------------------------------------------------
+            exit 1
+          }
+          trap 'fail_upgrade "$BASH_COMMAND"' ERR
+
           echo Upgrading PostgreSQL from version ${PG_MAJOR_OLD} to 18
           free_disk=$(df -P -B1 /shared | tail -n 1 | awk '{print $4}')
-          required=$(($(du -sb /shared/postgres_data | awk '{print $1}') * 2))
+          required=$(($(du -sb /shared/postgres_data | awk '{print $1}') * 3))
 
           if [ "$free_disk" -lt "$required" ]; then
             echo
@@ -129,18 +144,23 @@ run:
           cp -pr /etc/postgresql/${PG_MAJOR_OLD}/main/* /shared/postgres_data
           echo  >> /shared/postgres_data/postgresql.conf
           echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
-          SUCCESS=true
-          sudo -u postgres /usr/lib/postgresql/18/bin/pg_upgrade -d /shared/postgres_data -D /shared/postgres_data_new -b /usr/lib/postgresql/${PG_MAJOR_OLD}/bin -B /usr/lib/postgresql/18/bin || SUCCESS=false
-
-          if [[ "$SUCCESS" == 'false' ]]; then
-            echo -------------------------------------------------------------------------------------
-            echo UPGRADE OF POSTGRES FAILED
-            echo
-            echo You can run "./launcher start app" to restart your app in the meanwhile
-            echo -------------------------------------------------------------------------------------
-            exit 1
-          fi
-
+        
+          rm -fr /shared/postgres_dump 
+          [ ! -d /shared/postgres_dump ]  # rm -f always succeeds
+          install -d -m 0755 -o postgres -g postgres /shared/postgres_dump
+        
+          su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl start -D /shared/postgres_data -o '-p 5432'"
+          su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_dumpall --globals-only --clean --if-exists -f /shared/postgres_dump/globals.sql"
+          su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_dump -Fd -j$(($(nproc) - 1)) discourse -f /shared/postgres_dump/discourse"
+          su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl stop -D /shared/postgres_data"
+        
+          su postgres -c "/usr/lib/postgresql/18/bin/pg_ctl start -D /shared/postgres_data_new"
+          su postgres -c "/usr/lib/postgresql/18/bin/psql -c \"CREATE DATABASE discourse WITH TEMPLATE = template0 ENCODING = 'UTF8'\""
+          su postgres -c "/usr/lib/postgresql/18/bin/psql -f /shared/postgres_dump/globals.sql"
+          su postgres -c "/usr/lib/postgresql/18/bin/pg_restore -e -j$(($(nproc) - 1)) -d discourse /shared/postgres_dump/discourse"
+          su postgres -c "/usr/lib/postgresql/18/bin/pg_ctl stop -D /shared/postgres_data_new"
+        
+          rm -fr /shared/postgres_dump
           mkdir /shared/postgres_data_old
           mv /shared/postgres_data/* /shared/postgres_data_old
           mv /shared/postgres_data_new/* /shared/postgres_data
