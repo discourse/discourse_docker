@@ -152,13 +152,13 @@ run:
         
           su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl start -D /shared/postgres_data -o '-p 5432'"
           su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_dumpall --globals-only --clean --if-exists -f /shared/postgres_dump/globals.sql"
-          su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_dump -Fd -j$(($(nproc) - 1)) discourse -f /shared/postgres_dump/discourse"
+          su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_dump -Fd -j$(nproc --ignore=1) discourse -f /shared/postgres_dump/discourse"
           su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl stop -D /shared/postgres_data"
         
           su postgres -c "/usr/lib/postgresql/18/bin/pg_ctl start -D /shared/postgres_data_new"
           su postgres -c "/usr/lib/postgresql/18/bin/psql -c \"CREATE DATABASE discourse WITH TEMPLATE = template0 ENCODING = 'UTF8'\""
           su postgres -c "/usr/lib/postgresql/18/bin/psql -f /shared/postgres_dump/globals.sql"
-          su postgres -c "/usr/lib/postgresql/18/bin/pg_restore -e -j$(($(nproc) - 1)) -d discourse /shared/postgres_dump/discourse"
+          su postgres -c "/usr/lib/postgresql/18/bin/pg_restore -e -j$(nproc --ignore=1) -d discourse /shared/postgres_dump/discourse"
           su postgres -c "/usr/lib/postgresql/18/bin/pg_ctl stop -D /shared/postgres_data_new"
         
           rm -fr /shared/postgres_dump
