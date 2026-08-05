@@ -203,14 +203,9 @@ FROM discourse-runtime-base AS discourse-build-base
 # From https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
 # fingerprint: 6F71 F525 2828 41EE DAF8 51B4 2F59 B5F9 9B1B E0B4
 ADD nodesource-repo.gpg.key /usr/share/keyrings/nodesource.asc
-# From https://dl.yarnpkg.com/debian/pubkey.gpg
-# fingerprint: 72EC F46A 56B4 AD39 C907 BBB7 1646 B01B 86E5 0310
-ADD yarn-pubkey.gpg.key /usr/share/keyrings/yarn.asc
 RUN --mount=type=tmpfs,target=/var/log \
     --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt \
-# yarn packages
-    echo "deb [signed-by=/usr/share/keyrings/yarn.asc] https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list &&\
 # node packages
     printf 'Types: deb\nURIs: https://deb.nodesource.com/node_22.x\nSuites: nodistro\nComponents: main\nSigned-By: /usr/share/keyrings/nodesource.asc\n' > /etc/apt/sources.list.d/nodesource.sources &&\
     printf 'Package: nodejs\nPin: origin deb.nodesource.com\nPin-Priority: 600\n' > /etc/apt/preferences.d/nodejs &&\
@@ -227,7 +222,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     libreadline-dev \
     libunwind-dev \
 # node
-    nodejs yarn
+    nodejs
 
 # pnpm
 RUN --mount=type=tmpfs,target=/root/.npm \
@@ -252,7 +247,7 @@ RUN cd /var/www/discourse &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
 
 RUN cd /var/www/discourse &&\
-    sudo -u discourse /bin/bash -c 'if [ -f yarn.lock ]; then yarn install --frozen-lockfile && yarn cache clean; else pnpm install --frozen-lockfile; fi'
+    sudo -u discourse /bin/bash -c 'pnpm install --frozen-lockfile'
 
 FROM discourse-web-only AS discourse-release
 RUN --mount=type=tmpfs,target=/var/log \
