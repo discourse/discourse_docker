@@ -35,7 +35,7 @@ ADD mozilla-release-key.asc /tmp/mozilla-release-key.asc
 ADD install-firefox /tmp/install-firefox
 RUN /tmp/install-chrome &&\
     apt update &&\
-    apt install -y libgconf-2-4 libxss1 firefox-esr &&\
+    apt install -y libxss1 firefox-esr &&\
     /tmp/install-firefox &&\
     apt clean
 

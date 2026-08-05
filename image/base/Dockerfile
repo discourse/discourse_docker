@@ -1,7 +1,7 @@
 # NAME:     discourse/base
 # VERSION:  release
 
-ARG DEBIAN_RELEASE=bookworm
+ARG DEBIAN_RELEASE=trixie
 ARG RUBY_VERSION=3.4.10
 ARG FROM_DOCKER_IMAGE_TAG=${RUBY_VERSION}-${DEBIAN_RELEASE}-slim
 
@@ -9,14 +9,14 @@ FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS builder
 ARG DEBIAN_RELEASE
 ENV DEBIAN_RELEASE=${DEBIAN_RELEASE}
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
-RUN apt update && \
+RUN apt update &&\
 DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     autoconf build-essential \
     git \
     cmake \
     gnupg \
-    libpcre3-dev \
-    libfreetype6-dev \
+    libpcre2-dev \
+    libfreetype-dev \
     libbrotli-dev
 
 FROM builder AS libheif-builder
@@ -35,14 +35,6 @@ FROM libheif-builder AS vips-builder
 COPY --from=jpegli-builder /usr/local/lib/jpegli /usr/local/lib/jpegli
 ADD install-vips /tmp/install-vips
 RUN /tmp/install-vips
-
-FROM builder AS nginx-builder
-# From https://nginx.org/en/pgp_keys.html
-ADD nginx_public_keys.key /tmp/nginx_public_keys.key
-ADD install-nginx /tmp/install-nginx
-RUN gpg --import /tmp/nginx_public_keys.key &&\
-  rm /tmp/nginx_public_keys.key &&\
-  /tmp/install-nginx
 
 FROM builder AS thpoff-builder
 # This tool allows us to disable huge page support for our current process
@@ -86,45 +78,42 @@ COPY --from=libheif-builder /tmp/libheif-packages/libheif1.deb /tmp/libheif1.deb
 COPY --from=libheif-builder /tmp/libheif-packages/discourse-libheif-guard.deb /tmp/discourse-libheif-guard.deb
 
 RUN --mount=type=tmpfs,target=/var/log \
-  --mount=type=tmpfs,target=/var/cache/apt \
-  --mount=type=tmpfs,target=/var/lib/apt \
-    echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
+    --mount=type=tmpfs,target=/var/cache/apt \
+    --mount=type=tmpfs,target=/var/lib/apt \
+    echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+# custom libheif packages
     /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb \
 # discourse runtime requirements
-  gnupg sudo curl fping locales \
-  ca-certificates rsync \
+    gnupg sudo curl fping locales \
+    ca-certificates rsync \
     gawk anacron wget \
     psmisc whois brotli \
     pngcrush pngquant ripgrep poppler-utils \
     catdoc antiword parallel \
-# nginx runtime dependencies
-    libpcre3 zlib1g \
 # imagemagick runtime dependencies
     libjbig0 libtiff6 libpng16-16 libjpeg62-turbo libfontconfig1 \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
     fonts-urw-base35 \
-# oxipng dependencies \
+# oxipng dependencies
     advancecomp jpegoptim libjpeg-turbo-progs \
 # libvips runtime dependencies
     libglib2.0-0 libexpat1 libexif12 liblcms2-2 \
-    liborc-0.4-0 libcgif0 libimagequant0 libjxl0.7 libwebp7 \
-    libpango-1.0-0 libpangocairo-1.0-0 libcairo2 \
-# nginx runtime dependencies \
-    nginx-common && \
+    liborc-0.4-0 libcgif0 libimagequant0 libjxl0.11 libwebp7 \
+    libpango-1.0-0 libpangocairo-1.0-0 libcairo2 &&\
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
-    DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less; \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less &&\
 # postgres packages
     install -d /usr/share/postgresql-common/pgdg &&\
     curl -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc --fail https://www.postgresql.org/media/keys/ACCC4CF8.asc &&\
-    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${DEBIAN_RELEASE}-pgdg main" > /etc/apt/sources.list.d/pgdg.list; \
+    echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${DEBIAN_RELEASE}-pgdg main" > /etc/apt/sources.list.d/pgdg.list &&\
 # setup anacron, rsyslog, initctl
-    sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron; \
-    sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf; \
-    sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf; \
-    dpkg-divert --local --rename --add /sbin/initctl; \
-    sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl"; \
+    sed -i -e 's/start -q anacron/anacron -s/' /etc/cron.d/anacron &&\
+    sed -i.bak 's/$ModLoad imklog/#$ModLoad imklog/' /etc/rsyslog.conf &&\
+    sed -i.bak 's/module(load="imklog")/#module(load="imklog")/' /etc/rsyslog.conf &&\
+    dpkg-divert --local --rename --add /sbin/initctl &&\
+    sh -c "test -f /sbin/initctl || ln -s /bin/true /sbin/initctl" &&\
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
     libpq-dev postgresql-client-${PG_MAJOR} postgresql-client-${PG_MAJOR_OLD} &&\
     mkdir -p /etc/runit/1.d &&\
@@ -135,10 +124,15 @@ RUN --mount=type=tmpfs,target=/var/log \
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US.UTF-8
-RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen; \
+RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen &&\
     locale-gen
 
-COPY --from=nginx-builder /usr/sbin/nginx /usr/sbin
+# nginx
+RUN apt update &&\
+    DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    nginx-light \
+    libnginx-mod-http-brotli-filter \
+    libnginx-mod-http-brotli-static
 
 # Copy binary and configuration files for magick
 COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
@@ -209,17 +203,12 @@ FROM discourse-runtime-base AS discourse-build-base
 # From https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
 # fingerprint: 6F71 F525 2828 41EE DAF8 51B4 2F59 B5F9 9B1B E0B4
 ADD nodesource-repo.gpg.key /usr/share/keyrings/nodesource.asc
-# From https://dl.yarnpkg.com/debian/pubkey.gpg
-# fingerprint: 72EC F46A 56B4 AD39 C907 BBB7 1646 B01B 86E5 0310
-ADD yarn-pubkey.gpg.key /usr/share/keyrings/yarn.asc
 RUN --mount=type=tmpfs,target=/var/log \
-  --mount=type=tmpfs,target=/var/cache/apt \
-  --mount=type=tmpfs,target=/var/lib/apt \
-# yarn packages
-    echo "deb [signed-by=/usr/share/keyrings/yarn.asc] https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list; \
+    --mount=type=tmpfs,target=/var/cache/apt \
+    --mount=type=tmpfs,target=/var/lib/apt \
 # node packages
-    printf 'Types: deb\nURIs: https://deb.nodesource.com/node_22.x\nSuites: nodistro\nComponents: main\nSigned-By: /usr/share/keyrings/nodesource.asc\n' > /etc/apt/sources.list.d/nodesource.sources; \
-    printf 'Package: nodejs\nPin: origin deb.nodesource.com\nPin-Priority: 600\n' > /etc/apt/preferences.d/nodejs; \
+    printf 'Types: deb\nURIs: https://deb.nodesource.com/node_22.x\nSuites: nodistro\nComponents: main\nSigned-By: /usr/share/keyrings/nodesource.asc\n' > /etc/apt/sources.list.d/nodesource.sources &&\
+    printf 'Package: nodejs\nPin: origin deb.nodesource.com\nPin-Priority: 600\n' > /etc/apt/preferences.d/nodejs &&\
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
 # gem build dependencies
@@ -233,7 +222,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     libreadline-dev \
     libunwind-dev \
 # node
-    nodejs yarn
+    nodejs
 
 # pnpm
 RUN --mount=type=tmpfs,target=/root/.npm \
@@ -258,7 +247,7 @@ RUN cd /var/www/discourse &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
 
 RUN cd /var/www/discourse &&\
-    sudo -u discourse /bin/bash -c 'if [ -f yarn.lock ]; then yarn install --frozen-lockfile && yarn cache clean; else pnpm install --frozen-lockfile; fi'
+    sudo -u discourse /bin/bash -c 'pnpm install --frozen-lockfile'
 
 FROM discourse-web-only AS discourse-release
 RUN --mount=type=tmpfs,target=/var/log \
