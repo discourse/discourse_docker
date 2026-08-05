@@ -1,0 +1,30 @@
+#!/bin/bash
+set -e
+
+# Installs the latest Firefox release ("evergreen") into /opt/firefox-evergreen,
+# verified against Mozilla's GPG-signed SHA256SUMS using the release key
+# vendored in this repo as mozilla-release-key.asc.
+# key check (Mozilla rolls signing subkeys ~every 2 years):
+# https://archive.mozilla.org/pub/firefox/releases/<any version>/KEY
+
+FIREFOX_VERSION=$(wget -qO- https://product-details.mozilla.org/1.0/firefox_versions.json | grep -oE '"LATEST_FIREFOX_VERSION": *"[^"]+"' | cut -d'"' -f4)
+test -n "$FIREFOX_VERSION"
+echo "Installing Firefox $FIREFOX_VERSION"
+
+cd /tmp
+wget -q "https://archive.mozilla.org/pub/firefox/releases/$FIREFOX_VERSION/linux-x86_64/en-US/firefox-$FIREFOX_VERSION.tar.xz" -O firefox.tar.xz
+wget -q "https://archive.mozilla.org/pub/firefox/releases/$FIREFOX_VERSION/SHA256SUMS" -O SHA256SUMS
+wget -q "https://archive.mozilla.org/pub/firefox/releases/$FIREFOX_VERSION/SHA256SUMS.asc" -O SHA256SUMS.asc
+
+GNUPGHOME=$(mktemp -d)
+export GNUPGHOME
+gpg -q --import /tmp/mozilla-release-key.asc
+gpg --verify SHA256SUMS.asc SHA256SUMS
+
+FIREFOX_HASH=$(grep " linux-x86_64/en-US/firefox-$FIREFOX_VERSION.tar.xz\$" SHA256SUMS | cut -d' ' -f1)
+echo "$FIREFOX_HASH firefox.tar.xz" | sha256sum -c
+
+tar xJf firefox.tar.xz
+mv /tmp/firefox /opt/firefox-evergreen
+
+rm -rf "$GNUPGHOME" /tmp/firefox.tar.xz /tmp/SHA256SUMS /tmp/SHA256SUMS.asc /tmp/mozilla-release-key.asc

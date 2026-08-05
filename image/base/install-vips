@@ -1,0 +1,78 @@
+#!/bin/bash
+set -e
+
+# version check: https://github.com/libvips/libvips/releases
+VIPS_VERSION="8.18.4"
+VIPS_HASH="2677bad6c422617fd1172d359c16af34e736965d042c214203a87187d26ff037"
+
+PREFIX=/usr/local
+WDIR=/tmp/vips
+JPEGLI_PREFIX=/usr/local/lib/jpegli
+
+export DEBIAN_FRONTEND=noninteractive
+export PKG_CONFIG_PATH="$JPEGLI_PREFIX/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+apt -y -q install meson ninja-build pkg-config xz-utils \
+    libglib2.0-dev libexpat1-dev \
+    libpng-dev libwebp-dev libtiff-dev libjxl-dev librsvg2-dev \
+    libcgif-dev libexif-dev liblcms2-dev liborc-0.4-dev \
+    libimagequant-dev libpango1.0-dev
+
+test "$(pkg-config --variable=libdir libjpeg)" = "$JPEGLI_PREFIX/lib"
+
+mkdir -p $WDIR
+cd $WDIR
+
+wget -q -O $WDIR/vips.tar.xz "https://github.com/libvips/libvips/releases/download/v$VIPS_VERSION/vips-$VIPS_VERSION.tar.xz"
+sha256sum $WDIR/vips.tar.xz
+echo "$VIPS_HASH $WDIR/vips.tar.xz" | sha256sum -c
+tar xf $WDIR/vips.tar.xz -C $WDIR
+cd $WDIR/vips-$VIPS_VERSION
+
+meson setup build \
+  --prefix=$PREFIX \
+  --libdir=lib \
+  --buildtype=release \
+  --auto-features=disabled \
+  -Ddeprecated=false \
+  -Dexamples=false \
+  -Dcplusplus=false \
+  -Dppm=false \
+  -Danalyze=false \
+  -Dradiance=false \
+  -Dmodules=disabled \
+  -Dmagick=disabled \
+  -Dhighway=disabled \
+  -Dzlib=enabled \
+  -Djpeg=enabled \
+  -Dpng=enabled \
+  -Dwebp=enabled \
+  -Dtiff=enabled \
+  -Dheif=enabled \
+  -Djpeg-xl=enabled \
+  -Drsvg=enabled \
+  -Dcgif=enabled \
+  -Dexif=enabled \
+  -Dlcms=enabled \
+  -Dorc=enabled \
+  -Dimagequant=enabled \
+  -Dfontconfig=enabled \
+  -Dpangocairo=enabled
+
+ninja -C build -j"$(nproc)"
+ninja -C build install
+
+ldconfig $PREFIX/lib
+
+ldd "$PREFIX/lib/libvips.so.42" | grep -q "$JPEGLI_PREFIX/lib/libjpeg.so.62"
+
+for op in jpegload jpegsave pngload gifload webpload tiffload heifload jxlload svgload text; do
+  vips -l | grep -q "$op" || { echo "ERROR: vips is missing operation: $op"; exit 1; }
+done
+
+if vips -l | grep -qi magick || ldd $PREFIX/lib/libvips.so.42 | grep -Eqi 'libMagick|libgs\.so'; then
+  echo "ERROR: vips must not link to ImageMagick or Ghostscript"
+  exit 1
+fi
+
+cd $HOME
+rm -rf $WDIR

@@ -5,7 +5,7 @@
 shutdown() {
   echo Shutting Down
   /etc/runit/3
-  ls /etc/service | SHELL=/bin/sh parallel sv force-stop {}
+  ls /etc/service | xargs sv force-stop
   kill -HUP $RUNSVDIR
   wait $RUNSVDIR
 
@@ -13,7 +13,10 @@ shutdown() {
   sleep 0.1
 
   ORPHANS=`ps -eo pid | grep -v PID  | tr -d ' ' | grep -v '^1$'`
-  SHELL=/bin/bash parallel 'timeout 5 /bin/bash -c "kill {} && wait {}" || kill -9 {}' ::: $ORPHANS 2> /dev/null
+  for pid in $ORPHANS; do
+    (timeout 5 /bin/bash -c "kill $pid && wait $pid" 2>/dev/null || kill -9 $pid 2>/dev/null) &
+  done
+  wait
   exit
 }
 

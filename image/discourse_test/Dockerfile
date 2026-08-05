@@ -1,6 +1,6 @@
-ARG from_tag=build
+ARG from_tag=discourse/base:build
 
-FROM discourse/base:$from_tag AS base
+FROM $from_tag AS base
 ENV RAILS_ENV=test
 
 WORKDIR /var/www/discourse
@@ -13,7 +13,8 @@ RUN sudo -E -u discourse -H git config --global user.email "you@example.com" &&\
 # Include postgres and redis on test images
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
+  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
+  postgresql-${PG_MAJOR_OLD} postgresql-contrib-${PG_MAJOR_OLD} postgresql-${PG_MAJOR_OLD}-pgvector
 RUN /tmp/install-redis
 
 RUN chown -R discourse . &&\
@@ -24,19 +25,24 @@ RUN chown -R discourse . &&\
 FROM base AS with_browsers
 
 ENV TESTEM_DEFAULT_BROWSER=Chrome
+# From https://dl.google.com/linux/linux_signing_key.pub
+# fingerprint: EB4C 1BFD 4F04 2F6D DDCC EC91 7721 F63B D38B 4796
+ADD google-linux-signing-key.pub /usr/share/keyrings/google-chrome.asc
 ADD install-chrome /tmp/install-chrome
+# From https://archive.mozilla.org/pub/firefox/releases/<any version>/KEY
+# fingerprint: 14F2 6682 D091 6CDD 81E3 7B6D 61B7 B526 D98F 0353
+ADD mozilla-release-key.asc /tmp/mozilla-release-key.asc
+ADD install-firefox /tmp/install-firefox
 RUN /tmp/install-chrome &&\
     apt update &&\
     apt install -y libxss1 firefox-esr &&\
-    cd /tmp && wget -q "https://download.mozilla.org/?product=firefox-latest-ssl&os=linux64&lang=en-US" -O firefox.tar.xz &&\
-    tar xJvf firefox.tar.xz && mv /tmp/firefox /opt/firefox-evergreen &&\
-    apt clean &&\
-    rm /tmp/firefox.tar.xz
+    /tmp/install-firefox &&\
+    apt clean
 
 FROM with_browsers AS release
 
 RUN cd /var/www/discourse &&\
-    sudo -u discourse bundle install --jobs $(($(nproc) - 1)) &&\
+    sudo -u discourse bundle install --jobs $(nproc --ignore=1) &&\
     sudo -E -u discourse -H /bin/bash -c 'CI=1 pnpm install'
 
 RUN cd /var/www/discourse && sudo -E -u discourse -H bundle exec rake plugin:install_all_official &&\

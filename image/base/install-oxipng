@@ -1,27 +1,31 @@
 #!/bin/bash
 set -e
 
-# version check: https://github.com/shssoichiro/oxipng/releases
-OXIPNG_VERSION="9.1.2"
+# version check: https://github.com/oxipng/oxipng/releases
+OXIPNG_VERSION="10.1.1"
 dpkgArch="$(dpkg --print-architecture)"
 
 case "${dpkgArch##*-}" in
-    amd64) OXIPNG_FILE="oxipng-${OXIPNG_VERSION}-x86_64-unknown-linux-musl.tar.gz"; OXIPNG_HASH='211d53f3781be4a71566fbaad6611a3da018ac9b22d500651b091c2b42ebe318' ;;
-    arm64) OXIPNG_FILE="oxipng-${OXIPNG_VERSION}-aarch64-unknown-linux-musl.tar.gz"; OXIPNG_HASH='818d47d7195e1e0c4d58a9f3b6fd84aa3cd21770c60c876e73e2e6a17ca69b52' ;;
+    amd64) OXIPNG_FILE="oxipng-${OXIPNG_VERSION}-x86_64-unknown-linux-musl.tar.gz"; OXIPNG_HASH='a7e13e06040dea5fe1298668ac99afbe0ed781610a9e4b27d62a8850b3fdf273' ;;
+    arm64) OXIPNG_FILE="oxipng-${OXIPNG_VERSION}-aarch64-unknown-linux-musl.tar.gz"; OXIPNG_HASH='d8b599202378b038fc7571ba6ffd5f65592529a694f0315a7d436863c56029ed' ;;
     *) echo >&2 "unsupported architecture: ${dpkgArch}"; exit 1 ;;
 esac
 
 # Install other deps
 apt -y -q install advancecomp jpegoptim libjpeg-turbo-progs
 
-git clone --depth 1 --branch "3.08" https://github.com/Matthias-Wandel/jhead.git /tmp/jhead
+# jhead tag 3.08, fetched by commit since tags are mutable
+JHEAD_COMMIT="4d04ac965632e35a65709c7f92a857a749e71811"
+git init -q /tmp/jhead
+git -C /tmp/jhead fetch -q --depth 1 https://github.com/Matthias-Wandel/jhead.git "$JHEAD_COMMIT"
+git -C /tmp/jhead checkout -q "$JHEAD_COMMIT"
 cd /tmp/jhead && make && cp /tmp/jhead/jhead /usr/local/bin/jhead
 cd / && rm -rf /tmp/jhead
 
 mkdir /oxipng-install
 cd /oxipng-install
 
-wget -q https://github.com/shssoichiro/oxipng/releases/download/v${OXIPNG_VERSION}/${OXIPNG_FILE}
+wget -q https://github.com/oxipng/oxipng/releases/download/v${OXIPNG_VERSION}/${OXIPNG_FILE}
 sha256sum ${OXIPNG_FILE}
 echo "${OXIPNG_HASH} ${OXIPNG_FILE}" | sha256sum -c
 tar --strip-components=1 -xzf $OXIPNG_FILE
