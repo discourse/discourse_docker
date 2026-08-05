@@ -78,14 +78,15 @@ COPY --from=libheif-builder /tmp/libheif-packages/libheif1.deb /tmp/libheif1.deb
 COPY --from=libheif-builder /tmp/libheif-packages/discourse-libheif-guard.deb /tmp/discourse-libheif-guard.deb
 
 RUN --mount=type=tmpfs,target=/var/log \
-  --mount=type=tmpfs,target=/var/cache/apt \
-  --mount=type=tmpfs,target=/var/lib/apt \
+    --mount=type=tmpfs,target=/var/cache/apt \
+    --mount=type=tmpfs,target=/var/lib/apt \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
+# custom libheif packages
     /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb \
 # discourse runtime requirements
-  gnupg sudo curl fping locales \
-  ca-certificates rsync \
+    gnupg sudo curl fping locales \
+    ca-certificates rsync \
     gawk anacron wget \
     psmisc whois brotli \
     pngcrush pngquant ripgrep poppler-utils \
@@ -206,8 +207,8 @@ ADD nodesource-repo.gpg.key /usr/share/keyrings/nodesource.asc
 # fingerprint: 72EC F46A 56B4 AD39 C907 BBB7 1646 B01B 86E5 0310
 ADD yarn-pubkey.gpg.key /usr/share/keyrings/yarn.asc
 RUN --mount=type=tmpfs,target=/var/log \
-  --mount=type=tmpfs,target=/var/cache/apt \
-  --mount=type=tmpfs,target=/var/lib/apt \
+    --mount=type=tmpfs,target=/var/cache/apt \
+    --mount=type=tmpfs,target=/var/lib/apt \
 # yarn packages
     echo "deb [signed-by=/usr/share/keyrings/yarn.asc] https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list &&\
 # node packages
