@@ -1,124 +1,59 @@
 #!/bin/bash
 set -e
 
-# version check: https://github.com/strukturag/libheif/releases
 LIBHEIF_VERSION="1.23.1"
-PACKAGE_VERSION="$LIBHEIF_VERSION-1discourse1"
-LIBHEIF_HASH="0de0327f60fcd47de90d5654c6fe152232738d60d84fe084ec3e0f35e03b166a"
-
-PREFIX=/usr
+DEBIAN_VERSION="$LIBHEIF_VERSION-1"
+BASE_URL="https://deb.debian.org/debian/pool/main/libh/libheif"
 WDIR=/tmp/libheif
 PACKAGE_DIR=/tmp/libheif-packages
 
-export DEBIAN_FRONTEND=noninteractive
-apt -y -q install ninja-build pkg-config dpkg-dev libde265-dev libx265-dev libaom-dev
+DSC="libheif_${DEBIAN_VERSION}.dsc"
+ORIG="libheif_${LIBHEIF_VERSION}.orig.tar.gz"
+DEBIAN_TAR="libheif_${DEBIAN_VERSION}.debian.tar.xz"
 
-MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH)
-ARCHITECTURE=$(dpkg --print-architecture)
-test -n "$MULTIARCH"
-test -n "$ARCHITECTURE"
+export DEBIAN_FRONTEND=noninteractive
+apt-get -y -q install devscripts equivs
 
 mkdir -p "$WDIR" "$PACKAGE_DIR"
 cd "$WDIR"
 
-wget -q -O "$WDIR/libheif.tar.gz" "https://github.com/strukturag/libheif/releases/download/v$LIBHEIF_VERSION/libheif-$LIBHEIF_VERSION.tar.gz"
-echo "$LIBHEIF_HASH $WDIR/libheif.tar.gz" | sha256sum -c
-tar xzf "$WDIR/libheif.tar.gz" -C "$WDIR"
-cd "$WDIR/libheif-$LIBHEIF_VERSION"
-
-cmake -S . -B build -G Ninja \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX=$PREFIX \
-  "-DCMAKE_INSTALL_LIBDIR=lib/$MULTIARCH" \
-  -DBUILD_SHARED_LIBS=ON \
-  -DBUILD_TESTING=OFF \
-  -DBUILD_DOCUMENTATION=OFF \
-  -DENABLE_PLUGIN_LOADING=OFF \
-  -DWITH_EXAMPLES=OFF \
-  -DWITH_GDK_PIXBUF=OFF \
-  -DWITH_LIBDE265=ON \
-  -DWITH_X265=ON \
-  -DWITH_AOM_DECODER=ON \
-  -DWITH_AOM_ENCODER=ON \
-  -DWITH_X264=OFF \
-  -DWITH_OpenH264_DECODER=OFF
-
-cmake --build build -j"$(nproc)"
-DESTDIR="$WDIR/install" cmake --install build
-
-RUNTIME_ROOT="$WDIR/package-libheif1"
-DEV_ROOT="$WDIR/package-libheif-dev"
-GUARD_ROOT="$WDIR/package-discourse-libheif-guard"
-LIBDIR="usr/lib/$MULTIARCH"
-mkdir -p "$RUNTIME_ROOT/$LIBDIR" "$DEV_ROOT" "$GUARD_ROOT/DEBIAN"
-cp -a "$WDIR/install/." "$DEV_ROOT"
-mv "$DEV_ROOT/$LIBDIR"/libheif.so.1* "$RUNTIME_ROOT/$LIBDIR/"
-
-mkdir -p debian
-cat > debian/control <<EOF
-Source: libheif
-Section: libs
-Priority: optional
-Maintainer: Discourse Team <team@discourse.org>
-
-Package: libheif1
-Architecture: any
-Description: HEIF and AVIF codec library built for Discourse
-EOF
-RUNTIME_DEPENDS=$(dpkg-shlibdeps -O "$RUNTIME_ROOT/$LIBDIR/libheif.so.$LIBHEIF_VERSION" | sed -n 's/^shlibs:Depends=//p')
-test -n "$RUNTIME_DEPENDS"
-
-mkdir -p "$RUNTIME_ROOT/DEBIAN" "$DEV_ROOT/DEBIAN"
-cat > "$RUNTIME_ROOT/DEBIAN/control" <<EOF
-Package: libheif1
-Version: $PACKAGE_VERSION
-Architecture: $ARCHITECTURE
-Maintainer: Discourse Team <team@discourse.org>
-Section: libs
-Priority: optional
-Depends: $RUNTIME_DEPENDS
-Description: HEIF and AVIF codec library built for Discourse
- Pinned libheif build used by Discourse's ImageMagick and libvips.
-EOF
-cat > "$DEV_ROOT/DEBIAN/control" <<EOF
-Package: libheif-dev
-Version: $PACKAGE_VERSION
-Architecture: $ARCHITECTURE
-Maintainer: Discourse Team <team@discourse.org>
-Section: libdevel
-Priority: optional
-Depends: libheif1 (= $PACKAGE_VERSION)
-Description: HEIF and AVIF codec development files built for Discourse
- Development headers and metadata for the pinned Discourse libheif build.
-EOF
-cat > "$GUARD_ROOT/DEBIAN/control" <<EOF
-Package: discourse-libheif-guard
-Version: $PACKAGE_VERSION
-Architecture: all
-Maintainer: Discourse Team <team@discourse.org>
-Section: libs
-Priority: optional
-Depends: libheif1 (= $PACKAGE_VERSION)
-Conflicts: libheif1 (<< $PACKAGE_VERSION)
-Description: Prevent replacement of Discourse's pinned libheif build
- This guard makes direct installation of an older libheif1 package fail.
+wget -q "$BASE_URL/$DSC" "$BASE_URL/$ORIG" "$BASE_URL/$DEBIAN_TAR"
+cat <<EOF | sha256sum -c
+a9c2ea49af68fb13ac57b167cef3325c655fbe66a6f6eba16c1acb6c262d1b25  $DSC
+0de0327f60fcd47de90d5654c6fe152232738d60d84fe084ec3e0f35e03b166a  $ORIG
+e237289f23bc6607681843de81e9c19429ea5f1ca0f87b880658d08065179181  $DEBIAN_TAR
 EOF
 
-dpkg-deb --build --root-owner-group "$RUNTIME_ROOT" "$PACKAGE_DIR/libheif1.deb"
-dpkg-deb --build --root-owner-group "$DEV_ROOT" "$PACKAGE_DIR/libheif-dev.deb"
-dpkg-deb --build --root-owner-group "$GUARD_ROOT" "$PACKAGE_DIR/discourse-libheif-guard.deb"
-dpkg -i "$PACKAGE_DIR/libheif1.deb" "$PACKAGE_DIR/libheif-dev.deb" "$PACKAGE_DIR/discourse-libheif-guard.deb"
+dpkg-source -x "$DSC"
+cd "libheif-$LIBHEIF_VERSION"
+DEBFULLNAME="Discourse Team" DEBEMAIL="team@discourse.org" \
+  dch --force-bad-version --newversion "$LIBHEIF_VERSION-1~bpo13+discourse1" \
+      --distribution trixie --force-distribution \
+      "Rebuild Debian libheif 1.23.1 for the Discourse Trixie image."
+mk-build-deps --install --remove \
+  --tool 'apt-get -y -q --no-install-recommends' \
+  debian/control
+DEB_BUILD_OPTIONS="parallel=$(nproc)" dpkg-buildpackage -us -uc -b
+
+cp ../libheif1_*.deb \
+   ../libheif-dev_*.deb \
+   ../libheif-plugin-aomdec_*.deb \
+   ../libheif-plugin-aomenc_*.deb \
+   ../libheif-plugin-libde265_*.deb \
+   ../libheif-plugin-x265_*.deb \
+   "$PACKAGE_DIR/"
+
+apt-get -y -q install \
+  "$PACKAGE_DIR"/libheif1_*.deb \
+  "$PACKAGE_DIR"/libheif-dev_*.deb \
+  "$PACKAGE_DIR"/libheif-plugin-aomdec_*.deb \
+  "$PACKAGE_DIR"/libheif-plugin-aomenc_*.deb \
+  "$PACKAGE_DIR"/libheif-plugin-libde265_*.deb \
+  "$PACKAGE_DIR"/libheif-plugin-x265_*.deb
 ldconfig
 
-# Keep HEVC and AV1 support built into the library so no libheif plugins need
-# to be installed in the runtime image.
 test "$(pkg-config --modversion libheif)" = "$LIBHEIF_VERSION"
-ldd "$PREFIX/lib/$MULTIARCH/libheif.so.1" | grep -q 'libde265\.so'
-ldd "$PREFIX/lib/$MULTIARCH/libheif.so.1" | grep -q 'libx265\.so'
-ldd "$PREFIX/lib/$MULTIARCH/libheif.so.1" | grep -q 'libaom\.so'
-
-dpkg-query -W -f='${Version}\n' libheif1 | grep -qx "$PACKAGE_VERSION"
-dpkg-query -S "$PREFIX/lib/$MULTIARCH/libheif.so.$LIBHEIF_VERSION" | grep -q '^libheif1:'
-
-cd "$HOME"
-rm -rf "$WDIR"
+test "$(find /usr/lib -path '*/libheif/plugins/libheif-aomdec.so' | wc -l)" -eq 1
+test "$(find /usr/lib -path '*/libheif/plugins/libheif-aomenc.so' | wc -l)" -eq 1
+test "$(find /usr/lib -path '*/libheif/plugins/libheif-libde265.so' | wc -l)" -eq 1
+test "$(find /usr/lib -path '*/libheif/plugins/libheif-x265.so' | wc -l)" -eq 1

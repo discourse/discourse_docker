@@ -1,0 +1,5 @@
+discourse-thpoff (1.0-1discourse1) trixie; urgency=medium
+
+  * Package the Discourse transparent-huge-page execution helper.
+
+ -- Discourse Team <team@discourse.org>  Mon, 10 Aug 2026 00:00:00 +0000

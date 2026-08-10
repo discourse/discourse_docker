@@ -1,0 +1,14 @@
+Source: discourse-thpoff
+Section: admin
+Priority: optional
+Maintainer: Discourse Team <team@discourse.org>
+Build-Depends: debhelper-compat (= 13), linux-libc-dev
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+
+Package: discourse-thpoff
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: disable transparent huge pages before executing a command
+ A small wrapper that applies PR_SET_THP_DISABLE and then executes the given
+ command. The setting is inherited through fork and exec.

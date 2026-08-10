@@ -1,0 +1,12 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: jhead
+Source: https://github.com/Matthias-Wandel/jhead
+
+Files: *
+Copyright: Matthias Wandel
+License: public-domain
+ The upstream author has placed jhead in the public domain.
+
+Files: debian/*
+Copyright: 2026 Discourse Team
+License: public-domain

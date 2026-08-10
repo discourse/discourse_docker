@@ -14,8 +14,9 @@ RUN sudo -E -u discourse -H git config --global user.email "you@example.com" &&\
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
   postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
-  postgresql-${PG_MAJOR_OLD} postgresql-contrib-${PG_MAJOR_OLD} postgresql-${PG_MAJOR_OLD}-pgvector
-RUN /tmp/install-redis
+  postgresql-${PG_MAJOR_OLD} postgresql-contrib-${PG_MAJOR_OLD} postgresql-${PG_MAJOR_OLD}-pgvector \
+  redis-server &&\
+  redis-server --version | grep -q 'v=8\.'
 
 RUN chown -R discourse . &&\
     chown -R discourse /var/run/postgresql &&\

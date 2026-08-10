@@ -1,0 +1,18 @@
+Source: discourse-jhead
+Section: graphics
+Priority: optional
+Maintainer: Discourse Team <team@discourse.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/Matthias-Wandel/jhead
+
+Package: discourse-jhead
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libjpeg-turbo-progs
+Provides: jhead
+Conflicts: jhead
+Replaces: jhead
+Description: minimal JPEG metadata utility for Discourse
+ The jhead executable, packaged without Debian jhead's ImageMagick dependency.
+ jpegtran is included as a dependency for lossless autorotation.

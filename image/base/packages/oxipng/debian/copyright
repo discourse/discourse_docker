@@ -1,0 +1,14 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: oxipng
+Source: https://github.com/oxipng/oxipng
+
+Files: *
+Copyright: Josh Triplett and oxipng contributors
+License: MIT
+
+Files: debian/*
+Copyright: 2026 Discourse Team
+License: MIT
+
+License: MIT
+ See the upstream LICENSE file for the complete license text.

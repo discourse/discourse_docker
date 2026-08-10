@@ -1,0 +1,18 @@
+Source: discourse-oxipng
+Section: graphics
+Priority: optional
+Maintainer: Discourse Team <team@discourse.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/oxipng/oxipng
+
+Package: discourse-oxipng
+Architecture: amd64 arm64
+Depends: ${misc:Depends}
+Provides: oxipng
+Conflicts: oxipng
+Replaces: oxipng
+Description: lossless PNG optimizer packaged for Discourse
+ This package contains the architecture-specific, verified upstream musl
+ executable for oxipng 10.1.1.

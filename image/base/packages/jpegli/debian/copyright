@@ -1,0 +1,14 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: jpegli
+Source: https://github.com/google/jpegli
+
+Files: *
+Copyright: Google LLC and contributors
+License: BSD-3-clause
+
+Files: debian/*
+Copyright: 2026 Discourse Team
+License: BSD-3-clause
+
+License: BSD-3-clause
+ See the upstream LICENSE file for the complete license text.

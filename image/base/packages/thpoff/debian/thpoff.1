@@ -1,0 +1,11 @@
+.TH THPOFF 1 "August 2026" "discourse-thpoff 1.0" "User Commands"
+.SH NAME
+thpoff \- disable transparent huge pages before executing a command
+.SH SYNOPSIS
+.B thpoff
+.I command
+.RI [ argument ...]
+.SH DESCRIPTION
+.B thpoff
+uses PR_SET_THP_DISABLE for the current process and then executes the supplied
+command. The setting is inherited across fork and exec.

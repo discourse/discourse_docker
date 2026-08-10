@@ -1,0 +1,3 @@
+# This package intentionally wraps oxipng's verified upstream static PIE.
+discourse-oxipng: no-manual-page [usr/bin/oxipng]
+discourse-oxipng: shared-library-lacks-prerequisites [usr/bin/oxipng]

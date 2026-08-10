@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(MAKE) -f makefile
+
+override_dh_auto_install:
+	install -D -m 0755 jhead debian/discourse-jhead/usr/bin/jhead
+	install -D -m 0644 jhead.1 debian/discourse-jhead/usr/share/man/man1/jhead.1

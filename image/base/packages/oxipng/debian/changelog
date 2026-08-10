@@ -1,0 +1,5 @@
+discourse-oxipng (10.1.1-1discourse1) trixie; urgency=medium
+
+  * Package the verified upstream static oxipng executable.
+
+ -- Discourse Team <team@discourse.org>  Mon, 10 Aug 2026 00:00:00 +0000

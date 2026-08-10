@@ -1,0 +1,5 @@
+discourse-jemalloc (3.6.0-1discourse1) trixie; urgency=medium
+
+  * Build jemalloc 3.6.0 for the Discourse Ruby allocator.
+
+ -- Discourse Team <team@discourse.org>  Mon, 10 Aug 2026 00:00:00 +0000

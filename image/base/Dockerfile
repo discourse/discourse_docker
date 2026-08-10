@@ -27,12 +27,14 @@ FROM libheif-builder AS imagemagick_builder
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
-FROM libheif-builder AS jpegli-builder
+FROM builder AS jpegli-builder
+ADD packages/jpegli /tmp/jpegli-packaging
 ADD install-jpegli /tmp/install-jpegli
 RUN /tmp/install-jpegli
 
 FROM libheif-builder AS vips-builder
-COPY --from=jpegli-builder /usr/local/lib/jpegli /usr/local/lib/jpegli
+COPY --from=jpegli-builder /tmp/jpegli-packages /tmp/jpegli-debs
+ADD packages/vips /tmp/vips-packaging
 ADD install-vips /tmp/install-vips
 RUN /tmp/install-vips
 
@@ -40,14 +42,19 @@ FROM builder AS thpoff-builder
 # This tool allows us to disable huge page support for our current process
 # since the flag is preserved through forks and execs it can be used on any
 # process
-ADD thpoff.c /src/thpoff.c
-RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
+ADD packages/thpoff /tmp/thpoff-packaging
+ADD thpoff.c /tmp/thpoff.c
+ADD install-thpoff /tmp/install-thpoff
+RUN /tmp/install-thpoff
 
 FROM builder AS jemalloc-builder
+ADD packages/jemalloc /tmp/jemalloc-packaging
 ADD install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
 
-FROM builder AS oxipng-builder
+FROM builder AS image-tools-builder
+ADD packages/jhead /tmp/jhead-packaging
+ADD packages/oxipng /tmp/oxipng-packaging
 ADD install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
@@ -58,7 +65,7 @@ ARG PG_MAJOR=18
 ARG PG_MAJOR_OLD=15
 ENV PG_MAJOR=${PG_MAJOR} \
     PG_MAJOR_OLD=${PG_MAJOR_OLD} \
-    RUBY_ALLOCATOR=/usr/lib/libjemalloc.so \
+    RUBY_ALLOCATOR=/usr/lib/libjemalloc.so.1 \
     LEFTHOOK=0 \
     DEBIAN_RELEASE=${DEBIAN_RELEASE}
 
@@ -74,16 +81,24 @@ RUN groupadd --gid 104 postgres &&\
 RUN echo 2.0.`date +%Y%m%d` > /VERSION
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
 
-COPY --from=libheif-builder /tmp/libheif-packages/libheif1.deb /tmp/libheif1.deb
-COPY --from=libheif-builder /tmp/libheif-packages/discourse-libheif-guard.deb /tmp/discourse-libheif-guard.deb
+COPY --from=libheif-builder /tmp/libheif-packages/libheif1_*.deb /tmp/local-debs/
+COPY --from=libheif-builder /tmp/libheif-packages/libheif-plugin-aomdec_*.deb /tmp/local-debs/
+COPY --from=libheif-builder /tmp/libheif-packages/libheif-plugin-aomenc_*.deb /tmp/local-debs/
+COPY --from=libheif-builder /tmp/libheif-packages/libheif-plugin-libde265_*.deb /tmp/local-debs/
+COPY --from=libheif-builder /tmp/libheif-packages/libheif-plugin-x265_*.deb /tmp/local-debs/
+COPY --from=jpegli-builder /tmp/jpegli-packages/discourse-libjpegli62_*.deb /tmp/local-debs/
+COPY --from=vips-builder /tmp/vips-packages/*.deb /tmp/local-debs/
+COPY --from=jemalloc-builder /tmp/jemalloc-packages/*.deb /tmp/local-debs/
+COPY --from=image-tools-builder /tmp/image-tool-packages/*.deb /tmp/local-debs/
+COPY --from=thpoff-builder /tmp/thpoff-packages/*.deb /tmp/local-debs/
 
 RUN --mount=type=tmpfs,target=/var/log \
     --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-# custom libheif packages
-    /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb \
+# locally built Debian packages
+    /tmp/local-debs/*.deb \
 # discourse runtime requirements
     gnupg sudo curl fping locales \
     ca-certificates rsync \
@@ -117,9 +132,9 @@ RUN --mount=type=tmpfs,target=/var/log \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
     libpq-dev postgresql-client-${PG_MAJOR} postgresql-client-${PG_MAJOR_OLD} &&\
     mkdir -p /etc/runit/1.d &&\
-    apt-mark hold libheif1 discourse-libheif-guard &&\
-    rm /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb &&\
-    test "$(dpkg-query -W -f='${Version}' libheif1)" = "1.23.1-1discourse1"
+    rm -rf /tmp/local-debs &&\
+    test "$(dpkg-query -W -f='${Version}' libheif1)" = "1.23.1-1~bpo13+discourse1" &&\
+    test "$(dpkg-query -W -f='${Version}' libjemalloc1)" = "3.6.0-1discourse1"
 
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
@@ -153,35 +168,32 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
   test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
-COPY --from=vips-builder /usr/local/bin/vips /usr/local/bin/vips
-COPY --from=vips-builder /usr/local/bin/vipsheader /usr/local/bin/vipsheader
-COPY --from=vips-builder /usr/local/lib/libvips.so.42 /usr/local/lib/libvips.so.42
-COPY --from=vips-builder /usr/local/lib/jpegli/lib/libjpeg.so.62.3.0 /usr/local/lib/jpegli/lib/libjpeg.so.62
 RUN ldconfig &&\
   ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.1"' &&\
   ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\
   sudo -u discourse vips --version &&\
   sudo -u discourse vipsheader --version &&\
-  ldd /usr/local/bin/vips | grep -q '/usr/local/lib/libvips.so.42' &&\
-  ldd /usr/local/bin/vipsheader | grep -q '/usr/local/lib/libvips.so.42' &&\
-  ldd /usr/local/lib/libvips.so.42 | grep -q '/usr/local/lib/jpegli/lib/libjpeg.so.62' &&\
-  ldd /usr/local/bin/magick | grep 'libjpeg.so.62' | grep -vq '/usr/local/lib/jpegli/' &&\
+  dpkg-query -W discourse-libjpegli62 discourse-libvips42 discourse-vips-tools discourse-jhead discourse-oxipng discourse-thpoff >/dev/null &&\
+  dpkg-query -S "$(command -v vips)" | grep -q '^discourse-vips-tools:' &&\
+  dpkg-query -S "$(command -v jhead)" | grep -q '^discourse-jhead:' &&\
+  dpkg-query -S "$(command -v oxipng)" | grep -q '^discourse-oxipng:' &&\
+  ldd /usr/lib/*/libvips.so.42 | grep -q '/usr/lib/.*/discourse/jpegli/libjpeg.so.62' &&\
+  ldd /usr/local/bin/magick | grep 'libjpeg.so.62' | grep -vq '/discourse/jpegli/' &&\
   sudo -u discourse vips black /tmp/vips-jpegli.jpg 1 1 &&\
   sudo -u discourse vipsheader /tmp/vips-jpegli.jpg >/dev/null &&\
-  rm /tmp/vips-jpegli.jpg &&\
+  sudo -u discourse vips black /tmp/vips-heif.heic 2 2 &&\
+  sudo -u discourse vipsheader /tmp/vips-heif.heic >/dev/null &&\
+  sudo -u discourse magick identify /tmp/vips-heif.heic >/dev/null &&\
+  sudo -u discourse vips black /tmp/vips-avif.avif 2 2 &&\
+  sudo -u discourse vipsheader /tmp/vips-avif.avif >/dev/null &&\
+  sudo -u discourse magick identify /tmp/vips-avif.avif >/dev/null &&\
+  rm /tmp/vips-jpegli.jpg /tmp/vips-heif.heic /tmp/vips-avif.avif &&\
   for op in jpegload jpegsave pngload gifload webpload tiffload heifload jxlload svgload text thumbnail autorot gravity flatten; do \
     sudo -u discourse vips -l "$op" >/dev/null || { echo "ERROR: vips is missing operation: $op"; exit 1; }; \
   done &&\
   if dpkg-query -W -f '${Package} ${db:Status-Status}\n' ghostscript libgs10 libgs-common libgs10-common 2>/dev/null | grep -q ' installed$' || command -v gs >/dev/null; then \
     echo "ERROR: ghostscript must not be present in this image"; exit 1; \
   fi
-
-COPY --from=thpoff-builder /usr/local/sbin/thpoff /usr/local/sbin
-COPY --from=jemalloc-builder /usr/lib/libjemalloc.so /usr/lib
-COPY --from=oxipng-builder /usr/local/bin/jhead /usr/local/bin
-COPY --from=oxipng-builder /usr/local/bin/oxipng /usr/local/bin
-
-ADD install-redis /tmp/install-redis
 
 # version check: https://rubygems.org/gems/pups
 RUN cd /tmp &&\
@@ -252,5 +264,6 @@ RUN cd /var/www/discourse &&\
 FROM discourse-web-only AS discourse-release
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
-RUN /tmp/install-redis
+  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
+  redis-server &&\
+  redis-server --version | grep -q 'v=8\.'

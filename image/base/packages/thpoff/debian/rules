@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	$(CC) $(CPPFLAGS) $(CFLAGS) $(LDFLAGS) -o thpoff thpoff.c
+
+override_dh_auto_install:
+	install -D -m 0755 thpoff debian/discourse-thpoff/usr/sbin/thpoff
+	install -D -m 0644 debian/thpoff.1 debian/discourse-thpoff/usr/share/man/man1/thpoff.1

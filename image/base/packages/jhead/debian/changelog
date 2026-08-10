@@ -1,0 +1,5 @@
+discourse-jhead (3.08-1discourse1) trixie; urgency=medium
+
+  * Package the minimal jhead executable without unrelated image tools.
+
+ -- Discourse Team <team@discourse.org>  Mon, 10 Aug 2026 00:00:00 +0000

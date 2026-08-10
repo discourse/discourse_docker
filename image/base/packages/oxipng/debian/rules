@@ -1,0 +1,15 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	test -x upstream/oxipng
+	install -D -m 0755 upstream/oxipng debian/discourse-oxipng/usr/bin/oxipng
+	install -D -m 0644 upstream/MANUAL.txt debian/discourse-oxipng/usr/share/doc/discourse-oxipng/MANUAL.txt
+
+override_dh_strip:

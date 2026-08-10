@@ -1,0 +1,17 @@
+#!/bin/bash
+set -e
+
+WDIR=/tmp/discourse-thpoff-1.0
+PACKAGE_DIR=/tmp/thpoff-packages
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get -y -q install debhelper
+mkdir -p "$WDIR" "$PACKAGE_DIR"
+cp /tmp/thpoff.c "$WDIR/thpoff.c"
+cp -a /tmp/thpoff-packaging/debian "$WDIR/debian"
+cd "$WDIR"
+dpkg-buildpackage -us -uc -b
+cp ../discourse-thpoff_*.deb "$PACKAGE_DIR/"
+apt-get -y -q install "$PACKAGE_DIR"/discourse-thpoff_*.deb
+dpkg-deb --info "$PACKAGE_DIR"/discourse-thpoff_*.deb >/dev/null
+/usr/sbin/thpoff /bin/true

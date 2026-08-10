@@ -1,0 +1,15 @@
+Source: discourse-jemalloc
+Section: libs
+Priority: optional
+Maintainer: Discourse Team <team@discourse.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/jemalloc/jemalloc
+
+Package: libjemalloc1
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: jemalloc 3.6 allocator for Discourse Ruby processes
+ This package contains the pinned jemalloc ABI used as Discourse's Ruby
+ allocator. It is intentionally co-installable with Debian's libjemalloc2.

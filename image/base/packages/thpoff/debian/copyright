@@ -1,0 +1,11 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: thpoff
+
+Files: *
+Copyright: Public domain
+License: public-domain
+ This work is dedicated to the public domain.
+
+Files: debian/*
+Copyright: 2026 Discourse Team
+License: public-domain

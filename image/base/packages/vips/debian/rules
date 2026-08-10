@@ -1,0 +1,52 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/architecture.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export PKG_CONFIG_PATH = /usr/lib/$(DEB_HOST_MULTIARCH)/discourse/jpegli/pkgconfig
+
+%:
+	dh $@ --buildsystem=meson
+
+override_dh_auto_configure:
+	dh_auto_configure --buildsystem=meson -- \
+		--buildtype=plain \
+		--auto-features=disabled \
+		-Ddeprecated=false \
+		-Dexamples=false \
+		-Dcplusplus=false \
+		-Dppm=false \
+		-Danalyze=false \
+		-Dradiance=false \
+		-Dmodules=disabled \
+		-Dmagick=disabled \
+		-Dhighway=disabled \
+		-Dzlib=enabled \
+		-Djpeg=enabled \
+		-Dpng=enabled \
+		-Dwebp=enabled \
+		-Dtiff=enabled \
+		-Dheif=enabled \
+		-Djpeg-xl=enabled \
+		-Drsvg=enabled \
+		-Dcgif=enabled \
+		-Dexif=enabled \
+		-Dlcms=enabled \
+		-Dorc=enabled \
+		-Dimagequant=enabled \
+		-Dfontconfig=enabled \
+		-Dpangocairo=enabled
+
+override_dh_auto_test:
+	LD_LIBRARY_PATH=$(CURDIR)/obj-$(DEB_HOST_GNU_TYPE)/libvips \
+		dh_auto_test --buildsystem=meson
+
+override_dh_auto_install:
+	dh_auto_install --buildsystem=meson
+	for tool in debian/tmp/usr/bin/vips*; do chrpath --delete "$$tool" || true; done
+
+override_dh_shlibdeps:
+	dh_shlibdeps -- -l/usr/lib/$(DEB_HOST_MULTIARCH)/discourse/jpegli
+
+override_dh_missing:
+	dh_missing --fail-missing

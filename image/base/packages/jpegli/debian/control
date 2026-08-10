@@ -1,0 +1,22 @@
+Source: discourse-jpegli
+Section: libs
+Priority: optional
+Maintainer: Discourse Team <team@discourse.org>
+Build-Depends: debhelper-compat (= 13), cmake, ninja-build, liblcms2-dev, pkgconf
+Standards-Version: 4.7.2
+Rules-Requires-Root: no
+Homepage: https://github.com/google/jpegli
+
+Package: discourse-libjpegli62
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: private JPEGli libjpeg-compatible runtime for Discourse
+ JPEGli's libjpeg-compatible ABI, installed in a private directory for the
+ reduced Discourse libvips build.
+
+Package: discourse-libjpegli-dev
+Section: libdevel
+Architecture: any
+Depends: discourse-libjpegli62 (= ${binary:Version}), ${misc:Depends}
+Description: development files for Discourse's private JPEGli library
+ Headers and pkg-config metadata used to link Discourse's libvips package.

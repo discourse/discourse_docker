@@ -1,0 +1,4 @@
+The binary in upstream/ is extracted from oxipng's architecture-specific
+v10.1.1 musl release archive after the archive's pinned SHA-256 is verified by
+install-oxipng. Debian packaging provides ownership and versioning, but does
+not rebuild or re-harden this Rust executable.

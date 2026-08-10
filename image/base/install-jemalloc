@@ -1,32 +1,24 @@
 #!/bin/bash
 set -e
 
-# version check: https://github.com/jemalloc/jemalloc/releases
+JEMALLOC_VERSION="3.6.0"
+JEMALLOC_HASH="e16c2159dd3c81ca2dc3b5c9ef0d43e1f2f45b04548f42db12e7c12d7bdf84fe"
+WDIR=/tmp/discourse-jemalloc-$JEMALLOC_VERSION
+PACKAGE_DIR=/tmp/jemalloc-packages
 
-# Newer aarch64 platforms, like Raspberry Pi 5 with Debian Bookworm, are
-# shipping with PAGESIZE=16K. Setting it here is retrocompatible with older
-# systems, so it's safe to set it unconditionally for arm.
-# This means aarch64 will use the latest jemalloc, where we can configure the
-# page size, while x64 will keep using our pinned 3.6.0 jemalloc
-if uname -m | grep -qi 'aarch64'; then
-  mkdir /jemalloc-new
-  cd /jemalloc-new
+export DEBIAN_FRONTEND=noninteractive
+apt-get -y -q install debhelper
 
-  wget -q https://github.com/jemalloc/jemalloc/releases/download/5.3.1/jemalloc-5.3.1.tar.bz2
-  sha256sum jemalloc-5.3.1.tar.bz2
-  echo "3826bc80232f22ed5c4662f3034f799ca316e819103bdc7bb99018a421706f92 jemalloc-5.3.1.tar.bz2" | sha256sum -c
-  tar --strip-components=1 -xjf jemalloc-5.3.1.tar.bz2
-  ./configure --prefix=/usr --with-lg-page=16 && make build_lib -j"$(nproc)" && make install_lib_shared
-  cd / && rm -rf /jemalloc-new
-else
-  # jemalloc stable
-  mkdir /jemalloc-stable
-  cd /jemalloc-stable
+mkdir -p "$WDIR" "$PACKAGE_DIR"
+wget -q -O /tmp/jemalloc.tar.bz2 \
+  "https://github.com/jemalloc/jemalloc/releases/download/$JEMALLOC_VERSION/jemalloc-$JEMALLOC_VERSION.tar.bz2"
+echo "$JEMALLOC_HASH  /tmp/jemalloc.tar.bz2" | sha256sum -c
+tar --strip-components=1 -xjf /tmp/jemalloc.tar.bz2 -C "$WDIR"
+cp -a /tmp/jemalloc-packaging/debian "$WDIR/debian"
 
-  wget -q https://github.com/jemalloc/jemalloc/releases/download/3.6.0/jemalloc-3.6.0.tar.bz2
-  sha256sum jemalloc-3.6.0.tar.bz2
-  echo "e16c2159dd3c81ca2dc3b5c9ef0d43e1f2f45b04548f42db12e7c12d7bdf84fe jemalloc-3.6.0.tar.bz2" | sha256sum -c
-  tar --strip-components=1 -xjf jemalloc-3.6.0.tar.bz2
-  ./configure --prefix=/usr $EXTRA_CONF && make -j"$(nproc)" && make install_lib_shared
-  cd / && rm -rf /jemalloc-stable
-fi
+cd "$WDIR"
+DEB_BUILD_OPTIONS="parallel=$(nproc)" dpkg-buildpackage -us -uc -b
+cp ../libjemalloc1_*.deb "$PACKAGE_DIR/"
+apt-get -y -q install "$PACKAGE_DIR"/libjemalloc1_*.deb
+dpkg-deb --info "$PACKAGE_DIR"/libjemalloc1_*.deb >/dev/null
+LD_PRELOAD=/usr/lib/libjemalloc.so.1 ruby -e '100_000.times { Object.new }; GC.start'

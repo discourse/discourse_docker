@@ -1,0 +1,4 @@
+usr/include/**
+usr/lib/*/libvips.so
+usr/lib/*/pkgconfig/vips.pc
+usr/share/locale/**

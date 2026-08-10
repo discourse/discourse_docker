@@ -1,0 +1,16 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: jemalloc
+Source: https://github.com/jemalloc/jemalloc
+
+Files: *
+Copyright: Jason Evans and contributors
+License: BSD-2-clause
+
+Files: debian/*
+Copyright: 2026 Discourse Team
+License: BSD-2-clause
+
+License: BSD-2-clause
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the conditions in the upstream
+ COPYING file are met.

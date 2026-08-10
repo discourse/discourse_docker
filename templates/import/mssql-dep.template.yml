@@ -6,15 +6,8 @@ params:
 hooks:
   after_web_config:
     - exec:
-        cd: /tmp
         cmd:
-          - wget -q -O freetds.tar.gz http://www.freetds.org/files/stable/freetds-1.00.91.tar.gz
-          - tar -xzf freetds.tar.gz
-    - exec:
-        cd: /tmp/freetds-*
-        cmd:
-          - ./configure --prefix=/usr/local --with-tdsver=7.3
-          - make && make install
+          - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends freetds-dev
 
   after_bundle_exec:
     - exec:

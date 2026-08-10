@@ -1,0 +1,3 @@
+usr/include/discourse/jpegli
+usr/lib/*/discourse/jpegli/libjpeg.so
+usr/lib/*/discourse/jpegli/pkgconfig/libjpeg.pc

@@ -1,0 +1,4 @@
+# libvips intentionally uses a private JPEGli ABI so it cannot replace the
+# system libjpeg used by ImageMagick.
+discourse-libvips42: custom-library-search-path RUNPATH *discourse/jpegli* [usr/lib/*/libvips.so.42.*]
+discourse-libvips42: package-name-doesnt-match-sonames libvips42

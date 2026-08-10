@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+export AUTOHEADER = true
+
+%:
+	dh $@
+
+override_dh_auto_configure:
+	dh_auto_configure -- --prefix=/usr --libdir=/usr/lib --disable-prof
+
+override_dh_auto_build:
+	dh_auto_build -- build_lib
+
+override_dh_auto_test:
+	# jemalloc 3.6's unit-test symbol overrides are incompatible with modern
+	# -fno-common toolchains. The built package is smoke-tested after install.
+
+override_dh_auto_install:
+	$(MAKE) DESTDIR=$(CURDIR)/debian/libjemalloc1 install_lib_shared
+	rm debian/libjemalloc1/usr/lib/libjemalloc.so

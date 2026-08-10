@@ -1,0 +1,54 @@
+#!/usr/bin/make -f
+
+include /usr/share/dpkg/architecture.mk
+
+export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+%:
+	dh $@ --buildsystem=cmake+ninja
+
+override_dh_auto_configure:
+	dh_auto_configure --buildsystem=cmake+ninja -- \
+		-DCMAKE_BUILD_TYPE=None \
+		-DCMAKE_INSTALL_PREFIX=/usr \
+		-DCMAKE_INSTALL_LIBDIR=lib/$(DEB_HOST_MULTIARCH)/discourse/jpegli \
+		-DCMAKE_INSTALL_INCLUDEDIR=include/discourse/jpegli \
+		-DBUILD_SHARED_LIBS=ON \
+		-DBUILD_TESTING=OFF \
+		-DJPEGLI_ENABLE_FUZZERS=OFF \
+		-DJPEGLI_ENABLE_DEVTOOLS=OFF \
+		-DJPEGLI_ENABLE_TOOLS=OFF \
+		-DJPEGLI_ENABLE_JPEGLI_LIBJPEG=ON \
+		-DJPEGLI_INSTALL_JPEGLI_LIBJPEG=ON \
+		-DJPEGLI_ENABLE_DOXYGEN=OFF \
+		-DJPEGLI_ENABLE_MANPAGES=OFF \
+		-DJPEGLI_ENABLE_BENCHMARK=OFF \
+		-DJPEGLI_BUNDLE_LIBPNG=OFF \
+		-DJPEGLI_ENABLE_JNI=OFF \
+		-DJPEGLI_ENABLE_SJPEG=OFF \
+		-DJPEGLI_ENABLE_OPENEXR=OFF \
+		-DJPEGLI_ENABLE_SKCMS=OFF \
+		-DJPEGLI_ENABLE_TCMALLOC=OFF \
+		-DJPEGLI_FORCE_SYSTEM_LCMS2=ON
+
+override_dh_auto_install:
+	dh_auto_install --buildsystem=cmake+ninja
+	mkdir -p debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/discourse/jpegli/pkgconfig
+	printf '%s\n' \
+		'prefix=/usr' \
+		'exec_prefix=$${prefix}' \
+		'libdir=$${exec_prefix}/lib/$(DEB_HOST_MULTIARCH)/discourse/jpegli' \
+		'includedir=$${prefix}/include/discourse/jpegli' \
+		'' \
+		'Name: libjpeg' \
+		'Description: private JPEGli libjpeg-compatible library' \
+		'Version: 62.3.0' \
+		'Libs: -L$${libdir} -Wl,-rpath,$${libdir} -ljpeg' \
+		'Cflags: -I$${includedir}' \
+		> debian/tmp/usr/lib/$(DEB_HOST_MULTIARCH)/discourse/jpegli/pkgconfig/libjpeg.pc
+
+override_dh_makeshlibs:
+	dh_makeshlibs -n
+
+override_dh_missing:
+	dh_missing --fail-missing
