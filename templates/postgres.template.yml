@@ -152,13 +152,21 @@ run:
         
           su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl start -D /shared/postgres_data -o '-p 5432'"
           su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_dumpall --globals-only --clean --if-exists -f /shared/postgres_dump/globals.sql"
-          su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_dump -Fd -j$(nproc --ignore=1) discourse -f /shared/postgres_dump/discourse"
+        
+          dbs=$(su postgres -c "psql -Atc \"SELECT datname FROM pg_database WHERE datistemplate = false AND datname <> 'postgres';\"")
+          for db in $dbs; do
+            echo "Dumping DB ${db}..."
+            su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_dump -Fd -j$(nproc --ignore=1) $db -f /shared/postgres_dump/${db}"
+          done
           su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl stop -D /shared/postgres_data"
         
           su postgres -c "/usr/lib/postgresql/18/bin/pg_ctl start -D /shared/postgres_data_new"
-          su postgres -c "/usr/lib/postgresql/18/bin/psql -c \"CREATE DATABASE discourse WITH TEMPLATE = template0 ENCODING = 'UTF8'\""
           su postgres -c "/usr/lib/postgresql/18/bin/psql -f /shared/postgres_dump/globals.sql"
-          su postgres -c "/usr/lib/postgresql/18/bin/pg_restore -e -j$(nproc --ignore=1) -d discourse /shared/postgres_dump/discourse"
+          for db in $dbs; do
+            echo "Restoring DB ${db}..."
+            su postgres -c "/usr/lib/postgresql/18/bin/psql -c \"CREATE DATABASE $db WITH TEMPLATE = template0 ENCODING = 'UTF8'\""
+            su postgres -c "/usr/lib/postgresql/18/bin/pg_restore -e -j$(nproc --ignore=1) -d $db /shared/postgres_dump/${db}"
+          done
           su postgres -c "/usr/lib/postgresql/18/bin/pg_ctl stop -D /shared/postgres_data_new"
         
           rm -fr /shared/postgres_dump
