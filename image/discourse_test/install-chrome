@@ -7,7 +7,8 @@ set -e
 if [ "$(dpkg --print-architecture)" = "arm64" ]; then
   apt update && apt install -y chromium-driver
 else
-  echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.asc] https://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list &&\
+  wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | gpg --dearmor --output /usr/share/keyrings/google-chrome.gpg &&\
+    echo "deb [signed-by=/usr/share/keyrings/google-chrome.gpg arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list &&\
     apt update &&\
     apt install -y google-chrome-stable
 fi
