@@ -10,12 +10,14 @@ ENV LANG=en_US.UTF-8
 RUN sudo -E -u discourse -H git config --global user.email "you@example.com" &&\
     sudo -E -u discourse -H git config --global user.name "Your Name"
 
-# Include postgres and redis on test images
+# Include postgres on test images
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
   postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
-  postgresql-${PG_MAJOR_OLD} postgresql-contrib-${PG_MAJOR_OLD} postgresql-${PG_MAJOR_OLD}-pgvector \
-  redis
+  postgresql-${PG_MAJOR_OLD} postgresql-contrib-${PG_MAJOR_OLD} postgresql-${PG_MAJOR_OLD}-pgvector
+
+# Install Redis
+RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install redis
 
 RUN chown -R discourse . &&\
     chown -R discourse /var/run/postgresql &&\

@@ -250,5 +250,5 @@ RUN cd /var/www/discourse &&\
 FROM discourse-web-only AS discourse-release
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
-  redis
+  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
+RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install redis
