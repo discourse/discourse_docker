@@ -18,8 +18,8 @@ FROM $from_tag
 # Install Postgres and Redis
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
-RUN /tmp/install-redis
+  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
+  redis
 
 # Remove the code added on base image
 RUN rm -rf /var/www/*

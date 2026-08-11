@@ -181,8 +181,6 @@ COPY --from=jemalloc-builder /usr/lib/libjemalloc.so /usr/lib
 COPY --from=oxipng-builder /usr/local/bin/jhead /usr/local/bin
 COPY --from=oxipng-builder /usr/local/bin/oxipng /usr/local/bin
 
-ADD install-redis /tmp/install-redis
-
 # version check: https://rubygems.org/gems/pups
 RUN cd /tmp &&\
     gem fetch pups --version 1.4.0 &&\
@@ -252,5 +250,5 @@ RUN cd /var/www/discourse &&\
 FROM discourse-web-only AS discourse-release
 RUN --mount=type=tmpfs,target=/var/log \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
-RUN /tmp/install-redis
+  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
+  redis
