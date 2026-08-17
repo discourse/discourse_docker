@@ -122,7 +122,7 @@ docker_min_version='20.10.0'
 docker_rec_version='24.0.7'
 git_min_version='1.8.0'
 git_rec_version='1.8.0'
-kernel_min_version='4.4.0'
+kernel_min_version='5.13.0'
 
 config_file=containers/"$config".yml
 cidbootstrap=cids/"$config"_bootstrap.cid
@@ -281,7 +281,7 @@ check_prereqs() {
     echo "WARNING: Git version ${test} deprecated, recommend upgrade to ${git_rec_version} or newer."
   fi
 
-  # Check minimum kernel version due to https://bugs.ruby-lang.org/issues/13885
+  # Landlock support requires Linux 5.13 or later
   test=($(uname -r))
 
   # At least minimum version
