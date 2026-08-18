@@ -122,7 +122,7 @@ run:
         - bash -c "ln    -s           /shared/{uploads,backups} $home/public"
         - bash -c "mkdir -p           /shared/tmp/{backups,restores}"
         - bash -c "ln    -s           /shared/tmp/{backups,restores} $home/tmp"
-        - chown -R discourse:www-data /shared/log/rails /shared/uploads /shared/backups /shared/tmp
+        - find /shared/log/rails /shared/uploads /shared/backups /shared/tmp ! \( -user discourse -group www-data \) -exec chown discourse:www-data {} \+
         # scrub broken symlinks from plugins that have been removed
         - "[ ! -d public/plugins ] || find public/plugins/ -maxdepth 1 -xtype l -delete"
 
