@@ -1,0 +1,6 @@
+discourse-vips (8.18.4-1discourse1) trixie; urgency=medium
+
+  * Package the reduced Discourse libvips feature profile.
+  * Link JPEG operations to the private packaged Jpegli ABI.
+
+ -- Discourse Team <team@discourse.org>  Fri, 21 Aug 2026 00:00:00 +0000

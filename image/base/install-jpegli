@@ -3,74 +3,36 @@ set -e
 
 JPEGLI_COMMIT="031a0077f5799a6041004267fc12b956c1f52a20"
 JPEGLI_HASH="269b3a75d6b2da2351f7fb2d642043f60f9b6d1bd5839f20c0d7c569be073367"
-HIGHWAY_COMMIT="271a9a0ed9de1232d9117f1572c3fe28f8542ec1"
-HIGHWAY_HASH="c42bcfe44d100223ea0043acb3da6de703103ca44bfb1d46b577c90939177f5f"
-LIBJPEG_TURBO_COMMIT="8ecba3647edb6dd940463fedf38ca33a8e2a73d1"
-LIBJPEG_TURBO_HASH="ed729127097af5000bfeddc6b3e679c4363bb1618ebfc07efb6b47f576471b4b"
-
-PREFIX=/usr/local/lib/jpegli
-WDIR=/tmp/jpegli
+JPEGLI_VERSION="0.12.0~git20260601.031a007-1discourse1"
+WDIR="/tmp/discourse-jpegli-$JPEGLI_VERSION"
+PACKAGE_DIR=/tmp/jpegli-packages
 
 export DEBIAN_FRONTEND=noninteractive
-apt -y -q install liblcms2-dev
+apt-get -y -q install --no-install-recommends devscripts equivs
 
-mkdir -p "$WDIR"
+mkdir -p "$WDIR" "$PACKAGE_DIR"
+wget -q -O /tmp/jpegli.tar.gz "https://github.com/google/jpegli/archive/$JPEGLI_COMMIT.tar.gz"
+echo "$JPEGLI_HASH  /tmp/jpegli.tar.gz" | sha256sum -c
+tar xf /tmp/jpegli.tar.gz --strip-components=1 -C "$WDIR"
+rm -rf "$WDIR/debian"
+cp -a /tmp/jpegli-packaging/debian "$WDIR/debian"
+
 cd "$WDIR"
+mk-build-deps --install --remove \
+  --tool 'apt-get -y -q --no-install-recommends' \
+  debian/control
 
-wget -q -O "$WDIR/jpegli.tar.gz" "https://github.com/google/jpegli/archive/$JPEGLI_COMMIT.tar.gz"
-echo "$JPEGLI_HASH $WDIR/jpegli.tar.gz" | sha256sum -c
-tar zxf "$WDIR/jpegli.tar.gz" -C "$WDIR"
-cd "$WDIR/jpegli-$JPEGLI_COMMIT"
+MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH)
+mkdir -p third_party/libjpeg-turbo
+cp /usr/include/jpeglib.h third_party/libjpeg-turbo/jpeglib.h
+cp /usr/include/jmorecfg.h third_party/libjpeg-turbo/jmorecfg.h
+cp "/usr/include/$MULTIARCH/jconfig.h" third_party/libjpeg-turbo/jconfig.h.in
 
-wget -q -O "$WDIR/highway.tar.gz" "https://github.com/google/highway/archive/$HIGHWAY_COMMIT.tar.gz"
-wget -q -O "$WDIR/libjpeg-turbo.tar.gz" "https://github.com/libjpeg-turbo/libjpeg-turbo/archive/$LIBJPEG_TURBO_COMMIT.tar.gz"
-echo "$HIGHWAY_HASH $WDIR/highway.tar.gz" | sha256sum -c
-echo "$LIBJPEG_TURBO_HASH $WDIR/libjpeg-turbo.tar.gz" | sha256sum -c
+DEB_BUILD_OPTIONS="parallel=$(nproc)" dpkg-buildpackage -us -uc -b
+cp ../discourse-libjpegli62_*.deb ../discourse-libjpegli-dev_*.deb "$PACKAGE_DIR/"
+apt-get -y -q install "$PACKAGE_DIR"/discourse-libjpegli62_*.deb "$PACKAGE_DIR"/discourse-libjpegli-dev_*.deb
 
-mkdir -p third_party/highway third_party/libjpeg-turbo
-tar zxf "$WDIR/highway.tar.gz" --strip-components=1 -C third_party/highway
-tar zxf "$WDIR/libjpeg-turbo.tar.gz" --strip-components=1 -C third_party/libjpeg-turbo
-
-cmake -S . -B build -G Ninja \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_INSTALL_PREFIX="$PREFIX" \
-  -DCMAKE_INSTALL_LIBDIR=lib \
-  -DBUILD_SHARED_LIBS=ON \
-  -DBUILD_TESTING=OFF \
-  -DJPEGLI_ENABLE_FUZZERS=OFF \
-  -DJPEGLI_ENABLE_DEVTOOLS=OFF \
-  -DJPEGLI_ENABLE_TOOLS=OFF \
-  -DJPEGLI_ENABLE_JPEGLI_LIBJPEG=ON \
-  -DJPEGLI_INSTALL_JPEGLI_LIBJPEG=ON \
-  -DJPEGLI_ENABLE_DOXYGEN=OFF \
-  -DJPEGLI_ENABLE_MANPAGES=OFF \
-  -DJPEGLI_ENABLE_BENCHMARK=OFF \
-  -DJPEGLI_BUNDLE_LIBPNG=OFF \
-  -DJPEGLI_ENABLE_JNI=OFF \
-  -DJPEGLI_ENABLE_SJPEG=OFF \
-  -DJPEGLI_ENABLE_OPENEXR=OFF \
-  -DJPEGLI_ENABLE_SKCMS=OFF \
-  -DJPEGLI_ENABLE_TCMALLOC=OFF \
-  -DJPEGLI_FORCE_SYSTEM_LCMS2=ON
-
-cmake --build build -j"$(nproc)"
-cmake --install build
-
-mkdir -p "$PREFIX/lib/pkgconfig"
-printf '%s\n' \
-  'prefix=/usr/local/lib/jpegli' \
-  'exec_prefix=${prefix}' \
-  'libdir=${exec_prefix}/lib' \
-  'includedir=${prefix}/include' \
-  '' \
-  'Name: libjpeg' \
-  'Description: JPEGli libjpeg-compatible library' \
-  'Version: 62.3.0' \
-  'Libs: -L${libdir} -Wl,-rpath,${libdir} -ljpeg' \
-  'Cflags: -I${includedir}' \
-  > "$PREFIX/lib/pkgconfig/libjpeg.pc"
-
-test -e "$PREFIX/lib/libjpeg.so.62"
-
-cd "$HOME"
-rm -rf "$WDIR"
+test -e "/usr/lib/$MULTIARCH/discourse/jpegli/libjpeg.so.62"
+test "$(pkg-config --modversion "/usr/lib/$MULTIARCH/discourse/jpegli/pkgconfig/libjpeg.pc")" = "62.3.0"
+test "$(dpkg-query -W -f='${Version}' discourse-libjpegli62)" = "$JPEGLI_VERSION"
+dpkg-query -S "/usr/lib/$MULTIARCH/discourse/jpegli/libjpeg.so.62" | grep -q '^discourse-libjpegli62:'

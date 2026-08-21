@@ -1,0 +1,5 @@
+discourse-jpegli (0.12.0~git20260601.031a007-1discourse1) trixie; urgency=medium
+
+  * Package the pinned Jpegli libjpeg-compatible shared library.
+
+ -- Discourse Team <team@discourse.org>  Fri, 21 Aug 2026 00:00:00 +0000

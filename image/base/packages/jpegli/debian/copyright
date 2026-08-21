@@ -1,0 +1,35 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: jpegli
+Source: https://github.com/google/jpegli
+
+Files: *
+Copyright: Google LLC and contributors
+License: BSD-3-clause
+
+Files: third_party/libjpeg-turbo/jconfig.h.in
+Copyright: 1991-2023, Thomas G. Lane, Guido Vollbeding, D. R. Commander, and contributors
+License: BSD-BY-LC-NE
+
+Files: third_party/libjpeg-turbo/jmorecfg.h
+Copyright: 1991-1997, Thomas G. Lane
+ 1997-2009, Guido Vollbeding
+ 2009, 2011, 2014-2015, 2018, 2020, D. R. Commander
+License: BSD-BY-LC-NE
+
+Files: third_party/libjpeg-turbo/jpeglib.h
+Copyright: 1991-1998, Thomas G. Lane
+ 2002-2009, Guido Vollbeding
+ 2009-2011, 2013-2014, 2016-2017, 2020, D. R. Commander
+ 2015, Google, Inc.
+License: BSD-BY-LC-NE
+
+Files: debian/*
+Copyright: 2026 Discourse Team
+License: BSD-3-clause
+
+License: BSD-3-clause
+ See the upstream LICENSE file for the complete license text.
+
+License: BSD-BY-LC-NE
+ See /usr/share/doc/discourse-libjpegli-dev/libjpeg-turbo-copyright for the
+ complete Independent JPEG Group and libjpeg-turbo license text.

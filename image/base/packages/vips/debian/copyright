@@ -1,0 +1,14 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: libvips
+Source: https://github.com/libvips/libvips
+
+Files: *
+Copyright: John Cupitt and contributors
+License: LGPL-2.1+
+
+Files: debian/*
+Copyright: 2026 Discourse Team
+License: LGPL-2.1+
+
+License: LGPL-2.1+
+ See /usr/share/common-licenses/LGPL-2.1 for the complete license text.

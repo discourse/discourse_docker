@@ -1,0 +1,7 @@
+usr/lib/*/discourse/jpegli/cmake/**
+usr/lib/*/discourse/jpegli/libhwy.a
+usr/lib/*/discourse/jpegli/libjpegli_cms.so*
+usr/lib/*/discourse/jpegli/libjpegli_threads.so*
+usr/lib/*/discourse/jpegli/pkgconfig/libhwy.pc
+usr/lib/*/discourse/jpegli/pkgconfig/libjpegli_cms.pc
+usr/lib/*/discourse/jpegli/pkgconfig/libjpegli_threads.pc

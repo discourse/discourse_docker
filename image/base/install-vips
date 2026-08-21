@@ -1,78 +1,55 @@
 #!/bin/bash
 set -e
 
-# version check: https://github.com/libvips/libvips/releases
 VIPS_VERSION="8.18.4"
 VIPS_HASH="2677bad6c422617fd1172d359c16af34e736965d042c214203a87187d26ff037"
-
-PREFIX=/usr/local
-WDIR=/tmp/vips
-JPEGLI_PREFIX=/usr/local/lib/jpegli
+JPEGLI_VERSION="0.12.0~git20260601.031a007-1discourse1"
+WDIR="/tmp/discourse-vips-$VIPS_VERSION"
+PACKAGE_DIR=/tmp/vips-packages
 
 export DEBIAN_FRONTEND=noninteractive
-export PKG_CONFIG_PATH="$JPEGLI_PREFIX/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-apt -y -q install meson ninja-build pkg-config xz-utils \
-    libglib2.0-dev libexpat1-dev \
-    libpng-dev libwebp-dev libtiff-dev libjxl-dev librsvg2-dev \
-    libcgif-dev libexif-dev liblcms2-dev liborc-0.4-dev \
-    libimagequant-dev libpango1.0-dev
+apt-get -y -q install --no-install-recommends devscripts equivs
+apt-get -y -q install /tmp/jpegli-debs/discourse-libjpegli62_*.deb /tmp/jpegli-debs/discourse-libjpegli-dev_*.deb
 
-test "$(pkg-config --variable=libdir libjpeg)" = "$JPEGLI_PREFIX/lib"
+mkdir -p "$WDIR" "$PACKAGE_DIR"
+wget -q -O /tmp/vips.tar.xz "https://github.com/libvips/libvips/releases/download/v$VIPS_VERSION/vips-$VIPS_VERSION.tar.xz"
+echo "$VIPS_HASH  /tmp/vips.tar.xz" | sha256sum -c
+tar xf /tmp/vips.tar.xz --strip-components=1 -C "$WDIR"
+cp -a /tmp/vips-packaging/debian "$WDIR/debian"
 
-mkdir -p $WDIR
-cd $WDIR
+cd "$WDIR"
+mk-build-deps --install --remove \
+  --tool 'apt-get -y -q --no-install-recommends' \
+  debian/control
+DEB_BUILD_OPTIONS="parallel=$(nproc)" dpkg-buildpackage -us -uc -b
+cp ../discourse-libvips42_*.deb ../discourse-vips-tools_*.deb "$PACKAGE_DIR/"
+apt-get -y -q install "$PACKAGE_DIR"/discourse-libvips42_*.deb "$PACKAGE_DIR"/discourse-vips-tools_*.deb
+ldconfig
 
-wget -q -O $WDIR/vips.tar.xz "https://github.com/libvips/libvips/releases/download/v$VIPS_VERSION/vips-$VIPS_VERSION.tar.xz"
-sha256sum $WDIR/vips.tar.xz
-echo "$VIPS_HASH $WDIR/vips.tar.xz" | sha256sum -c
-tar xf $WDIR/vips.tar.xz -C $WDIR
-cd $WDIR/vips-$VIPS_VERSION
-
-meson setup build \
-  --prefix=$PREFIX \
-  --libdir=lib \
-  --buildtype=release \
-  --auto-features=disabled \
-  -Ddeprecated=false \
-  -Dexamples=false \
-  -Dcplusplus=false \
-  -Dppm=false \
-  -Danalyze=false \
-  -Dradiance=false \
-  -Dmodules=disabled \
-  -Dmagick=disabled \
-  -Dhighway=disabled \
-  -Dzlib=enabled \
-  -Djpeg=enabled \
-  -Dpng=enabled \
-  -Dwebp=enabled \
-  -Dtiff=enabled \
-  -Dheif=enabled \
-  -Djpeg-xl=enabled \
-  -Drsvg=enabled \
-  -Dcgif=enabled \
-  -Dexif=enabled \
-  -Dlcms=enabled \
-  -Dorc=enabled \
-  -Dimagequant=enabled \
-  -Dfontconfig=enabled \
-  -Dpangocairo=enabled
-
-ninja -C build -j"$(nproc)"
-ninja -C build install
-
-ldconfig $PREFIX/lib
-
-ldd "$PREFIX/lib/libvips.so.42" | grep -q "$JPEGLI_PREFIX/lib/libjpeg.so.62"
-
-for op in jpegload jpegsave pngload gifload webpload tiffload heifload jxlload svgload text; do
-  vips -l | grep -q "$op" || { echo "ERROR: vips is missing operation: $op"; exit 1; }
+MULTIARCH=$(dpkg-architecture -qDEB_HOST_MULTIARCH)
+test "$(dpkg-query -W -f='${Version}' discourse-libjpegli62)" = "$JPEGLI_VERSION"
+test "$(command -v vips)" = /usr/bin/vips
+test "$(command -v vipsheader)" = /usr/bin/vipsheader
+ldd "/usr/lib/$MULTIARCH/libvips.so.42" | grep -q "/usr/lib/$MULTIARCH/discourse/jpegli/libjpeg.so.62"
+for operation in jpegload jpegsave pngload gifload gifsave webpload tiffload heifload jxlload svgload text thumbnail autorot gravity flatten; do
+  vips -l "$operation" >/dev/null
 done
-
-if vips -l | grep -qi magick || ldd $PREFIX/lib/libvips.so.42 | grep -Eqi 'libMagick|libgs\.so'; then
-  echo "ERROR: vips must not link to ImageMagick or Ghostscript"
+for operation in magickload magicksave pdfload; do
+  if vips -l "$operation" >/dev/null 2>&1; then
+    echo "ERROR: vips exposes forbidden operation: $operation"
+    exit 1
+  fi
+done
+if ldd "/usr/lib/$MULTIARCH/libvips.so.42" | grep -Eqi 'libMagick|libpoppler|libgs\.so'; then
+  echo "ERROR: vips links to a forbidden image or PDF library"
   exit 1
 fi
 
-cd $HOME
-rm -rf $WDIR
+dpkg-query -W -f='${Depends}' discourse-vips-tools | grep -q "discourse-libvips42 (= $VIPS_VERSION-1discourse1)"
+dpkg-query -W -f='${Depends}' discourse-libvips42 | grep -q "discourse-libjpegli62 (= $JPEGLI_VERSION)"
+dpkg-query -W -f='${Provides}' discourse-libvips42 | grep -q "libvips42t64 (= $VIPS_VERSION-1discourse1)"
+dpkg-query -W -f='${Conflicts}' discourse-libvips42 | grep -q 'libvips42t64'
+dpkg-query -W -f='${Replaces}' discourse-libvips42 | grep -q 'libvips42t64'
+dpkg-query -W -f='${Provides}' discourse-vips-tools | grep -q "libvips-tools (= $VIPS_VERSION-1discourse1)"
+dpkg-query -W -f='${Conflicts}' discourse-vips-tools | grep -q 'libvips-tools'
+dpkg-query -W -f='${Replaces}' discourse-vips-tools | grep -q 'libvips-tools'

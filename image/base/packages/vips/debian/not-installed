@@ -1,0 +1,10 @@
+usr/bin/vipsedit
+usr/bin/vipsprofile
+usr/bin/vipsthumbnail
+usr/include/**
+usr/lib/*/libvips.so
+usr/lib/*/pkgconfig/vips.pc
+usr/share/locale/**
+usr/share/man/man1/vipsedit.1
+usr/share/man/man1/vipsprofile.1
+usr/share/man/man1/vipsthumbnail.1

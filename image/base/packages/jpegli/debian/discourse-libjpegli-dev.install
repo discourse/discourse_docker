@@ -1,0 +1,4 @@
+usr/include/discourse/jpegli
+usr/lib/*/discourse/jpegli/libjpeg.so
+usr/lib/*/discourse/jpegli/pkgconfig/libjpeg.pc
+usr/share/doc/discourse-libjpegli-dev/libjpeg-turbo-copyright

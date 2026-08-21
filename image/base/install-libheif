@@ -69,6 +69,7 @@ RUNTIME_DEPENDS=$(dpkg-shlibdeps -O "$RUNTIME_ROOT/$LIBDIR/libheif.so.$LIBHEIF_V
 test -n "$RUNTIME_DEPENDS"
 
 mkdir -p "$RUNTIME_ROOT/DEBIAN" "$DEV_ROOT/DEBIAN"
+printf 'libheif 1 libheif1 (= %s)\n' "$PACKAGE_VERSION" > "$RUNTIME_ROOT/DEBIAN/shlibs"
 cat > "$RUNTIME_ROOT/DEBIAN/control" <<EOF
 Package: libheif1
 Version: $PACKAGE_VERSION
