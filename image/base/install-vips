@@ -74,5 +74,9 @@ if vips -l | grep -qi magick || ldd $PREFIX/lib/libvips.so.42 | grep -Eqi 'libMa
   exit 1
 fi
 
+mkdir /tmp/vips-linker
+cp -a "$PREFIX/lib/libvips.so" /tmp/vips-linker/
+sed -i -e '/^Requires.private:/d' -e '/^Libs.private:/d' "$PREFIX/lib/pkgconfig/vips.pc"
+
 cd $HOME
 rm -rf $WDIR

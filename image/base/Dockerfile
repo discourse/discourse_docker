@@ -205,6 +205,9 @@ COPY etc/  /etc
 COPY sbin/ /sbin
 
 FROM discourse-runtime-base AS discourse-build-base
+COPY --from=vips-builder /usr/local/include/vips /usr/local/include/vips
+COPY --from=vips-builder /tmp/vips-linker/ /usr/local/lib/
+COPY --from=vips-builder /usr/local/lib/pkgconfig/vips.pc /usr/local/lib/pkgconfig/vips.pc
 # From https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
 # fingerprint: 6F71 F525 2828 41EE DAF8 51B4 2F59 B5F9 9B1B E0B4
 ADD nodesource-repo.gpg.key /usr/share/keyrings/nodesource.asc
@@ -218,7 +221,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
 # gem build dependencies
     cmake g++ pkg-config patch \
-    libtool \
+    libtool libglib2.0-dev \
     libxslt-dev \
     libcurl4-openssl-dev \
     libssl-dev \
@@ -227,7 +230,16 @@ RUN --mount=type=tmpfs,target=/var/log \
     libreadline-dev \
     libunwind-dev \
 # node
-    nodejs
+    nodejs &&\
+    test "$(pkg-config --modversion vips)" = "8.18.4"
+
+RUN printf '%s\n' \
+    '#include <vips/vips.h>' \
+    'int main(void) { if (VIPS_INIT("vips-smoke")) return 1; return vips_version(0) == VIPS_MAJOR_VERSION ? 0 : 1; }' |\
+    cc $(pkg-config --cflags vips) -x c -o /tmp/vips-smoke - $(pkg-config --libs vips) &&\
+    ldd -r /tmp/vips-smoke &&\
+    /tmp/vips-smoke &&\
+    rm /tmp/vips-smoke
 
 # pnpm
 RUN --mount=type=tmpfs,target=/root/.npm \
