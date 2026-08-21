@@ -134,6 +134,7 @@ RUN apt update &&\
     libnginx-mod-http-brotli-filter \
     libnginx-mod-http-brotli-static
 
+# Keep this in a separate layer so the cache records the exported font-directory timestamps.
 RUN fc-cache -f
 
 # Copy binary and configuration files for magick
