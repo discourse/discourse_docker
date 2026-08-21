@@ -134,6 +134,8 @@ RUN apt update &&\
     libnginx-mod-http-brotli-filter \
     libnginx-mod-http-brotli-static
 
+RUN fc-cache -f
+
 # Copy binary and configuration files for magick
 COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
 COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
