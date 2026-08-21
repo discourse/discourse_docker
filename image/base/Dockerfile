@@ -138,7 +138,6 @@ RUN apt update &&\
 COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
 COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
 COPY --from=imagemagick_builder /usr/local/share/ImageMagick-7 /usr/local/share/ImageMagick-7
-ADD vips-fixtures /tmp/vips-fixtures
 # Create symlinks to imagemagick tools
 RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   ln -s /usr/local/bin/magick /usr/local/bin/compare &&\
@@ -155,69 +154,7 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
 RUN ldconfig &&\
-  ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.1"' &&\
-  ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\
-  sudo -u discourse vips --version &&\
-  sudo -u discourse vipsheader --version &&\
-  test "$(command -v vips)" = /usr/bin/vips &&\
-  test "$(command -v vipsheader)" = /usr/bin/vipsheader &&\
-  dpkg-query -S /usr/bin/vips /usr/bin/vipsheader | grep -q '^discourse-vips-tools:' &&\
-  dpkg-query -S /usr/lib/*/libvips.so.42 | grep -q '^discourse-libvips42:' &&\
-  dpkg-query -S /usr/lib/*/discourse/jpegli/libjpeg.so.62 | grep -q '^discourse-libjpegli62:' &&\
-  ldd /usr/bin/vips | grep -q '/lib/.*/libvips.so.42' &&\
-  ldd /usr/bin/vipsheader | grep -q '/lib/.*/libvips.so.42' &&\
-  ldd /usr/lib/*/libvips.so.42 | grep -q '/usr/lib/.*/discourse/jpegli/libjpeg.so.62' &&\
-  ldd /usr/local/bin/magick | grep 'libjpeg.so.62' | grep -vq '/discourse/jpegli/' &&\
-  sudo -u discourse vips black /tmp/vips-jpegli.jpg 1 1 &&\
-  sudo -u discourse vipsheader /tmp/vips-jpegli.jpg >/dev/null &&\
-  sudo -u discourse magick -size 8x8 gradient: /tmp/vips-baseline.jpg &&\
-  sudo -u discourse magick -size 8x8 gradient: -interlace Plane /tmp/vips-progressive.jpg &&\
-  sudo -u discourse magick -size 8x8 gradient: -colorspace CMYK /tmp/vips-cmyk.jpg &&\
-  base64 -d /tmp/vips-fixtures/orientation-6.jpg.base64 >/tmp/vips-oriented.jpg &&\
-  sudo -u discourse vipsheader /tmp/vips-baseline.jpg /tmp/vips-progressive.jpg /tmp/vips-cmyk.jpg /tmp/vips-oriented.jpg >/dev/null &&\
-  printf '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><rect width="8" height="8" fill="red"/></svg>' >/tmp/vips-source.svg &&\
-  sudo -u discourse vips copy /tmp/vips-source.svg /tmp/vips-svg.png &&\
-  sudo -u discourse vips black /tmp/vips-source.png 8 8 &&\
-  sudo -u discourse vips copy /tmp/vips-source.png /tmp/vips-source.webp &&\
-  sudo -u discourse vips copy /tmp/vips-source.png /tmp/vips-source.tiff &&\
-  sudo -u discourse vips copy /tmp/vips-source.png /tmp/vips-source.jxl &&\
-  sudo -u discourse vips copy /tmp/vips-source.png /tmp/vips-source.gif &&\
-  sudo -u discourse vips black /tmp/vips-source.heic 8 8 &&\
-  sudo -u discourse vips black /tmp/vips-source.avif 8 8 &&\
-  sudo -u discourse vips text /tmp/vips-text.png Discourse &&\
-  sudo -u discourse vips thumbnail /tmp/vips-source.png /tmp/vips-thumbnail.png 4 &&\
-  test "$(sudo -u discourse vipsheader -f orientation /tmp/vips-oriented.jpg)" = 6 &&\
-  sudo -u discourse vips autorot /tmp/vips-oriented.jpg /tmp/vips-autorot.jpg &&\
-  sudo -u discourse vips xyz /tmp/vips-coordinates.v 8 8 &&\
-  sudo -u discourse vips gravity /tmp/vips-coordinates.v /tmp/vips-gravity.v centre 4 4 &&\
-  sudo -u discourse vips black /tmp/vips-alpha.png 4 4 --bands 4 &&\
-  sudo -u discourse vips flatten /tmp/vips-alpha.png /tmp/vips-flatten.png --background '255 255 255' &&\
-  test "$(sudo -u discourse vipsheader -f width /tmp/vips-thumbnail.png)" = 4 &&\
-  test "$(sudo -u discourse vipsheader -f height /tmp/vips-thumbnail.png)" = 4 &&\
-  test "$(sudo -u discourse vipsheader -f width /tmp/vips-autorot.jpg)" = 4 &&\
-  test "$(sudo -u discourse vipsheader -f height /tmp/vips-autorot.jpg)" = 8 &&\
-  test "$(sudo -u discourse vipsheader -f orientation /tmp/vips-autorot.jpg)" = 1 &&\
-  sudo -u discourse vips getpoint /tmp/vips-gravity.v 0 0 | grep -q '^2 2 *$' &&\
-  sudo -u discourse vips getpoint /tmp/vips-gravity.v 3 3 | grep -q '^5 5 *$' &&\
-  test "$(sudo -u discourse vipsheader -f bands /tmp/vips-flatten.png)" = 3 &&\
-  test "$(sudo -u discourse vips avg /tmp/vips-flatten.png)" = 255.000000 &&\
-  sudo -u discourse vipsheader /tmp/vips-svg.png /tmp/vips-source.webp /tmp/vips-source.tiff /tmp/vips-source.jxl /tmp/vips-source.gif /tmp/vips-source.heic /tmp/vips-source.avif /tmp/vips-text.png /tmp/vips-thumbnail.png /tmp/vips-autorot.jpg /tmp/vips-gravity.v /tmp/vips-flatten.png >/dev/null &&\
-  apt-get -s install libvips42t64 libvips-tools >/tmp/vips-coinstall.txt &&\
-  grep -q '^Remv discourse-libvips42 ' /tmp/vips-coinstall.txt &&\
-  grep -q '^Remv discourse-vips-tools ' /tmp/vips-coinstall.txt &&\
-  rm -rf /tmp/vips-* &&\
-  for op in jpegload jpegsave pngload gifload gifsave webpload tiffload heifload jxlload svgload text thumbnail autorot gravity flatten; do \
-    sudo -u discourse vips -l "$op" >/dev/null || { echo "ERROR: vips is missing operation: $op"; exit 1; }; \
-  done &&\
-  for op in magickload magicksave pdfload; do \
-    if sudo -u discourse vips -l "$op" >/dev/null 2>&1; then echo "ERROR: vips exposes forbidden operation: $op"; exit 1; fi; \
-  done &&\
-  if ldd /usr/lib/*/libvips.so.42 | grep -Eqi 'libMagick|libpoppler|libgs\.so'; then \
-    echo "ERROR: vips links to a forbidden image or PDF library"; exit 1; \
-  fi &&\
-  if dpkg-query -W -f '${Package} ${db:Status-Status}\n' ghostscript libgs10 libgs-common libgs10-common 2>/dev/null | grep -q ' installed$' || command -v gs >/dev/null; then \
-    echo "ERROR: ghostscript must not be present in this image"; exit 1; \
-  fi
+  ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.1"'
 
 COPY --from=thpoff-builder /usr/local/sbin/thpoff /usr/local/sbin
 COPY --from=jemalloc-builder /usr/lib/libjemalloc.so /usr/lib

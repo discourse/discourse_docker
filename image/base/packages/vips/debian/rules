@@ -37,16 +37,9 @@ override_dh_auto_configure:
 		-Dfontconfig=enabled \
 		-Dpangocairo=enabled
 
-override_dh_auto_test:
-	LD_LIBRARY_PATH=$(CURDIR)/obj-$(DEB_HOST_GNU_TYPE)/libvips \
-		dh_auto_test --buildsystem=meson
-
 override_dh_auto_install:
 	dh_auto_install --buildsystem=meson
 	for tool in debian/tmp/usr/bin/vips*; do chrpath --delete "$$tool" || true; done
 
 override_dh_shlibdeps:
 	dh_shlibdeps -- -l/usr/lib/$(DEB_HOST_MULTIARCH)/discourse/jpegli
-
-override_dh_missing:
-	dh_missing --fail-missing

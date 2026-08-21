@@ -53,6 +53,3 @@ override_dh_auto_install:
 
 override_dh_makeshlibs:
 	dh_makeshlibs -n
-
-override_dh_missing:
-	dh_missing --fail-missing

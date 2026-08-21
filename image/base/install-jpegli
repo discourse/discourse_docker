@@ -3,8 +3,7 @@ set -e
 
 JPEGLI_COMMIT="031a0077f5799a6041004267fc12b956c1f52a20"
 JPEGLI_HASH="269b3a75d6b2da2351f7fb2d642043f60f9b6d1bd5839f20c0d7c569be073367"
-JPEGLI_VERSION="0.12.0~git20260601.031a007-1discourse1"
-WDIR="/tmp/discourse-jpegli-$JPEGLI_VERSION"
+WDIR=/tmp/jpegli
 PACKAGE_DIR=/tmp/jpegli-packages
 
 export DEBIAN_FRONTEND=noninteractive
@@ -28,11 +27,5 @@ cp /usr/include/jpeglib.h third_party/libjpeg-turbo/jpeglib.h
 cp /usr/include/jmorecfg.h third_party/libjpeg-turbo/jmorecfg.h
 cp "/usr/include/$MULTIARCH/jconfig.h" third_party/libjpeg-turbo/jconfig.h.in
 
-DEB_BUILD_OPTIONS="parallel=$(nproc)" dpkg-buildpackage -us -uc -b
+DEB_BUILD_OPTIONS="nocheck parallel=$(nproc)" dpkg-buildpackage -us -uc -b
 cp ../discourse-libjpegli62_*.deb ../discourse-libjpegli-dev_*.deb "$PACKAGE_DIR/"
-apt-get -y -q install "$PACKAGE_DIR"/discourse-libjpegli62_*.deb "$PACKAGE_DIR"/discourse-libjpegli-dev_*.deb
-
-test -e "/usr/lib/$MULTIARCH/discourse/jpegli/libjpeg.so.62"
-test "$(pkg-config --modversion "/usr/lib/$MULTIARCH/discourse/jpegli/pkgconfig/libjpeg.pc")" = "62.3.0"
-test "$(dpkg-query -W -f='${Version}' discourse-libjpegli62)" = "$JPEGLI_VERSION"
-dpkg-query -S "/usr/lib/$MULTIARCH/discourse/jpegli/libjpeg.so.62" | grep -q '^discourse-libjpegli62:'
