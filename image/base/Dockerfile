@@ -126,6 +126,13 @@ RUN apt update &&\
     libnginx-mod-http-brotli-filter \
     libnginx-mod-http-brotli-static
 
+# Fontconfig caches include font-directory mtimes with nanoseconds. BuildKit keeps
+# these between RUNs, but containerd truncates them during layer export, making
+# caches stale. Normalize the mtimes before generating the caches.
+RUN find /usr/local/share/fonts /usr/share/fonts -type d \
+      -exec sh -c 'for dir do touch -d "@$(stat -c %Y "$dir")" "$dir"; done' sh {} + && \
+    fc-cache -f
+
 # Copy binary and configuration files for magick
 COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
 COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
