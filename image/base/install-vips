@@ -8,7 +8,6 @@ PACKAGE_DIR=/tmp/vips-packages
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get -y -q install --no-install-recommends devscripts equivs
-apt-get -y -q install /tmp/jpegli-debs/discourse-libjpegli62_*.deb /tmp/jpegli-debs/discourse-libjpegli-dev_*.deb
 
 mkdir -p "$WDIR" "$PACKAGE_DIR"
 wget -q -O /tmp/vips.tar.xz "https://github.com/libvips/libvips/releases/download/v$VIPS_VERSION/vips-$VIPS_VERSION.tar.xz"
@@ -21,4 +20,4 @@ mk-build-deps --install --remove \
   --tool 'apt-get -y -q --no-install-recommends' \
   debian/control
 DEB_BUILD_OPTIONS="nocheck parallel=$(nproc)" dpkg-buildpackage -us -uc -b
-cp ../discourse-libvips42_*.deb ../discourse-vips-tools_*.deb "$PACKAGE_DIR/"
+cp ../discourse-libvips42_*.deb "$PACKAGE_DIR/"

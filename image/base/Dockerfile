@@ -27,13 +27,7 @@ FROM libheif-builder AS imagemagick_builder
 ADD install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
-FROM builder AS jpegli-builder
-ADD packages/jpegli /tmp/jpegli-packaging
-ADD install-jpegli /tmp/install-jpegli
-RUN /tmp/install-jpegli
-
 FROM libheif-builder AS vips-builder
-COPY --from=jpegli-builder /tmp/jpegli-packages /tmp/jpegli-debs
 ADD packages/vips /tmp/vips-packaging
 ADD install-vips /tmp/install-vips
 RUN /tmp/install-vips
@@ -78,15 +72,14 @@ RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "
 
 COPY --from=libheif-builder /tmp/libheif-packages/libheif1.deb /tmp/libheif1.deb
 COPY --from=libheif-builder /tmp/libheif-packages/discourse-libheif-guard.deb /tmp/discourse-libheif-guard.deb
-COPY --from=jpegli-builder /tmp/jpegli-packages/discourse-libjpegli62_*.deb /tmp/vips-debs/
-COPY --from=vips-builder /tmp/vips-packages/*.deb /tmp/vips-debs/
+COPY --from=vips-builder /tmp/vips-packages/discourse-libvips42_*.deb /tmp/discourse-libvips42.deb
 
 RUN --mount=type=tmpfs,target=/var/log \
     --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-    /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb /tmp/vips-debs/*.deb \
+    /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb /tmp/discourse-libvips42.deb \
 # discourse runtime requirements
     gnupg sudo curl fping locales \
     ca-certificates rsync \
@@ -117,8 +110,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     libpq-dev postgresql-client-${PG_MAJOR} postgresql-client-${PG_MAJOR_OLD} &&\
     mkdir -p /etc/runit/1.d &&\
     apt-mark hold libheif1 discourse-libheif-guard &&\
-    rm /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb /tmp/vips-debs/*.deb &&\
-    rmdir /tmp/vips-debs &&\
+    rm /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb /tmp/discourse-libvips42.deb &&\
     test "$(dpkg-query -W -f='${Version}' libheif1)" = "1.23.1-1discourse1"
 
 ENV LC_ALL=en_US.UTF-8

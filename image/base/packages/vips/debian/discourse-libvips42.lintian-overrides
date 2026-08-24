@@ -1,2 +1,1 @@
-discourse-libvips42: custom-library-search-path RUNPATH *discourse/jpegli* [usr/lib/*/libvips.so.42.*]
 discourse-libvips42: package-name-doesnt-match-sonames libvips42

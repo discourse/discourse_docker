@@ -8,8 +8,7 @@ Build-Depends:
  ninja-build,
  pkgconf,
  xz-utils,
- chrpath,
- discourse-libjpegli-dev,
+ libjpeg62-turbo-dev,
  libheif-dev,
  libglib2.0-dev,
  libexpat1-dev,
@@ -33,17 +32,7 @@ Architecture: any
 Provides: libvips42t64 (= ${binary:Version})
 Conflicts: libvips42t64
 Replaces: libvips42t64
-Depends: discourse-libjpegli62 (= 0.12.0~git20260601.031a007-1discourse1), ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: reduced libvips runtime for Discourse
  A hardened libvips build containing only the image operations required by
  Discourse. ImageMagick and PDF loaders are disabled.
-
-Package: discourse-vips-tools
-Section: graphics
-Architecture: any
-Provides: libvips-tools (= ${binary:Version})
-Conflicts: libvips-tools
-Replaces: libvips-tools
-Depends: discourse-libvips42 (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: command-line tools for Discourse's reduced libvips
- The vips and vipsheader command-line programs.

@@ -1,9 +1,6 @@
 #!/usr/bin/make -f
 
-include /usr/share/dpkg/architecture.mk
-
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
-export PKG_CONFIG_PATH = /usr/lib/$(DEB_HOST_MULTIARCH)/discourse/jpegli/pkgconfig
 
 %:
 	dh $@ --buildsystem=meson
@@ -38,8 +35,4 @@ override_dh_auto_configure:
 		-Dpangocairo=enabled
 
 override_dh_auto_install:
-	dh_auto_install --buildsystem=meson
-	for tool in debian/tmp/usr/bin/vips*; do chrpath --delete "$$tool" || true; done
-
-override_dh_shlibdeps:
-	dh_shlibdeps -- -l/usr/lib/$(DEB_HOST_MULTIARCH)/discourse/jpegli
+	dh_auto_install --destdir=debian/tmp
