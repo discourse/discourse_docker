@@ -31,6 +31,9 @@ target "base-build-deps" {
   context = "./base"
   tags = ["${BASE_IMAGE}:build-deps"]
   target = "discourse-build-base"
+  args = {
+    "DATESTAMP" = DATESTAMP
+  }
 }
 
 target "base-slim" {
@@ -43,6 +46,7 @@ target "base-slim" {
   target = "discourse-slim"
   args = {
     "DISCOURSE_BRANCH" = "${branch}"
+    "DATESTAMP" = DATESTAMP
   }
 }
 
@@ -56,6 +60,7 @@ target "base-web-only" {
   target = "discourse-web-only"
   args = {
     "DISCOURSE_BRANCH" = "${branch}"
+    "DATESTAMP" = DATESTAMP
   }
 }
 
@@ -69,6 +74,7 @@ target "base-release" {
   target = "discourse-release"
   args = {
     "DISCOURSE_BRANCH" = "${branch}"
+    "DATESTAMP" = DATESTAMP
   }
 }
 
@@ -96,6 +102,7 @@ target "test" {
   args = {
     "from_tag" = "from"
     "SOURCE_DATE_EPOCH" = 0
+    "DATESTAMP" = DATESTAMP
   }
   contexts = {
     from = "target:base-slim-main"
@@ -108,6 +115,7 @@ target "dev" {
   args = {
     "from_tag" = "from"
     "SOURCE_DATE_EPOCH" = 0
+    "DATESTAMP" = DATESTAMP
   }
   contexts = {
     from = "target:base-slim-main"
