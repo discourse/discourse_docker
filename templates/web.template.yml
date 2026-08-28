@@ -132,11 +132,8 @@ run:
       cmd:
         - mkdir -p                    /shared/log/rails
         - bash -c "touch -a           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr,sidekiq}.log"
-        - bash -c "ln    -s           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr,sidekiq}.log $home/log"
         - bash -c "mkdir -p           /shared/{uploads,backups}"
-        - bash -c "ln    -s           /shared/{uploads,backups} $home/public"
         - bash -c "mkdir -p           /shared/tmp/{backups,restores}"
-        - bash -c "ln    -s           /shared/tmp/{backups,restores} $home/tmp"
         - find /shared/log/rails /shared/uploads /shared/backups /shared/tmp ! \( -user discourse -group www-data \) -exec chown discourse:www-data {} \+
 
   - exec:
