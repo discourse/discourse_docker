@@ -23,8 +23,9 @@ hooks:
 
 run:
   - exec: DEBIAN_FRONTEND=noninteractive apt-get purge -y postgresql-18 postgresql-contrib-18 postgresql-18-pgvector
-
+  
   - exec: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql-15 postgresql-contrib-15 postgresql-15-pgvector
+  
   - file:
      path: /etc/service/postgres/run
      chmod: "+x"
