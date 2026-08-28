@@ -128,7 +128,7 @@ run:
 
   - exec:
       cd: $home
-      tag: precompile
+      tag: migrate
       cmd:
         - mkdir -p                    /shared/log/rails
         - bash -c "touch -a           /shared/log/rails/{production,production_errors,unicorn.stdout,unicorn.stderr,sidekiq}.log"
