@@ -7,7 +7,7 @@ variable "CACHE_IMAGE" {
 }
 
 variable "ARCH" {
-  deafault = ""
+  default = ""
   validation {
     condition = ARCH != ""
     error_message = "The variable 'ARCH' must not be empty."
