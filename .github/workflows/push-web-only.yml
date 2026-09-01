@@ -74,17 +74,22 @@ jobs:
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
       - name: build
         run: |
-          # TODO: can we find a way to override or provide pups params at build time?
-          # Then we can do something like:
-          # bin/launcher build --params="version=esr" --conf-dir=./samples web_only
           cp ./samples/web_only.yml ./containers/web_only.yml
           echo $(grep base_image: ./templates/web.template.yml)-web-only >> ./containers/web_only.yml
-          sed -Ei 's/^ *+#?version:.*/  version: ${{ matrix.version }}/' ./containers/web_only.yml
-          sed -Ei '/^env:.*/a\  DISABLE_LETSENCRYPT: 1' ./containers/web_only.yml
+
           sed -Ei '/^ *+- "templates\/web.template.yml"/a\  - "templates/offline-page.template.yml"' ./containers/web_only.yml
           sed -Ei 's/^ *+#- "templates\/web.ssl.template.yml"/  - "templates\/web.ssl.template.yml"/' ./containers/web_only.yml
           sed -Ei 's/^ *+#- "templates\/web.letsencrypt.ssl.template.yml"/  - "templates\/web.letsencrypt.ssl.template.yml"/' ./containers/web_only.yml
-          bin/launcher build web_only \
+
+          # remove docker manager
+          sed -Ei '/^.*docker_manager.git/d' ./containers/web_only.yml
+
+          # build slim image
+          bin/launcher build \
+            --set params.version=${{ matrix.version }} \
+            --set env.DISABLE_LETSENCRYPT=1 \
+            --set base_image_slim=discourse/base:runtime-deps \
+            --build-slim web_only \
             --tag ${{ env.DOCKER_IMAGE }} \
             --output=type=registry,push-by-digest=true \
             --metadata-file=/tmp/out.json
