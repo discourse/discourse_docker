@@ -4,8 +4,10 @@
 ARG DEBIAN_RELEASE=trixie
 ARG RUBY_VERSION=3.4.10
 ARG FROM_DOCKER_IMAGE_TAG=${RUBY_VERSION}-${DEBIAN_RELEASE}-slim
+ARG DATESTAMP=0
 
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS builder
+ARG DATESTAMP
 ARG DEBIAN_RELEASE
 ENV DEBIAN_RELEASE=${DEBIAN_RELEASE}
 RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "/etc/apt/sources.list.d/${DEBIAN_RELEASE}-backports.list"
@@ -24,7 +26,7 @@ ADD install-libheif /tmp/install-libheif
 RUN /tmp/install-libheif
 
 FROM libheif-builder AS imagemagick_builder
-ADD install-imagemagick /tmp/install-imagemagick
+COPY install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
 FROM libheif-builder AS jpegli-builder
@@ -33,26 +35,26 @@ RUN /tmp/install-jpegli
 
 FROM libheif-builder AS vips-builder
 COPY --from=jpegli-builder /usr/local/lib/jpegli /usr/local/lib/jpegli
-ADD install-vips /tmp/install-vips
+COPY install-vips /tmp/install-vips
 RUN /tmp/install-vips
 
 FROM builder AS thpoff-builder
 # This tool allows us to disable huge page support for our current process
 # since the flag is preserved through forks and execs it can be used on any
 # process
-ADD thpoff.c /src/thpoff.c
+COPY thpoff.c /src/thpoff.c
 RUN gcc -o /usr/local/sbin/thpoff /src/thpoff.c && rm /src/thpoff.c
 
 FROM builder AS jemalloc-builder
-ADD install-jemalloc /tmp/install-jemalloc
+COPY install-jemalloc /tmp/install-jemalloc
 RUN /tmp/install-jemalloc
 
 FROM builder AS oxipng-builder
-ADD install-oxipng /tmp/install-oxipng
+COPY install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-base
-
+ARG DATESTAMP
 ARG DEBIAN_RELEASE
 ARG PG_MAJOR=18
 ARG PG_MAJOR_OLD=15
@@ -207,7 +209,7 @@ COPY sbin/ /sbin
 FROM discourse-runtime-base AS discourse-build-base
 # From https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key
 # fingerprint: 6F71 F525 2828 41EE DAF8 51B4 2F59 B5F9 9B1B E0B4
-ADD nodesource-repo.gpg.key /usr/share/keyrings/nodesource.asc
+COPY nodesource-repo.gpg.key /usr/share/keyrings/nodesource.asc
 RUN --mount=type=tmpfs,target=/var/log \
     --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt \
