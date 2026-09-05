@@ -130,7 +130,10 @@ RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen &&\
     locale-gen
 
 # nginx
-RUN apt update &&\
+RUN --mount=type=tmpfs,target=/var/log \
+    --mount=type=tmpfs,target=/var/cache/apt \
+    --mount=type=tmpfs,target=/var/lib/apt \
+    apt update &&\
     DEBIAN_FRONTEND=noninteractive apt-get -y install \
     nginx-light \
     libnginx-mod-http-brotli-filter \
@@ -191,7 +194,8 @@ COPY --from=oxipng-builder /usr/local/bin/jhead /usr/local/bin
 COPY --from=oxipng-builder /usr/local/bin/oxipng /usr/local/bin
 
 # version check: https://rubygems.org/gems/pups
-RUN cd /tmp &&\
+RUN --mount=type=tmpfs,target=/root/.cache \
+    cd /tmp &&\
     gem fetch pups --version 1.4.0 &&\
     echo "5809731d6f4819defe1aac694e614c4b3d9958b5f378a70edf761f3808877052 pups-1.4.0.gem" | sha256sum -c &&\
     gem install --local --force pups-1.4.0.gem &&\
@@ -231,6 +235,12 @@ RUN --mount=type=tmpfs,target=/var/log \
 # node
     nodejs
 
+# Do not copy built C extensions into each gem's lib/ as well as extensions/.
+# RubyGems keeps both by default (Gem.install_extension_in_lib); the extensions/
+# dir is authoritative and comes first in require_paths. Slated to become the
+# default in RubyGems 4: https://github.com/ruby/rubygems/issues/8921
+RUN echo "install_extension_in_lib: false" >> /usr/local/etc/gemrc
+
 # pnpm
 RUN --mount=type=tmpfs,target=/root/.npm \
     npm install -g pnpm@10
@@ -254,10 +264,12 @@ RUN cd /var/www/discourse &&\
     find /var/www/discourse/vendor/bundle -name tmp -type d -exec rm -rf {} +
 
 RUN cd /var/www/discourse &&\
-    sudo -u discourse /bin/bash -c 'pnpm install --frozen-lockfile'
+    sudo -u discourse /bin/bash -c 'pnpm install --frozen-lockfile --package-import-method hardlink'
 
 FROM discourse-web-only AS discourse-release
 RUN --mount=type=tmpfs,target=/var/log \
+  --mount=type=tmpfs,target=/var/cache/apt \
+  --mount=type=tmpfs,target=/var/lib/apt \
   apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector
-RUN apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install redis
+  postgresql-${PG_MAJOR} postgresql-contrib-${PG_MAJOR} postgresql-${PG_MAJOR}-pgvector \
+  redis
