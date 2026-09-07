@@ -47,7 +47,7 @@ jobs:
           echo "version=$version"
           echo "version=$version" >> $GITHUB_OUTPUT
 
-  push:
+  build:
     strategy:
       matrix:
         version: [latest,esr]
@@ -69,6 +69,7 @@ jobs:
           rm ${package}
       - uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
@@ -153,13 +154,13 @@ jobs:
       - name: update manifest
         run: |
           docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:latest \
-            ${{ needs.push.outputs.latest_amd64 }} \
-            ${{ needs.push.outputs.latest_arm64 }}
+            ${{ needs.build.outputs.latest_amd64 }} \
+            ${{ needs.build.outputs.latest_arm64 }}
 
           docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:${{ needs.version.outputs.latest }} \
-            ${{ needs.push.outputs.latest_amd64 }} \
-            ${{ needs.push.outputs.latest_arm64 }}
+            ${{ needs.build.outputs.latest_amd64 }} \
+            ${{ needs.build.outputs.latest_arm64 }}
 
           docker buildx imagetools create -t ${{ env.DOCKER_IMAGE }}:${{ needs.version.outputs.esr }} \
-            ${{ needs.push.outputs.esr_amd64 }} \
-            ${{ needs.push.outputs.esr_arm64 }}
+            ${{ needs.build.outputs.esr_amd64 }} \
+            ${{ needs.build.outputs.esr_arm64 }}
