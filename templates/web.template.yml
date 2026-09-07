@@ -251,7 +251,7 @@ run:
       cmd:
         - |-
           sudo -H -E -u discourse bash -c '
-            if [[ $(git symbolic-ref --short HEAD) == $version ]] ; then
+            if [[ $version == "latest" ]] ; then
                 SKIP_DB_AND_REDIS=1 bundle exec rake assets:precompile:build assets:precompile:pretty_text
             else
                 SKIP_DB_AND_REDIS=1 bundle exec rake assets:precompile:build
