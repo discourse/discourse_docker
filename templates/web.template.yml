@@ -249,7 +249,14 @@ run:
       tag: build
       hook: assets_precompile_build
       cmd:
-        - su discourse -c 'SKIP_DB_AND_REDIS=1 bundle exec rake assets:precompile:build assets:precompile:pretty_text'
+        - |-
+          sudo -H -E -u discourse bash -c '
+            if [[ $(git symbolic-ref --short HEAD) == $version ]] ; then
+                SKIP_DB_AND_REDIS=1 bundle exec rake assets:precompile:build assets:precompile:pretty_text
+            else
+                SKIP_DB_AND_REDIS=1 bundle exec rake assets:precompile:build
+            fi
+          '
   - exec:
       cd: $home
       tag: precompile
