@@ -86,7 +86,7 @@ jobs:
           # remove docker manager
           sed -Ei '/^.*docker_manager.git/d' ./containers/web_only.yml
 
-      - name: prep configuration
+      - name: build from configuration
         if: ${{ github.event_name == 'pull_request' }}
         run: |
           # test builds
