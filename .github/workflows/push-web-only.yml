@@ -96,15 +96,15 @@ jobs:
             --set env.DISABLE_LETSENCRYPT=1 \
             --set base_image_slim=discourse/base:runtime-deps \
             --build-slim web_only \
-            --tag ${{ env.DOCKER_IMAGE }}
-            --load
+            --tag ${{ env.DOCKER_IMAGE }} \
+            --output=type=docker \
           else
           bin/launcher build \
             --set params.version=${{ matrix.version }} \
             --set env.DISABLE_LETSENCRYPT=1 \
             web_only \
-            --tag ${{ env.DOCKER_IMAGE }}
-            --load
+            --tag ${{ env.DOCKER_IMAGE }} \
+            --output=type=docker \
           fi
 
       - name: build and push
