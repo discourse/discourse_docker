@@ -300,23 +300,42 @@ check_prereqs() {
   fi
 
   # 7. enough space for the bootstrap on docker folder
-  folder=`$docker_path info --format '{{.DockerRootDir}}'`
+  folder=$("$docker_path" info --format '{{.DockerRootDir}}')
   safe_folder=${folder:-/var/lib/docker}
-  if [[ -d $safe_folder && $(stat -f --format="%a*%S" $safe_folder)/1024**3 -lt 5 ]] ; then
+  check_disk() {
+      local free
+      free=$(( $(stat -f --format="%a*%S" "$safe_folder") ))
+      (( free >= 5 * 1024**3 ))
+  }
+
+  if ! check_disk; then
     echo "You have less than 5GB of free space on the disk where $safe_folder is located. You will need more space to continue"
     df -h $safe_folder
     echo
+
     if tty >/dev/null; then
-      read -p "Would you like to attempt to recover space by cleaning docker images and containers in the system? (y/N)" -n 1 -r
+      read -p "Would you like to attempt to recover space by cleaning docker images and containers in the system? (y/N) " -n 1 -r
       echo
-      if [[ $REPLY =~ ^[Yy]$ ]]
-      then
+
+      if [[ $REPLY =~ ^[Yy]$ ]]; then
         $docker_path container prune --force --filter until=24h >/dev/null
         $docker_path image prune --all --force --filter until=24h >/dev/null
-        echo "If the cleanup was successful, you may try again now"
+        echo "Finished cleaning"
+        if check_disk; then
+          read -p "Continue rebuild? (y/N) "
+          if ! [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo ""
+            exit 0
+          fi
+        else
+          echo "ERROR: insufficient disk space (<=5GB)"
+          exit 1
+        fi
+      else
+        echo "ERROR: insufficient disk space (<=5GB)"
+        exit 1
       fi
     fi
-    exit 1
   fi
 
   # 8. container definition file is accessible and is not insecure (world-readable)
