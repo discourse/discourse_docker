@@ -97,12 +97,14 @@ jobs:
             --set base_image_slim=discourse/base:runtime-deps \
             --build-slim web_only \
             --tag ${{ env.DOCKER_IMAGE }}
+            --load
           else
           bin/launcher build \
             --set params.version=${{ matrix.version }} \
             --set env.DISABLE_LETSENCRYPT=1 \
             web_only \
             --tag ${{ env.DOCKER_IMAGE }}
+            --load
           fi
 
       - name: build and push
