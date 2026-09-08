@@ -2,9 +2,9 @@
 set -e
 
 # version check: https://github.com/strukturag/libheif/releases
-LIBHEIF_VERSION="1.23.1"
+LIBHEIF_VERSION="1.23.4"
 PACKAGE_VERSION="$LIBHEIF_VERSION-1discourse1"
-LIBHEIF_HASH="0de0327f60fcd47de90d5654c6fe152232738d60d84fe084ec3e0f35e03b166a"
+LIBHEIF_HASH="d0c02b4b0e978f34a1974b6f3eea7975a537bf7a9195ffeea38e7242ff316fdd"
 
 PREFIX=/usr
 WDIR=/tmp/libheif
