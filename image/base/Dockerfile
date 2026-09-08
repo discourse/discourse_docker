@@ -121,7 +121,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     mkdir -p /etc/runit/1.d &&\
     apt-mark hold libheif1 discourse-libheif-guard &&\
     rm /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb &&\
-    test "$(dpkg-query -W -f='${Version}' libheif1)" = "1.23.1-1discourse1"
+    test "$(dpkg-query -W -f='${Version}' libheif1)" = "1.23.4-1discourse1"
 
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8
@@ -167,7 +167,7 @@ COPY --from=vips-builder /usr/local/bin/vipsheader /usr/local/bin/vipsheader
 COPY --from=vips-builder /usr/local/lib/libvips.so.42 /usr/local/lib/libvips.so.42
 COPY --from=vips-builder /usr/local/lib/jpegli/lib/libjpeg.so.62.3.0 /usr/local/lib/jpegli/lib/libjpeg.so.62
 RUN ldconfig &&\
-  ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.1"' &&\
+  ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.4"' &&\
   ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\
   sudo -u discourse vips --version &&\
   sudo -u discourse vipsheader --version &&\
