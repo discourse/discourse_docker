@@ -107,6 +107,7 @@ jobs:
             --tag ${{ env.DOCKER_IMAGE }} \
             --output=type=docker
           fi
+          docker images
 
       - name: build and push
         if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
