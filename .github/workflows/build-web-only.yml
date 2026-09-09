@@ -56,6 +56,7 @@ jobs:
     needs: version
     env:
       ARCH: ${{ matrix.os == 'ubuntu-24.04-arm' && 'arm64' || 'amd64' }}
+      VERSION: ${{ matrix.version }}
     steps:
       - uses: actions/checkout@v4
         with:
