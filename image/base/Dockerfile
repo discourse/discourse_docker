@@ -38,6 +38,10 @@ COPY --from=jpegli-builder /usr/local/lib/jpegli /usr/local/lib/jpegli
 COPY install-vips /tmp/install-vips
 RUN /tmp/install-vips
 
+FROM vips-builder AS vips-ico-builder
+COPY install-vips-ico /tmp/install-vips-ico
+RUN /tmp/install-vips-ico
+
 FROM builder AS thpoff-builder
 # This tool allows us to disable huge page support for our current process
 # since the flag is preserved through forks and execs it can be used on any
@@ -166,6 +170,7 @@ COPY --from=vips-builder /usr/local/bin/vips /usr/local/bin/vips
 COPY --from=vips-builder /usr/local/bin/vipsheader /usr/local/bin/vipsheader
 COPY --from=vips-builder /usr/local/lib/libvips.so.42 /usr/local/lib/libvips.so.42
 COPY --from=vips-builder /usr/local/lib/jpegli/lib/libjpeg.so.62.3.0 /usr/local/lib/jpegli/lib/libjpeg.so.62
+COPY --from=vips-ico-builder /tmp/vips-ico-runtime/ /
 RUN ldconfig &&\
   ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.4"' &&\
   ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\

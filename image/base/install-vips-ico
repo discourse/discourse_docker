@@ -1,0 +1,38 @@
+#!/bin/bash
+set -e
+
+VIPS_ICO_COMMIT="92f1101cfad5b4ca2b56b2a873b725939e0dab27"
+VIPS_ICO_HASH="a2548788a725fa99447fe7e35512219bff5aed25300512ea1c9c82c8a1f3c98f"
+
+PREFIX=/usr/local
+WDIR=/tmp/vips-ico
+RUNTIME_ROOT=/tmp/vips-ico-runtime
+VIPS_MODULE_VERSION="$(pkg-config --modversion vips | cut -d. -f1,2)"
+VIPS_MODULE_DIR="$PREFIX/lib/vips-modules-$VIPS_MODULE_VERSION"
+
+mkdir -p "$WDIR"
+cd "$WDIR"
+
+wget -q -O "$WDIR/vips-ico.tar.gz" "https://github.com/discourse/vips-ico/archive/$VIPS_ICO_COMMIT.tar.gz"
+echo "$VIPS_ICO_HASH $WDIR/vips-ico.tar.gz" | sha256sum -c
+tar xf "$WDIR/vips-ico.tar.gz" -C "$WDIR"
+cd "$WDIR/vips-ico-$VIPS_ICO_COMMIT"
+
+meson setup build \
+  --prefix="$PREFIX" \
+  --libdir=lib \
+  --buildtype=release
+meson compile -C build
+meson test -C build --print-errorlogs
+meson install -C build
+
+test -f "$VIPS_MODULE_DIR/vips-ico.so"
+vips -l icoload >/dev/null
+if ldd "$VIPS_MODULE_DIR/vips-ico.so" | grep -q 'libnsbmp'; then
+  echo "ERROR: vips-ico must link libnsbmp statically"
+  exit 1
+fi
+install -Dm755 "$VIPS_MODULE_DIR/vips-ico.so" "$RUNTIME_ROOT$VIPS_MODULE_DIR/vips-ico.so"
+
+cd /
+rm -rf /tmp/vips-ico

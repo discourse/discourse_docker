@@ -39,8 +39,9 @@ meson setup build \
   -Dppm=false \
   -Danalyze=false \
   -Dradiance=false \
-  -Dmodules=disabled \
+  -Dmodules=enabled \
   -Dmagick=disabled \
+  -Dmagick-module=disabled \
   -Dhighway=disabled \
   -Dzlib=enabled \
   -Djpeg=enabled \
@@ -48,7 +49,9 @@ meson setup build \
   -Dwebp=enabled \
   -Dtiff=enabled \
   -Dheif=enabled \
+  -Dheif-module=disabled \
   -Djpeg-xl=enabled \
+  -Djpeg-xl-module=disabled \
   -Drsvg=enabled \
   -Dcgif=enabled \
   -Dexif=enabled \
