@@ -1,4 +1,4 @@
-base_image: discourse/base:2.0.20260812-0036
+base_image: discourse/base:2.0.20260915-0028
 params:
   redis_io_threads: "1"
 
@@ -42,7 +42,7 @@ run:
   - replace:
       filename: "/etc/redis/redis.conf"
       from: /^logfile.*$/
-      to: "logfile \"\""
+      to: 'logfile ""'
 
   - replace:
       filename: "/etc/redis/redis.conf"
