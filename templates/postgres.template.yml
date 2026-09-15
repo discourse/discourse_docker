@@ -1,4 +1,4 @@
-base_image: discourse/base:2.0.20260812-0036
+base_image: discourse/base:2.0.20260915-0028
 params:
   db_synchronous_commit: "off"
   db_shared_buffers: "256MB"
@@ -145,21 +145,21 @@ run:
           cp -pr /etc/postgresql/${PG_MAJOR_OLD}/main/* /shared/postgres_data
           echo  >> /shared/postgres_data/postgresql.conf
           echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
-        
+
           rm -fr /shared/postgres_dump 
           [ ! -d /shared/postgres_dump ]  # rm -f always succeeds
           install -d -m 0755 -o postgres -g postgres /shared/postgres_dump
-        
+
           su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl start -D /shared/postgres_data -o '-p 5432'"
           su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_dumpall --globals-only --clean --if-exists -f /shared/postgres_dump/globals.sql"
-        
+
           dbs=$(su postgres -c "psql -Atc \"SELECT datname FROM pg_database WHERE datistemplate = false AND datname <> 'postgres';\"")
           for db in $dbs; do
             echo "Dumping DB ${db}..."
             su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_dump -Fd -j$(nproc --ignore=1) $db -f /shared/postgres_dump/${db}"
           done
           su postgres -c "/usr/lib/postgresql/${PG_MAJOR_OLD}/bin/pg_ctl stop -D /shared/postgres_data"
-        
+
           su postgres -c "/usr/lib/postgresql/18/bin/pg_ctl start -D /shared/postgres_data_new"
           su postgres -c "/usr/lib/postgresql/18/bin/psql -f /shared/postgres_dump/globals.sql"
           for db in $dbs; do
@@ -168,7 +168,7 @@ run:
             su postgres -c "/usr/lib/postgresql/18/bin/pg_restore -e -j$(nproc --ignore=1) -d $db /shared/postgres_dump/${db}"
           done
           su postgres -c "/usr/lib/postgresql/18/bin/pg_ctl stop -D /shared/postgres_data_new"
-        
+
           rm -fr /shared/postgres_dump
           mkdir /shared/postgres_data_old
           mv /shared/postgres_data/* /shared/postgres_data_old
