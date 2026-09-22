@@ -78,7 +78,7 @@ Section: libs
 Priority: optional
 Depends: $RUNTIME_DEPENDS
 Description: HEIF and AVIF codec library built for Discourse
- Pinned libheif build used by Discourse's ImageMagick.
+ Pinned libheif build used by Discourse's ImageMagick and libvips.
 EOF
 cat > "$DEV_ROOT/DEBIAN/control" <<EOF
 Package: libheif-dev
