@@ -29,15 +29,6 @@ FROM libheif-builder AS imagemagick_builder
 COPY install-imagemagick /tmp/install-imagemagick
 RUN /tmp/install-imagemagick
 
-FROM libheif-builder AS jpegli-builder
-ADD install-jpegli /tmp/install-jpegli
-RUN /tmp/install-jpegli
-
-FROM libheif-builder AS vips-builder
-COPY --from=jpegli-builder /usr/local/lib/jpegli /usr/local/lib/jpegli
-COPY install-vips /tmp/install-vips
-RUN /tmp/install-vips
-
 FROM builder AS thpoff-builder
 # This tool allows us to disable huge page support for our current process
 # since the flag is preserved through forks and execs it can be used on any
@@ -98,11 +89,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
     fonts-urw-base35 \
 # oxipng dependencies
-    advancecomp jpegoptim libjpeg-turbo-progs \
-# libvips runtime dependencies
-    libglib2.0-0 libexpat1 libexif12 liblcms2-2 \
-    liborc-0.4-0 libcgif0 libimagequant0 libjxl0.11 libwebp7 \
-    libpango-1.0-0 libpangocairo-1.0-0 libcairo2 &&\
+    advancecomp jpegoptim libjpeg-turbo-progs &&\
 # install these without recommends to avoid pulling in e.g.
 # X11 libraries, mailutils
     DEBIAN_FRONTEND=noninteractive apt-get -y install --no-install-recommends git rsyslog logrotate cron ssh-client less &&\
@@ -162,25 +149,8 @@ RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
   ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
   test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
 
-COPY --from=vips-builder /usr/local/bin/vips /usr/local/bin/vips
-COPY --from=vips-builder /usr/local/bin/vipsheader /usr/local/bin/vipsheader
-COPY --from=vips-builder /usr/local/lib/libvips.so.42 /usr/local/lib/libvips.so.42
-COPY --from=vips-builder /usr/local/lib/jpegli/lib/libjpeg.so.62.3.0 /usr/local/lib/jpegli/lib/libjpeg.so.62
 RUN ldconfig &&\
   ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.4"' &&\
-  ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\
-  sudo -u discourse vips --version &&\
-  sudo -u discourse vipsheader --version &&\
-  ldd /usr/local/bin/vips | grep -q '/usr/local/lib/libvips.so.42' &&\
-  ldd /usr/local/bin/vipsheader | grep -q '/usr/local/lib/libvips.so.42' &&\
-  ldd /usr/local/lib/libvips.so.42 | grep -q '/usr/local/lib/jpegli/lib/libjpeg.so.62' &&\
-  ldd /usr/local/bin/magick | grep 'libjpeg.so.62' | grep -vq '/usr/local/lib/jpegli/' &&\
-  sudo -u discourse vips black /tmp/vips-jpegli.jpg 1 1 &&\
-  sudo -u discourse vipsheader /tmp/vips-jpegli.jpg >/dev/null &&\
-  rm /tmp/vips-jpegli.jpg &&\
-  for op in jpegload jpegsave pngload gifload webpload tiffload heifload jxlload svgload text thumbnail autorot gravity flatten; do \
-    sudo -u discourse vips -l "$op" >/dev/null || { echo "ERROR: vips is missing operation: $op"; exit 1; }; \
-  done &&\
   if dpkg-query -W -f '${Package} ${db:Status-Status}\n' ghostscript libgs10 libgs-common libgs10-common 2>/dev/null | grep -q ' installed$' || command -v gs >/dev/null; then \
     echo "ERROR: ghostscript must not be present in this image"; exit 1; \
   fi
