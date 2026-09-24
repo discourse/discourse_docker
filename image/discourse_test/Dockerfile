@@ -56,6 +56,6 @@ RUN cd /var/www/discourse && \
     pnpm playwright install ffmpeg
 
 RUN cd /var/www/discourse && \
-    sudo -E -u discourse -H pnpm playwright install chromium
+    sudo -E -u discourse -H pnpm playwright install --no-shell chromium
 
 ENTRYPOINT ["sudo", "-E", "-u", "discourse", "-H", "ruby", "script/docker_test.rb"]
