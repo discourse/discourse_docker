@@ -46,6 +46,7 @@ FROM with_browsers AS release
 RUN cd /var/www/discourse &&\
     sudo -u discourse bundle config --local deployment true &&\
     sudo -u discourse bundle config --local path ./vendor/bundle &&\
+    sudo -u discourse bundle config --local with migrations &&\
     sudo -u discourse bundle install --jobs $(nproc --ignore=1) &&\
     sudo -E -u discourse -H /bin/bash -c 'CI=1 pnpm install'
 
