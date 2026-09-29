@@ -80,7 +80,7 @@ run:
         chown -R root /var/lib/postgresql/18/main
         if [ ! -e /shared/postgres_data ]; then
           install -d -m 0755 -o postgres -g postgres /shared/postgres_data
-          sudo -E -u postgres /usr/lib/postgresql/18/bin/initdb --no-data-checksums --locale-provider=builtin --locale C.UTF-8 -D /shared/postgres_data
+          sudo -E -u postgres /usr/lib/postgresql/18/bin/initdb --locale-provider=builtin --locale C.UTF-8 -D /shared/postgres_data
         fi
         find /shared/postgres_data \! -user postgres -exec chown postgres '{}' +
         find /var/run/postgresql \! -user postgres -exec chown postgres '{}' +
@@ -133,7 +133,7 @@ run:
           fi
 
           rm -fr /shared/postgres_data_new
-          install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/18/bin/initdb --no-data-checksums --locale-provider=builtin --locale C.UTF-8 -D /shared/postgres_data_new || exit 0
+          install -d -m 0755 -o postgres -g postgres /shared/postgres_data_new && sudo -u postgres /usr/lib/postgresql/18/bin/initdb --locale-provider=builtin --locale C.UTF-8 -D /shared/postgres_data_new || exit 0
           apt-get update
           apt-get install -y postgresql-${PG_MAJOR_OLD} postgresql-${PG_MAJOR_OLD}-pgvector
           pg_createcluster -u postgres --no-status ${PG_MAJOR_OLD} main
