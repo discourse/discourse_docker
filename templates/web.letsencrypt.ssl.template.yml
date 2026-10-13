@@ -79,7 +79,8 @@ run:
         }
 
         cert_exists() {
-          [[ "$(cd ${LETSENCRYPT_DIR}/${DISCOURSE_HOSTNAME}$1 && openssl verify -CAfile <(openssl x509 -in ca.cer) fullchain.cer | grep "OK")" ]]
+          # ca.cer holds the intermediate certificates
+          (cd "${LETSENCRYPT_DIR}/${DISCOURSE_HOSTNAME}$1" && openssl verify -untrusted ca.cer "${DISCOURSE_HOSTNAME}.cer" > /dev/null)
         }
 
         ########################################################
