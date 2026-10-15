@@ -200,6 +200,50 @@ jobs:
       test_release_amd64: ${{ steps.metadata.outputs.test_release_amd64 }}
       test_release_arm64: ${{ steps.metadata.outputs.test_release_arm64 }}
 
+  ruby_4:
+    runs-on: ${{ vars.AMD64_RUNNER }}
+    timeout-minutes: 90
+    needs: timestamp
+    defaults:
+      run:
+        working-directory: image
+    env:
+      TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
+      DATESTAMP: ${{ needs.timestamp.outputs.datestamp }}
+      RUBY_4_VERSION: 4.0.7
+      ARCH: amd64
+      CACHE_IMAGE: ghcr.io/${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - uses: docker/setup-buildx-action@v3
+      - name: Login to cache registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to Docker Hub
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      - name: Build Ruby 4 web only image
+        run: |
+          docker buildx bake base-web-only-main -f docker-bake.hcl -f docker-bake.cache.hcl \
+            --set "*.args.RUBY_VERSION=$RUBY_4_VERSION" \
+            --set "base-web-only-main.tags=${BASE_IMAGE}:web-only-ruby-${RUBY_4_VERSION}"
+      - name: Push Ruby 4 web only image
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+        run: |
+          docker buildx bake base-web-only-main -f docker-bake.hcl -f docker-bake.cache.hcl \
+            --set "*.args.RUBY_VERSION=$RUBY_4_VERSION" \
+            --set "base-web-only-main.tags=${BASE_IMAGE}:web-only-ruby-${RUBY_4_VERSION}" \
+            --set "base-web-only-main.tags=${BASE_IMAGE}:2.0.${TIMESTAMP}-web-only-ruby-${RUBY_4_VERSION}" \
+            --push
+
   setup_wizard:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
     runs-on: ${{ (matrix.arch == 'amd64' && vars.AMD64_RUNNER) || vars.ARM64_RUNNER }}
