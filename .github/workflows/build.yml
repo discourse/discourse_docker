@@ -230,18 +230,21 @@ jobs:
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-      - name: Build Ruby 4 web only image
+      - name: Build Ruby 4 images
         run: |
-          docker buildx bake base-web-only-main -f docker-bake.hcl -f docker-bake.cache.hcl \
+          docker buildx bake base-web-only-main test-release -f docker-bake.hcl -f docker-bake.cache.hcl \
             --set "*.args.RUBY_VERSION=$RUBY_4_VERSION" \
-            --set "base-web-only-main.tags=${BASE_IMAGE}:web-only-ruby-${RUBY_4_VERSION}"
-      - name: Push Ruby 4 web only image
+            --set "base-web-only-main.tags=${BASE_IMAGE}:web-only-ruby-${RUBY_4_VERSION}" \
+            --set "test-release.tags=${TEST_IMAGE}:release-ruby-${RUBY_4_VERSION}"
+      - name: Push Ruby 4 images
         if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
         run: |
-          docker buildx bake base-web-only-main -f docker-bake.hcl -f docker-bake.cache.hcl \
+          docker buildx bake base-web-only-main test-release -f docker-bake.hcl -f docker-bake.cache.hcl \
             --set "*.args.RUBY_VERSION=$RUBY_4_VERSION" \
             --set "base-web-only-main.tags=${BASE_IMAGE}:web-only-ruby-${RUBY_4_VERSION}" \
             --set "base-web-only-main.tags=${BASE_IMAGE}:2.0.${TIMESTAMP}-web-only-ruby-${RUBY_4_VERSION}" \
+            --set "test-release.tags=${TEST_IMAGE}:release-ruby-${RUBY_4_VERSION}" \
+            --set "test-release.tags=${TEST_IMAGE}:${TIMESTAMP}-release-ruby-${RUBY_4_VERSION}" \
             --push
 
   setup_wizard:
