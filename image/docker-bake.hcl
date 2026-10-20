@@ -14,10 +14,6 @@ variable "DEV_IMAGE" {
   default = "local_discourse/discourse_dev"
 }
 
-variable "STABLE_RUBY_VERSION" {
-  default = "3.4.11"
-}
-
 variable "DATESTAMP" {
   default = "0"
 }
@@ -50,7 +46,6 @@ target "base-slim" {
   target = "discourse-slim"
   args = {
     "DISCOURSE_BRANCH" = "${branch}"
-    "RUBY_VERSION" = branch == "stable" ? STABLE_RUBY_VERSION : null
     "DATESTAMP" = DATESTAMP
   }
 }
@@ -65,7 +60,6 @@ target "base-web-only" {
   target = "discourse-web-only"
   args = {
     "DISCOURSE_BRANCH" = "${branch}"
-    "RUBY_VERSION" = branch == "stable" ? STABLE_RUBY_VERSION : null
     "DATESTAMP" = DATESTAMP
   }
 }
@@ -80,7 +74,6 @@ target "base-release" {
   target = "discourse-release"
   args = {
     "DISCOURSE_BRANCH" = "${branch}"
-    "RUBY_VERSION" = branch == "stable" ? STABLE_RUBY_VERSION : null
     "DATESTAMP" = DATESTAMP
   }
 }
