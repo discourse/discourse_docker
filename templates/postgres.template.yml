@@ -1,4 +1,4 @@
-base_image: discourse/base:2.0.20261021-0024
+base_image: discourse/base:2.0.20261022-1808
 params:
   db_synchronous_commit: "off"
   db_shared_buffers: "256MB"
@@ -146,7 +146,7 @@ run:
           echo  >> /shared/postgres_data/postgresql.conf
           echo "data_directory = '/shared/postgres_data'" >> /shared/postgres_data/postgresql.conf
 
-          rm -fr /shared/postgres_dump 
+          rm -fr /shared/postgres_dump
           [ ! -d /shared/postgres_dump ]  # rm -f always succeeds
           install -d -m 0755 -o postgres -g postgres /shared/postgres_dump
 
