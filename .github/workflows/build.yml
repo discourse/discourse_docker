@@ -1,4 +1,5 @@
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -65,7 +66,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Login to Docker Hub
-        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
@@ -99,14 +100,14 @@ jobs:
           docker run --rm -e RUBY_ONLY=1 -e USE_TURBO=1 -e SKIP_PLUGINS=1 -e SKIP_LINT=1 -e DISCOURSE_TURBO_RSPEC_RETRY_AND_LOG_FLAKY_TESTS=1 ${TEST_IMAGE}:release
 
       - name: Build and push test image
-        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         run: |
           docker buildx bake test-slim -f docker-bake.hcl -f docker-bake.push.hcl -f docker-bake.cache.hcl -f docker-bake.cache-write.hcl --metadata-file=/tmp/test-slim.json
           docker buildx bake test-slim-browsers -f docker-bake.hcl -f docker-bake.push.hcl -f docker-bake.cache.hcl -f docker-bake.cache-write.hcl --metadata-file=/tmp/test-slim-browsers.json
           docker buildx bake test-release -f docker-bake.hcl -f docker-bake.push.hcl -f docker-bake.cache.hcl -f docker-bake.cache-write.hcl --metadata-file=/tmp/test-release.json
 
       - name: Build and push dev image
-        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         run: |
           docker buildx bake --allow=fs.read=../templates dev -f docker-bake.hcl -f docker-bake.push.hcl -f docker-bake.cache.hcl -f docker-bake.cache-write.hcl --metadata-file=/tmp/dev.json
 
@@ -119,7 +120,7 @@ jobs:
           docker history ${BASE_IMAGE}:release-main
 
       - name: push to dockerhub
-        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         run: |
           docker buildx bake base-runtime-deps -f docker-bake.hcl -f docker-bake.push.hcl -f docker-bake.cache.hcl -f docker-bake.cache-write.hcl --metadata-file=/tmp/base-runtime-deps.json
           docker buildx bake base-slim-main -f docker-bake.hcl -f docker-bake.push.hcl -f docker-bake.cache.hcl -f docker-bake.cache-write.hcl --metadata-file=/tmp/base-slim-main.json
@@ -130,7 +131,7 @@ jobs:
           docker buildx bake base-release-stable -f docker-bake.hcl -f docker-bake.push.hcl -f docker-bake.cache.hcl -f docker-bake.cache-write.hcl --metadata-file=/tmp/base-release-stable.json
 
       - name: save image digests
-        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         id: metadata
         run: |
           test_slim_${{ matrix.arch }}=$(jq -r '."test-slim"["containerimage.digest"]' /tmp/test-slim.json)
@@ -225,7 +226,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Login to Docker Hub
-        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         uses: docker/login-action@v3
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
@@ -237,7 +238,7 @@ jobs:
             --set "base-web-only-main.tags=${BASE_IMAGE}:web-only-ruby-${RUBY_4_VERSION}" \
             --set "test-release.tags=${TEST_IMAGE}:release-ruby-${RUBY_4_VERSION}"
       - name: Push Ruby 4 images
-        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+        if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
         run: |
           docker buildx bake base-web-only-main test-release -f docker-bake.hcl -f docker-bake.cache.hcl \
             --set "*.args.RUBY_VERSION=$RUBY_4_VERSION" \
@@ -248,7 +249,7 @@ jobs:
             --push
 
   setup_wizard:
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     runs-on: ${{ (matrix.arch == 'amd64' && vars.AMD64_RUNNER) || vars.ARM64_RUNNER }}
     strategy:
       matrix:
@@ -290,7 +291,7 @@ jobs:
     needs: [base, setup_wizard, timestamp]
     env:
       TIMESTAMP: ${{ needs.timestamp.outputs.timestamp }}
-    if: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     steps:
       - uses: docker/setup-buildx-action@v3
       - name: Login to Docker Hub
