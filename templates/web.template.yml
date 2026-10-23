@@ -1,4 +1,4 @@
-base_image: discourse/base:2.0.20261022-1808
+base_image: discourse/base:2.0.20261023-1648
 env:
   # You can have redis on a different box
   RAILS_ENV: 'production'

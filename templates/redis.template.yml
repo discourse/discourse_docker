@@ -1,4 +1,4 @@
-base_image: discourse/base:2.0.20261022-1808
+base_image: discourse/base:2.0.20261023-1648
 params:
   redis_io_threads: "1"
 
