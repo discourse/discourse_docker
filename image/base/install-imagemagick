@@ -2,8 +2,8 @@
 set -e
 
 # version check: https://github.com/ImageMagick/ImageMagick/releases
-IMAGE_MAGICK_VERSION="7.1.2-27"
-IMAGE_MAGICK_HASH="485dad5226fda2417ea65f3eb6e3f63e7d5dfacacdf6f57f9c39b6ef1e3cb667"
+IMAGE_MAGICK_VERSION="7.1.2-34"
+IMAGE_MAGICK_HASH="f5163a573a1c1bff16358d0a592b2fb168ad0fd3b9dc5ff57dc7820eebc5cf79"
 
 LIBJPEGTURBO=$(cat /etc/issue | grep -qi Debian && echo 'libjpeg62-turbo libjpeg62-turbo-dev' || echo 'libjpeg-turbo8 libjpeg-turbo8-dev')
 
