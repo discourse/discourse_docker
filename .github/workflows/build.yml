@@ -402,6 +402,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     permissions:
       contents: write
+      issues: write
       pull-requests: write
     concurrency:
       group: bump-base-image
@@ -444,7 +445,7 @@ jobs:
 
           pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
           if [ -n "$pr" ]; then
-            gh pr edit "$pr" --title "$title" --body "$body"
+            gh pr edit "$pr" --title "$title" --body "$body" --add-label bump-base-image
           else
-            gh pr create --draft --base main --head "$BRANCH" --title "$title" --body "$body"
+            gh pr create --draft --base main --head "$BRANCH" --title "$title" --body "$body" --label bump-base-image
           fi
