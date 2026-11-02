@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+version=${1:-}
+if [[ ! "$version" =~ ^2\.0\.[0-9]{8}-[0-9]{4}$ ]]; then
+  echo "Usage: $0 2.0.YYYYMMDD-HHMM" >&2
+  exit 1
+fi
+
+cd "$(dirname "$0")/.."
+
+VERSION="$version" perl -pi -e 's/^(base_image: *discourse\/base:)2\.0\.\d{8}-\d{4}/${1}$ENV{VERSION}/' templates/*.yml
+
+if ! grep -qF "discourse/base:$version" templates/web.template.yml; then
+  echo "Could not set base_image in templates/web.template.yml" >&2
+  exit 1
+fi
