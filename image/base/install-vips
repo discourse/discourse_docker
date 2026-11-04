@@ -2,8 +2,8 @@
 set -e
 
 # version check: https://github.com/libvips/libvips/releases
-VIPS_VERSION="8.18.4"
-VIPS_HASH="2677bad6c422617fd1172d359c16af34e736965d042c214203a87187d26ff037"
+VIPS_VERSION="8.18.7"
+VIPS_HASH="5baaead3b0bb20ffdb9e9ff09aa9fda08620923df77b63b436654cb5e0b3bf94"
 
 PREFIX=/usr/local
 WDIR=/tmp/vips
