@@ -1,1 +1,1 @@
-base_image: discourse/base:2.0.20261102-1134-web-only
+base_image: discourse/base:2.0.20261109-0018-web-only
