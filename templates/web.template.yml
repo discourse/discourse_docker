@@ -44,10 +44,7 @@ run:
       contents: |
         #!/bin/bash
         env > ~/boot_env
-        conf=/var/www/discourse/config/discourse.conf
-
-        # find DISCOURSE_ env vars, strip the leader, lowercase the key
-        /usr/local/bin/ruby -e 'ENV.each{|k,v| puts "#{$1.downcase} = '\''#{v}'\''" if k =~ /^DISCOURSE_(.*)/}' | install -m 600 -o discourse /dev/stdin ${conf}
+        rm -f $home/config/discourse.conf
 
   - file:
       path: /etc/service/unicorn/run
