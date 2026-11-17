@@ -117,10 +117,6 @@ run:
           --keypath /shared/ssl/${DISCOURSE_HOSTNAME}_ecc.key \
           --reloadcmd "sv reload nginx"
 
-        if cert_exists "" || cert_exists "_ecc"; then
-          grep -q 'force_https' "/var/www/discourse/config/discourse.conf" || echo "force_https = 'true'" >> "/var/www/discourse/config/discourse.conf"
-        fi
-
         /usr/sbin/nginx -c /etc/nginx/letsencrypt.conf -s stop
 
 hooks:
