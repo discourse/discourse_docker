@@ -54,7 +54,8 @@ COPY install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
 FROM builder AS nginx-builder
-COPY build-nginx-debs nginx-CVE-2026-123633.patch /tmp/
+COPY build-nginx-debs /tmp/
+COPY nginx-patches/ /tmp/nginx-patches/
 RUN /tmp/build-nginx-debs
 
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-base

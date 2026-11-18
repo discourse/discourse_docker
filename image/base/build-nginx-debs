@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-# Remove this backport when Debian Trixie ships a fix for CVE-2026-123633.
+# Remove this backport when Debian Trixie ships fixes for every CVE listed below.
 debian_version=1.26.3-3+deb13u10
 upstream_version=1.26.3
-package_version="${debian_version}+discourse1"
+package_version="${debian_version}+discourse2"
 source_url=https://deb.debian.org/debian-security/pool/updates/main/n/nginx
 
 export DEBIAN_FRONTEND=noninteractive
@@ -27,9 +27,11 @@ apt-get build-dep -y --no-install-recommends "./nginx_${debian_version}.dsc"
 # The pinned SHA-256 checks above authenticate these exact source files.
 dpkg-source --no-check -x "nginx_${debian_version}.dsc" src
 cd src
-install -m 0644 /tmp/nginx-CVE-2026-123633.patch debian/patches/
-echo nginx-CVE-2026-123633.patch >> debian/patches/series
-sed -i "1i nginx ($package_version) trixie; urgency=high\n\n  * Backport the upstream fix for CVE-2026-123633.\n\n -- Discourse Team <team@discourse.org>  Thu, 19 Nov 2026 00:00:00 +0000\n" debian/changelog
+while IFS= read -r patch; do
+    install -m 0644 "/tmp/nginx-patches/$patch" debian/patches/
+    printf '%s\n' "$patch" >> debian/patches/series
+done < /tmp/nginx-patches/series
+sed -i "1i nginx ($package_version) trixie; urgency=high\n\n  * Backport upstream fixes for CVE-2026-123633, CVE-2026-123634,\n    CVE-2026-123640 and CVE-2026-125283.\n\n -- Discourse Team <team@discourse.org>  Thu, 19 Nov 2026 00:00:00 +0000\n" debian/changelog
 dpkg-buildpackage --build=binary --no-sign
 
 # nginx and nginx-common must have the same source version. Keep the Debian
@@ -38,3 +40,6 @@ arch=$(dpkg --print-architecture)
 install -D -m 0644 "../nginx_${package_version}_${arch}.deb" /tmp/nginx-debs/nginx.deb
 install -D -m 0644 "../nginx-common_${package_version}_all.deb" /tmp/nginx-debs/nginx-common.deb
 install -D -m 0644 "../nginx-light_${package_version}_all.deb" /tmp/nginx-debs/nginx-light.deb
+
+# Optional module for custom images. Stock nginx-light does not install it.
+install -D -m 0644 "../libnginx-mod-stream_${package_version}_${arch}.deb" /tmp/nginx-debs/libnginx-mod-stream.deb
