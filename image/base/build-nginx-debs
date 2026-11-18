@@ -4,7 +4,7 @@ set -euo pipefail
 # Remove this backport when Debian Trixie ships fixes for every CVE listed below.
 debian_version=1.26.3-3+deb13u10
 upstream_version=1.26.3
-package_version="${debian_version}+discourse2"
+package_version="${debian_version}+discourse3"
 source_url=https://deb.debian.org/debian-security/pool/updates/main/n/nginx
 
 export DEBIAN_FRONTEND=noninteractive
@@ -31,7 +31,7 @@ while IFS= read -r patch; do
     install -m 0644 "/tmp/nginx-patches/$patch" debian/patches/
     printf '%s\n' "$patch" >> debian/patches/series
 done < /tmp/nginx-patches/series
-sed -i "1i nginx ($package_version) trixie; urgency=high\n\n  * Backport upstream fixes for CVE-2026-123633, CVE-2026-123634,\n    CVE-2026-123640 and CVE-2026-125283.\n\n -- Discourse Team <team@discourse.org>  Thu, 19 Nov 2026 00:00:00 +0000\n" debian/changelog
+sed -i "1i nginx ($package_version) trixie; urgency=high\n\n  * Backport upstream fixes for CVE-2026-118899, CVE-2026-123007,\n    CVE-2026-123633, CVE-2026-123634, CVE-2026-123640 and CVE-2026-125283.\n\n -- Discourse Team <team@discourse.org>  Thu, 19 Nov 2026 00:00:00 +0000\n" debian/changelog
 dpkg-buildpackage --build=binary --no-sign
 
 # nginx and nginx-common must have the same source version. Keep the Debian
