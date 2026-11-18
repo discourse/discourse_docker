@@ -206,7 +206,7 @@ RUN --mount=type=tmpfs,target=/var/log \
     --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt \
 # node packages
-    printf 'Types: deb\nURIs: https://deb.nodesource.com/node_22.x\nSuites: nodistro\nComponents: main\nSigned-By: /usr/share/keyrings/nodesource.asc\n' > /etc/apt/sources.list.d/nodesource.sources &&\
+    printf 'Types: deb\nURIs: https://deb.nodesource.com/node_26.x\nSuites: nodistro\nComponents: main\nSigned-By: /usr/share/keyrings/nodesource.asc\n' > /etc/apt/sources.list.d/nodesource.sources &&\
     printf 'Package: nodejs\nPin: origin deb.nodesource.com\nPin-Priority: 600\n' > /etc/apt/preferences.d/nodejs &&\
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections; \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
