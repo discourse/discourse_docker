@@ -53,11 +53,6 @@ FROM builder AS oxipng-builder
 COPY install-oxipng /tmp/install-oxipng
 RUN /tmp/install-oxipng
 
-FROM builder AS nginx-builder
-COPY build-nginx-debs /tmp/
-COPY nginx-patches/ /tmp/nginx-patches/
-RUN /tmp/build-nginx-debs
-
 FROM discourse/ruby:${FROM_DOCKER_IMAGE_TAG} AS discourse-runtime-base
 ARG DATESTAMP
 ARG DEBIAN_RELEASE
@@ -134,19 +129,15 @@ ENV LANGUAGE=en_US.UTF-8
 RUN sed -i "s/^# $LANG/$LANG/" /etc/locale.gen &&\
     locale-gen
 
-# Install the patched Debian packages alongside the archive's Brotli modules.
-RUN --mount=from=nginx-builder,source=/tmp/nginx-debs,target=/tmp/nginx-debs \
-    --mount=type=tmpfs,target=/var/log \
+# nginx
+RUN --mount=type=tmpfs,target=/var/log \
     --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt \
     apt update &&\
     DEBIAN_FRONTEND=noninteractive apt-get -y install \
-    /tmp/nginx-debs/nginx.deb \
-    /tmp/nginx-debs/nginx-common.deb \
-    /tmp/nginx-debs/nginx-light.deb \
+    nginx-light \
     libnginx-mod-http-brotli-filter \
-    libnginx-mod-http-brotli-static &&\
-    /usr/sbin/nginx -t
+    libnginx-mod-http-brotli-static
 
 # Fontconfig caches include font-directory mtimes with nanoseconds. BuildKit keeps
 # these between RUNs, but containerd truncates them during layer export, making
