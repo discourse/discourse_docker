@@ -24,22 +24,21 @@ RUN chown -R discourse . &&\
     bundle config unset deployment &&\
     bundle config unset without
 
+FROM base AS playwright-tmp
+
+RUN cd /var/www/discourse &&\
+    pnpm install --frozen-lockfile --ignore-scripts --filter @discourse/playwright-runner
+
 FROM base AS with_browsers
 
-ENV TESTEM_DEFAULT_BROWSER=Chrome
-# From https://dl.google.com/linux/linux_signing_key.pub
-# fingerprint: EB4C 1BFD 4F04 2F6D DDCC EC91 7721 F63B D38B 4796
-COPY google-linux-signing-key.pub /usr/share/keyrings/google-chrome.asc
-COPY install-chrome /tmp/install-chrome
-# From https://archive.mozilla.org/pub/firefox/releases/<any version>/KEY
-# fingerprint: 14F2 6682 D091 6CDD 81E3 7B6D 61B7 B526 D98F 0353
-COPY mozilla-release-key.asc /tmp/mozilla-release-key.asc
-COPY install-firefox /tmp/install-firefox
-RUN /tmp/install-chrome &&\
-    apt update &&\
-    apt install -y libxss1 firefox-esr &&\
-    /tmp/install-firefox &&\
-    apt clean
+ENV PLAYWRIGHT_BROWSERS_PATH=/home/discourse/.cache/ms-playwright
+RUN --mount=type=bind,from=playwright-tmp,source=/var/www/discourse,target=/var/www/discourse \
+    --mount=type=tmpfs,target=/var/log \
+    --mount=type=tmpfs,target=/var/cache/apt \
+    --mount=type=tmpfs,target=/var/lib/apt \
+    cd /var/www/discourse &&\
+    node_modules/.bin/playwright install-deps chromium &&\
+    sudo -E -u discourse -H node_modules/.bin/playwright install --no-shell chromium
 
 FROM with_browsers AS release
 
@@ -52,11 +51,5 @@ RUN cd /var/www/discourse &&\
 
 RUN cd /var/www/discourse && sudo -E -u discourse -H bundle exec rake plugin:install_all_official &&\
     LOAD_PLUGINS=1 sudo -E -u discourse -H bundle exec rake plugin:install_all_gems
-
-RUN cd /var/www/discourse && \
-    pnpm playwright install ffmpeg
-
-RUN cd /var/www/discourse && \
-    sudo -E -u discourse -H pnpm playwright install --no-shell chromium
 
 ENTRYPOINT ["sudo", "-E", "-u", "discourse", "-H", "ruby", "script/docker_test.rb"]
