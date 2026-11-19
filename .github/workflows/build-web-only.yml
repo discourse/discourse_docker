@@ -89,6 +89,8 @@ jobs:
 
       - name: build from configuration
         if: ${{ github.event_name == 'pull_request' }}
+        env:
+          DOCKER_IMAGE: discourse-web-only:ci
         run: |
           # test builds
           if [ "$VERSION" = "latest" ]; then
