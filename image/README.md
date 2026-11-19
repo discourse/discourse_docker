@@ -26,7 +26,7 @@ See both `docker-bake.hcl` and the respective `Dockerfile`s for details on _how_
 
 ### base ([discourse/base](https://hub.docker.com/r/discourse/base/))
 
-All of the dependencies for running Discourse.  This includes runit, postgres, nginx, ruby, imagemagick, etc.  It also includes the creation of the "discourse" user and `/var/www` directory.
+All of the dependencies for running Discourse.  This includes runit, postgres, nginx, ruby, libvips, etc.  It also includes the creation of the "discourse" user and `/var/www` directory.
 
 This image has the following tag variants:
 

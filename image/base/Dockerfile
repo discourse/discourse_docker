@@ -25,10 +25,6 @@ FROM builder AS libheif-builder
 ADD install-libheif /tmp/install-libheif
 RUN /tmp/install-libheif
 
-FROM libheif-builder AS imagemagick_builder
-COPY install-imagemagick /tmp/install-imagemagick
-RUN /tmp/install-imagemagick
-
 FROM libheif-builder AS jpegli-builder
 ADD install-jpegli /tmp/install-jpegli
 RUN /tmp/install-jpegli
@@ -93,13 +89,11 @@ RUN --mount=type=tmpfs,target=/var/log \
     psmisc whois brotli \
     pngcrush pngquant ripgrep poppler-utils \
     catdoc antiword parallel \
-# imagemagick runtime dependencies
-    libjbig0 libtiff6 libpng16-16 libjpeg62-turbo libfontconfig1 \
-    libwebpdemux2 libwebpmux3 libxext6 librsvg2-2 libgomp1 \
-    fonts-urw-base35 \
 # oxipng dependencies
     advancecomp jpegoptim libjpeg-turbo-progs \
 # libvips runtime dependencies
+    libtiff6 libpng16-16 libjpeg62-turbo libfontconfig1 fonts-urw-base35 \
+    libwebpdemux2 libwebpmux3 librsvg2-2 \
     libglib2.0-0 libexpat1 libexif12 liblcms2-2 \
     liborc-0.4-0 libcgif0 libimagequant0 libjxl0.11 libwebp7 \
     libpango-1.0-0 libpangocairo-1.0-0 libcairo2 &&\
@@ -146,32 +140,12 @@ RUN find /usr/local/share/fonts /usr/share/fonts -type d \
       -exec sh -c 'for dir do touch -d "@$(stat -c %Y "$dir")" "$dir"; done' sh {} + && \
     fc-cache -f
 
-# Copy binary and configuration files for magick
-COPY --from=imagemagick_builder /usr/local/bin/magick /usr/local/bin/magick
-COPY --from=imagemagick_builder /usr/local/etc/ImageMagick-7 /usr/local/etc/ImageMagick-7
-COPY --from=imagemagick_builder /usr/local/share/ImageMagick-7 /usr/local/share/ImageMagick-7
-# Create symlinks to imagemagick tools
-RUN ln -s /usr/local/bin/magick /usr/local/bin/animate &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/compare &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/composite &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/conjure &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/convert &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/display &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/identify &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/import &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/magick-script &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/mogrify &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/montage &&\
-  ln -s /usr/local/bin/magick /usr/local/bin/stream &&\
-  test $(magick -version | grep -o -e png -e tiff -e jpeg -e freetype -e heic -e webp | wc -l) -eq 6
-
 COPY --from=vips-builder /usr/local/lib/libvips.so.42 /usr/local/lib/libvips.so.42
 COPY --from=vips-builder /usr/local/lib/jpegli/lib/libjpeg.so.62.3.0 /usr/local/lib/jpegli/lib/libjpeg.so.62
 RUN ldconfig &&\
   ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.7"' &&\
   ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\
   ldd /usr/local/lib/libvips.so.42 | grep -q '/usr/local/lib/jpegli/lib/libjpeg.so.62' &&\
-  ldd /usr/local/bin/magick | grep 'libjpeg.so.62' | grep -vq '/usr/local/lib/jpegli/' &&\
   if dpkg-query -W -f '${Package} ${db:Status-Status}\n' ghostscript libgs10 libgs-common libgs10-common 2>/dev/null | grep -q ' installed$' || command -v gs >/dev/null; then \
     echo "ERROR: ghostscript must not be present in this image"; exit 1; \
   fi
