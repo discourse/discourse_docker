@@ -1,0 +1,45 @@
+#!/bin/bash
+set -euo pipefail
+
+# Remove this backport when Debian Trixie ships fixes for every CVE listed below.
+debian_version=1.26.3-3+deb13u10
+upstream_version=1.26.3
+package_version="${debian_version}+discourse3"
+source_url=https://deb.debian.org/debian-security/pool/updates/main/n/nginx
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get install -y --no-install-recommends dpkg-dev
+
+workdir=$(mktemp -d)
+trap 'rm -rf "$workdir"' EXIT
+cd "$workdir"
+
+# Pin both the NGINX source and Debian's packaging, including its security patches.
+for file in "nginx_${debian_version}.dsc" "nginx_${debian_version}.debian.tar.xz" "nginx_${upstream_version}.orig.tar.gz"; do
+    wget -nv "$source_url/$file"
+done
+sha256sum -c <<SUMS
+b1b8dc9c2fa47dcd46844f68833bc80244220a127299be36754bbb3b5d56192e  nginx_${debian_version}.dsc
+22b58b7a5261cd427022544814d502935aba9d84bf2ca4e03d9f7a17e678c388  nginx_${debian_version}.debian.tar.xz
+69ee2b237744036e61d24b836668aad3040dda461fe6f570f1787eab570c75aa  nginx_${upstream_version}.orig.tar.gz
+SUMS
+apt-get build-dep -y --no-install-recommends "./nginx_${debian_version}.dsc"
+# The pinned SHA-256 checks above authenticate these exact source files.
+dpkg-source --no-check -x "nginx_${debian_version}.dsc" src
+cd src
+while IFS= read -r patch; do
+    install -m 0644 "/tmp/nginx-patches/$patch" debian/patches/
+    printf '%s\n' "$patch" >> debian/patches/series
+done < /tmp/nginx-patches/series
+sed -i "1i nginx ($package_version) trixie; urgency=high\n\n  * Backport upstream fixes for CVE-2026-118899, CVE-2026-123007,\n    CVE-2026-123633, CVE-2026-123634, CVE-2026-123640 and CVE-2026-125283.\n\n -- Discourse Team <team@discourse.org>  Thu, 19 Nov 2026 00:00:00 +0000\n" debian/changelog
+dpkg-buildpackage --build=binary --no-sign
+
+# nginx and nginx-common must have the same source version. Keep the Debian
+# module ABI so the archive's Brotli modules can still be installed unchanged.
+arch=$(dpkg --print-architecture)
+install -D -m 0644 "../nginx_${package_version}_${arch}.deb" /tmp/nginx-debs/nginx.deb
+install -D -m 0644 "../nginx-common_${package_version}_all.deb" /tmp/nginx-debs/nginx-common.deb
+install -D -m 0644 "../nginx-light_${package_version}_all.deb" /tmp/nginx-debs/nginx-light.deb
+
+# Optional module for custom images. Stock nginx-light does not install it.
+install -D -m 0644 "../libnginx-mod-stream_${package_version}_${arch}.deb" /tmp/nginx-debs/libnginx-mod-stream.deb
