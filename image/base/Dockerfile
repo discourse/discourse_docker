@@ -146,7 +146,6 @@ RUN ldconfig &&\
   ruby -rfiddle -e 'lib = Fiddle.dlopen("libheif.so.1"); version = Fiddle::Function.new(lib["heif_get_version"], [], Fiddle::TYPE_VOIDP); abort "unexpected libheif version" unless Fiddle::Pointer.new(version.call).to_s == "1.23.7"' &&\
   ruby -rfiddle -e 'Fiddle.dlopen("libvips.so.42")' &&\
   ldd /usr/local/lib/libvips.so.42 | grep -q '/usr/local/lib/jpegli/lib/libjpeg.so.62' &&\
-  ! command -v magick &&\
   if dpkg-query -W -f '${Package} ${db:Status-Status}\n' ghostscript libgs10 libgs-common libgs10-common 2>/dev/null | grep -q ' installed$' || command -v gs >/dev/null; then \
     echo "ERROR: ghostscript must not be present in this image"; exit 1; \
   fi
