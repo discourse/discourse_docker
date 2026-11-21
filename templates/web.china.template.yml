@@ -2,7 +2,7 @@ hooks:
   before_code:
     - exec:
         cmd:
-          - su discourse -c 'git config --global url."https://mirror.ghproxy.com/https://github.com/".insteadOf "https://github.com/"'
+          - su discourse -c 'git config --global url."https://gh-proxy.com/https://github.com/".insteadOf "https://github.com/"'
 
   before_web:
     - exec:
