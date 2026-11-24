@@ -40,9 +40,9 @@ run:
 
         install /dev/null /etc/nginx/conf.d/outlets/server/10-http.conf
 
-        redirect_host='$host'
-        if [[ "$DISCOURSE_HOSTNAME" == *:* ]]; then
-          redirect_host='$http_host'
+        quic_hostname=$DISCOURSE_HOSTNAME
+        if [[ "$quic_hostname" =~ :[0-9]+$ ]]; then
+          quic_hostname=${quic_hostname%:*}
         fi
 
         cat << EOF > /etc/nginx/conf.d/outlets/server/20-https.conf
@@ -66,7 +66,13 @@ run:
         add_header Strict-Transport-Security 'max-age=31536000';
         add_header Alt-Svc 'h3=":443"; ma=86400';
 
-        if ($redirect_host != ${DISCOURSE_HOSTNAME}) {
+        set \$request_authority \$http_host;
+        set \$canonical_authority ${DISCOURSE_HOSTNAME};
+        if (\$http3 = h3) {
+          set \$request_authority \$host;
+          set \$canonical_authority $quic_hostname;
+        }
+        if (\$request_authority != \$canonical_authority) {
           rewrite (.*) https://${DISCOURSE_HOSTNAME}\$1 permanent;
         }
         EOF
