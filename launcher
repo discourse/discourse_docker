@@ -515,7 +515,7 @@ RUBY
        !templates.include?(File.join(launcher_dir, 'templates/web.socketed.template.yml')) &&
        !https_bindings.empty?
       extra_bindings = [ARGV[1], docker_args].compact.join(' ')
-        .scan(/(?:\A|\s)(?:-p\s*|--publish[=\s]+)(\S+\/udp)(?=\s|\z)/).flatten
+        .scan(/(?:\A|\s)(?:-p[=\s]*|--publish[=\s]+)(\S+\/udp)(?=\s|\z)/).flatten
       udp_port_in_use = (ports + extra_bindings).grep(/.+:\d+(?:-\d+)?\/udp\z/).any? do |binding|
         first, last = binding.split(':')[-2].split('-').map(&:to_i)
         first && (first..(last || first)).cover?(443)
