@@ -22,6 +22,7 @@ templates:
 expose:
   - "80:80" # http
   - "443:443" # https
+  - "443:443/udp"
 
 params:
   db_default_text_search_config: "pg_catalog.english"

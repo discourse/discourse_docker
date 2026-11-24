@@ -40,12 +40,9 @@ run:
 
         install /dev/null /etc/nginx/conf.d/outlets/server/10-http.conf
 
-        quic_hostname=$DISCOURSE_HOSTNAME
-        quic_port=443
-        if [[ "$quic_hostname" =~ :[0-9]+$ ]]; then
-          quic_port=${quic_hostname##*:}
-          quic_hostname=${quic_hostname%:*}
-        fi
+        ssl_hostname=$(printf '%s\n' "$DISCOURSE_HOSTNAME" | sed -E 's/:[0-9]+$//')
+        ssl_port_suffix=${DISCOURSE_HOSTNAME#"$ssl_hostname"}
+        ssl_port_suffix=${ssl_port_suffix:-:443}
 
         cat << EOF > /etc/nginx/conf.d/outlets/server/20-https.conf
         listen 443 ssl;
@@ -66,20 +63,14 @@ run:
         ssl_session_cache shared:SSL:1m;
 
         add_header Strict-Transport-Security 'max-age=31536000';
-        add_header Alt-Svc 'h3=":$quic_port"; ma=86400';
+        add_header Alt-Svc 'h3="$ssl_port_suffix"; ma=86400';
 
-        set \$request_authority \$http_host;
-        set \$canonical_authority ${DISCOURSE_HOSTNAME};
-        if (\$http3 = h3) {
-          set \$request_authority \$host;
-          set \$canonical_authority $quic_hostname;
-        }
-        if (\$request_authority != \$canonical_authority) {
+        if (\$host != $ssl_hostname) {
           rewrite (.*) https://${DISCOURSE_HOSTNAME}\$1 permanent;
         }
         EOF
 
         cat << EOF > /etc/nginx/conf.d/outlets/discourse/20-https.conf
         add_header Strict-Transport-Security 'max-age=31536000';
-        add_header Alt-Svc 'h3=":$quic_port"; ma=86400';
+        add_header Alt-Svc 'h3="$ssl_port_suffix"; ma=86400';
         EOF

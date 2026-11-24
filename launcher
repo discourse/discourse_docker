@@ -490,15 +490,10 @@ RUBY
 
     input=STDIN.readlines.join
     ports = []
-    templates = []
-    docker_args = nil
     input.split('_FILE_SEPERATOR_').each do |yml|
        yml.strip!
        begin
-         config = YAML.load(yml)
-         ports.concat(config['expose'] || [])
-         templates = config['templates'] || []
-         docker_args = config['docker_args']
+         ports += (YAML.load(yml)['expose'] || [])
        rescue Psych::SyntaxError => e
         puts e
         puts "*ERROR."
@@ -507,30 +502,13 @@ RUBY
         p e
        end
     end
-    launcher_dir = ARGV.fetch(0)
-    templates = templates.map { |path| File.expand_path(path, launcher_dir) }
-    https_port = /\A(?:.+:)?443:443\z/
-    https_bindings = ports.map { |port| port.to_s.delete_suffix('/tcp') }.grep(https_port)
-    if templates.include?(File.join(launcher_dir, 'templates/web.ssl.template.yml')) &&
-       !templates.include?(File.join(launcher_dir, 'templates/web.socketed.template.yml')) &&
-       !https_bindings.empty?
-      extra_bindings = [ARGV[1], docker_args].compact.join(' ')
-        .scan(/(?:\A|\s)(?:-p[=\s]*|--publish[=\s]+)(\S+\/udp)(?=\s|\z)/).flatten
-      udp_port_in_use = (ports + extra_bindings).grep(/.+:\d+(?:-\d+)?\/udp\z/).any? do |binding|
-        first, last = binding.split(':')[-2].split('-').map(&:to_i)
-        first && (first..(last || first)).cover?(443)
-      end
-      unless udp_port_in_use
-        ports.concat(https_bindings.uniq.map { |binding| "#{binding}/udp" })
-      end
-    end
     puts ports.map { |p| p.to_s.include?(':') ? "-p\n#{p}" : "--expose\n#{p}" }.join("\n")
 RUBY
 
     tmp_input_file=$(mktemp)
 
     echo "$input" > "$tmp_input_file"
-    raw=`exec cat "$tmp_input_file" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$ports_ruby" "$PWD" "$user_args_argv"`
+    raw=`exec cat "$tmp_input_file" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$ports_ruby"`
 
     rm -f "$tmp_input_file"
 
