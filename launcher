@@ -490,10 +490,15 @@ RUBY
 
     input=STDIN.readlines.join
     ports = []
+    env = {}
+    templates = []
     input.split('_FILE_SEPERATOR_').each do |yml|
        yml.strip!
        begin
-         ports += (YAML.load(yml)['expose'] || [])
+         config = YAML.load(yml)
+         ports.concat(config['expose'] || [])
+         env.merge!(config['env'] || {})
+         templates = config['templates'] || []
        rescue Psych::SyntaxError => e
         puts e
         puts "*ERROR."
@@ -502,13 +507,27 @@ RUBY
         p e
        end
     end
+    launcher_dir = ARGV.fetch(0)
+    templates = templates.map { |path| File.expand_path(path, launcher_dir) }
+    https_port = /\A(?:.+:)?443:443\z/
+    https_bindings = ports.map { |port| port.to_s.delete_suffix('/tcp') }.grep(https_port)
+    if templates.include?(File.join(launcher_dir, 'templates/web.ssl.template.yml')) &&
+       !templates.include?(File.join(launcher_dir, 'templates/web.socketed.template.yml')) &&
+       env.fetch('DISCOURSE_HTTP3', true).to_s == 'true' &&
+       !https_bindings.empty?
+      udp_bindings = ports.grep(/\/udp\z/).map { |binding| binding.delete_suffix('/udp') }
+      unless udp_bindings.any? { |binding| https_port.match?(binding) }
+        ports.concat(https_bindings.uniq.map { |binding| "#{binding}/udp" })
+      end
+      puts '*HTTP3.'
+    end
     puts ports.map { |p| p.to_s.include?(':') ? "-p\n#{p}" : "--expose\n#{p}" }.join("\n")
 RUBY
 
     tmp_input_file=$(mktemp)
 
     echo "$input" > "$tmp_input_file"
-    raw=`exec cat "$tmp_input_file" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$ports_ruby"`
+    raw=`exec cat "$tmp_input_file" | $docker_path run $user_args --rm -i -a stdin -a stdout $image ruby -e "$ports_ruby" "$PWD"`
 
     rm -f "$tmp_input_file"
 
@@ -517,6 +536,8 @@ RUBY
     while read i; do
       if [ "$i" == "*ERROR." ]; then
         ok=0
+      elif [ "$i" == "*HTTP3." ]; then
+        env+=("-e" "DISCOURSE_HTTP3=true")
       elif [ -n "$i" ]; then
         ports[${#ports[@]}]=$i
       fi

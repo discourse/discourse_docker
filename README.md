@@ -71,6 +71,12 @@ If the environment variable "SUPERVISED" is set to true, the container won't be 
 
 ## Container Configuration
 
+The SSL template enables HTTP/3 when the launcher publishes TCP port 443 on
+host port 443. The launcher also publishes UDP port 443 in this setup. Allow
+inbound UDP port 443 in your firewall to serve HTTP/3. Set
+`DISCOURSE_HTTP3: false` under `env` and rebuild to disable it. If you terminate
+TLS at a reverse proxy, configure HTTP/3 on that proxy.
+
 The beginning of the container definition can contain the following "special" sections:
 
 ### templates:

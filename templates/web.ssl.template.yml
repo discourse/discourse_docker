@@ -58,7 +58,7 @@ run:
 
         add_header Strict-Transport-Security 'max-age=31536000';
 
-        if (\$http_host != ${DISCOURSE_HOSTNAME}) {
+        if (\$host != ${DISCOURSE_HOSTNAME}) {
           rewrite (.*) https://${DISCOURSE_HOSTNAME}\$1 permanent;
         }
         EOF
@@ -66,3 +66,14 @@ run:
         cat << EOF > /etc/nginx/conf.d/outlets/discourse/20-https.conf
         add_header Strict-Transport-Security 'max-age=31536000';
         EOF
+
+        if [ "$DISCOURSE_HTTP3" = "true" ]; then
+          cat << 'EOF' >> /etc/nginx/conf.d/outlets/server/20-https.conf
+        listen 443 quic reuseport;
+        listen [::]:443 quic reuseport;
+        add_header Alt-Svc 'h3=":443"; ma=86400';
+        EOF
+          cat << 'EOF' >> /etc/nginx/conf.d/outlets/discourse/20-https.conf
+        add_header Alt-Svc 'h3=":443"; ma=86400';
+        EOF
+        fi
