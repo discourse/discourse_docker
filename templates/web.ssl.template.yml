@@ -42,7 +42,7 @@ run:
 
         ssl_hostname=$(printf '%s\n' "$DISCOURSE_HOSTNAME" | sed -E 's/:[0-9]+$//')
         ssl_port_suffix=${DISCOURSE_HOSTNAME#"$ssl_hostname"}
-        ssl_port_suffix=${ssl_port_suffix:-:443}
+        sed -i 's/proxy_set_header Host \$http_host;/proxy_set_header Host $host'"$ssl_port_suffix"';/' /etc/nginx/conf.d/discourse.conf
 
         cat << EOF > /etc/nginx/conf.d/outlets/server/20-https.conf
         listen 443 ssl;
@@ -63,7 +63,7 @@ run:
         ssl_session_cache shared:SSL:1m;
 
         add_header Strict-Transport-Security 'max-age=31536000';
-        add_header Alt-Svc 'h3="$ssl_port_suffix"; ma=86400';
+        add_header Alt-Svc 'h3="${ssl_port_suffix:-:443}"; ma=86400';
 
         if (\$host != $ssl_hostname) {
           rewrite (.*) https://${DISCOURSE_HOSTNAME}\$1 permanent;
@@ -72,5 +72,5 @@ run:
 
         cat << EOF > /etc/nginx/conf.d/outlets/discourse/20-https.conf
         add_header Strict-Transport-Security 'max-age=31536000';
-        add_header Alt-Svc 'h3="$ssl_port_suffix"; ma=86400';
+        add_header Alt-Svc 'h3="${ssl_port_suffix:-:443}"; ma=86400';
         EOF
