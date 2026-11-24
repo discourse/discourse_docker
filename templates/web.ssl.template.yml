@@ -40,9 +40,16 @@ run:
 
         install /dev/null /etc/nginx/conf.d/outlets/server/10-http.conf
 
+        redirect_host='$host'
+        if [[ "$DISCOURSE_HOSTNAME" == *:* ]]; then
+          redirect_host='$http_host'
+        fi
+
         cat << EOF > /etc/nginx/conf.d/outlets/server/20-https.conf
         listen 443 ssl;
         listen [::]:443 ssl;
+        listen 443 quic reuseport;
+        listen [::]:443 quic reuseport;
         http2 on;
 
         ssl_protocols TLSv1.2 TLSv1.3;
@@ -57,23 +64,14 @@ run:
         ssl_session_cache shared:SSL:1m;
 
         add_header Strict-Transport-Security 'max-age=31536000';
+        add_header Alt-Svc 'h3=":443"; ma=86400';
 
-        if (\$host != ${DISCOURSE_HOSTNAME}) {
+        if ($redirect_host != ${DISCOURSE_HOSTNAME}) {
           rewrite (.*) https://${DISCOURSE_HOSTNAME}\$1 permanent;
         }
         EOF
 
         cat << EOF > /etc/nginx/conf.d/outlets/discourse/20-https.conf
         add_header Strict-Transport-Security 'max-age=31536000';
-        EOF
-
-        if [ "$DISCOURSE_HTTP3" = "true" ]; then
-          cat << 'EOF' >> /etc/nginx/conf.d/outlets/server/20-https.conf
-        listen 443 quic reuseport;
-        listen [::]:443 quic reuseport;
         add_header Alt-Svc 'h3=":443"; ma=86400';
         EOF
-          cat << 'EOF' >> /etc/nginx/conf.d/outlets/discourse/20-https.conf
-        add_header Alt-Svc 'h3=":443"; ma=86400';
-        EOF
-        fi
