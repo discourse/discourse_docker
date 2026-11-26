@@ -130,7 +130,7 @@ RUN --mount=from=libde265-builder,source=/tmp/libde265-debs,target=/tmp/libde265
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
     libpq-dev postgresql-client-${PG_MAJOR} postgresql-client-${PG_MAJOR_OLD} &&\
     mkdir -p /etc/runit/1.d &&\
-    apt-mark hold libheif1 discourse-libheif-guard &&\
+    apt-mark hold libheif1 discourse-libheif-guard libde265-0 &&\
     rm /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb &&\
     test "$(dpkg-query -W -f='${Version}' libheif1)" = "1.23.7-1discourse1" &&\
     test "$(dpkg-query -W -f='${Version}' libde265-0)" = "1.0.15-1+deb13u2+discourse1"
