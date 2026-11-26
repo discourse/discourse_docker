@@ -21,7 +21,16 @@ DEBIAN_FRONTEND=noninteractive apt-get -y install wget \
     libfreetype-dev \
     libbrotli-dev
 
+FROM builder AS libde265-builder
+COPY build-libde265-debs /tmp/
+COPY libde265-patches/ /tmp/libde265-patches/
+RUN /tmp/build-libde265-debs
+
 FROM builder AS libheif-builder
+RUN --mount=from=libde265-builder,source=/tmp/libde265-debs,target=/tmp/libde265-debs \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install \
+    /tmp/libde265-debs/libde265-0.deb \
+    /tmp/libde265-debs/libde265-dev.deb
 ADD install-libheif /tmp/install-libheif
 RUN /tmp/install-libheif
 
@@ -79,13 +88,15 @@ RUN echo "deb http://deb.debian.org/debian ${DEBIAN_RELEASE}-backports main" > "
 COPY --from=libheif-builder /tmp/libheif-packages/libheif1.deb /tmp/libheif1.deb
 COPY --from=libheif-builder /tmp/libheif-packages/discourse-libheif-guard.deb /tmp/discourse-libheif-guard.deb
 
-RUN --mount=type=tmpfs,target=/var/log \
+RUN --mount=from=libde265-builder,source=/tmp/libde265-debs,target=/tmp/libde265-debs \
+    --mount=type=tmpfs,target=/var/log \
     --mount=type=tmpfs,target=/var/cache/apt \
     --mount=type=tmpfs,target=/var/lib/apt \
     echo "debconf debconf/frontend select Teletype" | debconf-set-selections &&\
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install \
-# custom libheif packages
+# custom libheif packages and the patched libde265 they decode HEVC with
     /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb \
+    /tmp/libde265-debs/libde265-0.deb \
 # discourse runtime requirements
     gnupg sudo curl fping locales \
     ca-certificates rsync \
@@ -119,9 +130,10 @@ RUN --mount=type=tmpfs,target=/var/log \
     apt-get -y update && DEBIAN_FRONTEND=noninteractive apt-get -y install runit socat \
     libpq-dev postgresql-client-${PG_MAJOR} postgresql-client-${PG_MAJOR_OLD} &&\
     mkdir -p /etc/runit/1.d &&\
-    apt-mark hold libheif1 discourse-libheif-guard &&\
+    apt-mark hold libheif1 discourse-libheif-guard libde265-0 &&\
     rm /tmp/libheif1.deb /tmp/discourse-libheif-guard.deb &&\
-    test "$(dpkg-query -W -f='${Version}' libheif1)" = "1.23.7-1discourse1"
+    test "$(dpkg-query -W -f='${Version}' libheif1)" = "1.23.7-1discourse1" &&\
+    test "$(dpkg-query -W -f='${Version}' libde265-0)" = "1.0.15-1+deb13u2+discourse1"
 
 ENV LC_ALL=en_US.UTF-8
 ENV LANG=en_US.UTF-8

@@ -1,0 +1,39 @@
+#!/bin/bash
+set -euo pipefail
+
+# Remove this backport when Debian Trixie ships fixes for every issue in libde265-patches/series.
+debian_version=1.0.15-1+deb13u2
+upstream_version=1.0.15
+package_version="${debian_version}+discourse1"
+source_url=https://deb.debian.org/debian-security/pool/updates/main/libd/libde265
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get install -y --no-install-recommends dpkg-dev
+
+workdir=$(mktemp -d)
+trap 'rm -rf "$workdir"' EXIT
+cd "$workdir"
+
+# Pin both the libde265 source and Debian's packaging, including its security patches.
+for file in "libde265_${debian_version}.dsc" "libde265_${debian_version}.debian.tar.xz" "libde265_${upstream_version}.orig.tar.gz"; do
+    wget -nv "$source_url/$file"
+done
+sha256sum -c <<SUMS
+d85412b00d6e52e12ca5ecb5003dfd3cd48da5f26a0f7a8ee63336289ecf6393  libde265_${debian_version}.dsc
+108b5d4d71243554110e2899e20d3f409c8368573bfddc98473eb1637b902ba9  libde265_${debian_version}.debian.tar.xz
+00251986c29d34d3af7117ed05874950c875dd9292d016be29d3b3762666511d  libde265_${upstream_version}.orig.tar.gz
+SUMS
+apt-get build-dep -y --no-install-recommends "./libde265_${debian_version}.dsc"
+# The pinned SHA-256 checks above authenticate these exact source files.
+dpkg-source --no-check -x "libde265_${debian_version}.dsc" src
+cd src
+while IFS= read -r patch; do
+    install -m 0644 "/tmp/libde265-patches/$patch" debian/patches/
+    printf '%s\n' "$patch" >> debian/patches/series
+done < /tmp/libde265-patches/series
+sed -i "1i libde265 ($package_version) trixie; urgency=high\n\n  * Backport upstream fixes for the dangling previous slice header (#523),\n    GHSA-mm7m-v26f-wf8x and GHSA-xp3h-6f5r-8cxp.\n\n -- Discourse Team <team@discourse.org>  Thu, 26 Nov 2026 00:00:00 +0000\n" debian/changelog
+dpkg-buildpackage --build=binary --no-sign
+
+arch=$(dpkg --print-architecture)
+install -D -m 0644 "../libde265-0_${package_version}_${arch}.deb" /tmp/libde265-debs/libde265-0.deb
+install -D -m 0644 "../libde265-dev_${package_version}_${arch}.deb" /tmp/libde265-debs/libde265-dev.deb
