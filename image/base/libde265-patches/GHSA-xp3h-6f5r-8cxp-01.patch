@@ -1,0 +1,94 @@
+Description: Make the CTB progress counter atomic with acquire/release ordering
+ The lock-free fast path of wait_for_progress() read a plain int, so the
+ saved WPP row context was not reliably published to the next row's task.
+ This is the progress-lock part of the upstream commit. Its row-slot mutex
+ was removed again upstream in ce8d65cb5d and is not included.
+Origin: backport, https://github.com/strukturag/libde265/commit/eb346780796055d9f9aac62d725d3170aa60c7b4
+Bug: https://github.com/strukturag/libde265/security/advisories/GHSA-xp3h-6f5r-8cxp
+Applied-Upstream: 1.1.2
+Last-Update: 2026-11-26
+
+diff --git a/libde265/threads.cc b/libde265/threads.cc
+index 7b0ad9a..1a1bb2c 100644
+--- a/libde265/threads.cc
++++ b/libde265/threads.cc
+@@ -87,7 +87,7 @@ void de265_cond_signal(de265_cond* c) { win32_cond_signal(c); }
+ 
+ de265_progress_lock::de265_progress_lock()
+ {
+-  mProgress = 0;
++  mProgress.store(0, std::memory_order_relaxed);
+ 
+   de265_mutex_init(&mutex);
+   de265_cond_init(&cond);
+@@ -101,12 +101,15 @@ de265_progress_lock::~de265_progress_lock()
+ 
+ void de265_progress_lock::wait_for_progress(int progress)
+ {
+-  if (mProgress >= progress) {
++  // Fast path: acquire-load pairs with the release-store in set_progress()/
++  // increase_progress() so that everything the signalling thread wrote before
++  // reaching this progress value is visible once we observe it here.
++  if (mProgress.load(std::memory_order_acquire) >= progress) {
+     return;
+   }
+ 
+   de265_mutex_lock(&mutex);
+-  while (mProgress < progress) {
++  while (mProgress.load(std::memory_order_acquire) < progress) {
+     de265_cond_wait(&cond, &mutex);
+   }
+   de265_mutex_unlock(&mutex);
+@@ -116,8 +119,8 @@ void de265_progress_lock::set_progress(int progress)
+ {
+   de265_mutex_lock(&mutex);
+ 
+-  if (progress>mProgress) {
+-    mProgress = progress;
++  if (progress > mProgress.load(std::memory_order_relaxed)) {
++    mProgress.store(progress, std::memory_order_release);
+ 
+     de265_cond_broadcast(&cond, &mutex);
+   }
+@@ -129,7 +132,8 @@ void de265_progress_lock::increase_progress(int progress)
+ {
+   de265_mutex_lock(&mutex);
+ 
+-  mProgress += progress;
++  mProgress.store(mProgress.load(std::memory_order_relaxed) + progress,
++                  std::memory_order_release);
+   de265_cond_broadcast(&cond, &mutex);
+ 
+   de265_mutex_unlock(&mutex);
+@@ -137,7 +141,7 @@ void de265_progress_lock::increase_progress(int progress)
+ 
+ int  de265_progress_lock::get_progress() const
+ {
+-  return mProgress;
++  return mProgress.load(std::memory_order_acquire);
+ }
+ 
+ 
+diff --git a/libde265/threads.h b/libde265/threads.h
+index ad4e472..a43806a 100644
+--- a/libde265/threads.h
++++ b/libde265/threads.h
+@@ -81,10 +81,16 @@ public:
+   void set_progress(int progress);
+   void increase_progress(int progress);
+   int  get_progress() const;
+-  void reset(int value=0) { mProgress=value; }
++  void reset(int value=0) { mProgress.store(value, std::memory_order_release); }
+ 
+ private:
+-  int mProgress;
++  // Read lock-free on the fast paths of wait_for_progress()/get_progress()
++  // while written under 'mutex'. It must be atomic so those reads are not a
++  // data race, and it carries acquire/release ordering so that the state a
++  // producer wrote before signalling progress (e.g. the saved WPP row context)
++  // is published to a consumer that observes the progress value without taking
++  // the mutex (GHSA-xp3h-6f5r-8cxp).
++  std::atomic<int> mProgress;
+ 
+   // private data
+ 
