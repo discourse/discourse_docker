@@ -14,6 +14,7 @@ templates:
 expose:
   - "80:80"   # http
   - "443:443" # https
+  - "443:443/udp" # HTTP/3 (requires SSL)
 
 # Use 'links' key to link containers together, aka use Docker --link flag.
 links:
